@@ -1,6 +1,6 @@
 -- BlockRise Empire - main HUD (kept light on purpose)
 --   top: Roblox's own top bar row, edge to edge: a big construction progress bar, the Empire Road goal, the City Tower
---   left: money, gems, Strength + six menu buttons   right: Store, Gift, More   bottom: level + XP
+--   left: money, gems, Strength + six menu buttons   right: Store, Gift, More   bottom-left: level + XP
 -- The middle of the screen stays free for playing.
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -444,9 +444,9 @@ function M.Init(ctx)
 	refreshMusic()
 
 	---------------------------------------------------------------------------
-	-- BOTTOM: level + XP
+	-- BOTTOM-LEFT: level + XP
 	---------------------------------------------------------------------------
-	local lvlBox = new("Frame", { Name = "Level", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.fromOffset(340, 40), BackgroundTransparency = 1, Parent = root })
+	local lvlBox = new("Frame", { Name = "Level", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -14), Size = UDim2.fromOffset(340, 40), BackgroundTransparency = 1, Parent = root })
 	local lvlScale = new("UIScale", { Parent = lvlBox })
 	local xpBar, xpFill = progress(lvlBox, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 30, 0.5, 2), Size = UDim2.new(1, -96, 0, 20) }, Color3.fromRGB(120, 210, 255), Color3.fromRGB(50, 120, 240))
 	local xpLbl = text({ Size = UDim2.fromScale(1, 1), Font = ROUND, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Text = "", Parent = xpBar })
