@@ -377,7 +377,7 @@ function M.Show()
 	local pack = packOf("spins3")
 	if pack and not restricted and ((pack.id or 0) > 0 or RunService:IsStudio()) then
 		K.banner(c.content, 4, { name = string.upper(pack.name), line = "Cheaper than one by one. Every spin can be the " .. (top and top.name or "jackpot") .. "!",
-			icon = "spin", color = GOLD2, tint = C3(255, 226, 150), height = 104, buttonW = 190,
+			icon = (Config.ProductImages and Config.ProductImages.spins3) or "spin", color = GOLD2, tint = C3(255, 226, 150), height = 104, buttonW = 190,
 			button = (pack.id or 0) > 0 and { "R$ " .. tostring(pack.price or "?"), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, pack.id) end, shine = true } or nil,
 			status = (pack.id or 0) <= 0 and { "SOON · R$" .. tostring(pack.price or "?"), K.LOCK } or nil })
 	end

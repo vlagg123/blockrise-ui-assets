@@ -685,7 +685,9 @@ function M.Init(ctx)
 		local f = new("Frame", { Name = key, Size = UDim2.fromOffset(0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, LayoutOrder = order, Parent = fx })
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 4),
 			SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
-		if Icons.has(icon) then
+		if type(icon) == "string" and icon:find("^rbxassetid://") then
+			new("ImageLabel", { Size = UDim2.fromOffset(21, 21), BackgroundTransparency = 1, Image = icon, ScaleType = Enum.ScaleType.Fit, LayoutOrder = 1, ZIndex = 3, Parent = f })
+		elseif Icons.has(icon) then
 			Icons.make(icon, { Size = UDim2.fromOffset(20, 20), LayoutOrder = 1, ZIndex = 3, Parent = f })
 		else
 			new("TextLabel", { Size = UDim2.fromOffset(18, 20), BackgroundTransparency = 1, Text = icon, TextSize = 14, Font = Enum.Font.SourceSans, LayoutOrder = 1, ZIndex = 3, Parent = f })
@@ -722,7 +724,7 @@ function M.Init(ctx)
 				local label = (p.key == "vip" and ("VIP +" .. pct(Config.VipBonus) .. " CASH"))
 					or (p.key == "bigcrew" and ("BIG CREW +" .. tostring(Config.BigCrewSlots or 3)))
 					or string.upper(p.name or p.key)
-				add("pass_" .. p.key, PASS_ICON[p.key] or p.icon or "star", PASS_COL[p.key] or T.purple, 30 + i, label)
+				add("pass_" .. p.key, (Config.ProductImages and Config.ProductImages[p.key]) or PASS_ICON[p.key] or p.icon or "star", PASS_COL[p.key] or T.purple, 30 + i, label)
 			end
 		end
 		local fb = player:GetAttribute("FriendBonus") or 0

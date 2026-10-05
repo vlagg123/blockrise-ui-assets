@@ -451,8 +451,8 @@ PAGES[6] = { "PASS-URI", "vip", C3(230, 80, 140), function()
 	local g = grid(240)
 	for i, ps in ipairs(Config.Store.passes) do
 		local owned = p and p:GetAttribute("Pass_" .. ps.key) == true
-		local icon = PASS_ICON[ps.key] or ps.icon
-		if ps.key == (Config.StormHammer and Config.StormHammer.pass) then icon = Config.StormHammer.icon or icon end
+		local icon = (Config.ProductImages and Config.ProductImages[ps.key]) or PASS_ICON[ps.key] or ps.icon
+		if ps.key == (Config.StormHammer and Config.StormHammer.pass) and not (Config.ProductImages and Config.ProductImages[ps.key]) then icon = Config.StormHammer.icon or icon end
 		local o = { order = i, name = ps.name, icon = icon, color = owned and C3(90, 200, 120) or C3(150, 150, 190), tag = owned and { "ARE", GREEN } or nil, artH = 110 }
 		o.button = owned and { "SCOATE", RED, function(b) call("pass", { key = ps.key, on = false }, true, b) end }
 			or { "DA GRATIS", GREEN, function(b) call("pass", { key = ps.key, on = true }, true, b) end }

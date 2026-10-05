@@ -220,7 +220,7 @@ def bills(loc=(0, 0, 0), rot=(0, 0, 0), n=7, s=1.0, band="#ffffff"):
 
 def money_bag(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, cloth="#d6a35a", sign="#2e9e4a"):
     P = _xf(loc, rot, s)
-    c = candy(cloth, rough=0.6, coat=0.15, tex="grain", dark="#c48f48", light="#e2b46c")
+    c = pbr("bagcloth", cloth, rough=0.65, coat=0.1, tex="leaf", scale=5.0, bump=0.15, dark="#cf9a52", light="#dfae66", emit=0.18)
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=48, v_segments=24, radius=1.0)
     for v in bm.verts:
@@ -295,10 +295,6 @@ def i_skipanim():
     poly([(-0.62, 0.48), (0.02, 0.0), (-0.62, -0.48)], 0.3, w, loc=(0.0, -0.3, 0))
     poly([(-0.06, 0.48), (0.58, 0.0), (-0.06, -0.48)], 0.3, w, loc=(0.0, -0.3, 0))
     box((0.16, 0.3, 0.96), w, loc=(0.66, -0.3, 0), bevel=0.04)
-    # a little clapperboard behind, so it reads as "skip the movie"
-    P = _xf((-0.95, 0.5, 0.95), (0, 18, 0))
-    obj("clap", bm_box(1.1, 0.12, 0.8), candy("#2b2d38", rough=0.4), parent=P, bevel=0.04)
-    obj("clap_top", bm_box(1.14, 0.13, 0.22), candy("#ffffff", rough=0.35), loc=(0, 0, 0.55), rot=(0, -14, 0), parent=P, bevel=0.03)
 
 
 def i_stormhammer():
@@ -309,8 +305,8 @@ def i_stormhammer():
     B._M.clear()
     B.build(h, spec["palette"])
     yb = glow("#ffe14a", 3.5)
-    poly(BOLT, 0.25, yb, loc=(1.35, 1.2, 1.1), rot=(0, 18, 0)).scale = (0.9, 0.9, 0.9)
-    poly(BOLT, 0.25, glow("#7fd4ff", 3.5), loc=(-1.45, 1.2, -0.4), rot=(0, -20, 0)).scale = (0.75, 0.75, 0.75)
+    poly(BOLT, 0.25, yb, loc=(0.85, 0.8, 0.95), rot=(0, 18, 0)).scale = (0.55, 0.55, 0.55)
+    poly(BOLT, 0.25, glow("#7fd4ff", 3.5), loc=(-0.95, 0.8, 0.55), rot=(0, -20, 0)).scale = (0.45, 0.45, 0.45)
 
 
 def i_teleporter():
@@ -324,14 +320,14 @@ def i_teleporter():
         beam.surface_render_method = "BLENDED"
     except Exception:
         pass
-    cyl(0.85, 2.2, beam, loc=(0, 0, 1.45), r2=0.6, segs=64, bevel=0.0, outline=False)
-    for z, r in ((0.9, 0.9), (1.6, 0.78), (2.25, 0.66)):
+    cyl(0.85, 1.6, beam, loc=(0, 0, 1.15), r2=0.66, segs=64, bevel=0.0, outline=False)
+    for z, r in ((0.75, 0.86), (1.35, 0.74)):
         torus(r, 0.04, glow("#c9fbff", 3.0), loc=(0, 0, z), outline=False)
     # location pin floating in the beam
     red = candy("#ff3b4a")
-    sphere(0.55, red, loc=(0, 0, 2.05))
-    cyl(0.48, 0.85, red, loc=(0, 0, 1.45), r2=0.0, rot=(180, 0, 0), segs=48, bevel=0.0)
-    sphere(0.22, candy("#ffffff"), loc=(0, -0.42, 2.12), scale=(1, 0.5, 1))
+    sphere(0.62, red, loc=(0, 0, 2.75))
+    cyl(0.54, 0.95, red, loc=(0, 0, 2.08), r2=0.0, rot=(180, 0, 0), segs=48, bevel=0.0)
+    sphere(0.25, candy("#ffffff"), loc=(0, -0.48, 2.82), scale=(1, 0.5, 1))
 
 
 def i_vip():
@@ -351,10 +347,10 @@ def i_vip():
 
 
 def i_bigcrew():
-    hardhat((-0.9, 0.5, 0.1), rot=(-6, 0, 30), col="#ff8a26", s=0.8)
-    hardhat((0.95, 0.5, 0.1), rot=(-6, 0, -30), col="#3d8cff", s=0.8)
-    hardhat((0, -0.3, 0.0), rot=(-8, 0, 0), col="#ffc534", s=0.95)
-    badge("+3", (1.2, -1.1, 1.25), s=0.72, col="#3fd36a")
+    hardhat((-0.85, 0.9, 0.75), rot=(-25, 0, 25), col="#ff8a26", s=0.75)
+    hardhat((0.85, 0.9, 0.75), rot=(-25, 0, -25), col="#3d8cff", s=0.75)
+    hardhat((0, -0.4, 0.0), rot=(-22, 0, 0), col="#ffc534", s=1.0)
+    badge("+3", (1.25, -1.2, 1.15), s=0.8, col="#3fd36a")
 
 
 def i_cash2x():
@@ -421,12 +417,15 @@ def i_gems2x():
 
 
 def i_fasttools():
-    hm = I.hammer(s=1.25)
+    hm = I.hammer(s=1.7)
     repaint(hm)
-    hm.matrix_world = _xf((0.2, 0, 0), (0, -40, 0))
+    for ob in hm.children_recursive:
+        if ob.type == "MESH" and ob.data.materials and "9aa3b8" in ob.data.materials[0].name:
+            ob.data.materials[0] = gold()
+    hm.matrix_world = _xf((0.3, 0, 0), (0, -40, 0))
     for k, (z, l, c) in enumerate(((0.95, 1.6, "#ffc534"), (0.45, 2.1, "#ff8a26"), (-0.05, 1.4, "#ffc534"))):
         box((l, 0.12, 0.16), candy(c, emit=0.5), loc=(-1.25 - l * 0.25, 0.35, z), bevel=0.06)
-    poly(BOLT, 0.25, glow("#ffe14a", 2.5), loc=(1.25, -0.4, -0.75), rot=(0, 15, 0)).scale = (0.55, 0.55, 0.55)
+    poly(BOLT, 0.25, glow("#ffe14a", 2.5), loc=(1.35, -0.5, -0.9), rot=(0, 15, 0)).scale = (0.7, 0.7, 0.7)
 
 
 def i_monster():
@@ -445,7 +444,7 @@ def i_monster():
 
 def i_goldcar():
     g = gold()
-    P = _xf((0, 0, 0), (0, 0, -22))
+    P = _xf((0, 0, 0), (0, 0, -38))
     # low wedge body: hull of a few points
     pts = [(-1.5, -0.62, 0.2), (1.55, -0.6, 0.2), (-1.5, 0.62, 0.2), (1.55, 0.6, 0.2), (-1.45, -0.6, 0.62), (-1.45, 0.6, 0.62),
            (1.6, -0.5, 0.42), (1.6, 0.5, 0.42), (0.5, -0.58, 0.68), (0.5, 0.58, 0.68)]
@@ -483,7 +482,7 @@ def i_starter():
 
 
 def i_rushcrew():
-    hardhat((0, 0.2, 0), rot=(-8, 0, 20), col="#ffc534", s=1.05)
+    hardhat((0, 0.2, 0), rot=(-25, 0, 20), col="#ffc534", s=1.3)
     poly(BOLT, 0.3, glow("#ffe14a", 1.2), loc=(0.95, -0.9, 0.6), rot=(0, 12, 0)).scale = (0.75, 0.75, 0.75)
     for k, (z, l) in enumerate(((1.1, 1.2), (0.65, 1.7), (0.2, 1.0))):
         box((l, 0.1, 0.13), candy("#ff8a26", emit=0.5), loc=(-1.6 - l * 0.2, 0.5, z), bevel=0.05)
@@ -496,8 +495,9 @@ def i_cashpack():
 
 
 def i_cashstack():
-    bills((-0.45, 0.25, 0), rot=(0, 0, 10), n=9)
-    bills((0.55, -0.25, 0), rot=(0, 0, -12), n=6)
+    bills((-0.55, 0.45, 0), rot=(0, 0, 10), n=12)
+    bills((0.6, 0.35, 0), rot=(0, 0, -8), n=9)
+    bills((0.0, -0.55, 0), rot=(0, 0, 4), n=6)
 
 
 def vault(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
@@ -726,7 +726,7 @@ ICONS = {
     "cashbank": i_cashbank, "cashboost": i_cashboost, "spin1": i_spin1, "spins3": i_spins3, "gems100": i_gems100, "gems300": i_gems300,
     "gems750": i_gems750, "gems1700": i_gems1700, "gems4500": i_gems4500, "gems12000": i_gems12000,
 }
-VIEW = {"cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "goldcar": (-0.3, -1, 0.35), "teleporter": (0, -1, 0.35),
+VIEW = {"cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.15, -1, 0.5), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (-0.1, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {

@@ -33,6 +33,11 @@ local ICON = {
 	-- gem shop
 	b_cash = "up_cash", b_strength = "up_strength", b_power = "up_power", b_crew = "up_crew", cashbag = "cash", cashsafe = "coins", finish = "timer", crewslot = "hire",
 }
+-- the Blender pictures of everything sold for Robux (Config.ProductImages), the old atlas icons as fallback
+local function iconOf(key, fallback)
+	local img = Config.ProductImages and Config.ProductImages[key]
+	return img or ICON[key] or fallback, img and 1.06 or nil
+end
 local PASS_COL = {
 	vip = Color3.fromRGB(255, 190, 40), bigcrew = Color3.fromRGB(90, 200, 120), cash2x = Color3.fromRGB(80, 210, 110), strength2x = Color3.fromRGB(255, 120, 80),
 	autobuild = Color3.fromRGB(90, 170, 255), autotrain = Color3.fromRGB(255, 150, 90), gems2x = Color3.fromRGB(70, 190, 255), fasttools = Color3.fromRGB(255, 200, 60),
@@ -117,7 +122,7 @@ local function teleporterBanner(tok, order)
 	local tp = find(Config.Store.passes, "teleporter")
 	if not tp or not visible(tp) or c.player:GetAttribute("Pass_teleporter") then return end
 	local btn, status = robuxButton(tp, true, tok)
-	local b = K.banner(c.content, order, { name = "TELEPORTER", line = "Tap GO in Places and travel anywhere in one tap. Forever.", icon = "locations",
+	local b = K.banner(c.content, order, { name = "TELEPORTER", line = "Tap GO in Places and travel anywhere in one tap. Forever.", icon = (iconOf("teleporter", "locations")),
 		color = PASS_COL.teleporter, tint = Color3.fromRGB(255, 214, 120), button = btn, status = status, buttonW = 180 })
 	if btn and btn.fill then task.spawn(function() btn.fill(b:FindFirstChildOfClass("TextButton")) end) end
 end
@@ -127,7 +132,7 @@ local function starterBanner(tok, order)
 	if not st or not visible(st) or c.player:GetAttribute("StarterBought") then return end
 	local btn, status = robuxButton(st, false, tok)
 	local b = K.banner(c.content, order, { name = "STARTER PACK", line = "500 Gems + " .. Config.FormatMoney(bestReward() * 20) .. " + 30 min of 2x Cash. One time only!",
-		icon = "gift", color = Color3.fromRGB(255, 110, 140), tint = Color3.fromRGB(255, 190, 210), button = btn, status = status, buttonW = 180 })
+		icon = (iconOf("starter", "gift")), color = Color3.fromRGB(255, 110, 140), tint = Color3.fromRGB(255, 190, 210), button = btn, status = status, buttonW = 180 })
 	if btn and btn.fill then task.spawn(function() btn.fill(b:FindFirstChildOfClass("TextButton")) end) end
 end
 
@@ -138,8 +143,9 @@ local function gems(tok)
 	for _, p in ipairs(Config.Store.products) do if p.gems and visible(p) then table.insert(packs, p) end end
 	itemTiles(tok, packs, 4, { make = function(p, i)
 		local bonus = (p.desc or ""):match("%+(%d+)%%")
-		return { name = p.name, icon = "gem", color = GEM_COLS[math.min(i, #GEM_COLS)], badge = p.tag and { p.tag, p.tag == "POPULAR" and T.red or Color3.fromRGB(255, 150, 20) },
-			stats = bonus and { { "+" .. bonus .. "% BONUS", K.GREEN } } or { { "GEMS", GEM2 } }, spin = p.tag ~= nil, iconScale = 0.8 + 0.2 * (i / #packs) }
+		local icon, sc = iconOf(p.key, "gem")
+		return { name = p.name, icon = icon, color = GEM_COLS[math.min(i, #GEM_COLS)], badge = p.tag and { p.tag, p.tag == "POPULAR" and T.red or Color3.fromRGB(255, 150, 20) },
+			stats = bonus and { { "+" .. bonus .. "% BONUS", K.GREEN } } or { { "GEMS", GEM2 } }, spin = p.tag ~= nil, iconScale = sc or (0.8 + 0.2 * (i / #packs)) }
 	end })
 end
 
@@ -151,7 +157,8 @@ local function cash(tok)
 	table.sort(packs, function(a, b) return a.cash < b.cash end)
 	local best = bestReward()
 	itemTiles(tok, packs, 4, { make = function(p, i)
-		return { name = p.name, icon = ICON[p.key] or "cash", color = CASH_COLS[math.min(i, #CASH_COLS)], stats = { { "+" .. Config.FormatMoney(best * p.cash), K.GREEN } } }
+		local icon, sc = iconOf(p.key, "cash")
+		return { name = p.name, icon = icon, iconScale = sc, color = CASH_COLS[math.min(i, #CASH_COLS)], stats = { { "+" .. Config.FormatMoney(best * p.cash), K.GREEN } } }
 	end })
 end
 
@@ -165,7 +172,8 @@ local function boosts(tok)
 		local left = p.key == "rushcrew" and ((c.player:GetAttribute("RushCrewEnds") or 0) - workspace:GetServerTimeNow())
 			or (p.boost and (c.player:GetAttribute("Boost_" .. tostring(p.boost)) or 0) or 0)
 		local mins = (p.name or ""):match("(%d+) min")
-		return { name = (p.name or ""):gsub("%s*%(.-%)", ""), icon = ICON[p.key] or "up_power", color = Color3.fromRGB(255, 170, 50),
+		local icon, sc = iconOf(p.key, "up_power")
+		return { name = (p.name or ""):gsub("%s*%(.-%)", ""), icon = icon, iconScale = sc, color = Color3.fromRGB(255, 170, 50),
 			stats = { mins and { mins .. " MIN", T.blue } or { "x" .. tostring(p.spins or 3), T.blue } },
 			badge = left > 0 and { "ON " .. c.fmtTime(left), K.GREEN } or nil, spin = left > 0 }
 	end })
@@ -177,7 +185,8 @@ local function passes(tok)
 	for _, p in ipairs(Config.Store.passes) do if visible(p) then table.insert(list, p) end end
 	itemTiles(tok, list, 3, { pass = true, make = function(p)
 		local owned = c.player:GetAttribute("Pass_" .. p.key) == true
-		local o = { name = p.name, icon = ICON[p.key] or p.icon, color = PASS_COL[p.key] or T.purple, status = owned and { "OWNED", K.GREEN } or nil, spin = p.key == "vip" }
+		local icon, sc = iconOf(p.key, p.icon)
+		local o = { name = p.name, icon = icon, iconScale = sc, color = PASS_COL[p.key] or T.purple, status = owned and { "OWNED", K.GREEN } or nil, spin = p.key == "vip" }
 		if owned and p.key == "skipanim" then
 			-- yours: switch the building fly-around off / on
 			local on = c.player:GetAttribute("SkipAnim") == true
