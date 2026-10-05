@@ -534,6 +534,8 @@ function M.Init(ctx)
 	refreshStrength()
 
 	local grid = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(176, 400), Parent = left })
+	local MENU_SCALE = 0.9 -- the big menu buttons (left and right) are 10% smaller than the original design
+	local gridScale = new("UIScale", { Scale = MENU_SCALE, Parent = grid })
 	local gridLayout = new("UIGridLayout", { CellSize = UDim2.fromOffset(80, 88), CellPadding = UDim2.fromOffset(14, 8), SortOrder = Enum.SortOrder.LayoutOrder,
 		FillDirectionMaxCells = 2, Parent = grid })
 	menu = {}
@@ -785,10 +787,10 @@ function M.Init(ctx)
 		leftScale.Scale = ls
 		local avail = (H - 10 - (compact and 150 or 60)) / ls
 		-- 8 buttons: 4 rows of 2, or 3 wide (3 rows) when the screen is short
-		local cols = (146 + 4 * 96 > avail) and 3 or 2
+		local cols = (146 + 4 * 96 * MENU_SCALE > avail) and 3 or 2
 		gridLayout.FillDirectionMaxCells = cols
 		grid.Size = UDim2.fromOffset(cols * 94, 400)
-		local rs = compact and 0.8 or 1
+		local rs = (compact and 0.8 or 1) * MENU_SCALE
 		rightScale.Scale = rs
 		lvlScale.Scale = compact and 0.85 or 1
 		fxScale.Scale = compact and 0.85 or 1
