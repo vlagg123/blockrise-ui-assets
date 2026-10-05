@@ -3,6 +3,8 @@
 local RS = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local K = require(RS.Shared:WaitForChild("MenuKit"))
+local Icons = require(RS.Shared:WaitForChild("Icons"))
+local PIN_ICON = Icons.has("pin") and "pin" or "locations"
 
 local M = {}
 local c, UI, T, new, Config
@@ -132,15 +134,15 @@ function M.Show()
 				if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
 				M.Go(p.id)
 			end },
-			{ "PIN", Color3.fromRGB(255, 190, 50), function()
+			{ "", Color3.fromRGB(255, 190, 50), function()
 				c.click()
 				c.closeModal()
 				if p.id == "site" then c.toast("🏗️ Follow the arrow to your site", T.accent) return end
 				c.setWaypoint(p.id)
-			end, icon = "locations" },
+			end, icon = PIN_ICON, square = true },
 		} })
 	end
-	K.note(c.content, 3, "PIN shows the way (free).  GO takes you there (Teleporter).")
+	K.note(c.content, 3, "The pin shows the way for free.  GO takes you there with the Teleporter.")
 end
 
 function M.Init(ctx)

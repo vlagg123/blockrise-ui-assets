@@ -210,10 +210,17 @@ function K.tile(grid, o)
 	end
 	local bp = { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -20, 0, 50) }
 	if o.buttons then
-		local n = #o.buttons
+		-- side by side, 6 px apart; a "square" one (icon only) is 50 x 50, the others share the rest
+		local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10), Size = UDim2.new(1, -20, 0, 50),
+			BackgroundTransparency = 1, ZIndex = 7, Parent = t })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
+		local squares, wide = 0, 0
+		for _, bd in ipairs(o.buttons) do if bd.square then squares += 1 else wide += 1 end end
+		local fixed = squares * 50 + 6 * (#o.buttons - 1)
 		for i, bd in ipairs(o.buttons) do
-			K.button(t, bd[1], bd[2], { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new((i - 1) / n, i == 1 and 10 or 3, 1, -10),
-				Size = UDim2.new(1 / n, -13, 0, 50), TextSize = 19, Icon = bd.icon }, bd[3])
+			local size = bd.square and UDim2.fromOffset(50, 50) or UDim2.new(1 / math.max(1, wide), -math.ceil(fixed / math.max(1, wide)), 0, 50)
+			local b = K.button(holder, bd[1], bd[2], { Size = size, TextSize = 21, Icon = bd.icon, Shine = bd.shine, LayoutOrder = i }, bd[3])
+			if bd.square then b.Name = "Square" end
 		end
 	elseif o.button then
 		bp.Icon, bp.Shine = o.button.icon, o.button.shine
