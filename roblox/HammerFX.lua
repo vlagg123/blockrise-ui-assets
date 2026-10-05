@@ -278,7 +278,7 @@ end
 -- a cartoon storm cloud (picture rendered in Blender): three layers facing the camera at different depths, so it looks
 -- round from every side; grey-blue normally, lit white for a blink when lightning flashes inside
 local CLOUD_IMG = "rbxassetid://84361525477052"
-local CLOUD_TINT = C3(118, 126, 152)
+local CLOUD_TINT = C3(142, 150, 178)
 local CLOUD_LIT = C3(240, 246, 255)
 local function makeCloud(e)
 	local core = fxPart({ Name = "Cloud", Transparency = 1, Size = Vector3.new(1, 1, 1) })
