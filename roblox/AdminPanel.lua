@@ -68,9 +68,20 @@ end
 ---------------------------------------------------------------------------
 -- bottom-right corner (on phones a bit higher, clear of the jump button)
 local touchOnly = UIS.TouchEnabled and not UIS.KeyboardEnabled
-local openBtn = UI.button("ADMIN", RED, C3(170, 30, 50), { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, touchOnly and -190 or -14),
-	Size = UDim2.fromOffset(100, 44), TextSize = 20, Font = T.chunky, Icon = "vip", ZIndex = 2, Parent = gui })
-openBtn.Name = "AdminButton"
+-- a plain red button: no gloss line, no icon
+local openBtn = new("TextButton", { Name = "AdminButton", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, touchOnly and -190 or -14),
+	Size = UDim2.fromOffset(100, 44), BackgroundColor3 = RED, BorderSizePixel = 0, AutoButtonColor = false, Text = "", ZIndex = 2, Parent = gui })
+new("UICorner", { CornerRadius = UDim.new(0, 12), Parent = openBtn })
+new("UIStroke", { Thickness = 2.5, Color = C3(20, 17, 32), ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = openBtn })
+do
+	local l = new("TextLabel", { Name = "Label", Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), BackgroundTransparency = 1, Text = "ADMIN",
+		Font = T.chunky, TextSize = 20, TextColor3 = Color3.new(1, 1, 1), ZIndex = 3, Parent = openBtn })
+	new("UIStroke", { Thickness = 2, Color = C3(20, 17, 32), Parent = l })
+	local sc = new("UIScale", { Parent = openBtn })
+	openBtn.MouseButton1Down:Connect(function() UI.tween(sc, 0.06, { Scale = 0.92 }) end)
+	openBtn.MouseButton1Up:Connect(function() UI.tween(sc, 0.15, { Scale = 1 }, Enum.EasingStyle.Back) end)
+	openBtn.MouseLeave:Connect(function() UI.tween(sc, 0.1, { Scale = 1 }) end)
+end
 -- hidden during the "building done" fly-around, like the rest of the HUD (the SKIP button sits in that corner)
 task.spawn(function()
 	local hud = player:WaitForChild("PlayerGui"):WaitForChild("HUD", 60)

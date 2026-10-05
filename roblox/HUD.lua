@@ -301,8 +301,15 @@ local function plusButton(parent, onClick)
 	corner(b, 11)
 	grad(b, Color3.fromRGB(110, 236, 120), Color3.fromRGB(36, 168, 78))
 	stroke(b, 2.5)
-	local l = text({ Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = "+", TextSize = 23, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5, Parent = b })
-	tstroke(l, 2)
+	-- the + is drawn from bars (a "+" character never sits in the middle of its box): a dark plus, a white one on top
+	for _, layer in ipairs({ { 18, 8, Color3.fromRGB(20, 17, 32), 5 }, { 14, 4, WHITE, 6 } }) do
+		local long, thick, col, z = layer[1], layer[2], layer[3], layer[4]
+		for _, sz in ipairs({ UDim2.fromOffset(long, thick), UDim2.fromOffset(thick, long) }) do
+			local bar = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = sz, BackgroundColor3 = col,
+				BorderSizePixel = 0, ZIndex = z, Parent = b })
+			corner(bar, 3)
+		end
+	end
 	local sc = new("UIScale", { Parent = b })
 	b.MouseButton1Down:Connect(function() UI.tween(sc, 0.06, { Scale = 0.9 }) end)
 	b.MouseButton1Up:Connect(function() UI.tween(sc, 0.15, { Scale = 1 }, Enum.EasingStyle.Back) end)
