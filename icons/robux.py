@@ -994,18 +994,22 @@ def crate(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply"):
         body = pbr("crate_wood", "#c98546", rough=0.5, coat=0.4, tex="grain", dark="#a8672f", light="#dc9a58", emit=0.15)
         trim = pbr("crate_iron", "#6b7388", metal=0.9, rough=0.3, coat=0.4, emit=0.15)
         seam, mark_col = None, "#ffd23f"
+        lid = pbr("crate_wood_lid", "#a8672f", rough=0.55, coat=0.3, tex="grain", dark="#8a5224", light="#b8773a", emit=0.08)
     elif kind == "builder":
         body = candy("#3f8cff")
         trim = candy("#ffc534", rough=0.3)
         seam, mark_col = "#9fe0ff", "#ffffff"
+        lid = candy("#2a62d8", emit=0.08)
     elif kind == "golden":
         body = gold()
         trim = gold_dark()
         seam, mark_col = "#fff2a0", "#fff7d6"
+        lid = pbr("crate_gold_lid", "#d88f12", metal=1.0, rough=0.25, coat=0.3, emit=0.12)
     else:
         body = candy("#ff4fc8", rough=0.22)
         trim = pbr("crate_violet", "#7a3df0", metal=0.6, rough=0.25, coat=0.6, emit=0.2)
         seam, mark_col = "#ffb3f0", "#ffffff"
+        lid = candy("#d42c9e", emit=0.08)
     W, H = 2.0, 1.7
     obj("crate_body", bm_box(W, W, H), body, loc=(0, 0, H / 2), parent=P, bevel=0.1)
     if kind == "supply":
@@ -1025,11 +1029,11 @@ def crate(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply"):
         for x in (-1, 1):
             obj("rail", bm_box(t, W + 0.06, t), trim, loc=(x * (W / 2 - t / 2 + 0.03), 0, z), parent=P, bevel=0.05)
     # the lid, a little bigger, lifted by the light inside
-    lift = 0.16 if seam else 0.0
-    obj("lid", bm_box(W + 0.16, W + 0.16, 0.34), body, loc=(0, 0, H + 0.17 + lift), parent=P, bevel=0.1)
+    lift = 0.24 if seam else 0.0
+    obj("lid", bm_box(W + 0.16, W + 0.16, 0.34), lid, loc=(0, 0, H + 0.17 + lift), parent=P, bevel=0.1)
     obj("lid_rim", bm_box(W + 0.22, W + 0.22, 0.12), trim, loc=(0, 0, H + 0.06 + lift), parent=P, bevel=0.04)
     if seam:
-        obj("seam", bm_box(W - 0.1, W - 0.1, lift + 0.06), glow(seam, 6.0), loc=(0, 0, H + lift / 2 - 0.01), parent=P, bevel=0.0, outline=False)
+        obj("seam", bm_box(W - 0.1, W - 0.1, lift + 0.06), glow(seam, 9.0), loc=(0, 0, H + lift / 2 - 0.01), parent=P, bevel=0.0, outline=False)
     # the mark on the front: a big ? (the gem crate has a gem)
     if kind == "exclusive":
         g = gem(PINK_GEM, s=0.6)
@@ -1060,10 +1064,10 @@ def i_crate_exclusive():
 
 
 def _three(kind):
-    # three crates: two on the floor, one on top
-    track(crate, loc=(-1.25, 0.35, 0), rot=(0, 0, 18), s=0.78, kind=kind)
-    track(crate, loc=(1.25, 0.35, 0), rot=(0, 0, 26), s=0.78, kind=kind)
-    track(crate, loc=(0.0, -0.75, 0), rot=(0, 0, 22), s=0.84, kind=kind)
+    # three crates: two on the floor, one on top of them
+    track(crate, loc=(-1.42, 0, 0), rot=(0, 0, 14), s=0.72, kind=kind)
+    track(crate, loc=(1.42, 0, 0), rot=(0, 0, 30), s=0.72, kind=kind)
+    track(crate, loc=(0.0, 0.0, 1.62), rot=(0, 0, 22), s=0.7, kind=kind)
 
 
 def i_crate_golden3():
@@ -1088,7 +1092,8 @@ ICONS = {
     "crate_golden3": i_crate_golden3, "crate_exclusive3": i_crate_exclusive3,
 }
 VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
-        "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
+        "vip": (0, -1, 0.42), "crate_supply": (-0.25, -1, 0.2), "crate_builder": (-0.25, -1, 0.2), "crate_golden": (-0.25, -1, 0.2),
+        "crate_exclusive": (-0.25, -1, 0.2), "crate_golden3": (-0.15, -1, 0.15), "crate_exclusive3": (-0.15, -1, 0.15), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
     "skipanim": ("#6fc3ff", "#1b2f86"), "stormhammer": ("#8fd8ff", "#1a1f6e"), "teleporter": ("#7ff2ff", "#11406e"), "vip": ("#ffe27a", "#8a3a10"),
