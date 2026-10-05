@@ -141,8 +141,8 @@ def build():
         o.location.y = -0.2
     # hard hat on the B, coins and a gem around
     hh = I.hardhat(rot=(12, 0, -18))
-    hh.location = (-3.0, 0.05, 1.62)
-    hh.scale = (0.48, 0.48, 0.48)
+    hh.location = (-3.05, 0.05, 1.9)
+    hh.scale = (0.44, 0.44, 0.44)
     I.coin(loc=(-4.15, -0.4, 0.15), rot=(78, 0, 25), r=0.42)
     I.coin(loc=(-3.6, -0.5, -0.75), rot=(82, 0, -15), r=0.32)
     P.brilliant(loc=(4.2, -0.5, -0.55), rot=(8, 0, -14), s=0.46)
@@ -181,7 +181,7 @@ def finish(raw_path=None, out_path=None):
     c = postnp.over(c, postnp.solid(postnp.INK, ink))
     c = postnp.over(c, img)
     H2, W2 = c.shape[:2]
-    for x, y, r in ((0.17, 0.2, 0.05), (0.8, 0.62, 0.04), (0.57, 0.28, 0.03)):
+    for x, y, r in ((0.16, 0.16, 0.05), (0.8, 0.62, 0.04)):
         c = postnp.sparkle(c, x * W2, y * H2, r * W2, 3.0)
     out_path = out_path or os.path.join(OUT, "logo.png")
     postnp.save(c, out_path)
