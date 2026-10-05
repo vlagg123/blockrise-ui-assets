@@ -909,10 +909,13 @@ function M.Init(ctx)
 		-- the button always says SPIN; the time to the next free spin sits small on its corner
 		more.items.spin.setLabel(ready and "SPIN!" or "SPIN")
 		more.items.spin.setCorner((not ready and sleft and sleft > 0) and fmtTime(sleft) or nil)
-		more.items.spin.setBadge(ready)
+		-- how many spins are waiting: the free one + the extra ones
+		local spins = (ready and ((player:GetAttribute("SpinNext") or math.huge) <= os.time()) and 1 or 0) + (player:GetAttribute("SpinExtra") or 0)
+		if ready and spins == 0 then spins = 1 end
+		more.items.spin.setBadge(spins)
 		local missions = player:GetAttribute("MissionsReady") or 0
 		more.items.daily.setBadge(missions)
-		moreB.setBadge(missions + (ready and 1 or 0))
+		moreB.setBadge(missions + spins)
 	end)
 
 	-- the buildings you can take now and never built (the server sends the built ones in BuiltIds)

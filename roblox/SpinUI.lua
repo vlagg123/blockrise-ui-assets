@@ -62,11 +62,13 @@ local function tile(parent, p, x)
 	local f = new("Frame", { Name = "Prize", Position = UDim2.fromOffset(x, 0), Size = UDim2.fromOffset(TILE, TILE + 16), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE:Lerp(r[2], RANK[p.rarity or "common"] >= 5 and 0.35 or 0.12), ZIndex = 1, Parent = f })
 	local art = prizeArt(p)
-	K.artBox(f, art, r[2], { Position = UDim2.fromOffset(7, 7), Size = UDim2.new(1, -14, 0, 86), Spin = RANK[p.rarity or "common"] >= 3,
+	K.artBox(f, art, r[2], { Position = UDim2.fromOffset(7, 7), Size = UDim2.new(1, -14, 0, 92), Spin = RANK[p.rarity or "common"] >= 3,
 		IconScale = type(art) == "string" and art:find("^rbxassetid://") and 1.1 or nil })
-	K.chip(f, r[1], r[2], { Position = UDim2.fromOffset(12, 11), ZIndex = 8 })
-	K.text({ Position = UDim2.fromOffset(6, 96), Size = UDim2.new(1, -12, 0, 44), Text = p.name, TextSize = 17, Max = 17, TextWrapped = true,
+	-- name, and the rarity in its colour under it (nothing covers the picture)
+	K.text({ Position = UDim2.fromOffset(6, 101), Size = UDim2.new(1, -12, 0, 24), Text = p.name, TextSize = 17, Max = 17,
 		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, Parent = f })
+	K.text({ Position = UDim2.fromOffset(6, 125), Size = UDim2.new(1, -12, 0, 20), Text = r[1], Font = T.chunky, TextSize = 15, Max = 15,
+		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = r[2]:Lerp(Color3.new(0, 0, 0), 0.15), Parent = f })
 	return f
 end
 
@@ -384,7 +386,7 @@ function M.Show()
 	K.section(c.content, 5, "TOP PRIZES", C3(255, 170, 220), "the rarest things on the reel")
 	local best = table.clone(Config.Spin.prizes)
 	table.sort(best, function(a, b) return a.weight < b.weight end)
-	local grid = K.grid(c.content, 6, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 236)
+	local grid = K.grid(c.content, 6, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 206)
 	for i = 1, math.min(4, #best) do
 		local p = best[i]
 		local r = rarOf(p)
