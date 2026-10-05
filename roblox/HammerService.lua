@@ -347,7 +347,7 @@ end
 function M.Init(c)
 	ctx = c
 	local rf = c.remote("RemoteFunction", "HammerAction")
-	rf.OnServerInvoke = function(plr, action, a, b)
+	M.Handler = function(plr, action, a, b)
 		local st = ctx.S[plr]
 		if not st or not st.data or not st.data.Hammers then return false, "Loading..." end
 		local fn = type(action) == "string" and actions[action]
@@ -361,6 +361,7 @@ function M.Init(c)
 		if not ok then warn("HammerAction error:", action, r1) return false, "Something went wrong" end
 		return r1, r2
 	end
+	rf.OnServerInvoke = M.Handler
 end
 
 return M

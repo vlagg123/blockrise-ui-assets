@@ -228,7 +228,7 @@ s = replaceOnce(s, [[		elseif cmd == "tool" then S[plr].data.ToolTier = v; giveT
 			for _, it in ipairs(S[plr].data.Hammers) do table.insert(t, it.k .. ":" .. it.lv .. (it.bound and "(b)" or "")) end
 			return { list = t, equip = S[plr].data.EquipHammer, power = HammerService.Power(S[plr]), cd = HammerService.Cooldown(S[plr]), crates = S[plr].data.Crates, tier = S[plr].data.ToolTier }
 		elseif cmd == "hammerAction" then
-			return ReplicatedStorage.Remotes.HammerAction.OnServerInvoke(plr, v[1], v[2], v[3])]])
+			return HammerService.Handler(plr, v[1], v[2], v[3])]])
 s = replaceOnce(s, [[		local n = int(v, 1, #Config.Tools)
 		if not n then return false, "bad tier" end
 		st.data.ToolTier = n
