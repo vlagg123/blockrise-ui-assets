@@ -555,41 +555,8 @@ def build():
     h.trail(hp + [0, 0.36, -0.66], hp + [0, -0.36, -0.66], [[255, 236, 140], [255, 100, 20]])
     H.append(h)
 
-    # 15 ---------------------------------------------------------------------------------- THUNDERCLAP (original design)
-    h = Hammer(15, "thunder", "Thunderclap Hammer", "Forged inside a storm. Every hit cracks like thunder.")
-    hy = 2.38
-    h.shaft(-0.5, hy - 0.1, 0.112, "stormwood")
-    h.grip(-0.42, 0.34, 0.13, "storm_lth", rings=3, ring_mat="silver", ring_r=0.134)
-    for i, y in enumerate((0.62, 1.12, 1.62)):
-        h.band("Rune%d" % i, y, 0.118, 0.035, "storm_neon")
-    h.add("Pommel", "cyl", (0.12, 0.15), (0, -0.52, 0), mat="silver", planes=cyl_bevel(0.12, 0.15, 0.04), smooth=40)
-    h.add("PommelGem", "box", (0.14, 0.14, 0.14), (0, -0.64, 0), R=Rx(45) @ Rz(35), mat="storm_crystal")
-    hp = np.array([0.0, hy, 0.0])
-    a, L = 0.31, 1.32
-    h.add("Head", "box", (2 * a, 2 * a / math.cos(math.radians(30)), L), hp, mat="stormstone", planes=hexagon(a) + chamfer(2 * a, 0.8, L, 0.04, edges="xy"))
-    for e in (-1, 1):
-        a2 = a + 0.055
-        h.add("Cap%d" % (e + 1), "box", (2 * a2, 2 * a2 / math.cos(math.radians(30)), 0.15), hp + [0, 0, e * (L / 2 + 0.01)], mat="silver", planes=hexagon(a2))
-        a3 = a - 0.02
-        h.add("Plate%d" % (e + 1), "box", (2 * a3, 2 * a3 / math.cos(math.radians(30)), 0.09), hp + [0, 0, e * (L / 2 + 0.11)], mat="silver", planes=hexagon(a3) + chamfer(2 * a3, 0.8, 0.09, 0.025, edges="xy"))
-        h.add("Core%d" % (e + 1), "cyl", (0.02, 0.15), hp + [0, 0, e * (L / 2 + 0.16)], R=ALONG_Z, mat="storm_neon", smooth=40, cast=False)
-    for i, z in enumerate((-0.3, 0.3)):
-        a4 = a + 0.02
-        h.add("Ring%d" % i, "box", (2 * a4, 2 * a4 / math.cos(math.radians(30)), 0.07), hp + [0, 0, z], mat="silver", planes=hexagon(a4))
-    # a lightning bolt rune on both sides of the head
-    for sx in (-1, 1):
-        for j, (z, y, ln, ang) in enumerate(((-0.13, 0.07, 0.2, 38), (0.0, 0.0, 0.16, -44), (0.13, -0.07, 0.2, 38))):
-            h.add("Bolt%d%d" % (sx + 1, j), "box", (0.02, 0.05, ln), hp + [sx * (a + 0.004), y, z], R=Rx(ang), mat="storm_neon", cast=False)
-    h.headbox(hp, (0.8, 0.9, 1.7))
-    h.fx("sparks", hp, [[220, 240, 255], [80, 170, 255]], 10, [0.04, 0.09], area=(0.6, 0.7, 1.3))
-    h.fx("glint", hp, [[170, 220, 255]], 2.5, [0.14, 0.28], area=(0.7, 0.7, 1.4))
-    h.light(hp, [90, 170, 255], 2.2, 10)
-    h.trail(hp + [0, 0.36, -0.75], hp + [0, -0.36, -0.75], [[230, 245, 255], [80, 160, 255]])
-    h.d["storm"] = True
-    H.append(h)
-
-    # 16 ---------------------------------------------------------------------------------- GALAXY
-    h = Hammer(16, "galaxy", "Galaxy Hammer", "A whole galaxy, trapped in crystal. The last hammer.")
+    # 15 ---------------------------------------------------------------------------------- GALAXY
+    h = Hammer(15, "galaxy", "Galaxy Hammer", "A whole galaxy, trapped in crystal. The last hammer.")
     hy = 2.42
     h.shaft(-0.52, hy - 0.22, 0.114, "void")
     for i, y in enumerate((-0.4, 0.36, 0.86, 1.36, 1.86)):
@@ -610,6 +577,45 @@ def build():
     h.light(hp, [190, 110, 255], 2.2, 10)
     h.trail(hp + [0, 0.36, -0.72], hp + [0, -0.36, -0.72], [[255, 150, 250], [140, 90, 255], [80, 200, 255]])
     h.d["scroll"] = dict(piece="Galaxy", image="galaxy", speed=[0.06, 0.02], studs=1.2)
+    H.append(h)
+
+    # special (Robux add-on) ----------------------------------------------------------------- THUNDERCLAP (original design)
+    h = Hammer(16, "thunder", "Thunderclap Hammer", "A storm in a hammer. Triples your build power, forever.")
+    h.d["special"] = True
+    hy = 2.36
+    h.shaft(-0.5, hy - 0.12, 0.114, "stormwood")
+    h.grip(-0.42, 0.34, 0.132, "storm_lth", rings=3, ring_mat="silver", ring_r=0.136)
+    for i, y in enumerate((0.62, 1.12, 1.62)):
+        h.band("Rune%d" % i, y, 0.12, 0.035, "storm_neon")
+    h.band("Socket", hy - 0.36, 0.17, 0.2, "silver")
+    h.add("Pommel", "box", (0.26, 0.14, 0.26), (0, -0.52, 0), mat="silver", planes=chamfer(0.26, 0.14, 0.26, 0.05))
+    h.add("PommelGem", "box", (0.15, 0.15, 0.15), (0, -0.65, 0), R=Rx(45) @ Rz(35), mat="storm_crystal")
+    hp = np.array([0.0, hy, 0.0])
+    # a big rectangular block of storm stone with silver edges
+    hw, hh, L = 0.72, 0.78, 1.18
+    h.add("Head", "box", (hw, hh, L), hp, mat="stormstone", planes=chamfer(hw, hh, L, 0.07))
+    for e in (-1, 1):
+        # silver end frames + the striking plates with a glowing core
+        h.add("Frame%d" % (e + 1), "box", (hw + 0.06, hh + 0.06, 0.12), hp + [0, 0, e * (L / 2 - 0.03)], mat="silver",
+              planes=chamfer(hw + 0.06, hh + 0.06, 0.12, 0.06, edges="z") + chamfer(hw + 0.06, hh + 0.06, 0.12, 0.03, edges="xy"))
+        h.add("Plate%d" % (e + 1), "box", (hw - 0.14, hh - 0.14, 0.06), hp + [0, 0, e * (L / 2 + 0.05)], mat="silver",
+              planes=chamfer(hw - 0.14, hh - 0.14, 0.06, 0.05, edges="z") + chamfer(hw - 0.14, hh - 0.14, 0.06, 0.02, edges="xy"))
+        h.add("Core%d" % (e + 1), "box", (0.26, 0.26, 0.02), hp + [0, 0, e * (L / 2 + 0.085)], R=Rz(45), mat="storm_neon", cast=False)
+    # silver bands around the middle of the block
+    for i, z in enumerate((-0.22, 0.22)):
+        h.add("Band%d" % i, "box", (hw + 0.03, hh + 0.03, 0.06), hp + [0, 0, z], mat="silver", planes=chamfer(hw + 0.03, hh + 0.03, 0.06, 0.07, edges="z"))
+    # glowing lightning cracks on both sides and on top
+    for sx in (-1, 1):
+        for j, (z, y, ln, ang) in enumerate(((-0.1, 0.12, 0.2, 40), (0.02, 0.0, 0.17, -46), (0.13, -0.12, 0.2, 40))):
+            h.add("Bolt%d%d" % (sx + 1, j), "box", (0.02, 0.055, ln), hp + [sx * (hw / 2 + 0.004), y, z], R=Rx(ang), mat="storm_neon", cast=False)
+    for j, (z, x, ln, ang) in enumerate(((-0.08, -0.1, 0.18, 35), (0.04, 0.02, 0.15, -40), (0.14, 0.12, 0.16, 35))):
+        h.add("TopBolt%d" % j, "box", (0.05, 0.02, ln), hp + [x, hh / 2 + 0.004, z], R=Ry(ang), mat="storm_neon", cast=False)
+    h.headbox(hp, (0.85, 0.9, 1.4))
+    h.fx("sparks", hp, [[220, 240, 255], [80, 170, 255]], 12, [0.04, 0.09], area=(0.7, 0.8, 1.2))
+    h.fx("glint", hp, [[170, 220, 255]], 3, [0.14, 0.3], area=(0.75, 0.8, 1.2))
+    h.light(hp, [90, 170, 255], 2.4, 11)
+    h.trail(hp + [0, 0.4, -0.66], hp + [0, -0.4, -0.66], [[230, 245, 255], [80, 160, 255]])
+    h.d["storm"] = True
     H.append(h)
 
     return [x.d for x in H]

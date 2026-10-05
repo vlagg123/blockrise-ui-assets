@@ -223,12 +223,12 @@ end
 local function buildHammer(h)
 	local origin = CFrame.new(0, 600, 0) -- far above the map while building
 	local tool = Instance.new("Tool")
-	tool.Name = "Hammer_" .. h.tier
+	tool.Name = h.special and ("Hammer_" .. h.key) or ("Hammer_" .. h.tier)
 	tool:SetAttribute("Key", h.key)
 	tool:SetAttribute("Tier", h.tier)
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
-	tool.Grip = CFrame.new()
+	tool.Grip = CFrame.Angles(math.rad(-25), 0, 0) -- leans out a little, the head never covers your face
 	local handle = Instance.new("Part")
 	handle.Name = "Handle"
 	handle.Size = Vector3.new(0.25, 0.25, 0.25)
@@ -277,7 +277,7 @@ local out = {}
 for _, tier in ipairs(args.tiers or {}) do
 	local h = spec.hammers[tier]
 	local t0 = os.clock()
-	local old = folder:FindFirstChild("Hammer_" .. tier)
+	local old = folder:FindFirstChild(h.special and ("Hammer_" .. h.key) or ("Hammer_" .. tier))
 	local ok, tool = pcall(buildHammer, h)
 	if ok then
 		if old then old:Destroy() end
