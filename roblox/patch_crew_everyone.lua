@@ -28,7 +28,7 @@ s = replaceOnce(s, "						if not hasCarrier or (now - w.waitSince > 6 and not co
 	"						if not hasCarrier or (now - w.waitSince > 8 and not coming) or now - w.waitSince > 20 then")
 
 -- no more standing at the spot: out of material = keep working at half speed
-s = replaceOnce(s, [[					elseif needs then
+s = replaceOnce(s, [=[					elseif needs then
 						-- out of material: wait at the spot for a laborer
 						if moveTo(w, spot, now) and not w.facedWait then w.facedWait = true; face(w, aim) end
 					elseif moveTo(w, spot, now) then
@@ -40,8 +40,8 @@ s = replaceOnce(s, [[					elseif needs then
 						table.insert(flows, { track = track, rate = t.rate * eff * mult })
 						if now - w.lastSwing > t.swing * (0.9 + math.random() * 0.2) then
 							w.lastSwing = now
-							if not earthStage then w.stock = (w.stock or 0) - 1 end]],
-	[[					elseif moveTo(w, spot, now) then
+							if not earthStage then w.stock = (w.stock or 0) - 1 end]=],
+	[=[					elseif moveTo(w, spot, now) then
 						w.facedWait = nil
 						-- a second builder on the same task is less efficient: spreading out pays off
 						local same = 0
@@ -55,7 +55,7 @@ s = replaceOnce(s, [[					elseif needs then
 						w.lastWork = now
 						if now - w.lastSwing > t.swing * (0.9 + math.random() * 0.2) * (needs and 1.5 or 1) then
 							w.lastSwing = now
-							if not earthStage and not needs then w.stock = (w.stock or 0) - 1 end]])
+							if not earthStage and not needs then w.stock = (w.stock or 0) - 1 end]=])
 
 -- laborers: their deliveries feed the stage too
 s = replaceOnce(s, "								table.insert(bursts, { track = w.dropTrack, amount = amount })",
