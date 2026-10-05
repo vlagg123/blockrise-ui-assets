@@ -771,10 +771,10 @@ def settle(dynamic, passive, frames=160):
         rb.collision_shape = "CONVEX_HULL" if kind == "ACTIVE" else "MESH"
         if kind == "PASSIVE":
             rb.mesh_source = "FINAL"
-        rb.friction = 0.9
+        rb.friction = 1.0
         rb.restitution = 0.0
-        rb.linear_damping = 0.3
-        rb.angular_damping = 0.6
+        rb.linear_damping = 0.5
+        rb.angular_damping = 0.9
         rb.use_margin = True
         rb.collision_margin = 0.004
     for f in range(1, frames + 1):
@@ -791,16 +791,37 @@ def settle(dynamic, passive, frames=160):
         o.matrix_world = m
 
 
-def drop_gems(P, n, seed, area, z0, sizes=(0.3, 0.42), sets=(BLUE_GEM, PINK_GEM, GREEN_GEM, PURPLE_GEM, RED_GEM), gap=1.0):
-    """n gems at random turns over area (x0, x1, y0, y1) in the frame P, one above the other so none starts inside another"""
+def drop_gems(P, n, seed, area, z0, sizes=(0.3, 0.4), sets=(BLUE_GEM, PINK_GEM, GREEN_GEM, PURPLE_GEM, RED_GEM), per=2, gap=0.92):
+    """n gems at random turns, dropped in layers of `per` over area (x0, x1, y0, y1) in the frame P.
+    Gems of one layer are ~0.9 apart and layers 0.92 apart, so none starts inside another."""
     rnd = random.Random(seed)
     gs = []
+    x0, x1, y0, y1 = area
     for k in range(n):
+        layer, i = divmod(k, per)
+        fx = (i + 0.5) / per if per > 1 else 0.5
+        if layer % 2:
+            fx = 1 - fx
+        x = x0 + (x1 - x0) * fx + rnd.uniform(-0.08, 0.08)
+        y = rnd.uniform(y0, y1)
         s_ = rnd.uniform(*sizes)
         g = gem(sets[k % len(sets)], rot=(rnd.uniform(0, 360), rnd.uniform(0, 360), rnd.uniform(0, 360)), s=s_)
-        g.matrix_world = P @ _xf((rnd.uniform(area[0], area[1]), rnd.uniform(area[2], area[3]), z0 + k * gap)) @ g.matrix_world
+        g.matrix_world = P @ _xf((x, y, z0 + layer * gap)) @ g.matrix_world
         gs.append(g)
     return gs
+
+
+def keep_inside(gs, P, test):
+    """delete the gems that came to rest outside the place they belong (test gets the position in frame P)"""
+    inv = P.inverted()
+    kept = []
+    for g in gs:
+        p = inv @ g.matrix_world.translation
+        if test(p):
+            kept.append(g)
+        else:
+            bpy.data.objects.remove(g, do_unlink=True)
+    return kept
 
 
 def ground(z=0.0, size=20.0):
@@ -842,13 +863,15 @@ def i_gems750():
     # a heap of gems dropped onto a red velvet cushion
     c = cushion(loc=(0, 0.2, 0.0))
     floor_ = ground(-0.32)
-    gs = drop_gems(Matrix.Identity(4), 10, 7, (-0.45, 0.45, -0.05, 0.45), 1.0, sizes=(0.32, 0.44))
+    P = Matrix.Identity(4)
+    gs = drop_gems(P, 12, 7, (-0.9, 0.9, 0.0, 0.4), 0.8, sizes=(0.32, 0.42))
     settle(gs, [c, floor_])
     bpy.data.objects.remove(floor_, do_unlink=True)
+    gs = keep_inside(gs, P, lambda p: abs(p.x) < 1.45 and -0.85 < p.y < 1.25 and p.z > 0.15)
     touching(gs)
 
 
-def velvet_mound(P, z=1.2, sx=1.12, sy=0.66, h=0.42):
+def velvet_mound(P, z=1.2, sx=1.12, sy=0.66, h=0.28):
     vel = pbr("chest_velvet", "#7a1f9a", rough=0.75, coat=0.05, tex="leaf", scale=30.0, bump=0.12, dark="#6a1888", light="#8a2aa8", emit=0.12)
     o = sphere(1.0, vel, outline=False)
     o.matrix_world = P @ _xf((0, 0, z), (0, 0, 0), (sx, sy, h))
@@ -922,19 +945,21 @@ def chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, fill=None):
 
 
 def chest_heap(n, seed, spill=0):
-    """an open chest heaped with gems that were dropped in and settled (plus some spilled on the floor)"""
-    parts = []
+    """an open chest heaped with gems that were dropped in and came to rest (plus some spilled on the floor in front)"""
     P = _xf((0, 0, 0), (0, 0, 14))
     before = set(bpy.data.objects)
     chest(rot=(0, 0, 14))
     walls = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
     bed = velvet_mound(P)
-    gs = drop_gems(P, n, seed, (-0.72, 0.72, -0.32, 0.3), 2.2)
+    gs = drop_gems(P, n, seed, (-0.9, 0.9, -0.25, 0.25), 1.75)
     floor_ = ground(0.0)
     if spill:
-        gs += drop_gems(P, spill, seed + 1, (-1.45, 1.45, -1.55, -1.2), 1.0, sizes=(0.34, 0.42), gap=0.9)
+        gs += drop_gems(P, spill, seed + 1, (-1.6, 1.6, -1.5, -1.25), 0.7, sizes=(0.34, 0.42), per=3)
     settle(gs, walls + [bed, floor_])
     bpy.data.objects.remove(floor_, do_unlink=True)
+    in_chest = lambda p: abs(p.x) < 1.15 and abs(p.y) < 0.72 and p.z > 1.15
+    on_floor = lambda p: abs(p.x) < 1.9 and -1.95 < p.y < -0.8 and p.z < 0.7
+    gs = keep_inside(gs, P, (lambda p: in_chest(p) or on_floor(p)) if spill else in_chest)
     touching(gs)
     return gs
 
