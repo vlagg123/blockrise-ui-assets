@@ -21,6 +21,10 @@ K.RAR = {
 	common = Color3.fromRGB(150, 156, 178), uncommon = Color3.fromRGB(80, 200, 100), rare = Color3.fromRGB(60, 150, 255),
 	epic = Color3.fromRGB(165, 90, 255), legend = Color3.fromRGB(255, 170, 30), mythic = Color3.fromRGB(255, 70, 120),
 }
+-- art for buildings (contracts, properties) until each one has its own icon
+K.BUILDING = { fence = "site", shed = "home", garage = "garage", house = "home", shop = "home", villa = "suburbs", warehouse = "company",
+	apartments = "company", luxvilla = "suburbs", distcenter = "contract", office = "downtown", hotel = "company", skyscraper = "downtown",
+	hq = "company", spire = "mega" }
 -- rarity by position in a tier list (tools, gear...)
 function K.rarityOf(i, n)
 	local f = (i - 1) / math.max(1, n - 1)
@@ -233,8 +237,9 @@ function K.tile(grid, o)
 	return t
 end
 
---[[ wide offer banner (Teleporter, starter pack, info cards)
-	o = { name, line, icon, color, tint (card colour), button = {label, color, onClick, icon, shine}, status, order, height }
+--[[ wide offer banner (Teleporter, starter pack, Rebirth, info cards)
+	o = { name, line, bar = {fraction, color, label}, chips = {{label, color}, ...}, icon, color, tint (card colour),
+	      button = {label, color, onClick, icon, shine}, status, order, height, buttonW }
 ]]
 function K.banner(parent, order, o)
 	local h = o.height or 128
@@ -250,9 +255,27 @@ function K.banner(parent, order, o)
 	if o.titleGrad ~= false then
 		new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 236, 150)), Rotation = 90, Parent = tl })
 	end
+	local y = 56
 	if o.line then
-		text({ Name = "Line", Position = UDim2.fromOffset(x, 56), Size = UDim2.new(1, -x - bw - 26, 0, h - 68), Text = o.line, TextSize = 18, TextWrapped = true,
+		local lh = (o.bar or o.chips) and 24 or (h - 68)
+		text({ Name = "Line", Position = UDim2.fromOffset(x, y), Size = UDim2.new(1, -x - bw - 26, 0, lh), Text = o.line, TextSize = 18, TextWrapped = not (o.bar or o.chips),
 			TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.DARK, Max = 18, Parent = f })
+		y += lh + 6
+	end
+	if o.bar then
+		local bar, fill = UI.bar({ Name = "Bar", Position = UDim2.fromOffset(x, y), Size = UDim2.new(1, -x - bw - 26, 0, 24), ZIndex = 3 }, o.bar[2] or K.GOLD)
+		bar.Parent = f
+		fill.Size = UDim2.fromScale(math.clamp(o.bar[1] or 0, 0.04, 1), 1)
+		if o.bar[3] then
+			text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = o.bar[3], Font = T.chunky, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+				TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = bar })
+		end
+		y += 30
+	end
+	if o.chips then
+		local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(x - 2, y), Size = UDim2.new(1, -x - bw - 26, 0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
+		for i, sdef in ipairs(o.chips) do K.chip(row, sdef[1], sdef[2], { LayoutOrder = i }) end
 	end
 	local bp = { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(bw, 58) }
 	if o.button then

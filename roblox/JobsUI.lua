@@ -72,7 +72,7 @@ function M.Show()
 			table.remove(chips, 2)
 		end
 		local o = { name = ct.name, line = ct.client .. " · " .. ct.stages .. " stages" .. (ct.done > 0 and ("  ·  done x" .. ct.done) or ""),
-			icon = ART[ord] or "site", color = K.RAR[rk], chips = chips, height = 120, buttonW = 168 }
+			icon = K.BUILDING[ct.id] or ART[ord] or "site", color = K.RAR[rk], chips = chips, height = 120, buttonW = 168 }
 		if ct.unlocked and data.active == ct.id then
 			o.status = { "ACTIVE", Color3.fromRGB(255, 176, 40) }
 			o.spin = true
