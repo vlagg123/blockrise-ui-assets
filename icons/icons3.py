@@ -199,58 +199,45 @@ def icon_suburbs():
 
 
 def icon_company():
-    lib("bigbuilding", loc=(-0.45, 0.25, 0), rot=(0, 0, 25))
-    lib("kenneyA", loc=(0.75, -0.35, 0), rot=(0, 0, 25), scale=0.62, paint={"_defaultMat": "#ffb347"})
+    lib("bigbuilding", loc=(-0.55, 0.3, 0), rot=(0, 0, 25))
+    lib("kenneyA", loc=(1.05, -0.35, 0), rot=(0, 0, 25), scale=0.6, paint={"_defaultMat": "#ffb347"})
 
 
 def icon_downtown():
-    lib("skyscraper", loc=(0, 0.2, 0), rot=(0, 0, 20), scale=1.25)
-    lib("kenneyG", loc=(-0.85, -0.15, 0), rot=(0, 0, 20), scale=0.78, paint={"_defaultMat": "#7fb2ff"})
-    lib("kenneyA", loc=(0.9, -0.3, 0), rot=(0, 0, 20), scale=0.7, paint={"_defaultMat": "#ff9f6e"})
+    # three towers side by side, never touching
+    lib("kenneyG", loc=(-1.25, -0.25, 0), rot=(0, 0, 20), scale=0.62, paint={"_defaultMat": "#7fb2ff"})
+    lib("skyscraper", loc=(0.05, 0.35, 0), rot=(0, 0, 20), scale=1.25)
+    lib("kenneyA", loc=(1.3, -0.3, 0), rot=(0, 0, 20), scale=0.6, paint={"_defaultMat": "#ff9f6e"})
 
 
-# ---- upgrade icons: the item alone; the green badge is added in 2D (same size and place on every icon, always in front)
-def icon_up_rent():
-    lib("house", rot=(0, 0, 205), paint={"Main": "#a25cff"})
+def _heart(s):
+    return [(16 * math.sin(t) ** 3 * s, (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) * s)
+            for t in (2 * math.pi * k / 40 for k in range(40))]
 
 
-def icon_up_power():
-    I.hammer(rot=(0, -32, 0))
+def icon_invite():
+    # open pink envelope with a letter sliding out, a big heart on the letter
+    I.poly([(-0.95, 0.5), (0.95, 0.5), (0, 1.25)], 0.08, loc=(0, 0.16, 0), color="#ff4f93", bevel=0.04)
+    I.box((1.9, 0.1, 1.2), loc=(0, 0.08, -0.1), color="#ff6aa6", bevel=0.06)
+    I.box((1.5, 0.05, 1.25), loc=(0, 0.0, 0.3), color="#fffaf0", bevel=0.04)
+    for k in range(2):
+        I.box((0.9 - k * 0.3, 0.02, 0.07), loc=(-0.1 - k * 0.15, -0.035, 0.12 - k * 0.16), color="#d6d9e6", bevel=0.0)
+    I.poly(_heart(0.019), 0.12, loc=(0, -0.06, 0.62), color="#ff2d55", bevel=0.05, gloss=0.6)
+    I.poly([(-0.95, -0.7), (0.95, -0.7), (0.95, 0.42), (0, -0.12), (-0.95, 0.42)], 0.1, loc=(0, -0.1, 0), color="#ff8cc0", bevel=0.05)
 
 
-def icon_up_strength():
-    I.dumbbell(rot=(0, -28, -18), color=I.ORANGE)
-
-
-def icon_up_cash():
-    P.coin_stack(4, loc=(0, 0, -0.35))
-
-
-def icon_up_crew():
-    I.hardhat(rot=(16, 0, 22))
-
-
-def icon_hire():
-    I.hardhat(rot=(16, 0, 22))
-
-
-def icon_up_luck():
-    P.icon_up_luck()
-
-
-def icon_badge_up():
-    pts = [(-0.34, -0.62), (0.34, -0.62), (0.34, 0.02), (0.72, 0.02), (0, 0.78), (-0.72, 0.02), (-0.34, 0.02)]
-    I.poly(pts, 0.42, color="#3ad65a", bevel=0.08, gloss=0.55)
-
-
-def icon_badge_plus():
-    I.box((1.3, 0.42, 0.44), color="#3ad65a", bevel=0.1, gloss=0.55)
-    I.box((0.44, 0.42, 1.3), color="#3ad65a", bevel=0.1, gloss=0.55)
-
-
-BADGED = {"up_power": "badge_up", "up_strength": "badge_up", "up_cash": "badge_up", "up_crew": "badge_up",
-          "up_rent": "badge_up", "up_luck": "badge_up", "hire": "badge_plus"}
-BADGES = {"badge_up": icon_badge_up, "badge_plus": icon_badge_plus}
+def icon_locations():
+    I.cyl(1.2, 0.3, loc=(0, 0, -0.15), color=I.GREEN, bevel=0.1, gloss=0.3)
+    I.cyl(0.75, 0.55, loc=(0, 0, -0.55), r2=1.18, color="#a8683a", bevel=0.06)
+    I.cyl(0.25, 0.03, loc=(0.05, -0.15, 0.01), color="#2f9a45", bevel=0.0)
+    for x, y in ((-0.5, -0.55), (-0.15, -0.75), (0.25, -0.9)):
+        I.cyl(0.11, 0.04, loc=(x, y, 0.02), color="#f1d9a8", bevel=0.01)
+    I.tree(loc=(-0.72, 0.35, 0), s=0.85)
+    I.tree(loc=(0.75, 0.45, 0), s=0.6)
+    pin = [I.sphere(0.7, loc=(0, 0, 0.6), color=I.RED, gloss=0.5),
+           I.cyl(0.62, 1.0, loc=(0, 0, -0.1), rot=(180, 0, 0), color=I.RED, r2=0.0, bevel=0.0, verts=40),
+           I.sphere(0.3, loc=(0, -0.6, 0.66), scale=(1, 0.7, 1), color=I.WHITE, gloss=0.5)]
+    I.group(pin, loc=(0.05, -0.18, 0.4), scale=0.66)
 
 
 def icon_vip():
@@ -262,14 +249,14 @@ LIB_ICONS = {"up_rent": icon_up_rent, "home": icon_home, "suburbs": icon_suburbs
              "downtown": icon_downtown, "vip": icon_vip}
 ICONS = dict(I.ICONS)
 ICONS.update(LIB_ICONS)
-ICONS.update({"up_power": icon_up_power, "up_strength": icon_up_strength, "up_cash": icon_up_cash, "up_crew": icon_up_crew,
+ICONS.update({"invite": icon_invite, "locations": icon_locations, "up_power": icon_up_power, "up_strength": icon_up_strength, "up_cash": icon_up_cash, "up_crew": icon_up_crew,
               "hire": icon_hire, "up_luck": icon_up_luck})
 ALL = dict(ICONS)
 ALL.update(BADGES)
 VIEWS = dict(P.VIEWS)
 VIEWS.update({"home": (0, -1, 0.5), "suburbs": (0, -1, 0.5), "company": (0, -1, 0.35), "downtown": (0, -1, 0.3),
               "up_rent": (0, -1, 0.5), "vip": (0, -1, 0.35), "badge_up": (0, -1, 0.22), "badge_plus": (0, -1, 0.22),
-              "up_cash": (0, -1, 0.45)})
+              "up_cash": (0, -1, 0.45), "invite": (0, -1, 0.35)})
 
 
 # ----------------------------------------------------------------------------------------- run

@@ -10,4 +10,4 @@ All third-party assets used to render the icon atlas are CC0 (public domain) —
 - **Large Building** (A, G) by Kenney — https://poly.pizza/m/ppwtREejXg, https://poly.pizza/m/h7Jaq7bqMq, CC0 (company, downtown)
 
 Everything else is modelled procedurally in icons.py / icons2.py.
-Atlas v5 on Roblox: rbxassetid://71207527744723
+Atlas v6 on Roblox: rbxassetid://83672774709080
