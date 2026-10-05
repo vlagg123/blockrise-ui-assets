@@ -60,7 +60,7 @@ function M.Show()
 	local function needs(ct)
 		local parts = {}
 		local function add(ok, label, have)
-			table.insert(parts, string.format('<font color="%s">%s %s%s</font>', ok and "#239a45" or "#e0344f", ok and "✓" or "✗", label,
+			table.insert(parts, string.format('<font color="%s">%s %s%s</font>', ok and "#239a45" or "#e0344f", ok and "✓" or "×", label,
 				(not ok and have) and (" (you: " .. have .. ")") or ""))
 		end
 		if (ct.reqRebirth or 0) > 0 then add(reb >= ct.reqRebirth, "Rebirth " .. ct.reqRebirth, tostring(reb)) end

@@ -257,7 +257,7 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 			return
 		end
 		if not cornerPill then
-			cornerPill = new("Frame", { Name = "Corner", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -7), Size = UDim2.fromOffset(0, 22),
+			cornerPill = new("Frame", { Name = "Corner", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 2, 0, -8), Size = UDim2.fromOffset(0, 22),
 				AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 6, Parent = b })
 			corner(cornerPill, 11)
 			grad(cornerPill, PANEL1, PANEL2)
