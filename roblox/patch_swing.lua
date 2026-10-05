@@ -24,55 +24,54 @@ s = replaceOnce(s, [[local function doHit()
 	sv.Name = "toolanim"; sv.Value = "Slash"; sv.Parent = tool
 	Debris:AddItem(sv, 0.4)
 	R.Work:FireServer()
-end]], [[-- SWING_TRACK: our own slash animation, restarted on every hit
-local SLASH_R15, SLASH_R6 = "rbxassetid://522635514", "rbxassetid://129967478"
-local swingTrack, swingHum
-local function toolCooldown()
+end]], [[-- SWING_TRACK: our own slash animation, restarted on every hit (one table: the script is at its local limit)
+local SW = { R15 = "rbxassetid://522635514", R6 = "rbxassetid://129967478", track = nil, hum = nil, queued = false }
+function SW.cooldown()
 	local tier = player:GetAttribute("ToolTier") or 1
 	return (Config.Tools[tier] or Config.Tools[1]).cooldown * (player:GetAttribute("Pass_fasttools") and Config.FastToolsPass or 1)
 end
-local function swing(cd)
+function SW.swing(cd)
 	local char = player.Character
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
-	if swingHum ~= hum or not swingTrack then
-		swingHum = hum
+	if SW.hum ~= hum or not SW.track then
+		SW.hum = hum
 		local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator", hum)
 		local anim = Instance.new("Animation")
-		anim.AnimationId = hum.RigType == Enum.HumanoidRigType.R6 and SLASH_R6 or SLASH_R15
+		anim.AnimationId = hum.RigType == Enum.HumanoidRigType.R6 and SW.R6 or SW.R15
 		local ok, tr = pcall(function() return animator:LoadAnimation(anim) end)
-		swingTrack = ok and tr or nil
-		if swingTrack then
-			swingTrack.Priority = Enum.AnimationPriority.Action2
-			swingTrack.Looped = false
+		SW.track = ok and tr or nil
+		if SW.track then
+			SW.track.Priority = Enum.AnimationPriority.Action2
+			SW.track.Looped = false
 		end
 	end
-	if not swingTrack then return end
-	swingTrack:Stop(0)
-	swingTrack:Play(0.04)
-	local len = swingTrack.Length > 0 and swingTrack.Length or 0.6
+	local tr = SW.track
+	if not tr then return end
+	tr:Stop(0)
+	tr:Play(0.04)
+	local len = tr.Length > 0 and tr.Length or 0.6
 	-- the whole swing fits in one cooldown, so the next hit always starts a fresh swing
-	swingTrack:AdjustSpeed(math.clamp(len / math.max((cd or 0.4) * 0.95, 0.15), 1, 3.5))
+	tr:AdjustSpeed(math.clamp(len / math.max((cd or 0.4) * 0.95, 0.15), 1, 3.5))
 end
-local hitQueued = false
 local function doHit()
 	local tool = myTool()
 	if not tool then return end
-	local cd = toolCooldown()
+	local cd = SW.cooldown()
 	local now = os.clock()
 	if now - lastHit < cd then
 		-- a bit too early: keep the click and swing the moment the tool is ready
-		if not hitQueued then
-			hitQueued = true
+		if not SW.queued then
+			SW.queued = true
 			task.delay(cd - (now - lastHit) + 0.01, function()
-				hitQueued = false
+				SW.queued = false
 				doHit()
 			end)
 		end
 		return
 	end
 	lastHit = now
-	swing(cd)
+	SW.swing(cd)
 	R.Work:FireServer()
 end]])
 
@@ -84,7 +83,7 @@ local autoOld = [[			local tool = myTool()
 				Debris:AddItem(sv, 0.4)
 			end]]
 local n
-s, n = s:gsub(autoOld:gsub("%p", "%%%0"), (([[			if myTool() then swing(toolCooldown()) end]]):gsub("%%", "%%%%")))
+s, n = s:gsub(autoOld:gsub("%p", "%%%0"), (([[			if myTool() then SW.swing(SW.cooldown()) end]]):gsub("%%", "%%%%")))
 assert(n == 2, "auto swing blocks: " .. tostring(n))
 
 assert(loadstring(s), "Client compile")
