@@ -397,22 +397,22 @@ PAGES[11] = { "ALTELE", "settings", C3(160, 160, 200), function()
 	if target() == player then
 		title("ZONA PERICULOASA")
 		local armed = false
-		local banner = K.banner(page, nextOrder(), { name = "RESETEAZA-MI PROGRESUL", line = "Doar contul tau: incepi de la 0 (tutorial de la pasul 1). Ce ai cumparat cu Robux ramane. Iesi din joc si intri din nou.",
-			icon = "rebirth", color = RED, tint = C3(255, 200, 200), buttonW = 210, height = 120 })
-		local b = K.button(banner, "RESETEAZA", RED, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(210, 58), TextSize = 22, ZIndex = 8 })
-		b.Activated:Connect(function()
-			local lbl = b:FindFirstChild("Label")
-			if not armed then
-				-- first tap only arms it: a second tap within 5 s does it
-				armed = true
-				if lbl then lbl.Text = "SIGUR? APASA IAR" end
-				task.delay(5, function() armed = false; if lbl and lbl.Parent then lbl.Text = "RESETEAZA" end end)
-				return
-			end
-			armed = false
-			if lbl then lbl.Text = "SE RESETEAZA..." end
-			call("resetme", { confirm = "RESET" })
-		end)
+		local banner
+		banner = K.banner(page, nextOrder(), { name = "RESETEAZA-MI PROGRESUL", line = "Doar contul tau: incepi de la 0 (tutorial de la pasul 1). Ce ai cumparat cu Robux ramane. Iesi din joc si intri din nou.",
+			icon = "rebirth", color = RED, tint = C3(255, 200, 200), buttonW = 210, height = 120, button = { "RESETEAZA", RED, function()
+				local b = banner and banner:FindFirstChildOfClass("TextButton")
+				local lbl = b and b:FindFirstChild("Label")
+				if not armed then
+					-- the first tap only arms it: a second tap within 5 s does it
+					armed = true
+					if lbl then lbl.Text = "SIGUR? APASA IAR" end
+					task.delay(5, function() armed = false; if lbl and lbl.Parent then lbl.Text = "RESETEAZA" end end)
+					return
+				end
+				armed = false
+				if lbl then lbl.Text = "SE RESETEAZA..." end
+				call("resetme", { confirm = "RESET" })
+			end } })
 	end
 	title("STELE & REBIRTH", "stele pentru Star Shop, si numarul de rebirth-uri")
 	bigButtons({ { "+100 STELE", PURPLE, add("stars", 100) }, { "+1000 STELE", GOLD, add("stars", 1000) }, { "+1 REBIRTH", C3(200, 120, 255), add("rebirths", 1) } })
