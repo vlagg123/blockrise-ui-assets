@@ -74,11 +74,11 @@ def g_hands():
     P = _xf((0, 0, 0), (0, 0, -16))
     els = [("ELLIPSOID", (0, 0.08, 0.72), 1.0, (0.62, 0.48, 0.55), None, 2.0)]
     for k in range(4):
-        x = -0.43 + k * 0.29
+        x = -0.4 + k * 0.268
         z = 1.02 - abs(k - 1.5) * 0.05
         # each finger: knuckle roll on top and the bent part down the front
-        els.append(("CAPSULE", (x, -0.3, z), 0.22, (0.16, 0, 0), (0, 0, 90), 3.0))
-        els.append(("CAPSULE", (x, -0.5, z - 0.3), 0.2, (0.1, 0, 0), (0, 90, 0), 3.0))
+        els.append(("CAPSULE", (x, -0.3, z), 0.235, (0.15, 0, 0), (0, 0, 90), 2.4))
+        els.append(("CAPSULE", (x, -0.5, z - 0.3), 0.215, (0.1, 0, 0), (0, 90, 0), 2.4))
     els.append(("CAPSULE", (-0.1, -0.6, 0.38), 0.21, (0.3, 0, 0), (0, 12, 0), 3.0))      # thumb across the front
     els.append(("CAPSULE", (0.05, 0.12, 0.05), 0.42, (0.22, 0, 0), (0, 90, 0), 2.0))     # wrist
     meta(els, sk, "fist", P=P, resolution=0.03)
@@ -88,24 +88,32 @@ def g_hands():
         box((l, 0.08, 0.1), candy("#ffffff", emit=0.6), loc=(1.3 + l * 0.2, 0.25, z), bevel=0.045)
 
 
-def glove(P, col="#e6a64e", cuff="#ff8a26", dark="#d39440", light="#f0b863"):
-    m = pbr("glove" + col, col, rough=0.6, coat=0.15, tex="leaf", scale=6, bump=0.3, dark=dark, light=light, emit=0.18)
-    els = [("ELLIPSOID", (0, 0, 0.62), 1.0, (0.52, 0.2, 0.5), None, 2.0)]
-    for k, h in enumerate((0.36, 0.44, 0.41, 0.32)):
-        x = -0.36 + k * 0.24
-        els.append(("CAPSULE", (x * 1.05, 0, 1.12 + h * 0.6), 0.17, (h, 0, 0), (0, 90 - (x * 8), 0), 2.6))
-    els.append(("CAPSULE", (0.62, 0, 0.72), 0.17, (0.26, 0, 0), (0, 40, 0), 2.6))  # thumb
-    meta(els, m, "glove", P=P, resolution=0.03)
-    obj("cuff", bm_cyl(0.56, 0.38, 64), candy(cuff, rough=0.55), loc=(0, 0, 0.1), parent=P, smooth=40, bevel=0.12, segs=4)
-    t = torus(0.57, 0.035, candy("#ffffff", rough=0.4), seg=64, ring=8, outline=False)
+def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
+    """a chunky cartoon work glove: one soft piece (palm + fingers + thumb), a rolled cuff"""
+    m = pbr("glove" + col, col, rough=0.62, coat=0.15, tex="leaf", scale=5, bump=0.25, dark=dark, light=light, emit=0.18)
+    els = [("ELLIPSOID", (0, 0, 0.66), 1.0, (0.6, 0.3, 0.6), None, 2.0)]
+    for k, h in enumerate((0.3, 0.38, 0.35, 0.26)):
+        x = -0.41 + k * 0.275
+        z = 1.2 + h * 0.75 - abs(k - 1.5) * 0.06
+        els.append(("CAPSULE", (x, 0, z), 0.235, (h, 0, 0), (0, 90 + (k - 1.5) * 6, 0), 2.2))
+    els.append(("CAPSULE", (0.66, -0.02, 0.78), 0.23, (0.22, 0, 0), (0, 52, 0), 2.2))   # thumb
+    els.append(("CAPSULE", (0, 0, 0.12), 0.52, (0.12, 0, 0), (0, 90, 0), 2.0))         # wrist
+    meta(els, m, "glove", P=P, resolution=0.028)
+    c = candy(cuff, rough=0.6, tex="leaf", scale=14, bump=0.2, dark="#f06d10", light="#ff8a2a")
+    obj("cuff", bm_cyl(0.6, 0.42, 64), c, loc=(0, 0, 0.0), parent=P, smooth=40, bevel=0.16, segs=5)
+    t = torus(0.62, 0.05, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
     t.matrix_world = P @ _xf((0, 0, 0.1))
-    # a stitched seam down the back of the hand
-    obj("seam", bm_box(0.04, 0.03, 0.6), candy(dark, rough=0.6), loc=(0, -0.21, 0.66), parent=P, bevel=0.0, outline=False)
+    # knuckle seam on the back of the hand
+    sm = candy(dark, rough=0.6)
+    for k in range(4):
+        x = -0.41 + k * 0.275
+        sp = sphere(0.045, sm, outline=False)
+        sp.matrix_world = P @ _xf((x, -0.33, 1.12))
 
 
 def g_gloves():
-    glove(_xf((-0.5, 0.45, 0.15), (0, 20, 12), (0.95, 0.95, 0.95)), col="#d9973f", dark="#c88a36", light="#e6a650")
-    glove(_xf((0.45, -0.25, 0), (8, -16, -10)))
+    glove(_xf((-0.55, 0.5, 0.25), (0, 24, 14), (0.85, 0.85, 0.85)), col="#e2a040", dark="#c98a32", light="#ecb055")
+    glove(_xf((0.35, -0.25, 0), (6, -14, -10)))
 
 
 def g_belt():
