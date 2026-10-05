@@ -116,8 +116,8 @@ def g_kettlebell():
     for x in (-0.6, 0.6):
         cyl(0.17, 0.4, candy("#2b2d38", rough=0.35), loc=(x, 0, 1.55), bevel=0.0)
     # a white weight label
-    obj("plate", bm_prism(circle(0.36, 40), 0.06, axis="Y"), candy("#ffffff", rough=0.3), loc=(0, -0.99, 0.82), smooth=40, bevel=0.02)
-    R.text("16", 0.38, 0.05, candy("#ff6a2b", rough=0.3), loc=(0, -1.04, 0.82))
+    obj("plate", bm_prism(circle(0.42, 40), 0.06, axis="Y"), candy("#ffffff", rough=0.3), loc=(0, -0.99, 0.82), smooth=40, bevel=0.02)
+    R.text("KG", 0.36, 0.05, candy("#ff6a2b", rough=0.3), loc=(0, -1.04, 0.8))
 
 
 def barbell(loc, rot, plates=(("#e0302f", 1.0, 0.26), ("#2f8cff", 0.8, 0.22), ("#ffc534", 0.6, 0.18)), L=3.8, bar=None, s=1.0):
@@ -140,13 +140,13 @@ def g_barbell():
 
 
 def g_ibeam():
-    steel = pbr("steel", "#5f78aa", metal=0.8, rough=0.32, coat=0.45, tex="brushed", axis="Y", dark="#4a6194", light="#94acd8", aniso=0.4, emit=0.2)
+    steel = pbr("ibeam_y", "#ffb81c", metal=0.3, rough=0.32, coat=0.6, emit=0.22)
 
     def bar(P):
-        T.i_beam(steel, (0, 0, 0), L=4.0, w=0.42, h=0.46, tf=0.08, tw=0.08)
+        T.i_beam(steel, (0, 0, 0), L=4.0, w=0.62, h=0.72, tf=0.12, tw=0.12)
         ob = [o for o in I3.iscene().objects if o.name.startswith("it_beam")][-1]
         ob.matrix_world = P @ _xf((0, 0, 0), (0, 0, 90))
-    barbell((0, 0, 0.6), (0, 0, -20), plates=(("#2b2d38", 1.05, 0.3), ("#e0302f", 0.82, 0.26)), L=4.0, bar=bar)
+    barbell((0, 0, 0.6), (0, 0, -20), plates=(("#2b2d38", 1.1, 0.3),), L=4.0, bar=bar)
 
 
 def g_block():
@@ -160,8 +160,9 @@ def g_block():
             t.matrix_world = P @ _xf((x, 0, 0.12 + k * 0.24), (90 if k % 2 == 0 else 0, 0, 90 if k % 2 else 0)) @ Matrix.Diagonal((1, 1.5, 1, 1))
     t = torus(0.55, 0.06, chrome(), a0=0.0, a1=math.pi, seg=30)
     t.matrix_world = P @ _xf((0, 0, 0.72), (90, 0, 0)) @ Matrix.Diagonal((1, 0.5, 1, 1))
-    t2 = R.text("2T", 0.5, 0.06, candy("#ffc534", rough=0.4))
-    t2.matrix_world = P @ _xf((0.0, -0.76, -0.62), (90, 0, 0))
+    # a yellow/black hazard stripe on the front
+    for k in range(6):
+        obj("haz", bm_box(0.22, 0.04, 0.3), candy("#ffc534" if k % 2 == 0 else "#2b2d38", rough=0.4), loc=(-0.55 + k * 0.22, -0.76, -0.75), rot=(0, 25, 0), parent=P, bevel=0.0, outline=False)
 
 
 def g_anvil():
@@ -170,11 +171,9 @@ def g_anvil():
     a = poly(pts, 0.95, m, loc=(0, 0, 0), rot=(0, 0, -25), bevel=0.05)
     # shiny worn top
     box((1.72, 0.9, 0.04), pbr("anviltop", "#c9d3e6", metal=1.0, rough=0.15, coat=0.6, emit=0.25), loc=(0.2, 0, 1.0), rot=(0, 0, -25), bevel=0.01, outline=False)
-    sp = R.poly([(0.15, 1.0), (-0.55, -0.05), (-0.05, -0.05), (-0.3, -1.0), (0.6, 0.15), (0.08, 0.15), (0.42, 1.0)], 0.2, glow("#ffb12e", 2.2), loc=(1.25, -0.2, 1.55), rot=(0, 15, 0))
-    sp.scale = (0.4, 0.4, 0.4)
-    for k in range(5):
-        a2 = -0.6 + k * 0.3
-        sphere(0.06, glow("#ffd36b", 3.0), loc=(math.cos(a2) * 1.25 - 0.2, -0.6, 1.2 + math.sin(a2 + 1.2) * 0.4), outline=False)
+    for k in range(6):
+        a2 = 0.3 + k * 0.42
+        sphere(0.09, glow("#ffd36b", 3.0), loc=(0.35 + math.cos(a2) * 0.7, -0.3, 1.15 + abs(math.sin(a2)) * 0.6), outline=False)
 
 
 def g_wreck():
