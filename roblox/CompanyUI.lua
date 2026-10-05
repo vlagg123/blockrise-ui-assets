@@ -56,29 +56,27 @@ end
 
 local function renderFound(tok, data)
 	c.modalSub.Text = ""
-	K.banner(c.content, 1, { name = "YOUR OWN COMPANY", line = "Buy properties. They pay rent every minute, even when you're offline.",
-		icon = "company", color = BLUE2, tint = Color3.fromRGB(170, 215, 255) })
-	-- what you need, as three tiles
+	-- everything fits without scrolling: a short intro, the three requirements in one row, the name field
+	K.banner(c.content, 1, { name = "YOUR OWN COMPANY", line = "Properties pay rent every minute, even offline.", icon = "company", color = BLUE2,
+		tint = Color3.fromRGB(170, 215, 255), height = 86 })
 	local lvl, mon, steel = data.level or 1, data.money or 0, data.mats.steel or 0
-	K.section(c.content, 2, "TO START", Color3.fromRGB(160, 215, 255), "all three, then pick a name")
-	local grid = K.grid(c.content, 3, 3, 244)
+	local grid = K.grid(c.content, 2, 3, 92, 10)
 	local function need(i, ok, name, icon, color, have)
-		K.tile(grid, { order = i, name = name, icon = icon, color = color, artH = 104, stats = { { have, ok and K.GREEN or RED } },
-			status = ok and { "✔ DONE", K.GREEN } or { "NOT YET", K.LOCK } })
+		K.row(grid, i, { name = name, icon = icon, color = color, height = 92, chips = { ok and { "✔ DONE", K.GREEN } or { have, RED } }, dim = false })
 	end
 	need(1, lvl >= Company.FoundLevel, "Level " .. Company.FoundLevel, "level", Color3.fromRGB(255, 196, 60), "YOU: " .. lvl)
 	need(2, mon >= Company.FoundCost, money(Company.FoundCost), "cash", Color3.fromRGB(90, 200, 110), "YOU: " .. money(mon))
-	need(3, steel >= Company.FoundSteel, Company.FoundSteel .. " Steel Beams", "🔩", Color3.fromRGB(150, 160, 190), "YOU: " .. steel)
+	need(3, steel >= Company.FoundSteel, Company.FoundSteel .. " Steel", "🔩", Color3.fromRGB(150, 160, 190), "YOU: " .. steel)
 	-- name + found
 	local ready = lvl >= Company.FoundLevel and mon >= Company.FoundCost and steel >= Company.FoundSteel
-	local row = new("Frame", { Name = "Row", Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1, LayoutOrder = 4, ZIndex = 2, Parent = c.content })
+	local row = new("Frame", { Name = "Row", Size = UDim2.new(1, 0, 0, 82), BackgroundTransparency = 1, LayoutOrder = 3, ZIndex = 2, Parent = c.content })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = row })
-	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -244, 0, 50), SliceScale = 0.45, ImageTransparency = 0.12,
+	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -244, 0, 54), SliceScale = 0.45, ImageTransparency = 0.12,
 		ZIndex = 2, Parent = row })
-	local box = new("TextBox", { Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Company name (3-20 letters)",
-		Font = T.body, TextSize = 21, TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(205, 210, 240), TextXAlignment = Enum.TextXAlignment.Left,
+	local box = new("TextBox", { Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -32, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Company name (3-20 letters)",
+		Font = T.body, TextSize = 22, TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(205, 210, 240), TextXAlignment = Enum.TextXAlignment.Left,
 		ClearTextOnFocus = false, ZIndex = 3, Parent = field })
-	K.button(row, "FOUND IT!", ready and K.GREEN or K.LOCK, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(206, 54),
+	K.button(row, "FOUND IT!", ready and K.GREEN or K.LOCK, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(206, 56),
 		TextSize = 24, Shine = ready }, function()
 		c.click()
 		if not ready then c.toast("📋 You need all three first", T.red, 2) return end
