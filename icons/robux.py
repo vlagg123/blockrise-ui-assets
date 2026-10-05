@@ -953,10 +953,18 @@ def chest_heap(n, seed, spill=0):
     bed = velvet_mound(P)
     gs = drop_gems(P, n, seed, (-0.9, 0.9, -0.25, 0.25), 1.75)
     floor_ = ground(0.0)
+    # invisible guard rails a little above the rim keep the heap in the chest (removed after the drop)
+    rails = []
+    for size, loc in (((0.1, 1.5, 0.5), (1.2, 0, 1.5)), ((0.1, 1.5, 0.5), (-1.2, 0, 1.5)), ((2.5, 0.1, 0.5), (0, -0.76, 1.5)),
+                      ((2.5, 0.1, 0.5), (0, 0.76, 1.5))):
+        r = obj("rail", bm_box(*size), candy("#000000"), loc=loc, outline=False)
+        r.matrix_world = P @ r.matrix_world
+        rails.append(r)
     if spill:
         gs += drop_gems(P, spill, seed + 1, (-1.6, 1.6, -1.5, -1.25), 0.7, sizes=(0.34, 0.42), per=3)
-    settle(gs, walls + [bed, floor_])
-    bpy.data.objects.remove(floor_, do_unlink=True)
+    settle(gs, walls + rails + [bed, floor_])
+    for o in rails + [floor_]:
+        bpy.data.objects.remove(o, do_unlink=True)
     in_chest = lambda p: abs(p.x) < 1.15 and abs(p.y) < 0.72 and p.z > 1.15
     on_floor = lambda p: abs(p.x) < 1.9 and -1.95 < p.y < -0.8 and p.z < 0.7
     gs = keep_inside(gs, P, (lambda p: in_chest(p) or on_floor(p)) if spill else in_chest)
