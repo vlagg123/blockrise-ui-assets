@@ -321,7 +321,25 @@ function K.row(parent, order, o)
 	local total = 28 + (o.line and 26 or 0) + (o.bar and 26 or 0) + (hasChips and 32 or 0)
 	local y = math.floor((h - total) / 2)
 	local w = UDim2.new(1, -x - right, 0, 0)
-	text({ Name = "Title", Position = UDim2.fromOffset(x, y), Size = w + UDim2.fromOffset(0, 28), Text = o.name, TextSize = 25, Max = 25,
+	local tx = 0
+	if o.new then
+		-- NEW: a red pill before the title + a pulsing dot on the picture's corner (until you build it once)
+		local pillF = new("Frame", { Name = "New", Position = UDim2.fromOffset(x, y + 2), Size = UDim2.fromOffset(58, 25), BackgroundColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0, ZIndex = 4, Parent = f })
+		new("UICorner", { CornerRadius = UDim.new(0, 9), Parent = pillF })
+		new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 92, 112), Color3.fromRGB(226, 30, 64)), Rotation = 90, Parent = pillF })
+		new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = pillF })
+		text({ Position = UDim2.fromOffset(0, 2), Size = UDim2.fromScale(1, 1), Text = "NEW", Font = T.chunky, TextSize = 16, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+			TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5, Parent = pillF })
+		local dot = new("Frame", { Name = "NewDot", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(h - 14, 14), Size = UDim2.fromOffset(22, 22),
+			BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 9, Parent = f })
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = dot })
+		new("UIStroke", { Thickness = 3, Color = Color3.new(1, 1, 1), Parent = dot })
+		local ds = new("UIScale", { Parent = dot })
+		game:GetService("TweenService"):Create(ds, TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Scale = 1.22 }):Play()
+		tx = 66
+	end
+	text({ Name = "Title", Position = UDim2.fromOffset(x + tx, y), Size = w + UDim2.fromOffset(-tx, 28), Text = o.name, TextSize = 25, Max = 25,
 		TextColor3 = o.dim and K.SUB or K.DARK, Parent = f })
 	y += 34
 	if o.line then

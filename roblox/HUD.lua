@@ -87,7 +87,7 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	stroke(base, 3)
 	local face = new("Frame", { Name = "Face", Size = UDim2.new(1, 0, 0, faceH), BackgroundColor3 = WHITE, BorderSizePixel = 0, Parent = b })
 	corner(face, 20)
-	grad(face, c1, c2)
+	local faceGrad = grad(face, c1, c2)
 	stroke(face, 3)
 	local gloss = new("Frame", { Position = UDim2.fromOffset(6, 5), Size = UDim2.new(1, -12, 0.42, 0), BackgroundColor3 = WHITE,
 		BackgroundTransparency = 0.55, BorderSizePixel = 0, Parent = face })
@@ -126,6 +126,122 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 		if onClick then onClick() end
 	end)
 	local api = { button = b, face = face, icon = ic, label = lbl }
+	-- tutorial lock: the button turns grey with a small padlock on its corner; unlocking plays an animation
+	-- (the padlock shakes, its shackle pops open, it flies off and the colours fill back in with a sparkle burst)
+	local GREY1, GREY2 = Color3.fromRGB(178, 182, 200), Color3.fromRGB(104, 108, 136)
+	local pics = {}
+	for _, d in ipairs(ic:GetDescendants()) do if d:IsA("ImageLabel") then table.insert(pics, d) end end
+	if ic:IsA("ImageLabel") then table.insert(pics, ic) end
+	local function paint(t) -- 0 = grey (locked) .. 1 = the button's own colours
+		faceGrad.Color = ColorSequence.new(GREY1:Lerp(c1, t), GREY2:Lerp(c2, t))
+		base.BackgroundColor3 = GREY2:Lerp(INK, 0.4):Lerp(c2:Lerp(INK, 0.4), t)
+		for _, im in ipairs(pics) do
+			im.ImageColor3 = Color3.fromRGB(150, 152, 168):Lerp(WHITE, t)
+			im.ImageTransparency = 0.25 * (1 - t)
+		end
+		lbl.TextColor3 = Color3.fromRGB(205, 207, 220):Lerp(WHITE, t)
+	end
+	local lock
+	local function padlock()
+		local g = new("CanvasGroup", { Name = "Lock", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -8, 0, 8), Size = UDim2.fromOffset(40, 44),
+			BackgroundTransparency = 1, ZIndex = 7, Parent = b })
+		-- shackle: an ink ring with a steel ring inside; its lower half hides behind the body
+		local sh = new("Frame", { Name = "Shackle", Position = UDim2.fromOffset(9, 3), Size = UDim2.fromOffset(22, 26), BackgroundTransparency = 1, ZIndex = 7, Parent = g })
+		local ink = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 7, Parent = sh })
+		corner(ink, 11)
+		new("UIStroke", { Thickness = 8, Color = INK, Parent = ink })
+		local steel = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 8, Parent = sh })
+		corner(steel, 11)
+		new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(214, 218, 232), Parent = steel })
+		-- body: gold with a keyhole and a little gloss
+		local body = new("Frame", { Name = "Body", Position = UDim2.fromOffset(4, 18), Size = UDim2.fromOffset(32, 23), BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 9, Parent = g })
+		corner(body, 7)
+		grad(body, Color3.fromRGB(255, 222, 96), Color3.fromRGB(232, 146, 26))
+		stroke(body, 2.5)
+		local gl = new("Frame", { Position = UDim2.fromOffset(4, 3), Size = UDim2.new(1, -8, 0, 6), BackgroundColor3 = WHITE, BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 10, Parent = body })
+		corner(gl, 3)
+		local hole = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 7), Size = UDim2.fromOffset(7, 7), BackgroundColor3 = Color3.fromRGB(70, 42, 18), BorderSizePixel = 0, ZIndex = 10, Parent = body })
+		corner(hole, 4)
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 11), Size = UDim2.fromOffset(3, 7), BackgroundColor3 = Color3.fromRGB(70, 42, 18), BorderSizePixel = 0, ZIndex = 10, Parent = body })
+		return { group = g, shackle = sh }
+	end
+	-- little stars that fly out of the button when it unlocks
+	local function burst()
+		for i = 1, 10 do
+			local a = (i / 10) * math.pi * 2 + math.random() * 0.4
+			local st = new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(22, 22), BackgroundTransparency = 1,
+				Text = "✦", Font = BIG, TextSize = 18 + math.random(0, 8), TextColor3 = (i % 2 == 0) and Color3.fromRGB(255, 236, 120) or WHITE, ZIndex = 9, Parent = b })
+			tstroke(st, 1.5)
+			local d = 46 + math.random(0, 18)
+			UI.tween(st, 0.55, { Position = UDim2.new(0.5, math.cos(a) * d, 0.45, math.sin(a) * d), TextTransparency = 1, Rotation = math.random(-90, 90) })
+			task.delay(0.6, function() st:Destroy() end)
+		end
+	end
+	-- a light band sweeps across the face
+	local function sweep()
+		local holder = new("CanvasGroup", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 6, Parent = face })
+		corner(holder, 20)
+		local band = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 0.2, BorderSizePixel = 0, Parent = holder })
+		local g = new("UIGradient", { Rotation = 20, Offset = Vector2.new(-1, 0), Parent = band,
+			Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 1), NumberSequenceKeypoint.new(0.5, 0.05),
+				NumberSequenceKeypoint.new(0.6, 1), NumberSequenceKeypoint.new(1, 1) }) })
+		UI.tween(g, 0.6, { Offset = Vector2.new(1, 0) })
+		task.delay(0.65, function() holder:Destroy() end)
+	end
+	function api.setLocked(on, animate)
+		if on then
+			if lock then return end
+			paint(0)
+			lock = padlock()
+			return
+		end
+		if not lock then return end
+		local L = lock
+		lock = nil
+		if not animate then
+			L.group:Destroy()
+			paint(1)
+			return
+		end
+		task.spawn(function()
+			-- shake
+			for i = 1, 6 do
+				L.group.Rotation = ((i % 2 == 0) and -16 or 16) * (1 - i / 7)
+				task.wait(0.05)
+			end
+			L.group.Rotation = 0
+			-- the shackle pops open
+			UI.tween(L.shackle, 0.2, { Position = L.shackle.Position + UDim2.fromOffset(4, -9), Rotation = 18 }, Enum.EasingStyle.Back)
+			if c.sound2D and c.S then c.sound2D(c.S.Click, 0.7, 1.5) end
+			task.wait(0.28)
+			-- the padlock flies off, the button fills with its colours
+			UI.tween(L.group, 0.45, { Position = L.group.Position + UDim2.fromOffset(14, -30), GroupTransparency = 1, Rotation = 30 })
+			local v = new("NumberValue", { Value = 0 })
+			v.Changed:Connect(paint)
+			UI.tween(v, 0.55, { Value = 1 })
+			sc.Scale = 1.3
+			UI.tween(sc, 0.55, { Scale = 1 }, Enum.EasingStyle.Back)
+			burst()
+			sweep()
+			if c.sound2D and c.S then c.sound2D(c.S.Chime, 0.6, 1.25) end
+			task.wait(0.6)
+			v:Destroy()
+			L.group:Destroy()
+			paint(1)
+		end)
+	end
+	function api.isLocked() return lock ~= nil end
+	function api.nudge()
+		if not lock then return end
+		local g = lock.group
+		task.spawn(function()
+			for i = 1, 5 do
+				g.Rotation = ((i % 2 == 0) and -14 or 14) * (1 - i / 6)
+				task.wait(0.04)
+			end
+			g.Rotation = 0
+		end)
+	end
 	function api.setBadge(v)
 		local on = v ~= nil and v ~= false and v ~= 0
 		badge.Visible = on
@@ -191,10 +307,23 @@ function M.Init(ctx)
 	local topGui = new("ScreenGui", { Name = "TopStrip", IgnoreGuiInset = true, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		DisplayOrder = gui.DisplayOrder - 1, Parent = gui.Parent })
 
+	-- tutorial: JOBS, SHOP and the contract bar stay locked until the first Empire Road steps are done
+	-- (walk to the Job Board, build the first building, Equipment Store, Hiring Office, your property)
+	local menu
+	local function tutorialDone()
+		local rs = player:GetAttribute("RoadStep")
+		return rs ~= nil and rs > (Config.TutorialSteps or 6)
+	end
+	local function lockedToast(which)
+		c.toast("🔒 Complete the tutorial first — follow the arrow!", T.muted, 2.5)
+		if which and menu and menu[which] then menu[which].nudge() end
+	end
+
 	-- actions ----------------------------------------------------------------
 	local A = {}
 	local function toggle(name, fn) if fn then _G.__CE_Toggle(name, fn) end end
 	function A.jobs()
+		if not tutorialDone() then lockedToast("jobs") return end
 		-- after your first contract the Job Board opens from anywhere
 		if (player:GetAttribute("Completed") or 0) >= 1 and _G.__CE_ShowContracts then
 			toggle("Contracts", _G.__CE_ShowContracts)
@@ -202,7 +331,10 @@ function M.Init(ctx)
 			c.setWaypoint("board")
 		end
 	end
-	function A.shop() toggle("Shop", c.showShop) end
+	function A.shop()
+		if not tutorialDone() then lockedToast("shop") return end
+		toggle("Shop", c.showShop)
+	end
 	function A.upgrades() toggle("Upgrades", c.showUpgrades) end
 	function A.company() toggle("Company", _G.__CE_ShowCompany) end
 	function A.rebirth() toggle("Rebirth", c.showRebirth) end
@@ -220,6 +352,8 @@ function M.Init(ctx)
 	-- where an Empire Road goal is done: open the right window, or take you there
 	local function goPlace(place)
 		if not place then return end
+		-- after your first building the Job Board opens from anywhere: no walking back to it
+		if place == "board" and (player:GetAttribute("Completed") or 0) >= 1 and tutorialDone() then A.jobs() return end
 		local tutorial = (player:GetAttribute("RoadStep") or 1) <= Config.RoadTutorialSteps
 		if place == "site" then
 			if (player:GetAttribute("ContractJob") or "") == "" then A.jobs() else A.go("site") end
@@ -293,6 +427,7 @@ function M.Init(ctx)
 	end)
 	buildHit.Activated:Connect(function()
 		c.click()
+		if not tutorialDone() then lockedToast() return end
 		if c.legacyJob.panel.Visible then A.go("site") else A.jobs() end
 	end)
 
@@ -373,7 +508,7 @@ function M.Init(ctx)
 	local grid = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(176, 300), Parent = left })
 	local gridLayout = new("UIGridLayout", { CellSize = UDim2.fromOffset(80, 88), CellPadding = UDim2.fromOffset(10, 6), SortOrder = Enum.SortOrder.LayoutOrder,
 		FillDirectionMaxCells = 2, Parent = grid })
-	local menu = {}
+	menu = {}
 	local defs = {
 		{ "jobs", "JOBS", Color3.fromRGB(255, 205, 70), Color3.fromRGB(240, 130, 20), A.jobs },
 		{ "shop", "SHOP", Color3.fromRGB(110, 200, 255), Color3.fromRGB(40, 110, 230), A.shop },
@@ -587,7 +722,7 @@ function M.Init(ctx)
 			else
 				bBonus.Text = ""
 			end
-			cX.Visible = lj.abandon.Visible
+			cX.Visible = lj.abandon.Visible and tutorialDone()
 			-- armed (first tap done): the same X in the same place, its border flashing yellow until tapped again
 			if cXstroke then
 				local armed = os.clock() < confirmUntil
@@ -596,7 +731,9 @@ function M.Init(ctx)
 		else
 			if lastKind ~= "none" then lastKind = "none"; Icons.set(bIcon, "jobs") end
 			bFill.Visible = false
-			bText.Text = "NO CONTRACT  <font color='#ffd45a' size='15' face='FredokaOne'>tap here to find a job</font>"
+			local hint = tutorialDone() and "tap here to find a job"
+				or ((player:GetAttribute("Completed") or 0) == 0 and "follow the arrow to the Job Board" or "🔒 finish the tutorial first")
+			bText.Text = "NO CONTRACT  <font color='#ffd45a' size='15' face='FredokaOne'>" .. hint .. "</font>"
 			bText.TextColor3 = Color3.fromRGB(255, 255, 255)
 			bPct.Text = ""
 			bBonus.Text = ""
@@ -640,6 +777,44 @@ function M.Init(ctx)
 		moreB.setBadge(missions + (ready and 1 or 0))
 	end)
 
+	-- the buildings you can take now and never built (the server sends the built ones in BuiltIds)
+	local seenNew
+	local function newBuildings()
+		local list = {}
+		local ids = player:GetAttribute("BuiltIds")
+		if ids == nil then return list end
+		local built = {}
+		for id in string.gmatch(ids, "[^,]+") do built[id] = true end
+		local lvl, rep, str, reb = player:GetAttribute("Level") or 1, player:GetAttribute("Rep") or 0, player:GetAttribute("Strength") or 0, player:GetAttribute("Rebirths") or 0
+		for _, ct in ipairs(Config.Contracts) do
+			if not built[ct.id] and rep >= ct.reqRep and lvl >= ct.reqLevel and str >= (ct.reqStrength or 0) and reb >= (ct.reqRebirth or 0) then
+				table.insert(list, ct)
+			end
+		end
+		return list
+	end
+	c.newBuildings = newBuildings
+
+	-- the lock on JOBS and SHOP: animated when it opens during this session, silent for players past the tutorial
+	local wasLocked, sawLocked = nil, false
+	local function applyLock()
+		local locked = not tutorialDone()
+		-- only a player we actually saw doing the tutorial gets the unlock show
+		if locked and player:GetAttribute("RoadStep") ~= nil and player:GetAttribute("Loaded") == true then sawLocked = true end
+		if locked == wasLocked then return end
+		local animate = (not locked) and sawLocked
+		wasLocked = locked
+		menu.jobs.setLocked(locked, animate)
+		if animate then
+			task.delay(0.35, function() menu.shop.setLocked(locked, true) end)
+		else
+			menu.shop.setLocked(locked, false)
+		end
+	end
+	applyLock()
+	player:GetAttributeChangedSignal("RoadStep"):Connect(applyLock)
+	player:GetAttributeChangedSignal("Loaded"):Connect(applyLock)
+
 	-- "something to do here" badges on the menu buttons (checked twice a second)
 	task.spawn(function()
 		while root.Parent do
@@ -647,7 +822,27 @@ function M.Init(ctx)
 			-- shop: the next tool or training gear is affordable
 			local tier, gt = player:GetAttribute("ToolTier") or 1, player:GetAttribute("GearTier") or 1
 			local nt, ng = Config.Tools[tier + 1], Config.TrainingGear[gt + 1]
-			menu.shop.setBadge((nt and money >= nt.price) or (ng and money >= ng.price) or false)
+			local open = tutorialDone()
+			menu.shop.setBadge(open and ((nt and money >= nt.price) or (ng and money >= ng.price)) or false)
+			-- jobs: buildings you can take now but never built yet (NEW on the Job Board)
+			local fresh = newBuildings()
+			menu.jobs.setBadge(open and #fresh or 0)
+			if player:GetAttribute("Loaded") and player:GetAttribute("BuiltIds") ~= nil then
+				if not seenNew then
+					seenNew = {}
+					for _, ct in ipairs(fresh) do seenNew[ct.id] = true end
+				else
+					for _, ct in ipairs(fresh) do
+						if not seenNew[ct.id] then
+							seenNew[ct.id] = true
+							if open then
+								c.toast("🆕 New building unlocked: " .. ct.name .. "! Open JOBS", Color3.fromRGB(255, 205, 70), 4)
+								if c.sound2D and c.S then c.sound2D(c.S.Chime, 0.5, 1.3) end
+							end
+						end
+					end
+				end
+			end
 			-- upgrades: how many can be bought right now
 			local n = 0
 			for _, dp in ipairs(Company.Departments) do
