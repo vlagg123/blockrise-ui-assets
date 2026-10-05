@@ -85,6 +85,11 @@ s = replaceOnce(s, [[	elseif kind == "Complete" then
 		clearStageBanners()
 		_G.__CE_ShowHome(d)]])
 
+-- the hint bar under the screen hides while a reward card is open
+if not s:find("if modal.Visible or inCinematic or openCards > 0 then", 1, true) then
+	s = replaceOnce(s, "	if modal.Visible or inCinematic then\n		h = \"\"", "	if modal.Visible or inCinematic or openCards > 0 then\n		h = \"\"")
+end
+
 assert(loadstring(s), "Client compile")
 Client.Source = s
 return "banners patched"
