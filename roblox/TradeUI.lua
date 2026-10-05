@@ -145,17 +145,24 @@ end
 
 local function itemList()
 	local list = {}
-	for _, m in ipairs(Company.Materials) do table.insert(list, { kind = "mat", id = m.id, name = m.name, icon = m.icon, color = m.color, attr = "Mat_" .. m.id }) end
-	for _, b in ipairs(Company.Blueprints) do table.insert(list, { kind = "bp", id = b.id, name = b.name, icon = b.icon, color = b.color, attr = "BP_" .. b.id }) end
+	for _, m in ipairs(Company.Materials) do table.insert(list, { kind = "mat", id = m.id, name = m.name, icon = m.image or m.icon, color = m.color, attr = "Mat_" .. m.id }) end
+	for _, b in ipairs(Company.Blueprints) do table.insert(list, { kind = "bp", id = b.id, name = b.name, icon = b.image or b.icon, color = b.color, attr = "BP_" .. b.id }) end
 	return list
 end
 
 local function offerLines(o)
 	local lines = {}
-	for _, m in ipairs(Company.Materials) do if (o.mats[m.id] or 0) > 0 then table.insert(lines, { m.icon, m.name, o.mats[m.id] }) end end
-	for _, b in ipairs(Company.Blueprints) do if (o.bps[b.id] or 0) > 0 then table.insert(lines, { b.icon, b.name, o.bps[b.id] }) end end
-	if (o.cash or 0) > 0 then table.insert(lines, { "💵", "Cash", Config.FormatMoney(o.cash) }) end
+	for _, m in ipairs(Company.Materials) do if (o.mats[m.id] or 0) > 0 then table.insert(lines, { m.image or m.icon, m.name, o.mats[m.id] }) end end
+	for _, b in ipairs(Company.Blueprints) do if (o.bps[b.id] or 0) > 0 then table.insert(lines, { b.image or b.icon, b.name, o.bps[b.id] }) end end
+	if (o.cash or 0) > 0 then table.insert(lines, { "cash", "Cash", Config.FormatMoney(o.cash) }) end
 	return lines
+end
+
+-- the item's picture, square, h tall, at x
+local function iconAt(parent, icon, x, h)
+	local holder = new("Frame", { Name = "Pic", Position = UDim2.fromOffset(x, 4), Size = UDim2.fromOffset(h - 8, h - 8), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
+	K.art(holder, icon, UDim2.fromScale(1.15, 1.15), 4)
+	return holder
 end
 
 local function lineRow(parent, order, h)
@@ -190,7 +197,7 @@ local function render(v)
 	end
 	for i, l in ipairs(lines) do
 		local f = lineRow(win.theirList, i, 50)
-		K.text({ Position = UDim2.fromOffset(12, 0), Size = UDim2.fromOffset(32, 50), Text = l[1], TextSize = 24, Parent = f })
+		iconAt(f, l[1], 8, 50)
 		K.text({ Position = UDim2.fromOffset(50, 0), Size = UDim2.new(1, -150, 1, 0), Text = l[2], TextSize = 18, Max = 18, Parent = f })
 		K.text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.fromOffset(90, 50), Text = tostring(l[3]), Font = T.chunky, TextSize = 20,
 			TextXAlignment = Enum.TextXAlignment.Right, Parent = f })
@@ -234,7 +241,7 @@ local function openWindow(v)
 	local rows = {}
 	for i, it in ipairs(itemList()) do
 		local f = lineRow(myList, i, 52)
-		K.text({ Position = UDim2.fromOffset(10, 0), Size = UDim2.fromOffset(32, 52), Text = it.icon, TextSize = 24, Parent = f })
+		iconAt(f, it.icon, 6, 52)
 		K.text({ Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -206, 0, 24), Text = it.name, TextSize = 17, Max = 17, Parent = f })
 		local have = K.text({ Position = UDim2.fromOffset(46, 27), Size = UDim2.new(1, -206, 0, 18), Text = "", TextSize = 13, TextColor3 = K.SUB, Parent = f })
 		local minus = UI.button("-", K.LOCK, nil, { Position = UDim2.new(1, -156, 0, 7), Size = UDim2.fromOffset(38, 38), TextSize = 22, ZIndex = 4, Parent = f })

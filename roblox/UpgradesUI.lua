@@ -21,7 +21,7 @@ local function matChips(mats, have)
 		local n = mats and mats[m.id]
 		if n and n > 0 then
 			local ok = (have[m.id] or 0) >= n
-			table.insert(out, { Config.FormatNum(n) .. " " .. m.icon, ok and Color3.fromRGB(80, 200, 110) or Color3.fromRGB(235, 80, 80) })
+			table.insert(out, { Config.FormatNum(n), ok and Color3.fromRGB(80, 200, 110) or Color3.fromRGB(235, 80, 80), pic = m.image or m.icon })
 		end
 	end
 	return out
@@ -103,7 +103,9 @@ render = function(tok, data)
 		local grid = K.grid(c.content, 2, cols(), 268)
 		for i, m in ipairs(Company.Materials) do
 			local n = data.mats[m.id] or 0
-			local o = { order = i, name = m.name, icon = m.icon, color = Color3.fromRGB(255, 186, 70), tag = { "x" .. Config.FormatNum(n), K.DARK },
+			-- the art box takes the material's rarity colour: steel common ... diamond glass legendary
+			local o = { order = i, name = m.name, icon = m.image or m.icon, iconScale = m.image and 1.08 or nil,
+				color = K.RAR[({ "common", "uncommon", "rare", "epic", "legend" })[i] or "legend"], tag = { "x" .. Config.FormatNum(n), K.DARK },
 				stats = { { money(m.sell) .. " EACH", K.GREEN } }, dim = n == 0 }
 			if n > 0 then
 				o.buttons = {
@@ -120,7 +122,7 @@ render = function(tok, data)
 		local grid = K.grid(c.content, 2, cols(), 268)
 		for i, b in ipairs(Company.Blueprints) do
 			local n = data.bps[b.id] or 0
-			K.tile(grid, { order = i, name = (b.name:gsub(" Blueprint", "")), icon = b.icon, color = b.color, tag = { "x" .. n, K.DARK },
+			K.tile(grid, { order = i, name = (b.name:gsub(" Blueprint", "")), icon = b.image or b.icon, iconScale = b.image and 1.08 or nil, color = b.color, tag = { "x" .. n, K.DARK },
 				stats = { { "x" .. tostring(b.pay) .. " PAY", Color3.fromRGB(255, 170, 30) } }, dim = n == 0,
 				status = n > 0 and { "AT JOB BOARD", Color3.fromRGB(80, 170, 255) } or { "NONE YET", K.LOCK } })
 		end

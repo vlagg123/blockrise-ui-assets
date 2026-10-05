@@ -15,14 +15,14 @@ local RED = Color3.fromRGB(235, 80, 80)
 local function money(n) return Config.FormatMoney(n) end
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 
--- material chips ("5 🔩"), red when you don't have enough
+-- material chips (the material's picture and how many), red when you don't have enough
 local function matChips(mats, have, times)
 	local out = {}
 	for _, m in ipairs(Company.Materials) do
 		local n = mats and mats[m.id]
 		if n and n > 0 then
 			local need = n * (times or 1)
-			table.insert(out, { Config.FormatNum(need) .. " " .. m.icon, (have[m.id] or 0) >= need and Color3.fromRGB(80, 200, 110) or RED })
+			table.insert(out, { Config.FormatNum(need), (have[m.id] or 0) >= need and Color3.fromRGB(80, 200, 110) or RED, pic = m.image or m.icon })
 		end
 	end
 	return out
@@ -66,7 +66,8 @@ local function renderFound(tok, data)
 	end
 	need(1, lvl >= Company.FoundLevel, "Level " .. Company.FoundLevel, "level", Color3.fromRGB(255, 196, 60), "YOU: " .. lvl)
 	need(2, mon >= Company.FoundCost, money(Company.FoundCost), "cash", Color3.fromRGB(90, 200, 110), "YOU: " .. money(mon))
-	need(3, steel >= Company.FoundSteel, Company.FoundSteel .. " Steel", "🔩", Color3.fromRGB(150, 160, 190), "YOU: " .. steel)
+	local st = Company.MaterialById.steel
+	need(3, steel >= Company.FoundSteel, Company.FoundSteel .. " Steel", st.image or st.icon, Color3.fromRGB(150, 160, 190), "YOU: " .. steel)
 	-- name + found
 	local ready = lvl >= Company.FoundLevel and mon >= Company.FoundCost and steel >= Company.FoundSteel
 	local row = new("Frame", { Name = "Row", Size = UDim2.new(1, 0, 0, 82), BackgroundTransparency = 1, LayoutOrder = 3, ZIndex = 2, Parent = c.content })
@@ -137,6 +138,32 @@ function M.Show()
 	render(tok, data)
 end
 
+-- a found material pops out of the building: its picture bounces in, "+N" next to it, and it floats up and fades
+local Debris = game:GetService("Debris")
+local function lootPop(pos, m, qty)
+	if not m.image then c.floatText(pos, "+" .. qty .. " " .. m.icon, m.color, 1.1) return end
+	local p = new("Part", { Name = "LootPop", Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Transparency = 1, Size = Vector3.one * 0.2,
+		CFrame = CFrame.new(pos), Parent = workspace })
+	local bb = new("BillboardGui", { Size = UDim2.fromOffset(150, 64), AlwaysOnTop = true, MaxDistance = 150, StudsOffset = Vector3.new(0, 0.5, 0), Parent = p })
+	local box = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = bb })
+	local pic = new("ImageLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 36, 0.5, 0), Size = UDim2.fromOffset(62, 62), BackgroundTransparency = 1,
+		Image = m.image, Rotation = -20, Parent = box })
+	local l = UI.label({ AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 70, 0.5, 2), Size = UDim2.new(1, -70, 0, 40), Text = "+" .. qty, Font = T.title,
+		TextScaled = true, TextColor3 = m.color:Lerp(Color3.new(1, 1, 1), 0.2), TextXAlignment = Enum.TextXAlignment.Left, Parent = box })
+	local stroke = UI.textStroke(0.2, 2.5)
+	stroke.Parent = l
+	local sc = new("UIScale", { Scale = 0.25, Parent = box })
+	UI.tween(sc, 0.32, { Scale = 1 }, Enum.EasingStyle.Back)
+	UI.tween(pic, 0.45, { Rotation = 0 }, Enum.EasingStyle.Back)
+	UI.tween(bb, 1.35, { StudsOffset = Vector3.new(math.random(-8, 8) / 10, 5.5, 0) }, Enum.EasingStyle.Quad)
+	task.delay(0.85, function()
+		UI.tween(pic, 0.45, { ImageTransparency = 1 })
+		UI.tween(l, 0.45, { TextTransparency = 1 })
+		if stroke:IsA("UIStroke") then UI.tween(stroke, 0.45, { Transparency = 1 }) end
+	end)
+	Debris:AddItem(p, 1.5)
+end
+
 function M.Init(ctx)
 	c = ctx
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
@@ -144,15 +171,15 @@ function M.Init(ctx)
 		if kind == "Loot" then
 			local m = Company.MaterialById[d.id]
 			if not m then return end
-			if d.pos then c.floatText(d.pos + Vector3.new(0, 3.5, 0), "+" .. d.qty .. " " .. m.icon, m.color, 1.1) end
+			if d.pos then lootPop(d.pos + Vector3.new(0, 3.5, 0), m, d.qty) end
 			if m.order >= 3 then
-				c.toast(m.icon .. " Rare find: " .. d.qty .. " " .. m.name .. "!", m.color, 3)
+				c.toast("Rare find: " .. d.qty .. " " .. m.name .. "!", m.color, 3)
 				c.sound2D(c.S.Chime, 0.5, 1.3)
 			end
 		elseif kind == "LootBlueprint" then
 			local b = Company.BlueprintById[d.id]
 			if b then
-				c.banner("📜 BLUEPRINT FOUND!", b.name .. ": " .. b.desc, b.color)
+				c.banner("BLUEPRINT FOUND!", b.name .. ": " .. b.desc, b.color)
 				c.sound2D(c.S.Chime, 0.6, 0.9)
 			end
 		elseif kind == "CompanyFounded" then

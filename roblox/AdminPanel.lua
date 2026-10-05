@@ -480,13 +480,13 @@ PAGES[8] = { "MATERIALE", "backpack", C3(120, 200, 255), function()
 	title("MATERIALE")
 	local g = grid(240)
 	for i, m in ipairs(Company.Materials or {}) do
-		K.tile(g, { order = i, name = tostring(m.name or m.id), icon = m.icon or "backpack", color = C3(120, 170, 230), artH = 110, buttons = {
+		K.tile(g, { order = i, name = tostring(m.name or m.id), icon = m.image or m.icon or "backpack", color = C3(120, 170, 230), artH = 110, buttons = {
 			{ "+100", BLUE, function(b) call("mat", { id = m.id, n = 100 }, nil, b) end }, { "+1000", GOLD, function(b) call("mat", { id = m.id, n = 1000 }, nil, b) end } } })
 	end
 	title("BLUEPRINTS")
 	local g2 = grid(240)
 	for i, bp in ipairs(Company.Blueprints or {}) do
-		K.tile(g2, { order = i, name = tostring(bp.name or bp.id), icon = bp.icon or "portfolio", color = C3(90, 140, 230), artH = 110, buttons = {
+		K.tile(g2, { order = i, name = tostring(bp.name or bp.id), icon = bp.image or bp.icon or "portfolio", color = C3(90, 140, 230), artH = 110, buttons = {
 			{ "+5", BLUE, function(b) call("bp", { id = bp.id, n = 5 }, nil, b) end }, { "+25", GOLD, function(b) call("bp", { id = bp.id, n = 25 }, nil, b) end } } })
 	end
 end }

@@ -411,7 +411,9 @@ function M.Show()
 		local cell = new("Frame", { BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 3, Parent = list })
 		local dot = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = r[2], ZIndex = 4, Parent = cell })
 		UI.corner(6).Parent = dot
-		K.text({ Position = UDim2.fromOffset(20, 0), Size = UDim2.new(1, -100, 1, 0), Text = p.icon .. "  " .. p.name, TextSize = 17, Max = 17, TextColor3 = K.DARK, Parent = cell })
+		local pic = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 18, 0.5, 0), Size = UDim2.fromOffset(28, 28), BackgroundTransparency = 1, ZIndex = 4, Parent = cell })
+		K.art(pic, prizeArt(p), UDim2.fromScale(1.1, 1.1), 5)
+		K.text({ Position = UDim2.fromOffset(52, 0), Size = UDim2.new(1, -140, 1, 0), Text = p.name, TextSize = 17, Max = 17, TextColor3 = K.DARK, Parent = cell })
 		K.text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(90, 32), Text = pctText(p), TextSize = 17, Max = 17,
 			TextColor3 = r[2]:Lerp(Color3.new(0, 0, 0), 0.25), TextXAlignment = Enum.TextXAlignment.Right, Parent = cell })
 	end

@@ -147,11 +147,17 @@ function K.grid(parent, order, cols, cellH, gap)
 end
 
 -- small coloured tag (stats, rarity, OWNED...)
+-- props.Pic = a picture in front of the text (rbxassetid or atlas icon name: materials, blueprints...)
 function K.chip(parent, label, color, props)
 	local c = UI.slice("pill", { Name = "Chip", Size = UDim2.fromOffset(0, 26), AutomaticSize = Enum.AutomaticSize.X, SliceScale = 0.36, ImageColor3 = color or T.blue, ZIndex = 5, Parent = parent })
-	for k, v in pairs(props or {}) do c[k] = v end
-	new("UIPadding", { PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9), Parent = c })
-	text({ Position = UDim2.fromOffset(0, 2), Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = label, Font = T.chunky, TextSize = 15,
+	local pic = props and props.Pic
+	for k, v in pairs(props or {}) do if k ~= "Pic" then c[k] = v end end
+	new("UIPadding", { PaddingLeft = UDim.new(0, pic and 4 or 9), PaddingRight = UDim.new(0, 9), Parent = c })
+	if pic then
+		local h = new("Frame", { Name = "Pic", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(25, 25), BackgroundTransparency = 1, ZIndex = 6, Parent = c })
+		K.art(h, pic, UDim2.fromScale(1.12, 1.12), 6)
+	end
+	text({ Position = UDim2.fromOffset(pic and 26 or 0, 2), Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = label, Font = T.chunky, TextSize = 15,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 2, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6, Parent = c })
 	return c
 end
@@ -229,7 +235,7 @@ function K.tile(grid, o)
 	elseif o.stats and #o.stats > 0 then
 		local row = new("Frame", { Name = "Stats", Position = UDim2.fromOffset(11, y), Size = UDim2.new(1, -22, 0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = t })
 		local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
-		for i, s in ipairs(o.stats) do K.chip(row, s[1], s[2], { LayoutOrder = i }) end
+		for i, s in ipairs(o.stats) do K.chip(row, s[1], s[2], { LayoutOrder = i, Pic = s.pic }) end
 		-- the chips always fit inside the tile: a row too long for it shrinks a little (never spills onto the next tile)
 		local fit = new("UIScale", { Parent = row })
 		local function refit()
@@ -305,7 +311,7 @@ function K.banner(parent, order, o)
 	if o.chips then
 		local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(x - 2, y), Size = UDim2.new(1, -x - bw - 26, 0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
-		for i, sdef in ipairs(o.chips) do K.chip(row, sdef[1], sdef[2], { LayoutOrder = i }) end
+		for i, sdef in ipairs(o.chips) do K.chip(row, sdef[1], sdef[2], { LayoutOrder = i, Pic = sdef.pic }) end
 	end
 	local bp = { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(bw, 58) }
 	if o.button then
@@ -375,7 +381,7 @@ function K.row(parent, order, o)
 	if hasChips then
 		local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(x - 2, y), Size = w + UDim2.fromOffset(0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
-		for i, sdef in ipairs(o.chips) do K.chip(row, sdef[1], sdef[2], { LayoutOrder = i }) end
+		for i, sdef in ipairs(o.chips) do K.chip(row, sdef[1], sdef[2], { LayoutOrder = i, Pic = sdef.pic }) end
 	end
 	local bp = { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(bw, 54) }
 	if o.button then
