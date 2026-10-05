@@ -401,7 +401,12 @@ function M.Show()
 	local box = controlRow(8, 24 + math.ceil(n / 2) * 36)
 	local list = new("Frame", { Position = UDim2.fromOffset(16, 12), Size = UDim2.new(1, -32, 1, -24), BackgroundTransparency = 1, ZIndex = 3, Parent = box })
 	new("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 32), CellPadding = UDim2.fromOffset(16, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
-	for i, p in ipairs(Config.Spin.prizes) do
+	-- biggest chance first, left to right, row by row
+	local sorted = {}
+	for i, p in ipairs(Config.Spin.prizes) do sorted[i] = { p = p, i = i } end
+	table.sort(sorted, function(a, b) if a.p.weight ~= b.p.weight then return a.p.weight > b.p.weight end return a.i < b.i end)
+	for i, e in ipairs(sorted) do
+		local p = e.p
 		local r = rarOf(p)
 		local cell = new("Frame", { BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 3, Parent = list })
 		local dot = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = r[2], ZIndex = 4, Parent = cell })
