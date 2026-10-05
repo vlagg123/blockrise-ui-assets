@@ -366,6 +366,39 @@ function K.loading(parent)
 	return f
 end
 
+-- a stand-alone window in the same style as the main one (trade window, popups): shadow, striped body, ribbon header
+-- with a big icon, red close button. Returns the window frame and its close button (nil when noClose).
+function K.window(parent, size, title, c1, c2, icon, noClose)
+	local w = new("Frame", { Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 20), Size = size, BackgroundTransparency = 1,
+		Active = true, Parent = parent })
+	UI.slice("shadow", { Name = "Shadow", Position = UDim2.fromOffset(-12, -2), Size = UDim2.new(1, 26, 1, 28), ImageTransparency = 0.05, ZIndex = 1, Parent = w })
+	local body = UI.slice("panel", { Name = "Body", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Parent = w })
+	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(104, 104, 240), Color3.fromRGB(52, 46, 150)), Rotation = 90, Parent = body })
+	local stripes = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 1, -10), BackgroundTransparency = 1, ZIndex = 3, Parent = w })
+	UI.corner(17).Parent = stripes
+	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(128, 128),
+		ImageTransparency = 0.6, Parent = stripes })
+	local hdr = new("Frame", { Name = "Header", Position = UDim2.fromOffset(70, -26), Size = UDim2.new(1, -140, 0, 70), BackgroundTransparency = 1, ZIndex = 20, Parent = w })
+	UI.slice("button", { Name = "Ribbon", ImageColor3 = c2 and c1:Lerp(c2, 0.45) or c1, ZIndex = 1, Parent = hdr })
+	local hs = new("CanvasGroup", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -16), BackgroundTransparency = 1, ZIndex = 2, Parent = hdr })
+	UI.corner(12).Parent = hs
+	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(96, 96),
+		ImageTransparency = 0.3, Parent = hs })
+	UI.slice("gloss", { ZIndex = 3, Parent = hdr })
+	local tl = text({ Name = "Title", Position = UDim2.fromOffset(icon and 80 or 20, 6), Size = UDim2.new(1, icon and -100 or -40, 0, 48), Text = title, Font = T.chunky, TextSize = 38, Max = 38,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 4, ZIndex = 5, Parent = hdr })
+	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 234, 150)), Rotation = 90, Parent = tl })
+	if icon then
+		Icons.make(icon, { Name = "HeaderIcon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 16, 0.5, -10), Size = UDim2.fromOffset(108, 108), Rotation = -8,
+			ZIndex = 8, Parent = hdr })
+	end
+	local close
+	if not noClose then
+		close = UI.button("X", T.red, nil, { Position = UDim2.new(1, -48, 0, -20), Size = UDim2.fromOffset(62, 62), TextSize = 34, Font = T.chunky, ZIndex = 30, Parent = w })
+	end
+	return w, close, tl
+end
+
 -- scroll a list so that a child (a tile, a row) sits near the top
 function K.scrollTo(list, item, pad)
 	task.defer(function()

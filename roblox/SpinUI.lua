@@ -237,7 +237,7 @@ function M.ShowCodes()
 	K.banner(c.content, 1, { name = "FREE REWARDS", line = "Codes give Gems, cash and boosts. Each one works once.", icon = "codes", color = Color3.fromRGB(110, 80, 230),
 		tint = Color3.fromRGB(205, 190, 255), height = 104 })
 	local f = controlRow(2, 84)
-	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 15), Size = UDim2.new(1, -236, 0, 54), SliceScale = 0.45, ImageTransparency = 0.55, ZIndex = 2, Parent = f })
+	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 15), Size = UDim2.new(1, -236, 0, 54), SliceScale = 0.45, ImageTransparency = 0.12, ZIndex = 2, Parent = f })
 	local box = new("TextBox", { Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -32, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Enter a code",
 		Font = T.body, TextSize = 23, TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(205, 210, 240), TextXAlignment = Enum.TextXAlignment.Left,
 		ClearTextOnFocus = false, ZIndex = 3, Parent = field })
@@ -260,7 +260,7 @@ function M.ShowCodes()
 	b.Activated:Connect(redeem)
 	box.FocusLost:Connect(function(enter) if enter then redeem() end end)
 	local res = controlRow(3, 56)
-	codeMsg = K.text({ Position = UDim2.fromOffset(18, 0), Size = UDim2.new(1, -36, 1, 0), TextSize = 20, Max = 20, TextColor3 = K.SUB, Parent = res,
+	codeMsg = K.text({ Position = UDim2.fromOffset(18, 8), Size = UDim2.new(1, -36, 1, -16), TextSize = 20, Max = 20, TextColor3 = K.SUB, Parent = res,
 		Text = "Type a code and press REDEEM." })
 	K.note(c.content, 4, "👍 Like and favorite the game: new codes at every like milestone!")
 end

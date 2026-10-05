@@ -7,6 +7,8 @@ local M = {}
 local c
 local UI, T, new, Config
 local PINK1, PINK2 = Color3.fromRGB(255, 140, 200), Color3.fromRGB(210, 60, 140)
+local GIFT_COLS = { Color3.fromRGB(255, 120, 180), Color3.fromRGB(165, 110, 255), Color3.fromRGB(70, 170, 255), Color3.fromRGB(60, 200, 150),
+	Color3.fromRGB(255, 170, 40), Color3.fromRGB(255, 90, 100), Color3.fromRGB(120, 200, 80), Color3.fromRGB(255, 200, 60) }
 local ClaimRF
 local secsBase, secsAt = 0, os.clock()
 
@@ -69,7 +71,7 @@ function M.Show()
 	local timers = {}
 	for i, g in ipairs(Config.PlaytimeGifts) do
 		local left = g.mins * 60 - playSecs()
-		local o = { order = i, name = g.mins .. " minutes", icon = "gift", color = done[i] and Color3.fromRGB(160, 160, 190) or PINK2:Lerp(PINK1, (i % 3) / 3),
+		local o = { order = i, name = g.mins .. " minutes", icon = "gift", color = GIFT_COLS[(i - 1) % #GIFT_COLS + 1],
 			stats = rewardChips(g) }
 		if done[i] then
 			o.dim = true

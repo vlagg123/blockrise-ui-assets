@@ -61,7 +61,7 @@ local function renderFound(tok, data)
 	-- what you need, as three tiles
 	local lvl, mon, steel = data.level or 1, data.money or 0, data.mats.steel or 0
 	K.section(c.content, 2, "TO START", Color3.fromRGB(160, 215, 255), "all three, then pick a name")
-	local grid = K.grid(c.content, 3, 3, 214)
+	local grid = K.grid(c.content, 3, 3, 244)
 	local function need(i, ok, name, icon, color, have)
 		K.tile(grid, { order = i, name = name, icon = icon, color = color, artH = 104, stats = { { have, ok and K.GREEN or RED } },
 			status = ok and { "✔ DONE", K.GREEN } or { "NOT YET", K.LOCK } })
@@ -73,7 +73,7 @@ local function renderFound(tok, data)
 	local ready = lvl >= Company.FoundLevel and mon >= Company.FoundCost and steel >= Company.FoundSteel
 	local row = new("Frame", { Name = "Row", Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1, LayoutOrder = 4, ZIndex = 2, Parent = c.content })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = row })
-	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -244, 0, 50), SliceScale = 0.45, ImageTransparency = 0.55,
+	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -244, 0, 50), SliceScale = 0.45, ImageTransparency = 0.12,
 		ZIndex = 2, Parent = row })
 	local box = new("TextBox", { Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Company name (3-20 letters)",
 		Font = T.body, TextSize = 21, TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(205, 210, 240), TextXAlignment = Enum.TextXAlignment.Left,
