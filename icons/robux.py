@@ -609,7 +609,7 @@ def i_rushcrew():
     hh = hardhat((0, 0.2, 0), rot=(-8, 0, 28), col="#ffa91a", s=1.2)
     # a round blue badge with a lightning bolt: 2x speed
     # in front of the hat, up at its top right, turned to the camera (never hidden behind the brim)
-    P = _xf((1.2, -1.35, 1.05), (-23, 0, 0), 0.8)
+    P = _xf((1.5, -1.35, 0.55), (-23, 0, 0), 0.8)
     obj("bb", bm_prism(circle(0.82, 64), 0.28, axis="Y"), candy("#2f8cff", rough=0.25), parent=P, bevel=0.06)
     b = poly(BOLT, 0.3, candy("#ffe14a", rough=0.25, emit=0.6), rot=(0, 0, 0), bevel=0.03)
     b.matrix_world = P @ _xf((0, -0.2, 0)) @ Matrix.Diagonal((0.62, 1, 0.62, 1))
