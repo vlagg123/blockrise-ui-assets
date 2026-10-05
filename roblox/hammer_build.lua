@@ -305,7 +305,7 @@ for _, tier in ipairs(args.tiers or {}) do
 	local old = folder:FindFirstChild(h.special and ("Hammer_" .. h.key) or ("Hammer_" .. tier))
 	local ok, tool = pcall(buildHammer, h)
 	if ok then
-		if old then old:Destroy() end
+		if old and not args.preview then old:Destroy() end
 		if args.preview then
 			tool:PivotTo(CFrame.new(args.preview + Vector3.new((tier - 1) * 3.2, 0, 0)) * CFrame.Angles(0, math.rad(args.yaw or 0), 0))
 			for _, p in ipairs(tool:GetDescendants()) do if p:IsA("BasePart") then p.Anchored = true end end
