@@ -83,8 +83,8 @@ function UI.badgeText(l, t)
 	if tonumber(t) and tonumber(t) > 9 then t = "+9" end
 	t = tostring(t)
 	l.Text = t
-	local dx = (t == "1" and -1.5) or (t:sub(1, 1) == "1" and -0.75) or 0
-	local dy = t == "!" and 0 or -1
+	local dx = (t == "1" and -1.25) or (t:sub(1, 1) == "1" and -0.6) or 0
+	local dy = -0.5
 	l.Position = UDim2.fromOffset(dx, dy)
 end
 

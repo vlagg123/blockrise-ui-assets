@@ -98,11 +98,14 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 		Text = label, TextScaled = true, TextXAlignment = Enum.TextXAlignment.Center, Parent = b })
 	tstroke(lbl, 3)
 	new("UITextSizeConstraint", { MaxTextSize = 21, MinTextSize = 9, Parent = lbl })
+	-- the red circle breathes; the number on it stays still (a scaled number drifts off the centre by a pixel or two)
 	local badge = new("Frame", { Name = "Badge", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -7, 0, 7), Size = UDim2.fromOffset(28, 28),
-		BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, Visible = false, ZIndex = 5, Parent = b })
-	corner(badge, 14)
-	stroke(badge, 2.5)
-	local bsc = new("UIScale", { Parent = badge })
+		BackgroundTransparency = 1, Visible = false, ZIndex = 5, Parent = b })
+	local dot = new("Frame", { Name = "Dot", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 5, Parent = badge })
+	corner(dot, 14)
+	stroke(dot, 2.5)
+	local bsc = new("UIScale", { Parent = dot })
 	-- FredokaOne: its glyphs sit in the middle of the line (Luckiest Guy leans and rides high, so "!" looked off-centre)
 	local bl = text({ Size = UDim2.fromScale(1, 1), Text = "1", Font = ROUND, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
 		TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6, Parent = badge })
