@@ -663,9 +663,10 @@ def pouch(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, col="#8a3df0"):
 
 def i_gems1700():
     pouch(loc=(0, 0.2, 0), rot=(0, 0, 10))
-    gem(BLUE_GEM, loc=(-0.1, 0.1, 2.05), rot=(20, 0, 14), s=0.6)
-    gem(PINK_GEM, loc=(0.5, 0.0, 1.95), rot=(-15, 10, -30), s=0.45)
-    gem(GREEN_GEM, loc=(-0.6, 0.05, 1.9), rot=(10, -20, 30), s=0.42)
+    # one big diamond standing up out of the opening, two smaller ones behind it on the sides (no gem touches another)
+    gem(BLUE_GEM, loc=(0, 0.2, 2.12), rot=(10, 0, 14), s=0.62)
+    gem(PINK_GEM, loc=(-0.62, 0.82, 1.86), rot=(10, -12, 20), s=0.36)
+    gem(GREEN_GEM, loc=(0.64, 0.82, 1.84), rot=(10, 12, -20), s=0.34)
     gem(BLUE_GEM, loc=(1.15, -0.8, 0.45), rot=(8, 0, -20), s=0.5)
     gem(PURPLE_GEM, loc=(-1.15, -0.75, 0.4), rot=(8, 0, 20), s=0.45)
 
