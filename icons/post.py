@@ -22,6 +22,7 @@ SPARKLE = {   # icon -> list of (x, y, r) in 0..1 of the canvas
     "spin": [(0.88, 0.16, 0.06)],
     "upgrades": [(0.82, 0.20, 0.06)],
     "rebirth": [(0.86, 0.18, 0.06)],
+    "portfolio": [(0.86, 0.2, 0.07), (0.14, 0.34, 0.045)],
 }
 
 def dilate(a, r):

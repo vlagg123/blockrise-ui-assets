@@ -221,6 +221,113 @@ def icon_gift():
     I.torus(0.38, 0.14, loc=(0.36, 0, 0.9), rot=(90, 0, -28), color=GOLD, gloss=0.5)
     I.sphere(0.22, loc=(0, -0.06, 0.74), color="#ffc21a", gloss=0.5)
 
+def _deg_euler_to(d):
+    """Euler angles (degrees) that turn +Z onto direction d."""
+    q = Vector((0, 0, 1)).rotation_difference(Vector(d).normalized())
+    e = q.to_euler()
+    return (math.degrees(e.x), math.degrees(e.y), math.degrees(e.z))
+
+def icon_quest():
+    # archery target with an arrow right in the bullseye, seen a little from the side
+    WOODC = "#b8743c"
+    objs = []
+    for i, (r, col) in enumerate(((1.0, I.RED), (0.77, I.WHITE), (0.54, I.RED), (0.3, GOLD))):
+        objs.append(I.cyl(r, 0.24 + i * 0.05, rot=(90, 0, 0), color=col, bevel=0.03, gloss=0.45))
+    objs.append(I.torus(1.0, 0.09, rot=(90, 0, 0), color=WOODC))
+    # wooden stand behind the board
+    objs.append(I.box((0.16, 0.16, 1.5), loc=(-0.45, 0.35, -0.75), rot=(0, 12, 0), color=WOODC, bevel=0.04))
+    objs.append(I.box((0.16, 0.16, 1.5), loc=(0.45, 0.35, -0.75), rot=(0, -12, 0), color=WOODC, bevel=0.04))
+    # the arrow, built along +Z then aimed out of the bullseye
+    arrow = [I.cyl(0.065, 1.7, loc=(0, 0, 0.85), color="#f2e4c8", bevel=0.0),
+             I.cyl(0.09, 0.14, loc=(0, 0, 1.74), color=I.DARK, bevel=0.02)]
+    for k in range(3):
+        phi = math.radians(90 + 120 * k)
+        arrow.append(I.box((0.3, 0.035, 0.5), loc=(math.cos(phi) * 0.17, math.sin(phi) * 0.17, 1.42), rot=(0, 0, math.degrees(phi)), color=I.RED if k else I.ORANGE, bevel=0.015))
+    objs.append(I.group(arrow, loc=(0, 0.05, 0), rot=_deg_euler_to((0.42, -0.72, 0.5))))
+    I.group(objs, rot=(0, 0, 32))
+
+def gear_wheel(r, teeth, depth, color, loc=(0, 0, 0)):
+    objs = [I.cyl(r, depth, rot=(90, 0, 0), color=color, bevel=0.07, gloss=0.45)]
+    tw = 2 * math.pi * r / teeth * 0.5
+    for i in range(teeth):
+        a = 360 * i / teeth
+        ar = math.radians(a)
+        objs.append(I.box((r * 0.36, depth * 0.96, tw), loc=(math.cos(ar) * (r + r * 0.1), 0, math.sin(ar) * (r + r * 0.1)), rot=(0, -a, 0), color=color, bevel=0.06, gloss=0.45))
+    objs.append(I.cyl(r * 0.5, depth + 0.06, rot=(90, 0, 0), color="#ffffff", bevel=0.04, gloss=0.5))
+    objs.append(I.cyl(r * 0.26, depth + 0.12, rot=(90, 0, 0), color=I.DARK, bevel=0.03))
+    return I.group(objs, loc=loc)
+
+def icon_settings():
+    big = gear_wheel(0.82, 9, 0.42, "#8ea4c8", loc=(-0.3, 0, 0.28))
+    small = gear_wheel(0.46, 7, 0.36, I.ORANGE, loc=(0.78, -0.12, -0.62))
+    small.rotation_euler.y = math.radians(14)
+    I.group([big, small], rot=(0, 0, -26))
+
+def icon_locations():
+    # a little island with a big map pin on it
+    I.cyl(1.2, 0.3, loc=(0, 0, -0.15), color=I.GREEN, bevel=0.1, gloss=0.3)
+    I.cyl(0.75, 0.55, loc=(0, 0, -0.55), r2=1.18, color="#a8683a", bevel=0.06)
+    I.cyl(0.32, 0.03, loc=(0.05, -0.15, 0.01), color="#2f9a45", bevel=0.0)
+    for x, y in ((-0.5, -0.55), (-0.15, -0.75), (0.25, -0.9)):
+        I.cyl(0.11, 0.04, loc=(x, y, 0.02), color="#f1d9a8", bevel=0.01)
+    t = I.tree(loc=(-0.72, 0.35, 0), s=0.85)
+    t2 = I.tree(loc=(0.75, 0.45, 0), s=0.6)
+    pin = [I.sphere(0.7, loc=(0, 0, 0.6), color=I.RED, gloss=0.5),
+           I.cyl(0.62, 1.0, loc=(0, 0, -0.1), rot=(180, 0, 0), color=I.RED, r2=0.0, bevel=0.0, verts=40),
+           I.sphere(0.3, loc=(0, -0.6, 0.66), scale=(1, 0.7, 1), color=I.WHITE, gloss=0.5)]
+    I.group(pin, loc=(0.05, -0.15, 0.66), scale=1.15)
+
+def icon_portfolio():
+    # gold trophy: your buildings & achievements
+    PURP = "#6a4bd6"
+    I.box((1.4, 1.0, 0.38), loc=(0, 0, -0.62), color=PURP, bevel=0.08)
+    I.box((1.05, 0.78, 0.2), loc=(0, 0, -0.34), color=PURP, bevel=0.06)
+    I.box((0.62, 0.06, 0.2), loc=(0, -0.51, -0.62), color=GOLD, bevel=0.03, metal=True)
+    I.cyl(0.13, 0.5, loc=(0, 0, 0.0), color=GOLD, bevel=0.03, metal=True)
+    I.sphere(0.2, loc=(0, 0, 0.08), color=GOLD, gloss=0.55)
+    I.cyl(0.32, 0.12, loc=(0, 0, -0.2), color=GOLD, bevel=0.04, metal=True)
+    I.cyl(0.42, 1.05, loc=(0, 0, 0.72), r2=0.9, color=GOLD, bevel=0.1, metal=True)
+    I.torus(0.9, 0.08, loc=(0, 0, 1.24), color=GOLD, gloss=0.55)
+    I.cyl(0.84, 0.04, loc=(0, 0, 1.22), color="#d8901a", bevel=0.0)
+    I.arc_tube(0.34, 0.09, 80, 280, loc=(-0.8, 0, 0.82), color=GOLD)
+    I.arc_tube(0.34, 0.09, -100, 100, loc=(0.8, 0, 0.82), color=GOLD)
+    star3d(0.3, 0.14, 0.12, loc=(0, -0.66, 0.78), rot=(-8, 0, 0), color="#fff6c8")
+
+def icon_up_luck():
+    # four-leaf clover: four puffy hearts meeting in the middle, with a curly stem
+    G1 = "#43d05c"
+    sc = 0.026
+    for i in range(4):
+        ang = math.radians(45 + 90 * i)
+        u = (math.cos(ang), math.sin(ang))      # leaf axis (from the centre outwards)
+        v = (math.sin(ang), -math.cos(ang))     # across the leaf
+        pts = []
+        for k in range(48):
+            t = 2 * math.pi * k / 48
+            x = 16 * math.sin(t) ** 3 * sc
+            z = (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) * sc
+            z = z + 17 * sc + 0.06            # heart tip just off the centre
+            pts.append((x * v[0] + z * u[0], x * v[1] + z * u[1]))
+        I.poly(pts, 0.26, color=G1, bevel=0.09, gloss=0.45)
+    I.sphere(0.16, loc=(0, -0.1, 0), scale=(1, 0.6, 1), color="#2fae48", gloss=0.4)
+    I.arc_tube(0.9, 0.085, 185, 255, loc=(0.9, 0.06, -0.1), color="#2fa346")
+
+TURN = {"store": (0, 34), "trade": (0, 30), "upgrades": (0, 32), "up_luck": (-10, 26), "rebirth": (0, 26),
+        "up_power": (0, 22), "up_strength": (0, 22), "codes": (0, 26), "invite": (0, 26)}
+
+def turn(n):
+    """Turn the finished model so we see it from the side (3/4 view) instead of flat on."""
+    if n not in TURN:
+        return
+    rx, rz = TURN[n]
+    tops = [o for o in bpy.context.scene.objects if o.parent is None and o.type in ("MESH", "EMPTY")]
+    e = bpy.data.objects.new("turn", None)
+    bpy.context.collection.objects.link(e)
+    for o in tops:
+        o.parent = e
+    e.rotation_euler = (math.radians(rx), 0, math.radians(rz))
+    bpy.context.view_layer.update()
+
 def icon_crew():
     I.hardhat(rot=(16, 0, 22))
 
@@ -240,7 +347,7 @@ def frame_and_render(path, view=(0, -1, 0.42), margin=1.12):
     scn.render.resolution_x = scn.render.resolution_y = RES
     I.frame_and_render(path, view=view, margin=margin)
 
-VIEWS = {"gift": (0, -1, 0.8)}
+VIEWS = {"gift": (0, -1, 0.8), "settings": (0, -1, 0.55), "locations": (0, -1, 0.42), "quest": (0, -1, 0.3), "portfolio": (0, -1, 0.38)}
 
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
@@ -250,6 +357,7 @@ if __name__ == "__main__":
     for n in names:
         reset()
         I.ICONS[n]()
+        turn(n)
         puff()
         I.add_outlines()
         frame_and_render(os.path.join(out, n + ".png"), view=VIEWS.get(n, (0, -1, 0.42)))
