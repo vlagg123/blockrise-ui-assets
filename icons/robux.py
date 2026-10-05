@@ -235,8 +235,11 @@ def money_bag(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, cloth="#d6a35a", sign="#2e9e4
     # the gathered top flares out above the tie
     obj("ruffle", bm_cyl(0.34, 0.5, 40, r2=0.62), c, loc=(0, 0, 2.3), parent=P, smooth=40, bevel=0.06)
     torus(0.4, 0.11, candy("#8a4a20", rough=0.6, coat=0.1)).matrix_world = P @ _xf((0, 0, 1.98))
+    # the $ sits in the middle of the round part, facing the camera, bent to follow the cloth
     t = text("$", 1.05, 0.1, candy(sign, rough=0.3), rot=(90, 0, 0))
-    t.matrix_world = P @ _xf((0, -1.0, 0.95), (90, 0, 0))
+    for v in t.data.vertices:
+        v.co.z -= (v.co.x ** 2 + v.co.y ** 2) / 2.0
+    t.matrix_world = P @ _xf((0, -0.89, 1.26), (70.6, 0, 0))
 
 
 def badge(label, loc, s=1.0, col="#ff3b4a", txt="#ffffff", rot=(0, 0, 0), shape="circle"):
@@ -485,7 +488,8 @@ def i_starter():
 def i_rushcrew():
     hh = hardhat((0, 0.2, 0), rot=(-8, 0, 28), col="#ffa91a", s=1.2)
     # a round blue badge with a lightning bolt: 2x speed
-    P = _xf((1.15, -1.0, -0.55), (0, 0, 0), 0.8)
+    # in front of the hat, up at its top right, turned to the camera (never hidden behind the brim)
+    P = _xf((1.2, -1.35, 1.05), (-23, 0, 0), 0.8)
     obj("bb", bm_prism(circle(0.82, 64), 0.28, axis="Y"), candy("#2f8cff", rough=0.25), parent=P, bevel=0.06)
     b = poly(BOLT, 0.3, candy("#ffe14a", rough=0.25, emit=0.6), rot=(0, 0, 0), bevel=0.03)
     b.matrix_world = P @ _xf((0, -0.2, 0)) @ Matrix.Diagonal((0.62, 1, 0.62, 1))
@@ -495,8 +499,9 @@ def i_rushcrew():
 
 def i_cashpack():
     money_bag()
-    coin(loc=(1.05, -0.75, 0.3), rot=(75, 0, -25), r=0.5)
-    coin(loc=(-1.1, -0.6, 0.25), rot=(72, 0, 30), r=0.42)
+    # the coins lean in front of the bag (clear of the cloth)
+    coin(loc=(0.98, -1.28, 0.36), rot=(75, 0, -25), r=0.5)
+    coin(loc=(-1.02, -1.12, 0.3), rot=(72, 0, 30), r=0.42)
 
 
 def i_cashstack():
@@ -731,7 +736,7 @@ ICONS = {
     "cashbank": i_cashbank, "cashboost": i_cashboost, "spin1": i_spin1, "spins3": i_spins3, "gems100": i_gems100, "gems300": i_gems300,
     "gems750": i_gems750, "gems1700": i_gems1700, "gems4500": i_gems4500, "gems12000": i_gems12000,
 }
-VIEW = {"cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
+VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (-0.1, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
