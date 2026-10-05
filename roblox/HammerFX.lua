@@ -271,14 +271,15 @@ local function makeFeet(e, f)
 end
 
 -- the Thunderclap's own storm cloud: it follows you, and moves over the house while you build
-local CLOUD = C3(46, 49, 62)
+local CLOUD = C3(34, 36, 46)
 local function makeCloud(e)
 	-- flattened dark puffs, and dark smoke rolling off them so the edges look soft
 	local c = { parts = {}, pos = nil }
 	for i = 1, 11 do
 		local s = 3.2 + math.random() * 3
-		local p = fxPart({ Name = "Cloud", Shape = Enum.PartType.Ball, Material = Enum.Material.SmoothPlastic, Color = CLOUD:Lerp(C3(80, 84, 100), math.random() * 0.5),
-			Transparency = 0.18, Size = Vector3.new(s, s, s) })
+		-- flat dark (Neon ignores the light): a cartoon storm cloud, and the puffs light up when it flashes inside
+		local p = fxPart({ Name = "Cloud", Shape = Enum.PartType.Ball, Color = CLOUD:Lerp(C3(70, 74, 90), math.random() * 0.6),
+			Transparency = 0.08, Size = Vector3.new(s, s, s) })
 		local r = math.random() * 4.5
 		local a = math.random() * math.pi * 2
 		table.insert(c.parts, { part = p, off = Vector3.new(math.cos(a) * r * 1.3, (math.random() - 0.5) * 1.0 - (i == 1 and 0 or 0.4), math.sin(a) * r), ph = math.random() * 6, color = p.Color })
