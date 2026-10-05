@@ -228,7 +228,7 @@ local function buildHammer(h)
 	tool:SetAttribute("Tier", h.tier)
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
-	tool.Grip = CFrame.Angles(math.rad(-25), 0, 0) -- leans out a little, the head never covers your face
+	tool.Grip = CFrame.Angles(math.rad(-16), 0, 0) -- leans out a touch: the head never covers your face, and it doesn't hang back either
 	local handle = Instance.new("Part")
 	handle.Name = "Handle"
 	handle.Size = Vector3.new(0.25, 0.25, 0.25)
