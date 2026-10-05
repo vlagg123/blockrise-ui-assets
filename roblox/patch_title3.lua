@@ -12,7 +12,7 @@ end
 s = replaceBetween(s, "\tlocal Icons = require(RS.Shared:WaitForChild(\"Icons\"))\n\tlocal INK = Color3.fromRGB(20, 17, 32)\n", "\tlocal t0 = os.clock()\n", [==[
 	local Icons = require(RS.Shared:WaitForChild("Icons"))
 	local ContentProvider = game:GetService("ContentProvider")
-	local LOGO = "rbxassetid://95302110763174"
+	local LOGO = "rbxassetid://82912323552669"
 	local W, H = 1300, 760
 	local cx = W / 2
 	local box = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(W, H), BackgroundTransparency = 1, ZIndex = 81, Parent = intro })
