@@ -486,8 +486,10 @@ function M.Init(ctx)
 		end
 		local ch = math.clamp(h - 12, 32, 44)
 		local gap = 8
-		row.Position = UDim2.fromOffset(x0 + 6, math.floor((h - ch) / 2))
-		local total = w - 6 - 12
+		-- a clear gap after the Roblox buttons, and a little room on the right
+		local left = math.clamp(math.floor(camera.ViewportSize.X * 0.025), 18, 40)
+		row.Position = UDim2.fromOffset(x0 + left, math.floor((h - ch) / 2))
+		local total = w - left - 12
 		row.Size = UDim2.fromOffset(total, ch)
 		local mw = megaOn and math.clamp(math.floor(total * 0.16), 130, 190) or 0
 		local qw = math.clamp(math.floor(total * 0.3), 170, 340)
