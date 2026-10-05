@@ -89,7 +89,7 @@ def g_hands():
 def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
     """a chunky cartoon work glove: one soft piece (palm + fingers + thumb), a rolled cuff"""
     m = pbr("glove" + col, col, rough=0.5, coat=0.3, emit=0.08)
-    els = [("ELLIPSOID", (0, 0, 0.8), 1.0, (0.6, 0.3, 0.55), None, 2.0), ("CUBE", (0, 0, 0.45), 0.5, (0.42, 0.2, 0.3), None, 2.0)]
+    els = [("ELLIPSOID", (0, 0, 0.78), 1.0, (0.6, 0.3, 0.5), None, 2.0), ("ELLIPSOID", (0, 0, 0.38), 1.0, (0.52, 0.27, 0.36), None, 2.0)]
     for k, h in enumerate((0.3, 0.38, 0.35, 0.26)):
         x = -0.41 + k * 0.275
         z = 1.2 + h * 0.75 - abs(k - 1.5) * 0.06
