@@ -1,5 +1,7 @@
--- BlockRise Empire - Places: every location in one list, one tap to travel there (or set a waypoint)
+-- BlockRise Empire - Places: every location in one list. The pin (waypoint arrow) is free; GO (instant travel)
+-- needs the Teleporter game pass.
 local RS = game:GetService("ReplicatedStorage")
+local MarketplaceService = game:GetService("MarketplaceService")
 local Icons = require(RS.Shared:WaitForChild("Icons"))
 
 local M = {}
@@ -23,8 +25,32 @@ local PLACES = {
 
 local lastGo = 0
 
--- travel: stand a few steps in front of the place (towards the middle of the map), facing it
+local function teleporterPass()
+	for _, p in ipairs(Config.Store.passes) do if p.key == "teleporter" then return p end end
+end
+local function hasTeleporter() return c.player:GetAttribute("Pass_teleporter") == true end
+local function offerTeleporter()
+	local p = teleporterPass()
+	if p and (p.id or 0) > 0 then
+		MarketplaceService:PromptGamePassPurchase(c.player, p.id)
+	else
+		c.toast("📍 The Teleporter is coming soon!", T.muted, 2.5)
+	end
+end
+M.Has = hasTeleporter
+M.Offer = offerTeleporter
+
+-- travel: stand a few steps in front of the place (towards the middle of the map), facing it.
+-- Without the Teleporter you get the waypoint arrow instead.
 function M.Go(id)
+	if not hasTeleporter() then
+		if id == "site" then
+			c.toast("🏗️ Follow the arrow to your construction site", T.accent, 2.5)
+		else
+			c.setWaypoint(id)
+		end
+		return false
+	end
 	if os.clock() - lastGo < 1.2 then return end
 	local pos
 	if id == "site" then
@@ -70,8 +96,28 @@ function M.Go(id)
 end
 
 function M.Show()
-	local tok = c.openModal("Locations", "Places", "Tap GO to travel", R1, R2)
 	local player = c.player
+	local owned = hasTeleporter()
+	local tok = c.openModal("Locations", "Places", owned and "Tap GO to travel" or "Pins are free · GO needs the Teleporter", R1, R2)
+	if not owned then
+		-- the Teleporter offer sits on top
+		local tp = c.card(0, 92)
+		new("UIStroke", { Thickness = 3, Color = Color3.fromRGB(255, 205, 70), Parent = tp })
+		local tile = new("Frame", { Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(72, 72), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 22, Parent = tp })
+		UI.corner(18).Parent = tile
+		UI.grad(Color3.fromRGB(255, 160, 190), Color3.fromRGB(215, 50, 110)).Parent = tile
+		new("UIStroke", { Thickness = 2.5, Color = INK, Parent = tile })
+		Icons.make("locations", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.1, 1.1), ZIndex = 23, Parent = tile })
+		local tt = UI.label({ Position = UDim2.fromOffset(96, 10), Size = UDim2.new(1, -280, 0, 32), Text = "TELEPORTER", Font = Enum.Font.LuckiestGuy, TextSize = 26,
+			TextColor3 = Color3.fromRGB(255, 214, 80), ZIndex = 22, Parent = tp })
+		new("UIStroke", { Thickness = 2.5, Color = INK, Parent = tt })
+		UI.label({ Position = UDim2.fromOffset(96, 44), Size = UDim2.new(1, -280, 0, 38), TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextSize = 14,
+			TextColor3 = Color3.fromRGB(225, 222, 240), ZIndex = 22, Parent = tp, Text = "Unlock GO: travel to any place in one tap, forever. The pins (arrow to follow) stay free." })
+		local pass = teleporterPass()
+		local buy = UI.button("R$ " .. tostring(pass and pass.price or 39), Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70),
+			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(150, 54), TextSize = 24, ZIndex = 23, Parent = tp })
+		buy.Activated:Connect(function() c.click(); offerTeleporter() end)
+	end
 	for i, p in ipairs(PLACES) do
 		local f = c.card(i, 84)
 		local tile = new("Frame", { Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(68, 68), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 22, Parent = f })
@@ -97,11 +143,19 @@ function M.Show()
 			sub.Text = "Take a contract first"
 		end
 		if locked then f.BackgroundTransparency = 0.3 end
-		local go = UI.button(locked and (p.zone and "TO GATE" or lockText) or "GO", locked and T.bg3 or Color3.fromRGB(130, 240, 120), locked and T.bg2 or Color3.fromRGB(30, 160, 70),
-			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -66, 0.5, 0), Size = UDim2.fromOffset(130, 50), TextSize = locked and 17 or 24, ZIndex = 23, Parent = f })
+		local goText = locked and (p.zone and "TO GATE" or lockText) or "GO"
+		if not owned and not (p.needs == "contract" and locked) then goText = "🔒 GO" end
+		local green = owned and not locked
+		local go = UI.button(goText, green and Color3.fromRGB(130, 240, 120) or T.bg3, green and Color3.fromRGB(30, 160, 70) or T.bg2,
+			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -66, 0.5, 0), Size = UDim2.fromOffset(130, 50), TextSize = (locked or not owned) and 18 or 24, ZIndex = 23, Parent = f })
 		go.Activated:Connect(function()
 			c.click()
 			if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
+			if not hasTeleporter() then
+				c.toast("📍 GO needs the Teleporter — or tap the pin to follow the arrow for free", Color3.fromRGB(255, 214, 80), 3)
+				offerTeleporter()
+				return
+			end
 			M.Go(p.id)
 			if locked and lockText then c.toast(lockText .. " needed to enter " .. p.name, T.muted, 3) end
 		end)
@@ -117,12 +171,18 @@ function M.Show()
 	local tip = c.card(40, 40)
 	tip.BackgroundTransparency = 0.55
 	UI.label({ Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), TextSize = 12, TextWrapped = true, TextColor3 = T.muted, ZIndex = 22, Parent = tip,
-		Text = "GO takes you there right away.  The pin button shows the way with an arrow instead." })
+		Text = "The pin shows the way with an arrow (free).  GO takes you there right away (Teleporter)." })
 end
 
 function M.Init(ctx)
 	c = ctx
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
+	c.player:GetAttributeChangedSignal("Pass_teleporter"):Connect(function()
+		if hasTeleporter() then
+			c.toast("📍 Teleporter unlocked! Tap GO in Places to travel", T.green, 3.5)
+			if c.modalOpen() and c.modalTitle.Text == "Places" then M.Show() end
+		end
+	end)
 end
 
 return M
