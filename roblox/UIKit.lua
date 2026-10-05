@@ -77,6 +77,16 @@ function UI.tween(o, t, props, style, dir)
 	return tw
 end
 
+-- the number / "!" on a red badge, optically centred: a "1" carries its weight on the stem (right of its box),
+-- and digits sit a hair low in their line at small sizes
+function UI.badgeText(l, t)
+	t = tostring(t)
+	l.Text = t
+	local dx = (t == "1" and -1.5) or (t:sub(1, 1) == "1" and -0.75) or 0
+	local dy = t == "!" and 0 or -1
+	l.Position = UDim2.fromOffset(dx, dy)
+end
+
 -- a 9-slice piece of the skin atlas
 function UI.slice(name, props)
 	local c = CELLS[name]
@@ -292,6 +302,7 @@ function UI.tabs(parent, list, current, onPick, props)
 				ImageColor3 = Color3.fromRGB(255, 60, 90), ZIndex = 26, Parent = b })
 			local dl = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = tostring(t.badge), Font = Enum.Font.FredokaOne, TextSize = 15,
 				TextColor3 = Color3.new(1, 1, 1), ZIndex = 27, Parent = d })
+			UI.badgeText(dl, t.badge)
 			new("UIStroke", { Thickness = 1.5, Color = T.ink, Parent = dl })
 		end
 		b.Activated:Connect(function() if not on then onPick(t.id) end end)

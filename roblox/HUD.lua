@@ -252,7 +252,7 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 		hasBadge = on
 		if b.ZIndex < 3 then b.ZIndex = on and 2 or 1 end
 		pulsing[bsc] = on or nil
-		if type(v) == "number" then bl.Text = v > 9 and "9+" or tostring(v) else bl.Text = "!" end
+		UI.badgeText(bl, type(v) == "number" and (v > 9 and "9+" or tostring(v)) or "!")
 	end
 	function api.setLabel(t) lbl.Text = t end
 	-- a small dark pill on the top-right corner (a timer: when the next free spin comes...)
@@ -282,7 +282,7 @@ local function pill(parent, key, width, color)
 	local f = panel({ Size = UDim2.fromOffset(width, 40), Parent = parent }, 20)
 	-- the icon sits inside the pill (a little bigger than the pill's height, never past its left edge)
 	local ic = Icons.make(key, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(25, 19), Size = UDim2.fromOffset(46, 46), ZIndex = 3, Parent = f })
-	local val = text({ Name = "Value", Position = UDim2.fromOffset(52, 0), Size = UDim2.new(1, -94, 1, 0), Text = "0", TextSize = 23,
+	local val = text({ Name = "Value", Position = UDim2.fromOffset(52, 0), Size = UDim2.new(1, -100, 1, 0), Text = "0", TextSize = 23,
 		TextColor3 = color, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 3, Parent = f })
 	tstroke(val, 2.5)
 	local sc = new("UIScale", { Parent = val })
@@ -290,7 +290,7 @@ local function pill(parent, key, width, color)
 end
 
 local function plusButton(parent, onClick)
-	local b = new("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -5, 0.5, 0), Size = UDim2.fromOffset(30, 30),
+	local b = new("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(30, 30),
 		BackgroundColor3 = WHITE, Text = "", AutoButtonColor = false, ZIndex = 4, Parent = parent })
 	corner(b, 11)
 	grad(b, Color3.fromRGB(110, 236, 120), Color3.fromRGB(36, 168, 78))
@@ -506,8 +506,9 @@ function M.Init(ctx)
 	local leftScale = new("UIScale", { Parent = left })
 	local cashPill, cashVal, cashSc = pill(left, "cash", 236, Color3.fromRGB(150, 255, 140))
 	plusButton(cashPill, function() A.store("cash") end)
-	local gemPill, gemVal, gemSc = pill(left, "gem", 236, Color3.fromRGB(130, 225, 255))
+	local gemPill, gemVal, gemSc, gemIc = pill(left, "gem", 236, Color3.fromRGB(130, 225, 255))
 	gemPill.Position = UDim2.fromOffset(0, 46)
+	gemIc.Position = UDim2.fromOffset(25, 22) -- the diamond is drawn high in its picture: centred in the pill
 	plusButton(gemPill, function() A.store("gems") end)
 	local strPill, strVal, strSc = pill(left, "strength", 236, Color3.fromRGB(255, 180, 110))
 	strPill.Position = UDim2.fromOffset(0, 92)
@@ -754,7 +755,9 @@ function M.Init(ctx)
 		local gap = 16 -- clear room between the chips
 		-- a clear gap after the Roblox buttons, and a little room on the right
 		local left = math.clamp(math.floor(camera.ViewportSize.X * 0.025), 18, 40)
-		row.Position = UDim2.fromOffset(x0 + left, math.floor((h - ch) / 2))
+		-- level with Roblox's own buttons: in today's top bar (58 high) they are 44 tall and sit 2 above its bottom edge
+		local by, bh = (h >= 50) and (h - 46) or math.floor((h - 32) / 2), (h >= 50) and 44 or 32
+		row.Position = UDim2.fromOffset(x0 + left, inset.Min.Y + math.floor(by + (bh - ch) / 2))
 		local total = w - left - 12
 		row.Size = UDim2.fromOffset(total, ch)
 		local mw = megaOn and math.clamp(math.floor(total * 0.16), 130, 190) or 0
