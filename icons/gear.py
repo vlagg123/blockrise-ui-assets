@@ -84,13 +84,11 @@ def g_hands():
     meta(els, sk, "fist", P=P, resolution=0.03)
     band = candy("#ff8a26", rough=0.65, coat=0.1, tex="leaf", scale=16, bump=0.25, dark="#f07d1c", light="#ff9a3c")
     obj("band", bm_cyl(0.5, 0.36, 64), band, loc=(0.05, 0.12, -0.06), parent=P, smooth=40, bevel=0.12, segs=4)
-    for k, (z, l) in enumerate(((1.3, 0.55), (0.9, 0.8), (0.5, 0.5))):
-        box((l, 0.08, 0.1), candy("#ffffff", emit=0.6), loc=(1.3 + l * 0.2, 0.25, z), bevel=0.045)
 
 
 def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
     """a chunky cartoon work glove: one soft piece (palm + fingers + thumb), a rolled cuff"""
-    m = pbr("glove" + col, col, rough=0.62, coat=0.15, tex="leaf", scale=5, bump=0.25, dark=dark, light=light, emit=0.18)
+    m = pbr("glove" + col, col, rough=0.5, coat=0.3, emit=0.2)
     els = [("ELLIPSOID", (0, 0, 0.66), 1.0, (0.6, 0.3, 0.6), None, 2.0)]
     for k, h in enumerate((0.3, 0.38, 0.35, 0.26)):
         x = -0.41 + k * 0.275
@@ -99,10 +97,11 @@ def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
     els.append(("CAPSULE", (0.66, -0.02, 0.78), 0.23, (0.22, 0, 0), (0, 52, 0), 2.2))   # thumb
     els.append(("CAPSULE", (0, 0, 0.12), 0.52, (0.12, 0, 0), (0, 90, 0), 2.0))         # wrist
     meta(els, m, "glove", P=P, resolution=0.028)
-    c = candy(cuff, rough=0.6, tex="leaf", scale=14, bump=0.2, dark="#f06d10", light="#ff8a2a")
-    obj("cuff", bm_cyl(0.6, 0.42, 64), c, loc=(0, 0, 0.0), parent=P, smooth=40, bevel=0.16, segs=5)
-    t = torus(0.62, 0.05, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
-    t.matrix_world = P @ _xf((0, 0, 0.1))
+    c = candy(cuff, rough=0.45)
+    obj("cuff", bm_cyl(0.58, 0.62, 64, r2=0.54), c, loc=(0, 0, -0.05), parent=P, smooth=40, bevel=0.14, segs=5)
+    for z in (-0.18, 0.08):
+        t = torus(0.585, 0.04, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
+        t.matrix_world = P @ _xf((0, 0, z))
     # knuckle seam on the back of the hand
     sm = candy(dark, rough=0.6)
     for k in range(4):
@@ -112,8 +111,7 @@ def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
 
 
 def g_gloves():
-    glove(_xf((-0.55, 0.5, 0.25), (0, 24, 14), (0.85, 0.85, 0.85)), col="#e2a040", dark="#c98a32", light="#ecb055")
-    glove(_xf((0.35, -0.25, 0), (6, -14, -10)))
+    glove(_xf((0, 0, 0), (8, -12, -14)))
 
 
 def g_belt():
@@ -403,7 +401,7 @@ ICONS = {
     "gear7": g_ibeam, "gear8": g_block, "gear9": g_anvil, "gear10": g_wreck, "gear11": g_girder, "gear12": g_hook,
     "excavator": m_excavator, "mixer": m_mixer, "crane": m_crane, "st_tires": s_tires, "st_hoist": s_hoist,
 }
-VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.15, -1, 0.25), "gear2": (-0.1, -1, 0.2),
+VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.35, -1, 0.3), "gear2": (-0.1, -1, 0.12),
         "excavator": (-0.3, -1, 0.35), "mixer": (-0.3, -1, 0.3), "crane": (-0.3, -1, 0.3), "st_tires": (-0.2, -1, 0.25), "st_hoist": (-0.2, -1, 0.25)}
 SPARK = {"gear9": [(0.82, 0.2, 0.07), (0.66, 0.1, 0.045)], "gear5": [(0.82, 0.2, 0.06)], "gear12": [(0.84, 0.18, 0.06)], "gear10": [(0.84, 0.16, 0.06)]}
 
