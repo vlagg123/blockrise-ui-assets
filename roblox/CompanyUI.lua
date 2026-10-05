@@ -99,9 +99,10 @@ local function renderEstate(tok, data)
 				o.stats = { { "BUILD ONE FIRST", K.LOCK } }
 				o.status = { "🔒 LOCKED", K.LOCK }
 			else
-				o.tag = { money(info.rent) .. "/MIN", K.GREEN }
+				-- the corner shows what the ones you own pay now; the green chip is what ONE more pays you
+				if info.owned > 0 then o.tag = { money(info.rent) .. "/MIN", K.GREEN } end
 				o.stats = matChips(p.mats, data.mats)
-				table.insert(o.stats, 1, { "+" .. money(info.nextRent), Color3.fromRGB(80, 200, 110) })
+				table.insert(o.stats, 1, { "+" .. money(info.nextRent) .. "/MIN", Color3.fromRGB(80, 200, 110) })
 				while #o.stats > 2 do table.remove(o.stats) end
 				local can = (data.money or 0) >= info.cost
 				o.buttons = {
