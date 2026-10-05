@@ -189,11 +189,6 @@ def lib(key, loc=(0, 0, 0), rot=(0, 0, 0), scale=1.0, paint=None):
 
 
 # ----------------------------------------------------------------------------------------- icons using library models
-def icon_store():
-    # Quaternius "Chest with Gold", open, from the front corner
-    lib("chest", rot=(0, 0, 200))
-
-
 def icon_home():
     lib("house", rot=(0, 0, 205))
 
@@ -214,17 +209,23 @@ def icon_downtown():
     lib("kenneyA", loc=(0.9, -0.3, 0), rot=(0, 0, 20), scale=0.7, paint={"_defaultMat": "#ff9f6e"})
 
 
+def icon_up_rent():
+    lib("house", loc=(-0.3, 0.2, 0), rot=(0, 0, 205), paint={"Main": "#a25cff"})
+    I.coin(loc=(0.95, -0.75, 0.45), rot=(78, 0, -20), r=0.55)
+
+
 def icon_vip():
     lib("crown", rot=(12, 0, 0))
 
 
-LIB_ICONS = {"store": icon_store, "home": icon_home, "suburbs": icon_suburbs, "company": icon_company,
+# the Quaternius chest was tried for "store" but the procedural one reads better at 124 px
+LIB_ICONS = {"up_rent": icon_up_rent, "home": icon_home, "suburbs": icon_suburbs, "company": icon_company,
              "downtown": icon_downtown, "vip": icon_vip}
 ICONS = dict(I.ICONS)
 ICONS.update(LIB_ICONS)
 VIEWS = dict(P.VIEWS)
 VIEWS.update({"home": (0, -1, 0.5), "suburbs": (0, -1, 0.5), "company": (0, -1, 0.35), "downtown": (0, -1, 0.3),
-              "store": (0, -1, 0.55), "vip": (0, -1, 0.35)})
+              "up_rent": (0, -1, 0.5), "vip": (0, -1, 0.35)})
 
 
 # ----------------------------------------------------------------------------------------- run
