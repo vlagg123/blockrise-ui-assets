@@ -958,14 +958,18 @@ function M.Init(ctx)
 					seenNew = {}
 					for _, ct in ipairs(fresh) do seenNew[ct.id] = true end
 				else
+					-- one message, however many unlock at once
+					local got = {}
 					for _, ct in ipairs(fresh) do
 						if not seenNew[ct.id] then
 							seenNew[ct.id] = true
-							if open then
-								c.toast("🆕 New building unlocked: " .. ct.name .. "! Open JOBS", Color3.fromRGB(255, 205, 70), 4)
-								if c.sound2D and c.S then c.sound2D(c.S.Chime, 0.5, 1.3) end
-							end
+							table.insert(got, ct.name)
 						end
+					end
+					if open and #got > 0 then
+						c.toast(#got == 1 and ("🆕 New building unlocked: " .. got[1] .. "! Open JOBS")
+							or ("🆕 " .. #got .. " new buildings unlocked! Open JOBS"), Color3.fromRGB(255, 205, 70), 4)
+						if c.sound2D and c.S then c.sound2D(c.S.Chime, 0.5, 1.3) end
 					end
 				end
 			end
