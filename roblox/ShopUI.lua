@@ -180,9 +180,8 @@ function M.Available()
 	local out = { hammers = false, gear = false, machines = false, crew = false, count = 0 }
 	local gt = p:GetAttribute("GearTier") or 1
 	local ng = Config.TrainingGear[gt + 1]
-	out.hammers = HammersUI.Available()
+	out.hammers = false -- (crates are opened in the Inventory: its button carries the count)
 	out.gear = ng ~= nil and cash >= ng.price
-	if out.hammers then out.count += 1 end
 	if out.gear then out.count += 1 end
 	local lvl = p:GetAttribute("Level") or 1
 	for _, m in ipairs(Config.Machines) do

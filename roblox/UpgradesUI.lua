@@ -56,9 +56,11 @@ render = function(tok, data)
 	if mode == "inventory" then
 		local nBps = 0
 		for _, b in ipairs(Company.Blueprints) do nBps += data.bps[b.id] or 0 end
+		HammersUI = HammersUI or require(script.Parent:WaitForChild("HammersUI"))
+		local hv = HammersUI.Available()
 		UI.tabs(c.content, {
-			{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230),
-				badge = (c.player:GetAttribute("CrateTotal") or 0) > 0 },
+			{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = hv.hammers == true },
+			{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20), badge = hv.crates },
 			{ id = "tradeup", label = "TRADE-UP", icon = "trade", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
 			{ id = "index", label = "INDEX", icon = "star", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(220, 140, 30) },
 			{ id = "materials", label = "MATERIALS", icon = "site", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
@@ -103,9 +105,10 @@ render = function(tok, data)
 				K.row(c.content, order, o)
 			end
 		end
-	elseif invTab == "hammers" or invTab == "tradeup" or invTab == "index" then
+	elseif invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index" then
 		HammersUI = HammersUI or require(script.Parent:WaitForChild("HammersUI"))
-		if invTab == "hammers" then HammersUI.Hammers(tok) elseif invTab == "tradeup" then HammersUI.TradeUp(tok) else HammersUI.Index(tok) end
+		if invTab == "hammers" then HammersUI.Hammers(tok) elseif invTab == "crates" then HammersUI.MyCrates(tok)
+		elseif invTab == "tradeup" then HammersUI.TradeUp(tok) else HammersUI.Index(tok) end
 	elseif invTab == "materials" then
 		K.section(c.content, 1, "MATERIALS", Color3.fromRGB(255, 220, 110), "they drop while you build")
 		local grid = K.grid(c.content, 2, cols(), 268)
@@ -154,7 +157,7 @@ function M.Show()
 end
 
 -- Inventory: opens on HAMMERS (or the tab asked for); a redraw keeps the tab
-local INV_TABS = { hammers = true, tradeup = true, index = true, materials = true, blueprints = true }
+local INV_TABS = { hammers = true, crates = true, tradeup = true, index = true, materials = true, blueprints = true }
 function M.Inventory(t)
 	local reopen = c.modalOpen() and c.modalTitle.Text == "Inventory"
 	mode = "inventory"
@@ -166,7 +169,7 @@ function M.Init(ctx)
 	c = ctx
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
 	c.redrawInventory = function() M.Inventory(invTab) end
-	c.inventoryHammerTab = function() return mode == "inventory" and (invTab == "hammers" or invTab == "tradeup" or invTab == "index") end
+	c.inventoryHammerTab = function() return mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index") end
 end
 
 return M

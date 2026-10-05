@@ -398,6 +398,7 @@ function M.Init(ctx)
 		local tutorial = (player:GetAttribute("RoadStep") or 1) <= Config.RoadTutorialSteps
 		if place == "site" then
 			if (player:GetAttribute("ContractJob") or "") == "" then A.jobs() else A.go("site") end
+		elseif place == "inventory" then toggle("Inventory", function() c.showInventory("crates") end)
 		elseif tutorial then
 			c.setWaypoint(place)
 		elseif place == "shop" then A.shop()
@@ -1041,6 +1042,8 @@ function M.Init(ctx)
 				end
 			end
 			menu.upgrades.setBadge(n)
+			-- inventory: crates waiting to be opened
+			if menu.inventory then menu.inventory.setBadge(player:GetAttribute("CrateTotal") or 0) end
 			-- rebirth: ready
 			local run, cost = player:GetAttribute("RunEarned") or 0, player:GetAttribute("FranchiseCost") or math.huge
 			menu.rebirth.setBadge(run >= cost)
