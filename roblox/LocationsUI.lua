@@ -144,18 +144,18 @@ function M.Show()
 		end
 		if locked then f.BackgroundTransparency = 0.3 end
 		local goText = locked and (p.zone and "TO GATE" or lockText) or "GO"
-		if not owned and not (p.needs == "contract" and locked) then goText = "🔒 GO" end
+		if not owned then goText = "🔒 GO" end -- without the Teleporter every row says the same
 		local green = owned and not locked
 		local go = UI.button(goText, green and Color3.fromRGB(130, 240, 120) or T.bg3, green and Color3.fromRGB(30, 160, 70) or T.bg2,
 			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -66, 0.5, 0), Size = UDim2.fromOffset(130, 50), TextSize = (locked or not owned) and 18 or 24, ZIndex = 23, Parent = f })
 		go.Activated:Connect(function()
 			c.click()
-			if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
 			if not hasTeleporter() then
 				c.toast("📍 GO needs the Teleporter — or tap the pin to follow the arrow for free", Color3.fromRGB(255, 214, 80), 3)
 				offerTeleporter()
 				return
 			end
+			if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
 			M.Go(p.id)
 			if locked and lockText then c.toast(lockText .. " needed to enter " .. p.name, T.muted, 3) end
 		end)
