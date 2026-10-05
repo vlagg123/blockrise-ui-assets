@@ -1,6 +1,6 @@
 -- BlockRise Empire - main HUD (kept light on purpose)
 --   top: Roblox's own top bar row, edge to edge: a big construction progress bar, the Empire Road goal, the City Tower
---   left: money, gems, Strength + six menu buttons   right: Store, Gift, More   bottom-left: level + XP
+--   left: money, gems, Strength + eight menu buttons   right: Store, Gift, More   bottom-left: level + XP
 -- The middle of the screen stays free for playing.
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -356,6 +356,8 @@ function M.Init(ctx)
 		toggle("Shop", c.showShop)
 	end
 	function A.upgrades() toggle("Upgrades", c.showUpgrades) end
+	function A.inventory() toggle("Inventory", c.showInventory) end
+	function A.cars() toggle("Garage", _G.__CE_ShowGarage) end
 	function A.company() toggle("Company", _G.__CE_ShowCompany) end
 	function A.rebirth() toggle("Rebirth", c.showRebirth) end
 	function A.locations() toggle("Locations", c.showLocations) end
@@ -525,7 +527,7 @@ function M.Init(ctx)
 	for _, a in ipairs({ "Strength", "PowerMult", "ToolTier" }) do player:GetAttributeChangedSignal(a):Connect(refreshStrength) end
 	refreshStrength()
 
-	local grid = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(176, 300), Parent = left })
+	local grid = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(176, 400), Parent = left })
 	local gridLayout = new("UIGridLayout", { CellSize = UDim2.fromOffset(80, 88), CellPadding = UDim2.fromOffset(10, 6), SortOrder = Enum.SortOrder.LayoutOrder,
 		FillDirectionMaxCells = 2, Parent = grid })
 	menu = {}
@@ -535,10 +537,12 @@ function M.Init(ctx)
 		{ "upgrades", "UPGRADES", Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70), A.upgrades },
 		{ "rebirth", "REBIRTH", Color3.fromRGB(205, 150, 255), Color3.fromRGB(125, 65, 230), A.rebirth },
 		{ "company", "COMPANY", Color3.fromRGB(120, 220, 255), Color3.fromRGB(30, 140, 210), A.company },
+		{ "inventory", "INVENTORY", Color3.fromRGB(255, 214, 90), Color3.fromRGB(226, 130, 30), A.inventory, icon = "portfolio" },
 		{ "locations", "PLACES", Color3.fromRGB(255, 140, 150), Color3.fromRGB(225, 55, 85), A.locations },
+		{ "cars", "CARS", Color3.fromRGB(255, 140, 120), Color3.fromRGB(215, 55, 55), A.cars },
 	}
 	for i, d in ipairs(defs) do
-		local api = bigButton(grid, d[1], d[2], d[3], d[4], 80, 88, d[5])
+		local api = bigButton(grid, d.icon or d[1], d[2], d[3], d[4], 80, 88, d[5])
 		api.button.LayoutOrder = i
 		menu[d[1]] = api
 	end
@@ -585,11 +589,9 @@ function M.Init(ctx)
 	storeB.button.LayoutOrder = 1
 	local giftB = bigButton(right, "gift", "GIFT", Color3.fromRGB(255, 160, 220), Color3.fromRGB(215, 60, 160), 84, 94, A.gift)
 	giftB.button.LayoutOrder = 2
-	local carsB = bigButton(right, "cars", "CARS", Color3.fromRGB(255, 140, 120), Color3.fromRGB(215, 55, 55), 84, 94, function() toggle("Garage", _G.__CE_ShowGarage) end)
-	carsB.button.LayoutOrder = 3
 	local more
 	local moreB = bigButton(right, "more", "MORE", Color3.fromRGB(170, 185, 225), Color3.fromRGB(85, 95, 150), 84, 94, function() openPopup(more) end)
-	moreB.button.LayoutOrder = 4
+	moreB.button.LayoutOrder = 3
 
 	more = popup("MorePopup", {
 		{ "daily", "DAILY", Color3.fromRGB(255, 150, 175), Color3.fromRGB(225, 60, 105), A.daily },
@@ -783,9 +785,10 @@ function M.Init(ctx)
 		local ls = compact and (H < 620 and 0.72 or 0.8) or 1
 		leftScale.Scale = ls
 		local avail = (H - 10 - (compact and 150 or 60)) / ls
-		local cols = (146 + 3 * 94 > avail) and 3 or 2
+		-- 8 buttons: 4 rows of 2, or 3 wide (3 rows) when the screen is short
+		local cols = (146 + 4 * 94 > avail) and 3 or 2
 		gridLayout.FillDirectionMaxCells = cols
-		grid.Size = UDim2.fromOffset(cols * 90, 300)
+		grid.Size = UDim2.fromOffset(cols * 90, 400)
 		local rs = compact and 0.8 or 1
 		rightScale.Scale = rs
 		lvlScale.Scale = compact and 0.85 or 1
@@ -794,7 +797,7 @@ function M.Init(ctx)
 		fx.Size = UDim2.fromOffset(math.clamp(math.floor(camera.ViewportSize.X / s * 0.36 / fxScale.Scale), 220, 460), 160)
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
-			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 200 * rs) -- level with CARS / MORE
+			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 200 * rs) -- level with MORE
 		end
 	end
 	gui:GetAttributeChangedSignal("Compact"):Connect(function() task.defer(layout) end)

@@ -1,11 +1,12 @@
--- BlockRise Empire - Upgrades window: the six permanent player upgrades, your materials and blueprints
+-- BlockRise Empire - Upgrades window (the six player upgrades) and the Inventory window (your materials and blueprints)
 local RS = game:GetService("ReplicatedStorage")
 local Company = require(RS.Shared:WaitForChild("Company"))
 local K = require(RS.Shared:WaitForChild("MenuKit"))
 
 local M = {}
 local c, UI, T, new, Config
-local tab = "upgrades"
+local mode = "upgrades"    -- which window is drawing: "upgrades" or "inventory"
+local invTab = "materials" -- the Inventory tab
 local G1, G2 = Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70)
 local INK = Color3.fromRGB(20, 17, 32)
 local TINT = { up_power = Color3.fromRGB(255, 170, 60), up_strength = Color3.fromRGB(255, 120, 80), up_cash = Color3.fromRGB(80, 200, 110),
@@ -51,19 +52,20 @@ end
 render = function(tok, data)
 	c.modalSub.Text = money(data.money or 0)
 	for _, ch in ipairs(c.content:GetChildren()) do if not ch:IsA("UIListLayout") then ch:Destroy() end end
-	local nBps = 0
-	for _, b in ipairs(Company.Blueprints) do nBps += data.bps[b.id] or 0 end
-	UI.tabs(c.content, {
-		{ id = "upgrades", label = "UPGRADES", icon = "upgrades", c1 = G1, c2 = G2 },
-		{ id = "materials", label = "MATERIALS", icon = "site", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
-		{ id = "blueprints", label = "BLUEPRINTS", icon = "codes", c1 = Color3.fromRGB(120, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = nBps },
-	}, tab, function(id)
-		c.click()
-		tab = id
-		render(tok, data)
-		c.content.CanvasPosition = Vector2.zero
-	end)
-	if tab == "upgrades" then
+	if mode == "inventory" then
+		local nBps = 0
+		for _, b in ipairs(Company.Blueprints) do nBps += data.bps[b.id] or 0 end
+		UI.tabs(c.content, {
+			{ id = "materials", label = "MATERIALS", icon = "site", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
+			{ id = "blueprints", label = "BLUEPRINTS", icon = "codes", c1 = Color3.fromRGB(120, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = nBps },
+		}, invTab, function(id)
+			c.click()
+			invTab = id
+			render(tok, data)
+			c.content.CanvasPosition = Vector2.zero
+		end)
+	end
+	if mode == "upgrades" then
 		K.section(c.content, 1, "UPGRADES", Color3.fromRGB(160, 250, 150), "a Rebirth resets them")
 		local order = 1
 		for _, dp in ipairs(Company.Departments) do
@@ -96,7 +98,7 @@ render = function(tok, data)
 				K.row(c.content, order, o)
 			end
 		end
-	elseif tab == "materials" then
+	elseif invTab == "materials" then
 		K.section(c.content, 1, "MATERIALS", Color3.fromRGB(255, 220, 110), "they drop while you build")
 		local grid = K.grid(c.content, 2, cols(), 268)
 		for i, m in ipairs(Company.Materials) do
@@ -125,16 +127,27 @@ render = function(tok, data)
 	end
 end
 
-function M.Show(t)
-	if type(t) == "string" then tab = t end
-	local tok = c.openModal("Upgrades", "Upgrades", "", G1, G2)
+local function open(name, c1, c2)
+	local tok = c.openModal(name, name, "", c1, c2)
 	local loading = K.loading(c.content)
 	local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
 	if not c.live(tok) then return end
 	loading:Destroy()
-	if not ok or not okr or type(data) ~= "table" then c.toast("⚠️ Couldn't load your upgrades, try again", T.red) return end
+	if not ok or not okr or type(data) ~= "table" then c.toast("⚠️ Couldn't load it, try again", T.red) return end
 	c.modalSub.Text = money(data.money or 0)
 	render(tok, data)
+end
+
+function M.Show()
+	mode = "upgrades"
+	open("Upgrades", G1, G2)
+end
+
+-- Inventory: opens on MATERIALS (or the tab asked for)
+function M.Inventory(t)
+	mode = "inventory"
+	invTab = (t == "blueprints") and "blueprints" or "materials"
+	open("Inventory", Color3.fromRGB(255, 214, 70), Color3.fromRGB(240, 135, 20))
 end
 
 function M.Init(ctx)
