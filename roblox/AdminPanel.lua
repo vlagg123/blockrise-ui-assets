@@ -221,7 +221,9 @@ end
 -- [ your number ] [ GIVE ] [ SET TO ] [ RESET ]
 local function ownNumber(action, hint, canReset)
 	local f = new("Frame", { Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = nextOrder(), ZIndex = 7, Parent = page })
-	local boxBg = UI.slice("inset", { Size = UDim2.new(0.4, 0, 1, 0), ImageColor3 = Color3.new(1, 1, 1), ZIndex = 8, Parent = f })
+	local boxBg = new("Frame", { Size = UDim2.new(0.4, 0, 1, -6), Position = UDim2.fromOffset(0, 2), BackgroundColor3 = Color3.fromRGB(250, 250, 255), ZIndex = 8, Parent = f })
+	UI.corner(14).Parent = boxBg
+	new("UIStroke", { Thickness = 3, Color = T.ink, Parent = boxBg })
 	local box = new("TextBox", { Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = hint or "alt numar (ex: 2.5M)",
 		PlaceholderColor3 = C3(140, 140, 175), TextColor3 = K.DARK, Font = T.title, TextSize = 20, ClearTextOnFocus = false, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 9, Parent = boxBg })
 	local function go(mode)
