@@ -42,12 +42,7 @@ d = replaceOnce(d, [[		if kind == "DealerMsg" and d and d.text then c.toast(d.te
 	[[		if kind == "DealerMsg" and d and d.text then c.toast(d.text, T.red, 2.8)
 		elseif kind == "DealerOk" and d and d.text then c.toast(d.text, T.green, 3.5)]])
 
--- the server tells you when your car is out (it parks on a free spot next to you, often behind you)
-v = replaceOnce(v, [[				local ok, msg = action(plr, "spawn", cfg.id)
-				if not ok then ctx.feedback(plr, "DealerMsg", { text = "⚠️ " .. tostring(msg or "Can't spawn it here") }) end]],
-[[				local ok, msg = action(plr, "spawn", cfg.id)
-				if not ok then ctx.feedback(plr, "DealerMsg", { text = "⚠️ " .. tostring(msg or "Can't spawn it here") })
-				else ctx.feedback(plr, "DealerOk", { text = "🚗 Your " .. cfg.name .. " is parked right next to you. Hop in!" }) end]])
+-- (no extra spawn message from the server: VehicleService already says "Your car is parked next to you. Press E to drive")
 
 assert(loadstring(d), "DealerUI compile")
 assert(loadstring(v), "VehicleService compile")
