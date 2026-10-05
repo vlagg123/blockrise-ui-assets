@@ -100,7 +100,7 @@ end
 function M.Show()
 	local player = c.player
 	local owned = hasTeleporter()
-	c.openModal("Locations", "Places", owned and "tap GO to travel" or "", R1, R2)
+	c.openModal("Locations", "Places", "", R1, R2)
 	if not owned then
 		-- the Teleporter offer sits on top
 		local pass = teleporterPass()
