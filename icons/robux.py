@@ -1058,9 +1058,9 @@ def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, m
     if open_:
         # light pouring out: a bright slab in the opening and cartoon beams fanning up
         obj("light", bm_box(W - 0.34, D - 0.34, 0.26), glow(L["glow"], 8.0), loc=(0, 0, H - 0.02), parent=P, bevel=0.06, outline=False)
-        beams = [(-34, 2.2, 0.22), (-17, 2.7, 0.2), (0, 3.1, 0.26), (17, 2.7, 0.2), (34, 2.2, 0.22)]
+        beams = [(-40, 1.9, 0.2), (-21, 2.5, 0.18), (-4, 2.9, 0.24), (14, 2.6, 0.18), (32, 2.1, 0.2)]
         for a, ln, w in beams:
-            pts = [(-w, 0.0), (w, 0.0), (w * 0.45, ln), (-w * 0.45, ln)]
+            pts = [(-w, 0.0), (w, 0.0), (w * 0.4, ln), (-w * 0.4, ln)]
             b = poly(pts, 0.04, glow(L["beam"], 3.2), bevel=0.0, outline=False)
             b.matrix_world = P @ _xf((0, 0.1, H - 0.05), (0, a, 0))
         # sparkles in the air
@@ -1068,8 +1068,8 @@ def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, m
             st = poly(star_pts(r, r * 0.34, 4, 90), 0.05, glow("#ffffff", 4.5), bevel=0.0, outline=False)
             st.matrix_world = P @ _xf((x, -0.3, z), (0, 0, 0))
         if mark:
-            q = text("?", 1.15, 0.14, candy(L["mark"], rough=0.25, emit=0.55), bevel=0.02, outline=True, center=True)
-            q.matrix_world = P @ _xf((0.05, -0.35, H + 1.25), (90, 0, -8))
+            q = text("?", 1.5, 0.16, candy(L["mark"], rough=0.25, emit=0.55), bevel=0.025, outline=True, center=True)
+            q.matrix_world = P @ _xf((0.1, -0.7, H + 1.45), (90, -10, 0))
     return P
 
 
