@@ -117,20 +117,21 @@ local cats = new("ScrollingFrame", { Position = UDim2.fromOffset(24, 244), Size 
 	ScrollBarThickness = 0, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
 new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = cats })
 noBar(cats)
-local page = new("ScrollingFrame", { Position = UDim2.fromOffset(238, 214), Size = UDim2.new(1, -262, 0, 414), BackgroundColor3 = C3(36, 30, 92),
+-- the page on the right, and under it a fixed action bar (confirm / result / hint): nothing ever covers the buttons
+local PAGE_H, BAR_H = 414, 78
+local page = new("ScrollingFrame", { Position = UDim2.fromOffset(238, 214), Size = UDim2.new(1, -262, 0, PAGE_H - BAR_H - 10), BackgroundColor3 = C3(36, 30, 92),
 	BackgroundTransparency = 0.35, BorderSizePixel = 0, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
 UI.corner(14).Parent = page
 UI.pad(14, 12).Parent = page
 new("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder, Parent = page })
 
--- the answer: a big pill at the bottom of the window
--- (inside the window, where the confirm bar shows: always on screen)
-local toast = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0, 238 + (1000 - 262) / 2, 0, 214 + 414 - 14), Size = UDim2.fromOffset(620, 50), BackgroundColor3 = GREEN,
+-- the answer: shown in the action bar under the page for 3 seconds (over the bar, never over the page)
+local toast = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromOffset(238, 214 + PAGE_H), Size = UDim2.new(1, -262, 0, BAR_H), BackgroundColor3 = GREEN,
 	Visible = false, ZIndex = 40, Parent = window })
-UI.corner(23).Parent = toast
+UI.corner(16).Parent = toast
 new("UIStroke", { Thickness = 3, Color = T.ink, Parent = toast })
-local toastLbl = K.text({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 20, TextColor3 = Color3.new(1, 1, 1), Stroke = 2.5,
-	TextXAlignment = Enum.TextXAlignment.Center, Max = 20, ZIndex = 41, Parent = toast })
+local toastLbl = K.text({ Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -32, 1, 0), Text = "", Font = T.chunky, TextSize = 22, TextColor3 = Color3.new(1, 1, 1), Stroke = 2.5,
+	TextXAlignment = Enum.TextXAlignment.Center, Max = 22, ZIndex = 41, Parent = toast })
 local toastN = 0
 local function say(ok, msg)
 	toastN += 1
@@ -264,10 +265,9 @@ end
 ---------------------------------------------------------------------------
 -- 4) the confirm bar: a tap only picks the action, CONFIRMA does it
 ---------------------------------------------------------------------------
-local PAGE_H, BAR_H = 414, 78
 local pending -- { label, run, btn, danger }
 local bar = new("Frame", { Name = "Confirm", AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromOffset(238, 214 + PAGE_H), Size = UDim2.new(1, -262, 0, BAR_H),
-	BackgroundColor3 = C3(22, 18, 60), Visible = false, ZIndex = 30, Parent = window })
+	BackgroundColor3 = C3(22, 18, 60), Visible = true, ZIndex = 30, Parent = window })
 UI.corner(16).Parent = bar
 local barStroke = new("UIStroke", { Thickness = 3, Color = GOLD, Parent = bar })
 local barAsk = K.text({ Position = UDim2.fromOffset(18, 8), Size = UDim2.new(1, -400, 0, 22), Text = "", Font = T.chunky, TextSize = 17, TextColor3 = GOLD, Stroke = 2,
@@ -289,11 +289,17 @@ local function mark(btn, on)
 		if c then c:Destroy() end
 	end
 end
+-- nothing picked: the bar says what to do
 function clearPending()
 	if pending then mark(pending.btn, false) end
 	pending = nil
-	bar.Visible = false
-	page.Size = UDim2.new(1, -262, 0, PAGE_H)
+	barAsk.Text = "3. CONFIRMA AICI"
+	barAsk.TextColor3 = C3(170, 165, 220)
+	barWhat.Text = "Apasa ce vrei sa dai, apoi CONFIRMA"
+	barWhat.TextColor3 = C3(200, 196, 240)
+	barStroke.Color = C3(90, 84, 160)
+	if okBtn then okBtn.Visible = false end
+	if noBtn then noBtn.Visible = false end
 end
 local function ask(label, run, btn, danger)
 	if pending then mark(pending.btn, false) end
@@ -304,12 +310,12 @@ local function ask(label, run, btn, danger)
 	barAsk.Text = danger and "ATENTIE! CONFIRMI?" or ("CONFIRMI?  PENTRU " .. string.upper(p and p.DisplayName or "?"))
 	barAsk.TextColor3 = danger and C3(255, 120, 120) or GOLD
 	barWhat.Text = label
+	barWhat.TextColor3 = Color3.new(1, 1, 1)
 	barStroke.Color = danger and RED or GOLD
+	okBtn.Visible, noBtn.Visible = true, true
 	local lbl = okBtn and okBtn:FindFirstChild("Label")
 	if lbl then lbl.Text = danger and "RESETEAZA" or "CONFIRMA" end
 	if okBtn then UI.recolor(okBtn, danger and RED or GREEN) end
-	page.Size = UDim2.new(1, -262, 0, PAGE_H - BAR_H - 10)
-	bar.Visible = true
 end
 okBtn = K.button(bar, "CONFIRMA", GREEN, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(190, 56), TextSize = 22,
 	ZIndex = 31, Shine = true }, function()
@@ -321,6 +327,7 @@ okBtn = K.button(bar, "CONFIRMA", GREEN, { AnchorPoint = Vector2.new(1, 0.5), Po
 end)
 noBtn = K.button(bar, "ANULEAZA", C3(118, 112, 170), { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -212, 0.5, 0), Size = UDim2.fromOffset(160, 56), TextSize = 20,
 	ZIndex = 31 }, function() clearPending() end)
+clearPending()
 
 -- every button of the pages: pick the action (it runs on CONFIRMA)
 local function call(action, v, redraw, btn)
