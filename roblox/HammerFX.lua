@@ -207,8 +207,11 @@ local AURA = {
 	amethyst = { shade = { every = { 0.06, 0.1 }, color = C3(80, 35, 140) }, glints = { every = { 0.45, 0.9 }, color = C3(215, 165, 255) } },
 	lava = { shade = { every = { 0.06, 0.1 }, color = C3(50, 20, 12) }, glints = { every = { 0.35, 0.7 }, color = C3(255, 150, 50) } },
 	frost = { shade = { every = { 0.06, 0.1 }, color = C3(200, 230, 255), glow = true }, glints = { every = { 0.4, 0.8 }, color = C3(235, 250, 255) } },
-	diamond = { rings = { { count = 4, shape = "gem", size = 0.3, colors = { C3(235, 250, 255), C3(170, 235, 255), C3(255, 210, 250) }, speed = 1.4, tilt = 0.35, r = 1.1, spin = 2.5,
-		trans = 0.12, trail = { C3(200, 240, 255), 0.18 } } }, twinkle = { every = { 0.3, 0.6 } } },
+	-- (little sparks of light with a trail, circling the head: solid gems looked like glitchy white squares)
+	diamond = { rings = { { count = 3, shape = "ball", size = 0.14, colors = { C3(245, 252, 255), C3(180, 235, 255), C3(255, 215, 250) }, speed = 1.8, tilt = 0.35, r = 1.1,
+		trail = { C3(190, 235, 255), 0.35 } },
+		{ count = 2, shape = "ball", size = 0.1, colors = { C3(255, 255, 255) }, speed = -2.4, tilt = -0.6, r = 1.3, trail = { C3(255, 215, 250), 0.25 } } },
+		twinkle = { every = { 0.3, 0.6 } } },
 	plasma = { rings = { { count = 2, shape = "ball", size = 0.22, colors = { C3(150, 245, 255) }, speed = 3.4, tilt = 0.5, r = 1.0, trail = { C3(80, 220, 255), 0.22 } },
 		{ count = 2, shape = "ball", size = 0.16, colors = { C3(200, 255, 255) }, speed = -2.6, tilt = -0.7, r = 1.25, trail = { C3(120, 200, 255), 0.18 } } },
 		arcs = { every = { 0.25, 0.55 }, color = C3(90, 220, 255), toOrbs = true } },
