@@ -951,7 +951,10 @@ function M.Init(ctx)
 			local tier, gt = player:GetAttribute("ToolTier") or 1, player:GetAttribute("GearTier") or 1
 			local nt, ng = Config.Tools[tier + 1], Config.TrainingGear[gt + 1]
 			local open = tutorialDone()
-			menu.shop.setBadge(open and ((nt and money >= nt.price) or (ng and money >= ng.price)) or false)
+			-- shop: something to buy on any tab (the Shop shows a red dot on that tab)
+			local av = c.shopAvailable and c.shopAvailable()
+			local any = av and (av.tools or av.gear or av.machines or av.crew) or ((nt and money >= nt.price) or (ng and money >= ng.price))
+			menu.shop.setBadge(open and any or false)
 			-- jobs: buildings you can take now but never built yet (NEW on the Job Board)
 			local fresh = newBuildings()
 			menu.jobs.setBadge(open and #fresh or 0)

@@ -168,6 +168,32 @@ local function crew()
 	K.note(c.content, 3, "Workers build your job on their own. Firing one gives 50% back.")
 end
 
+-- which tabs have something you can buy right now (the red dots on the tabs and the "!" on the SHOP button)
+function M.Available()
+	local p = c.player
+	local cash = money()
+	local out = { tools = false, gear = false, machines = false, crew = false }
+	local tier, gt = p:GetAttribute("ToolTier") or 1, p:GetAttribute("GearTier") or 1
+	local nt, ng = Config.Tools[tier + 1], Config.TrainingGear[gt + 1]
+	out.tools = nt ~= nil and cash >= nt.price
+	out.gear = ng ~= nil and cash >= ng.price
+	local lvl = p:GetAttribute("Level") or 1
+	for _, m in ipairs(Config.Machines) do
+		if p:GetAttribute("M_" .. m.id) == true then
+			local mlv = math.max(1, p:GetAttribute("ML_" .. m.id) or 1)
+			if mlv < Config.MachineMaxLevel and cash >= Config.MachineUpgradeCost(m, mlv) then out.machines = true end
+		elseif lvl >= m.reqLevel and cash >= m.price then
+			out.machines = true
+		end
+	end
+	if (p:GetAttribute("WorkerCount") or 0) < (p:GetAttribute("MaxWorkers") or 2) then
+		for _, w in ipairs(Config.WorkerTypes) do
+			if lvl >= (w.reqLevel or 1) and cash >= w.price then out.crew = true end
+		end
+	end
+	return out
+end
+
 function M.Show(t, keepScroll)
 	-- opening the window (not a redraw while it is open) always starts on the first tab
 	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Shop") then tab = "tools" end
@@ -179,7 +205,13 @@ function M.Show(t, keepScroll)
 	c.openModal("Shop", "Shop", "", th.c1, th.c2)
 	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
 	c.modalSub.Text = fmt(money())
-	UI.tabs(c.content, TABS, tab, function(id)
+	local avail = M.Available()
+	local tabs = {}
+	for i, t2 in ipairs(TABS) do
+		tabs[i] = table.clone(t2)
+		tabs[i].badge = avail[t2.id] == true -- a red "!" dot where something can be bought
+	end
+	UI.tabs(c.content, tabs, tab, function(id)
 		c.click()
 		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
 		M.Show(id)
@@ -190,6 +222,7 @@ end
 function M.Init(ctx)
 	c = ctx
 	UI, T, Config = c.UI, c.T, c.Config
+	c.shopAvailable = M.Available
 	-- the cash in the header follows your money while the shop is open
 	c.player:GetAttributeChangedSignal("Money"):Connect(function()
 		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab ~= "crew" then c.modalSub.Text = fmt(money()) end

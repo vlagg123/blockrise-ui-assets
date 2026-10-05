@@ -22,15 +22,18 @@ end
 
 local Client = game.StarterPlayer.StarterPlayerScripts.Client
 local s = Client.Source
-if not s:find("local function cinematic(center, size, front, done)", 1, true) then
+if not s:find("local sweep = math.pi * 0.85", 1, true) then
 	s = replaceOnce(s, [[local function cinematic(center, size, done)]], [[local function cinematic(center, size, front, done)]])
 	s = replaceOnce(s, [[	local dir = (startCF.Position - center) * Vector3.new(1, 0, 1)
 	local a0 = (dir.Magnitude > 0.1) and math.atan2(dir.Z, dir.X) or 0]], [[	local dir = (startCF.Position - center) * Vector3.new(1, 0, 1)
 	local a0 = (dir.Magnitude > 0.1) and math.atan2(dir.Z, dir.X) or 0
+	local sweep = math.pi * 0.85
 	if typeof(front) == "Vector3" and (front * Vector3.new(1, 0, 1)).Magnitude > 0.1 then
-		-- sweep across the front of the building: from its front-left to its front-right
-		a0 = math.atan2(front.Z, front.X) - math.pi * 0.425
+		-- the front stays in view the whole time: from front-left (63 deg) to a 3/4 front-right view (27 deg)
+		a0 = math.atan2(front.Z, front.X) - math.pi * 0.35
+		sweep = math.pi * 0.5
 	end]])
+	s = replaceOnce(s, [[		local a = a0 + ease * math.pi * 0.85]], [[		local a = a0 + ease * sweep]])
 	local n
 	s, n = s:gsub("cinematic%(d%.center, d%.size, ", "cinematic(d.center, d.size, d.front, ")
 	assert(n == 3, "cinematic calls: " .. tostring(n))
