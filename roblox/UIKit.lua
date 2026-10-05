@@ -150,7 +150,7 @@ function UI.button(text, c1, c2, props)
 	if props.Icon then
 		local Icons = require(script.Parent:WaitForChild("Icons"))
 		local ic = Icons.make(props.Icon, { Name = "Icon", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 4, 0.5, -4), Size = UDim2.new(0, 0, 1, 4), ZIndex = z + 2, Parent = b })
-		new("UIAspectRatioConstraint", { AspectRatio = 1, Parent = ic })
+		new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height, Parent = ic })
 		if ic:IsA("TextLabel") and not Icons.emoji[props.Icon] then ic.Text = props.Icon end -- an emoji was passed
 		-- label goes right of the icon
 		lbl.AnchorPoint = Vector2.new(0, 0)

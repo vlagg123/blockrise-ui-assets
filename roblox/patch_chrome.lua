@@ -25,6 +25,7 @@ local fitWindow
 do
 	local INK = Color3.fromRGB(20, 17, 32)
 	local Icons = require(RS.Shared:WaitForChild("Icons"))
+	modal.Name = "Window"
 	modal.Active = true -- clicks on the window itself must not reach the dark backdrop (that closes it)
 	modal.BackgroundTransparency = 1
 	for _, d in ipairs(modal:GetChildren()) do
