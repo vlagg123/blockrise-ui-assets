@@ -292,6 +292,14 @@ local function clearBody()
 		if not ch:IsA("UIListLayout") and ch.Name ~= "Tabs" then ch:Destroy() end
 	end
 end
+-- a grid of small tiles that always keeps its column count (a short row stays small, on the left)
+local function smallGrid(order)
+	local n = invCols()
+	local f = new("Frame", { Name = "Grid", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = c.content })
+	new("UIGridLayout", { CellSize = UDim2.new(1 / n, -math.ceil(8 * (n - 1) / n), 0, 158), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Left, Parent = f })
+	return f
+end
 local function small(chip, s) new("UIScale", { Scale = s or 0.78, Parent = chip }) return chip end
 
 -- one hammer as a small tile: art, rarity, level, name, power. The whole tile is a button.
@@ -367,7 +375,7 @@ local function drawHammers(tok, data)
 	for _, n in pairs(data.crates) do total += n end
 	if total > 0 then
 		K.section(c.content, 2, "CRATES TO OPEN", Color3.fromRGB(255, 220, 110), total .. " waiting  ·  tap one to open it")
-		local cg = K.grid(c.content, 3, invCols(), 158, 8)
+		local cg = smallGrid(3)
 		for i, cr in ipairs(Hammers.Crates) do
 			local have = data.crates[cr.id] or 0
 			if have > 0 then
@@ -379,7 +387,7 @@ local function drawHammers(tok, data)
 	end
 	sortHammers(data.hammers, data.equip)
 	K.section(c.content, 4, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
-	local grid = K.grid(c.content, 5, invCols(), 158, 8)
+	local grid = smallGrid(5)
 	for i, it in ipairs(data.hammers) do
 		local h = Hammers.ById[it.k]
 		local r = rar(h)
@@ -507,7 +515,7 @@ local function drawTradeUp(tok, data)
 	-- what you can put in (others dimmed)
 	sortHammers(data.hammers)
 	K.section(c.content, 2, "YOUR HAMMERS", Color3.fromRGB(200, 170, 255), "tap to put in · tap a slot to take out · Rusty, pass and exclusive hammers stay out")
-	local grid = K.grid(c.content, 3, invCols(), 158, 8)
+	local grid = smallGrid(3)
 	local n = 0
 	for _, it in ipairs(data.hammers) do
 		local h = Hammers.ById[it.k]
@@ -566,7 +574,7 @@ function M.Index(tok)
 		local have = 0
 		for _, h in ipairs(list) do if data.index[h.key] then have += 1 end end
 		K.section(c.content, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color, have .. " / " .. #list .. "  ·  " .. Hammers.PowerLabel(list[1].key, 1) .. " power")
-		local grid = K.grid(c.content, order + 1, invCols(), 158, 8)
+		local grid = smallGrid(order + 1)
 		for i, h in ipairs(list) do
 			local got = data.index[h.key] == true
 			miniTile(grid, { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got,
