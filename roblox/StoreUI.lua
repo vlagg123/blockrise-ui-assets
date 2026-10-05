@@ -166,7 +166,7 @@ local function boosts(tok)
 			or (p.boost and (c.player:GetAttribute("Boost_" .. tostring(p.boost)) or 0) or 0)
 		local mins = (p.name or ""):match("(%d+) min")
 		return { name = (p.name or ""):gsub("%s*%(.-%)", ""), icon = ICON[p.key] or "up_power", color = Color3.fromRGB(255, 170, 50),
-			stats = { mins and { mins .. " MIN", T.blue } or { "x3", T.blue } },
+			stats = { mins and { mins .. " MIN", T.blue } or { "x" .. tostring(p.spins or 3), T.blue } },
 			badge = left > 0 and { "ON " .. c.fmtTime(left), K.GREEN } or nil, spin = left > 0 }
 	end })
 end

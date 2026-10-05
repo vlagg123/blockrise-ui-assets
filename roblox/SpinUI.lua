@@ -1,4 +1,6 @@
--- BlockRise Empire - Lucky Spin (prize reel), promo codes and the invite button (small HUD row next to the gift)
+-- BlockRise Empire - Lucky Spin (a casino-style prize reel), promo codes and the invite button (small HUD row next to the gift)
+-- The reel: a velvet well in a golden frame with blinking bulbs, prize tiles coloured by rarity, a glowing selector.
+-- Every prize and its exact chance is listed in the window (Roblox rules for paid random items).
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -10,10 +12,18 @@ local M = {}
 local c
 local UI, T, new, Config
 local GOLD1, GOLD2 = Color3.fromRGB(255, 210, 70), Color3.fromRGB(235, 130, 20)
-local WIN = Color3.fromRGB(150, 245, 150)
+local C3 = Color3.fromRGB
 local SpinRF, CodeRF
 local spinning = false
 local codeTok, codeMsg
+
+-- rarities: label + colour (the game's own rarity colours)
+local RAR = {
+	common = { "COMMON", K.RAR.common }, uncommon = { "UNCOMMON", K.RAR.uncommon }, rare = { "RARE", K.RAR.rare },
+	epic = { "EPIC", K.RAR.epic }, legend = { "LEGENDARY", K.RAR.legend }, mythic = { "MYTHIC", K.RAR.mythic },
+}
+local RANK = { common = 1, uncommon = 2, rare = 3, epic = 4, legend = 5, mythic = 6 }
+local function rarOf(p) return RAR[p.rarity or "common"] or RAR.common end
 
 local function fmtLong(s)
 	s = math.max(0, math.floor(s))
@@ -30,32 +40,34 @@ local function odds(p)
 	if totalWeight == 0 then for _, q in ipairs(Config.Spin.prizes) do totalWeight += q.weight end end
 	return p.weight / totalWeight * 100
 end
-
--- prize art: atlas icons where we have one
-local function prizeIcon(p)
-	local n = string.lower(p.name or "")
-	if p.jackpot and p.kind == "cash" then return "store", GOLD2 end
-	if n:find("2x") and n:find("cash") then return "up_cash", Color3.fromRGB(80, 200, 110) end
-	if n:find("strength") then return "up_strength", Color3.fromRGB(255, 120, 80) end
-	if n:find("gem") then return "gem", p.jackpot and GOLD2 or Color3.fromRGB(60, 160, 255) end
-	if n:find("big cash") then return "coins", Color3.fromRGB(80, 200, 110) end
-	if n:find("cash") then return "cash", Color3.fromRGB(80, 200, 110) end
-	return p.icon, Color3.fromRGB(150, 156, 196)
+local function pctText(p)
+	local pct = odds(p)
+	if pct < 1 then return string.format("%.2f%%", pct) elseif pct < 10 then return string.format("%.1f%%", pct) end
+	return math.floor(pct + 0.5) .. "%"
 end
 
-local TILE, GAP = 118, 10
+-- prize art: an atlas icon (or the Thunderclap's own picture)
+local function prizeArt(p)
+	if p.art == "storm" then return (Config.StormHammer and Config.StormHammer.icon) or "up_power" end
+	if p.art then return p.art end
+	local n = string.lower(p.name or "")
+	if n:find("gem") then return "gem" end
+	if n:find("cash") then return "cash" end
+	return p.icon
+end
+
+local TILE, GAP = 136, 12
 local function tile(parent, p, x)
-	local f = new("Frame", { Name = "Prize", Position = UDim2.fromOffset(x, 0), Size = UDim2.fromOffset(TILE, TILE + 10), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
-	UI.slice("tile", { Name = "Bg", ImageColor3 = p.jackpot and Color3.fromRGB(255, 230, 150) or K.TILE, ZIndex = 1, Parent = f })
-	local icon, col = prizeIcon(p)
-	K.artBox(f, icon, col, { Position = UDim2.fromOffset(7, 7), Size = UDim2.new(1, -14, 0, 74), Spin = p.jackpot })
-	K.text({ Position = UDim2.fromOffset(6, 84), Size = UDim2.new(1, -12, 0, 38), Text = p.name, TextSize = 16, Max = 16, TextWrapped = true,
+	local r = rarOf(p)
+	local f = new("Frame", { Name = "Prize", Position = UDim2.fromOffset(x, 0), Size = UDim2.fromOffset(TILE, TILE + 16), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
+	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE:Lerp(r[2], RANK[p.rarity or "common"] >= 5 and 0.35 or 0.12), ZIndex = 1, Parent = f })
+	local art = prizeArt(p)
+	K.artBox(f, art, r[2], { Position = UDim2.fromOffset(7, 7), Size = UDim2.new(1, -14, 0, 86), Spin = RANK[p.rarity or "common"] >= 3,
+		IconScale = type(art) == "string" and art:find("^rbxassetid://") and 1.1 or nil })
+	K.chip(f, r[1], r[2], { Position = UDim2.fromOffset(12, 11), ZIndex = 8 })
+	K.text({ Position = UDim2.fromOffset(6, 96), Size = UDim2.new(1, -12, 0, 44), Text = p.name, TextSize = 17, Max = 17, TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, Parent = f })
 	return f
-end
-local function light(f, on)
-	local bg = f and f:FindFirstChild("Bg")
-	if bg then UI.tween(bg, on and 0.25 or 0.6, { ImageColor3 = on and WIN or K.TILE }) end
 end
 
 local function weightedRandom()
@@ -74,49 +86,94 @@ local function controlRow(order, h)
 	return f
 end
 
+-- a row of little light bulbs along an edge; they chase each other like a casino sign
+local function bulbs(parent, y, n, list)
+	for i = 1, n do
+		local b = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new((i - 0.5) / n, 0, y, 0), Size = UDim2.fromOffset(9, 9), BackgroundColor3 = GOLD1,
+			BorderSizePixel = 0, ZIndex = 6, Parent = parent })
+		UI.corner(5).Parent = b
+		table.insert(list, b)
+	end
+end
+
 function M.Show()
 	local tok = c.openModal("Spin", "Lucky Spin", "", GOLD1, GOLD2)
 	pcall(function() SpinRF:InvokeServer("get") end)
 	if not c.live(tok) then return end
 	odds(Config.Spin.prizes[1])
-	-- the reel: a dark well, tiles slide under a golden frame
-	local reel = new("Frame", { Name = "Reel", Size = UDim2.new(1, 0, 0, 164), BackgroundTransparency = 1, LayoutOrder = 1, ZIndex = 2, Parent = c.content })
-	UI.slice("inset", { Name = "Well", ImageTransparency = 0.25, ZIndex = 1, Parent = reel })
-	local clip = new("Frame", { Name = "Clip", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 1, -16), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 2, Parent = reel })
-	local strip = new("Frame", { Position = UDim2.fromOffset(0, 9), Size = UDim2.fromOffset(60 * (TILE + GAP), TILE + 10), BackgroundTransparency = 1, ZIndex = 3, Parent = clip })
+	local restricted = c.player:GetAttribute("PaidRandomRestricted") == true
+
+	-- the teaser: the mythic prize
+	local top
+	for _, p in ipairs(Config.Spin.prizes) do if not top or RANK[p.rarity or "common"] > RANK[top.rarity or "common"] then top = p end end
+	if top then
+		K.banner(c.content, 1, { name = "WIN THE " .. string.upper(top.name), line = "The rarest prize on the reel: " .. pctText(top) .. " every spin. Feeling lucky?",
+			icon = prizeArt(top), color = rarOf(top)[2], tint = C3(255, 200, 225), height = 112 })
+	end
+
+	-- the reel: velvet well, golden frame, chasing bulbs, glowing selector
+	local reelSlot = new("Frame", { Name = "Reel", Size = UDim2.new(1, 0, 0, 214), BackgroundTransparency = 1, LayoutOrder = 2, ZIndex = 2, Parent = c.content })
+	local reel = new("Frame", { Name = "Box", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 2, Parent = reelSlot })
+	local well = new("Frame", { Name = "Well", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 1, Parent = reel })
+	UI.corner(22).Parent = well
+	new("UIGradient", { Color = ColorSequence.new(C3(58, 28, 96), C3(22, 10, 40)), Rotation = 90, Parent = well })
+	local frameStroke = new("UIStroke", { Thickness = 6, Color = GOLD1, Parent = well })
+	new("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C3(255, 240, 160)), ColorSequenceKeypoint.new(0.5, GOLD2), ColorSequenceKeypoint.new(1, C3(255, 240, 160)) }),
+		Rotation = 90, Parent = frameStroke })
+	local lights = {}
+	bulbs(reel, 0, 26, lights)
+	bulbs(reel, 1, 26, lights)
+	local clip = new("Frame", { Name = "Clip", Position = UDim2.fromOffset(14, 22), Size = UDim2.new(1, -28, 1, -44), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 2, Parent = reel })
+	local strip = new("Frame", { Position = UDim2.fromOffset(0, 9), Size = UDim2.fromOffset(60 * (TILE + GAP), TILE + 16), BackgroundTransparency = 1, ZIndex = 3, Parent = clip })
+	-- the edges fade into the dark, so your eye goes to the middle
+	for _, side in ipairs({ 0, 1 }) do
+		local fade = new("Frame", { AnchorPoint = Vector2.new(side, 0), Position = UDim2.fromScale(side, 0), Size = UDim2.new(0.22, 0, 1, 0), BackgroundColor3 = C3(36, 17, 64),
+			BorderSizePixel = 0, ZIndex = 7, Parent = clip })
+		new("UIGradient", { Rotation = side == 0 and 0 or 180, Transparency = NumberSequence.new(0, 1), Parent = fade })
+	end
 	local items = {}
 	for i = 1, 60 do items[i] = weightedRandom() end
 	local tiles = {}
 	for i = 1, 60 do tiles[i] = tile(strip, Config.Spin.prizes[items[i]], (i - 1) * (TILE + GAP)) end
-	local marker = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(TILE + 14, TILE + 24), BackgroundTransparency = 1,
+	-- selector: a glowing golden frame with arrows and a soft beam
+	local beam = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(TILE + 18, 200), BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundTransparency = 0.88, ZIndex = 4, Parent = reel })
+	UI.corner(16).Parent = beam
+	local marker = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(TILE + 16, TILE + 30), BackgroundTransparency = 1,
 		ZIndex = 8, Parent = reel })
 	UI.corner(18).Parent = marker
-	new("UIStroke", { Thickness = 5, Color = GOLD1, Parent = marker })
+	local markStroke = new("UIStroke", { Thickness = 5, Color = GOLD1, Parent = marker })
+	local markScale = new("UIScale", { Parent = marker })
 	for _, y in ipairs({ 0, 1 }) do
-		local tri = new("TextLabel", { AnchorPoint = Vector2.new(0.5, y), Position = UDim2.new(0.5, 0, y, y == 0 and -2 or 2), Size = UDim2.fromOffset(34, 28), BackgroundTransparency = 1,
-			Text = y == 0 and "▼" or "▲", TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = GOLD1, ZIndex = 9, Parent = reel })
-		UI.textStroke(0, 2.5).Parent = tri
+		local tri = new("TextLabel", { AnchorPoint = Vector2.new(0.5, y), Position = UDim2.new(0.5, 0, y, y == 0 and -6 or 6), Size = UDim2.fromOffset(40, 30), BackgroundTransparency = 1,
+			Text = y == 0 and "▼" or "▲", TextSize = 30, Font = Enum.Font.GothamBlack, TextColor3 = GOLD1, ZIndex = 9, Parent = reel })
+		UI.textStroke(0, 3).Parent = tri
 	end
+	-- the big word over the reel when you win (RARE! EPIC! LEGENDARY! MYTHIC!)
+	local shout = K.text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 0, 0, 70), Text = "", Font = T.chunky, TextSize = 64, Max = 64,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 5, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 12, Parent = reel })
+	local shoutGrad = new("UIGradient", { Rotation = 90, Parent = shout })
+	local shoutScale = new("UIScale", { Scale = 0, Parent = shout })
 	local function centerOn(i, jitter)
 		-- the reel is scaled with the UI: measure a tile to get the design width of the clip area
 		local sc = tiles[1].AbsoluteSize.X / TILE
-		local w = sc > 0.05 and clip.AbsoluteSize.X / sc or 760
+		local w = sc > 0.05 and clip.AbsoluteSize.X / sc or 740
 		return -((i - 1) * (TILE + GAP) + TILE / 2 + (jitter or 0)) + w / 2
 	end
 	task.defer(function() strip.Position = UDim2.fromOffset(centerOn(4), 9) end)
-	-- status + button
-	local ctrl = controlRow(2, 92)
-	local status = K.text({ Position = UDim2.fromOffset(18, 14), Size = UDim2.new(1, -370, 0, 32), Text = "", TextSize = 25, Max = 25, Parent = ctrl })
-	local sub = K.text({ Position = UDim2.fromOffset(18, 52), Size = UDim2.new(1, -370, 0, 24), Text = "", TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = ctrl })
-	-- one big button for a free / extra spin; otherwise two side by side: Gems and Robux
-	local btn = UI.button("SPIN!", K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(330, 60), TextSize = 27,
-		ZIndex = 7, Shine = true, Parent = ctrl })
+
+	-- status + buttons
+	local ctrl = controlRow(3, 104)
+	local status = K.text({ Position = UDim2.fromOffset(20, 14), Size = UDim2.new(1, -400, 0, 36), Text = "", Font = T.chunky, TextSize = 28, Max = 28, Parent = ctrl })
+	local sub = K.text({ Position = UDim2.fromOffset(20, 56), Size = UDim2.new(1, -400, 0, 26), Text = "", TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = ctrl })
+	local btn = UI.button("SPIN!", K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0.5, 0), Size = UDim2.fromOffset(360, 66), TextSize = 30,
+		Font = T.chunky, ZIndex = 7, Shine = true, Parent = ctrl })
 	local btnLbl = btn:FindFirstChild("Label")
 	local p1 = packOf("spin1")
-	local robuxBtn = UI.button("R$ " .. tostring(p1 and p1.price or 10), K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0),
-		Size = UDim2.fromOffset(160, 60), TextSize = 26, ZIndex = 7, Shine = true, Parent = ctrl })
-	local gemBtn = UI.button(tostring(Config.Spin.gemCost), Color3.fromRGB(60, 170, 255), nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -186, 0.5, 0),
-		Size = UDim2.fromOffset(160, 60), TextSize = 26, ZIndex = 7, Icon = "gem", Parent = ctrl })
+	local robuxBtn = UI.button("SPIN  R$ " .. tostring(p1 and p1.price or 19), K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0.5, 0),
+		Size = UDim2.fromOffset(190, 66), TextSize = 25, Font = T.chunky, ZIndex = 7, Shine = true, Parent = ctrl })
+	local gemBtn = UI.button(tostring(Config.Spin.gemCost), C3(60, 170, 255), nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -218, 0.5, 0),
+		Size = UDim2.fromOffset(160, 66), TextSize = 27, Font = T.chunky, ZIndex = 7, Icon = "gem", Parent = ctrl })
 	local mode = "free"
 	local resultUntil = 0
 	local statusScale = new("UIScale", { Parent = status })
@@ -126,40 +183,47 @@ function M.Show()
 		local left = freeLeft()
 		local extra = c.player:GetAttribute("SpinExtra") or 0
 		local gems = c.player:GetAttribute("Gems") or 0
-		local restricted = c.player:GetAttribute("PaidRandomRestricted") == true
 		if left <= 0 then
 			mode = "free"
-			stText = "Your FREE spin is ready!"
-			if btnLbl then btnLbl.Text = "FREE SPIN" end
+			stText = "FREE SPIN READY!"
+			if btnLbl then btnLbl.Text = "FREE SPIN!" end
 		elseif extra > 0 then
 			mode = "free"
-			stText = "Extra spins: " .. extra
-			if btnLbl then btnLbl.Text = "SPIN (" .. extra .. ")" end
+			stText = extra .. " SPIN" .. (extra == 1 and "" or "S") .. " WAITING"
+			if btnLbl then btnLbl.Text = "SPIN! (" .. extra .. ")" end
 		elseif restricted then
 			-- Roblox policy: no paid spins in this region, only the free one
 			mode = "wait"
-			stText = "Free spin in " .. fmtLong(left)
+			stText = "NEXT FREE SPIN"
 			if btnLbl then btnLbl.Text = "⏱ " .. fmtLong(left) end
 		else
 			mode = "paid"
-			stText = "Free spin in " .. fmtLong(left)
+			stText = "SPIN AGAIN?"
 		end
 		btn.Visible = mode ~= "paid"
 		UI.recolor(btn, mode == "wait" and K.LOCK or K.GREEN)
 		robuxBtn.Visible = mode == "paid"
 		gemBtn.Visible = mode == "paid"
-		-- the Gems button stays, greyed out when you don't have enough
-		UI.recolor(gemBtn, gems >= Config.Spin.gemCost and Color3.fromRGB(60, 170, 255) or K.LOCK)
-		sub.Text = restricted and "One free spin every 4 hours" or ("One free spin every 4 hours · you have " .. Config.FormatNum(gems) .. " 💎")
+		UI.recolor(gemBtn, gems >= Config.Spin.gemCost and C3(60, 170, 255) or K.LOCK)
+		sub.Text = (left > 0 and ("Free spin in " .. fmtLong(left)) or "One free spin every 4 hours") .. (restricted and "" or ("   ·   you have " .. Config.FormatNum(gems) .. " 💎"))
 		if os.clock() >= resultUntil then
 			status.Text = stText
 			status.TextColor3 = K.DARK
 		end
 	end
 	refresh()
+	-- the bulbs chase, faster while the reel turns
 	local conn
-	conn = RunService.Heartbeat:Connect(function()
+	local phase = 0
+	conn = RunService.Heartbeat:Connect(function(dt)
 		if not c.live(tok) then conn:Disconnect() return end
+		phase += dt * (spinning and 14 or 4)
+		local k = math.floor(phase) % 3
+		for i, b in ipairs(lights) do
+			b.BackgroundColor3 = (i % 3 == k) and Color3.new(1, 1, 1) or GOLD1
+			b.BackgroundTransparency = (i % 3 == k) and 0 or 0.35
+		end
+		beam.BackgroundTransparency = 0.86 + 0.05 * math.sin(os.clock() * 3)
 		if not spinning then refresh() end
 	end)
 	local doSpin
@@ -203,6 +267,46 @@ function M.Show()
 			c.toast("🎰 Robux spins are coming soon", T.muted, 2.5)
 		end
 	end)
+
+	-- the win, louder the rarer it is
+	local function celebrate(p, t)
+		local r = rarOf(p)
+		local rank = RANK[p.rarity or "common"]
+		local bg = t and t:FindFirstChild("Bg")
+		if bg then UI.tween(bg, 0.25, { ImageColor3 = K.TILE:Lerp(r[2], 0.55) }) end
+		local ps = new("UIScale", { Scale = 1.18, Parent = t })
+		UI.tween(ps, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
+		markStroke.Color = r[2]
+		frameStroke.Color = r[2]
+		task.delay(2.5, function() if markStroke.Parent then markStroke.Color = GOLD1; frameStroke.Color = GOLD1 end end)
+		if rank >= 3 then
+			shout.Text = r[1] .. "!"
+			shoutGrad.Color = ColorSequence.new(Color3.new(1, 1, 1), r[2]:Lerp(Color3.new(1, 1, 1), 0.2))
+			shoutScale.Scale = 0
+			UI.tween(shoutScale, 0.35, { Scale = rank >= 5 and 1.15 or 1 }, Enum.EasingStyle.Back)
+			task.delay(1.6, function() if shout.Parent then UI.tween(shoutScale, 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In) end end)
+		end
+		if rank >= 5 then
+			c.sound2D(c.S.Fanfare, 0.6, 1)
+			local char = c.player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then c.emit(char.HumanoidRootPart.Position, "confetti", nil, 160) end
+			-- the reel shakes
+			task.spawn(function()
+				for i = 1, 10 do
+					if not reel.Parent then break end
+					reel.Position = UDim2.fromOffset(math.random(-6, 6), math.random(-3, 3))
+					task.wait(0.03)
+				end
+				reel.Position = UDim2.new()
+			end)
+		elseif rank >= 3 then
+			c.sound2D(c.S.Chime, 0.6, 1.1)
+			c.sound2D(c.S.Coins, 0.5, 1.15)
+		else
+			c.sound2D(c.S.Coins, 0.6, 1.1)
+		end
+	end
+
 	doSpin = function()
 		if spinning then return end
 		spinning = true
@@ -214,6 +318,7 @@ function M.Show()
 		end
 		local idx = data.index
 		local p = Config.Spin.prizes[idx]
+		shoutScale.Scale = 0
 		-- rebuild the tile the reel will land on (tile 50)
 		local target = 50
 		tiles[target]:Destroy()
@@ -229,6 +334,8 @@ function M.Show()
 			if n ~= lastTick then
 				lastTick = n
 				c.sound2D(c.S.Click, 0.18, 1.4)
+				markScale.Scale = 1.06
+				UI.tween(markScale, 0.1, { Scale = 1 })
 			end
 		end)
 		tw:Play()
@@ -241,58 +348,65 @@ function M.Show()
 		tickConn:Disconnect()
 		spinning = false
 		if c.live(tok) then
-			light(tiles[target], true)
-			-- the prize pops
-			local ps = Instance.new("UIScale")
-			ps.Parent = tiles[target]
-			ps.Scale = 1.14
-			UI.tween(ps, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
+			celebrate(p, tiles[target])
 			-- the next spin starts from tile 4: show the same prize there so the reset isn't visible
-			task.delay(1.2, function()
+			task.delay(1.4, function()
 				if not c.live(tok) or spinning then return end
 				tiles[4]:Destroy()
 				tiles[4] = tile(strip, p, 3 * (TILE + GAP))
-				tiles[4].Bg.ImageColor3 = WIN
 				strip.Position = UDim2.fromOffset(centerOn(4), 9)
-				light(tiles[4], false)
 			end)
 		end
 		local text = p.name
-		if p.kind == "cash" and data.cash then text = Config.FormatMoney(data.cash) .. (p.jackpot and " JACKPOT!" or " cash") end
+		if p.kind == "cash" and data.cash then text = Config.FormatMoney(data.cash) .. " " .. (p.jackpot and "JACKPOT!" or "cash") end
 		if c.live(tok) then
 			resultUntil = os.clock() + 3.5
-			status.Text = (p.jackpot and "JACKPOT! " or "You won: ") .. text
-			status.TextColor3 = Color3.fromRGB(225, 110, 10)
+			status.Text = "YOU WON: " .. string.upper(text)
+			status.TextColor3 = rarOf(p)[2]:Lerp(Color3.new(0, 0, 0), 0.2)
 			statusScale.Scale = 1.15
 			UI.tween(statusScale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
 		else
-			c.banner(p.jackpot and "🤑 JACKPOT!" or "🎰 YOU WON!", p.icon .. " " .. text, GOLD1)
-		end
-		if p.jackpot then
-			c.sound2D(c.S.Fanfare, 0.6, 1)
-			local char = c.player.Character
-			if char and char:FindFirstChild("HumanoidRootPart") then c.emit(char.HumanoidRootPart.Position, "confetti", nil, 120) end
-		else
-			c.sound2D(c.S.Coins, 0.6, 1.1)
+			c.banner(RANK[p.rarity or "common"] >= 5 and "🤑 " .. rarOf(p)[1] .. "!" or "🎰 YOU WON!", p.icon .. " " .. text, GOLD1)
 		end
 		refresh()
 	end
-	-- Robux pack
+
+	-- spin packs (Robux)
 	local pack = packOf("spins3")
-	if pack and (pack.id or 0) > 0 and c.player:GetAttribute("PaidRandomRestricted") ~= true then
-		K.row(c.content, 3, { name = pack.name, icon = "spin", color = GOLD2, height = 92, buttonW = 170,
-			button = { "R$ " .. tostring(pack.price or "?"), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, pack.id) end, shine = true } })
+	if pack and not restricted and ((pack.id or 0) > 0 or RunService:IsStudio()) then
+		K.banner(c.content, 4, { name = string.upper(pack.name), line = "Cheaper than one by one. Every spin can be the " .. (top and top.name or "jackpot") .. "!",
+			icon = "spin", color = GOLD2, tint = C3(255, 226, 150), height = 104, buttonW = 190,
+			button = (pack.id or 0) > 0 and { "R$ " .. tostring(pack.price or "?"), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, pack.id) end, shine = true } or nil,
+			status = (pack.id or 0) <= 0 and { "SOON · R$" .. tostring(pack.price or "?"), K.LOCK } or nil })
 	end
-	-- the odds of every prize (always shown)
-	K.section(c.content, 4, "ODDS", Color3.fromRGB(255, 220, 110), "every prize and its chance")
+
+	-- the best prizes, big
+	K.section(c.content, 5, "TOP PRIZES", C3(255, 170, 220), "the rarest things on the reel")
+	local best = table.clone(Config.Spin.prizes)
+	table.sort(best, function(a, b) return a.weight < b.weight end)
+	local grid = K.grid(c.content, 6, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 236)
+	for i = 1, math.min(4, #best) do
+		local p = best[i]
+		local r = rarOf(p)
+		local art = prizeArt(p)
+		K.tile(grid, { order = i, name = p.name, icon = art, color = r[2], badge = { r[1], r[2] }, spin = true, artH = 120,
+			iconScale = type(art) == "string" and art:find("^rbxassetid://") and 1.1 or nil, stats = { { pctText(p) .. " CHANCE", r[2] } } })
+	end
+
+	-- every prize and its chance, rarest last
+	K.section(c.content, 7, "ALL PRIZES & ODDS", C3(255, 220, 110), "every spin, the same odds")
 	local n = #Config.Spin.prizes
-	local box = controlRow(5, 24 + math.ceil(n / 2) * 34)
-	local list = new("Frame", { Position = UDim2.fromOffset(18, 12), Size = UDim2.new(1, -36, 1, -24), BackgroundTransparency = 1, ZIndex = 3, Parent = box })
-	new("UIGridLayout", { CellSize = UDim2.new(0.5, -6, 0, 30), CellPadding = UDim2.fromOffset(12, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local box = controlRow(8, 24 + math.ceil(n / 2) * 36)
+	local list = new("Frame", { Position = UDim2.fromOffset(16, 12), Size = UDim2.new(1, -32, 1, -24), BackgroundTransparency = 1, ZIndex = 3, Parent = box })
+	new("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 32), CellPadding = UDim2.fromOffset(16, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	for i, p in ipairs(Config.Spin.prizes) do
-		local pct = odds(p)
-		K.text({ Size = UDim2.fromScale(1, 1), LayoutOrder = i, TextSize = 18, Max = 18, TextColor3 = K.DARK, Parent = list,
-			Text = string.format("%s  %s  <font color='#7a6fb0'>%s%%</font>", p.icon, p.name, (pct < 10 and string.format("%.1f", pct) or tostring(math.floor(pct + 0.5)))) })
+		local r = rarOf(p)
+		local cell = new("Frame", { BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 3, Parent = list })
+		local dot = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = r[2], ZIndex = 4, Parent = cell })
+		UI.corner(6).Parent = dot
+		K.text({ Position = UDim2.fromOffset(20, 0), Size = UDim2.new(1, -100, 1, 0), Text = p.icon .. "  " .. p.name, TextSize = 17, Max = 17, TextColor3 = K.DARK, Parent = cell })
+		K.text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(90, 32), Text = pctText(p), TextSize = 17, Max = 17,
+			TextColor3 = r[2]:Lerp(Color3.new(0, 0, 0), 0.25), TextXAlignment = Enum.TextXAlignment.Right, Parent = cell })
 	end
 end
 
@@ -402,6 +516,14 @@ function M.Init(ctx)
 		end
 	end)
 	c.R.Feedback.OnClientEvent:Connect(function(kind, d)
+		if kind == "SpinBig" and type(d) == "table" then
+			-- somebody hit something big on the Lucky Spin
+			local r = RAR[d.rarity or "epic"] or RAR.epic
+			if d.user == c.player.UserId then return end
+			c.toast("🎰 " .. tostring(d.name) .. " won " .. tostring(d.prize) .. " (" .. r[1] .. ") on the Lucky Spin!", r[2]:Lerp(Color3.new(1, 1, 1), 0.3), 4.5)
+			if d.rarity == "mythic" then c.banner("⚡ " .. string.upper(tostring(d.prize)) .. "!", tostring(d.name) .. " just won it on the Lucky Spin", r[2]) end
+			return
+		end
 		if kind == "CodeRedeemed" then
 			local parts = {}
 			if d.gems then table.insert(parts, "💎 " .. d.gems) end
