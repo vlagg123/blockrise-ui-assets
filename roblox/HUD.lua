@@ -658,8 +658,11 @@ function M.Init(ctx)
 	-- BOTTOM-LEFT, above the level: everything working for you right now
 	-- (bad-weather bonus, boosts and Rush Crew with their timers, VIP and every pass you own, friends, Premium)
 	---------------------------------------------------------------------------
-	local fx = new("Frame", { Name = "Effects", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -64), Size = UDim2.fromOffset(460, 160),
-		BackgroundTransparency = 1, Parent = root })
+	-- at most 10 lines (fewer if the menu buttons are closer): more than that scroll, they never climb over the HUD
+	local fx = new("ScrollingFrame", { Name = "Effects", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -64), Size = UDim2.fromOffset(460, 0),
+		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollingDirection = Enum.ScrollingDirection.Y, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollBarThickness = 0, ScrollBarImageColor3 = Color3.new(1, 1, 1), ScrollBarImageTransparency = 0.35, ElasticBehavior = Enum.ElasticBehavior.Never,
+		ScrollingEnabled = false, Active = false, Parent = root })
 	local fxScale = new("UIScale", { Parent = fx })
 	-- small lines of text, one per effect, stacked upwards from the level bar
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 1), VerticalAlignment = Enum.VerticalAlignment.Bottom,
@@ -736,9 +739,29 @@ function M.Init(ctx)
 				task.delay(0.2, function() f:Destroy() end)
 			end
 		end
+		local n = 0
 		for key, w in pairs(want) do
 			local ch = fxChip(key, w[1], w[2], w[3])
 			ch.label.Text = w[4]
+			n += 1
+		end
+		-- height: all the lines, up to 10 and never up into the menu buttons; past that the list scrolls
+		local k = fx.AbsoluteSize.X / math.max(fx.Size.X.Offset, 1) -- design px -> screen px
+		if k > 0 then
+			local menuBottom = 0
+			for _, b in ipairs(grid:GetChildren()) do
+				if b:IsA("GuiObject") and b.Visible then menuBottom = math.max(menuBottom, b.AbsolutePosition.Y + b.AbsoluteSize.Y) end
+			end
+			local room = menuBottom > 0 and (fx.AbsolutePosition.Y + fx.AbsoluteSize.Y - menuBottom) / k - 12 or 1e6
+			local lines = math.max(3, math.min(10, math.floor((room + 1) / 21)))
+			local over = n > lines
+			local h = (over and lines or n) * 21 - 1
+			if fx.Size.Y.Offset ~= h then fx.Size = UDim2.fromOffset(fx.Size.X.Offset, math.max(h, 0)) end
+			if fx.ScrollingEnabled ~= over then
+				fx.ScrollingEnabled, fx.Active = over, over
+				fx.ScrollBarThickness = over and 4 or 0
+				if not over then fx.CanvasPosition = Vector2.zero end
+			end
 		end
 	end
 	task.spawn(function()
@@ -805,7 +828,7 @@ function M.Init(ctx)
 		lvlScale.Scale = compact and 0.85 or 1
 		fxScale.Scale = compact and 0.85 or 1
 		-- the effects never reach the hotbar in the middle of the bottom edge
-		fx.Size = UDim2.fromOffset(math.clamp(math.floor(camera.ViewportSize.X / s * 0.36 / fxScale.Scale), 220, 460), 160)
+		fx.Size = UDim2.fromOffset(math.clamp(math.floor(camera.ViewportSize.X / s * 0.36 / fxScale.Scale), 220, 460), fx.Size.Y.Offset)
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
 			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 300 * rs) -- level with MORE (4th button)
