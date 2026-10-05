@@ -2,7 +2,7 @@
 -- needs the Teleporter game pass.
 local RS = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
-local Icons = require(RS.Shared:WaitForChild("Icons"))
+local K = require(RS.Shared:WaitForChild("MenuKit"))
 
 local M = {}
 local c, UI, T, new, Config
@@ -98,80 +98,49 @@ end
 function M.Show()
 	local player = c.player
 	local owned = hasTeleporter()
-	local tok = c.openModal("Locations", "Places", owned and "Tap GO to travel" or "Pins are free · GO needs the Teleporter", R1, R2)
+	c.openModal("Locations", "Places", owned and "tap GO to travel" or "", R1, R2)
 	if not owned then
 		-- the Teleporter offer sits on top
-		local tp = c.card(0, 92)
-		new("UIStroke", { Thickness = 3, Color = Color3.fromRGB(255, 205, 70), Parent = tp })
-		local tile = new("Frame", { Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(72, 72), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 22, Parent = tp })
-		UI.corner(18).Parent = tile
-		UI.grad(Color3.fromRGB(255, 160, 190), Color3.fromRGB(215, 50, 110)).Parent = tile
-		new("UIStroke", { Thickness = 2.5, Color = INK, Parent = tile })
-		Icons.make("locations", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.1, 1.1), ZIndex = 23, Parent = tile })
-		local tt = UI.label({ Position = UDim2.fromOffset(96, 10), Size = UDim2.new(1, -280, 0, 32), Text = "TELEPORTER", Font = Enum.Font.LuckiestGuy, TextSize = 26,
-			TextColor3 = Color3.fromRGB(255, 214, 80), ZIndex = 22, Parent = tp })
-		new("UIStroke", { Thickness = 2.5, Color = INK, Parent = tt })
-		UI.label({ Position = UDim2.fromOffset(96, 44), Size = UDim2.new(1, -280, 0, 38), TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextSize = 14,
-			TextColor3 = Color3.fromRGB(225, 222, 240), ZIndex = 22, Parent = tp, Text = "Unlock GO: travel to any place in one tap, forever. The pins (arrow to follow) stay free." })
 		local pass = teleporterPass()
-		local buy = UI.button("R$ " .. tostring(pass and pass.price or 39), Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70),
-			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(150, 54), TextSize = 24, ZIndex = 23, Parent = tp })
-		buy.Activated:Connect(function() c.click(); offerTeleporter() end)
+		K.banner(c.content, 0, { name = "TELEPORTER", line = "Unlock GO and travel anywhere in one tap. Pins stay free.", icon = "locations",
+			color = Color3.fromRGB(235, 70, 130), tint = Color3.fromRGB(255, 214, 120), buttonW = 170,
+			button = { "R$ " .. tostring(pass and pass.price or 39), K.GREEN, function() c.click(); offerTeleporter() end } })
 	end
+	local grid = K.grid(c.content, 2, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 250)
 	for i, p in ipairs(PLACES) do
-		local f = c.card(i, 84)
-		local tile = new("Frame", { Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(68, 68), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 22, Parent = f })
-		UI.corner(16).Parent = tile
-		UI.grad(p.tint:Lerp(Color3.new(1, 1, 1), 0.25), p.tint:Lerp(INK, 0.35)).Parent = tile
-		new("UIStroke", { Thickness = 2.5, Color = INK, Parent = tile })
-		Icons.make(p.icon, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.05, 1.05), ZIndex = 23, Parent = tile })
-		local title = UI.label({ Position = UDim2.fromOffset(92, 12), Size = UDim2.new(1, -300, 0, 30), Text = p.name, Font = Enum.Font.LuckiestGuy, TextSize = 23, ZIndex = 22, Parent = f })
-		new("UIStroke", { Thickness = 2, Color = INK, Parent = title })
-		local sub = UI.label({ Position = UDim2.fromOffset(92, 44), Size = UDim2.new(1, -300, 0, 20), Text = p.desc, TextSize = 13, TextColor3 = T.muted, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 22, Parent = f })
-		local locked, lockText = false, nil
+		local locked, badge = false, nil
 		if p.zone then
 			local z = Config.Zones[p.zone]
 			if player:GetAttribute(z.attr) ~= true then
 				locked = true
-				lockText = "🔒 " .. Config.FormatNum(z.rep or 0) .. " Rep"
-				sub.Text = "Opens at " .. Config.FormatNum(z.rep or 0) .. " Reputation (you have " .. Config.FormatNum(player:GetAttribute("Rep") or 0) .. ")"
+				badge = { "🔒 " .. Config.FormatNum(z.rep or 0) .. " ⭐", K.DARK }
 			end
 		end
 		if p.needs == "contract" and (player:GetAttribute("ContractJob") or "") == "" then
 			locked = true
-			lockText = "NO JOB"
-			sub.Text = "Take a contract first"
+			badge = { "NO JOB", K.DARK }
 		end
-		if locked then f.BackgroundTransparency = 0.3 end
-		local goText = locked and (p.zone and "TO GATE" or lockText) or "GO"
-		if not owned then goText = "🔒 GO" end -- without the Teleporter every row says the same
-		local green = owned and not locked
-		local go = UI.button(goText, green and Color3.fromRGB(130, 240, 120) or T.bg3, green and Color3.fromRGB(30, 160, 70) or T.bg2,
-			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -66, 0.5, 0), Size = UDim2.fromOffset(130, 50), TextSize = (locked or not owned) and 18 or 24, ZIndex = 23, Parent = f })
-		go.Activated:Connect(function()
-			c.click()
-			if not hasTeleporter() then
-				c.toast("📍 GO needs the Teleporter — or tap the pin to follow the arrow for free", Color3.fromRGB(255, 214, 80), 3)
-				offerTeleporter()
-				return
-			end
-			if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
-			M.Go(p.id)
-			if locked and lockText then c.toast(lockText .. " needed to enter " .. p.name, T.muted, 3) end
-		end)
-		local pin = UI.button("", Color3.fromRGB(255, 214, 70), Color3.fromRGB(240, 135, 20), { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(46, 46), ZIndex = 23, Parent = f })
-		Icons.make("locations", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.1, 1.1), ZIndex = 25, Parent = pin })
-		pin.Activated:Connect(function()
-			c.click()
-			if p.id == "site" then c.toast("🏗️ Follow the arrow to your site", T.accent) c.closeModal() return end
-			c.closeModal()
-			c.setWaypoint(p.id)
-		end)
+		local goText = owned and (locked and (p.zone and "GATE" or "NO JOB") or "GO") or "🔒 GO"
+		K.tile(grid, { order = i, name = p.name, icon = p.icon, color = p.tint, badge = badge, artH = 124, buttons = {
+			{ goText, owned and not locked and K.GREEN or K.LOCK, function()
+				c.click()
+				if not hasTeleporter() then
+					c.toast("📍 GO needs the Teleporter. The pin is free!", Color3.fromRGB(255, 214, 80), 3)
+					offerTeleporter()
+					return
+				end
+				if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
+				M.Go(p.id)
+			end },
+			{ "PIN", Color3.fromRGB(255, 190, 50), function()
+				c.click()
+				c.closeModal()
+				if p.id == "site" then c.toast("🏗️ Follow the arrow to your site", T.accent) return end
+				c.setWaypoint(p.id)
+			end, icon = "locations" },
+		} })
 	end
-	local tip = c.card(40, 40)
-	tip.BackgroundTransparency = 0.55
-	UI.label({ Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), TextSize = 12, TextWrapped = true, TextColor3 = T.muted, ZIndex = 22, Parent = tip,
-		Text = "The pin shows the way with an arrow (free).  GO takes you there right away (Teleporter)." })
+	K.note(c.content, 3, "PIN shows the way (free).  GO takes you there (Teleporter).")
 end
 
 function M.Init(ctx)

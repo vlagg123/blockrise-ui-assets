@@ -30,14 +30,16 @@ UI.Theme = {
 }
 local T = UI.Theme
 
-UI.SKIN = "rbxassetid://90750611744286"
-UI.PATTERN = "rbxassetid://79685521043980"
+UI.SKIN = "rbxassetid://107184333530086"
+UI.PATTERN = "rbxassetid://74568081749351" -- diagonal stripes, 22% white: fade with ImageTransparency
 -- name -> { x, y, slice inset } inside the 512x512 skin atlas (cells are 128x128, drawn at 2x)
 local CELLS = {
 	panel = { 0, 0, 44 }, button = { 128, 0, 40 }, tile = { 256, 0, 40 }, gloss = { 384, 0, 30 },
 	pill = { 0, 128, 34 }, inset = { 128, 128, 28 }, shadow = { 256, 128, 44 }, circle = { 384, 128, 63 },
-	fill = { 0, 256, 28 },
+	fill = { 0, 256, 28 }, rays = { 128, 256, 0 }, glow = { 256, 256, 0 }, face = { 384, 256, 40 },
 }
+UI.CELLS = CELLS
+UI.TAB_OFF = Color3.fromRGB(66, 72, 156)
 
 function UI.new(class, props, children)
 	local o = Instance.new(class)
@@ -79,8 +81,14 @@ end
 function UI.slice(name, props)
 	local c = CELLS[name]
 	local im = new("ImageLabel", { Name = name, BackgroundTransparency = 1, Image = UI.SKIN, ImageRectOffset = Vector2.new(c[1], c[2]),
-		ImageRectSize = Vector2.new(128, 128), ScaleType = Enum.ScaleType.Slice, SliceCenter = Rect.new(c[3], c[3], 128 - c[3], 128 - c[3]),
-		SliceScale = 0.5, Size = UDim2.fromScale(1, 1) })
+		ImageRectSize = Vector2.new(128, 128), Size = UDim2.fromScale(1, 1) })
+	if c[3] > 0 then
+		im.ScaleType = Enum.ScaleType.Slice
+		im.SliceCenter = Rect.new(c[3], c[3], 128 - c[3], 128 - c[3])
+		im.SliceScale = 0.5
+	else
+		im.ScaleType = Enum.ScaleType.Stretch
+	end
 	for k, v in pairs(props or {}) do if k ~= "Parent" then im[k] = v end end
 	if props and props.Parent then im.Parent = props.Parent end
 	return im
@@ -106,9 +114,22 @@ function UI.label(props)
 	return l
 end
 
+-- a light band that sweeps across a button every few seconds (buy buttons, the main action)
+function UI.shine(b, z, period)
+	local sweep = UI.slice("face", { Name = "Sweep", ImageTransparency = 0.45, ZIndex = z or 1, Parent = b:FindFirstChild("Bg") or b })
+	local g = new("UIGradient", { Rotation = 25, Offset = Vector2.new(-1, 0), Parent = sweep,
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 1), NumberSequenceKeypoint.new(0.5, 0.2),
+			NumberSequenceKeypoint.new(0.6, 1), NumberSequenceKeypoint.new(1, 1) }) })
+	local tw = TweenService:Create(g, TweenInfo.new(0.75, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, false, period or 2.6), { Offset = Vector2.new(1, 0) })
+	tw:Play()
+	sweep.Destroying:Connect(function() tw:Cancel() end)
+	return sweep
+end
+
 -- chunky game button: one 9-slice image (face + 3D lip + ink outline) tinted with the colour, a gloss on top.
 -- Hover brightens it, pressing darkens and sinks it a little. Nothing grows over its neighbours.
-local LABEL_KEYS = { Text = true, TextSize = true, Font = true, TextColor3 = true }
+-- Extra props: Icon (atlas icon shown left of the text), Shine (sweeping light band).
+local LABEL_KEYS = { Text = true, TextSize = true, Font = true, TextColor3 = true, Icon = true, Shine = true }
 function UI.button(text, c1, c2, props)
 	props = props or {}
 	local z = props.ZIndex or 1
@@ -119,12 +140,29 @@ function UI.button(text, c1, c2, props)
 	end
 	local bg = UI.slice("button", { Name = "Bg", ImageColor3 = color, ZIndex = z, Parent = b })
 	UI.slice("gloss", { Name = "Shine", ImageTransparency = 0.1, ZIndex = z, Parent = bg })
-	local lbl = new("TextLabel", { Name = "Label", Size = UDim2.new(1, -8, 1, -8), Position = UDim2.fromOffset(4, 0), BackgroundTransparency = 1, Text = text,
-		Font = props.Font or T.chunky, TextSize = props.TextSize or 20, TextColor3 = props.TextColor3 or Color3.new(1, 1, 1), TextWrapped = false,
-		TextScaled = false, ZIndex = z + 1, Parent = b })
-	new("UITextSizeConstraint", { MaxTextSize = props.TextSize or 20, MinTextSize = 10, Parent = lbl })
+	-- the label sits on the face (above the 3D lip)
+	local lbl = new("TextLabel", { Name = "Label", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 3), Size = UDim2.new(1, -14, 1, -13),
+		BackgroundTransparency = 1, Text = text, Font = props.Font or T.body, TextColor3 = props.TextColor3 or Color3.new(1, 1, 1), TextWrapped = false,
+		ZIndex = z + 1, Parent = b })
+	new("UITextSizeConstraint", { MaxTextSize = props.TextSize or 20, MinTextSize = 9, Parent = lbl })
 	lbl.TextScaled = true
-	new("UIStroke", { Thickness = 2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = lbl })
+	new("UIStroke", { Thickness = 2.2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = lbl })
+	if props.Icon then
+		local Icons = require(script.Parent:WaitForChild("Icons"))
+		local ic = Icons.make(props.Icon, { Name = "Icon", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 4, 0.5, -4), Size = UDim2.new(0, 0, 1, 4), ZIndex = z + 2, Parent = b })
+		new("UIAspectRatioConstraint", { AspectRatio = 1, Parent = ic })
+		if ic:IsA("TextLabel") and not Icons.emoji[props.Icon] then ic.Text = props.Icon end -- an emoji was passed
+		-- label goes right of the icon
+		lbl.AnchorPoint = Vector2.new(0, 0)
+		local function place()
+			local h = b.AbsoluteSize.Y
+			lbl.Position = UDim2.new(0, math.floor(h * 0.85) + 2, 0, 3)
+			lbl.Size = UDim2.new(1, -math.floor(h * 0.85) - 10, 1, -13)
+		end
+		b:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
+		place()
+	end
+	if props.Shine then UI.shine(b, z) end
 	local sc = new("UIScale", { Parent = b })
 	local hover = false
 	local function paint(down)
@@ -159,18 +197,31 @@ function UI.bar(props, c1, c2)
 end
 
 -- a row of tabs (sub-menus) at the top of a window; returns the row frame
+-- a window can register a fixed tab bar for its scrolling list: tabs made "in" the list go to the bar instead
+-- UI.tabHosts[listFrame] = { bar = Frame, changed = function() end }
+UI.tabHosts = setmetatable({}, { __mode = "k" })
 function UI.tabs(parent, list, current, onPick, props)
 	props = props or {}
-	local row = new("Frame", { Name = "Tabs", Size = UDim2.new(1, 0, 0, 52), BackgroundTransparency = 1, LayoutOrder = props.LayoutOrder or -100, ZIndex = 21, Parent = parent })
+	local host = UI.tabHosts[parent]
+	if host then
+		for _, o in ipairs(host.bar:GetChildren()) do o:Destroy() end
+		parent = host.bar
+	end
+	local row = new("Frame", { Name = "Tabs", Size = UDim2.new(1, 0, 0, 54), BackgroundTransparency = 1, LayoutOrder = props.LayoutOrder or -100, ZIndex = 21, Parent = parent })
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = row })
 	for i, t in ipairs(list) do
 		local on = t.id == current
-		local col = on and (t.c1 and (t.c2 and t.c1:Lerp(t.c2, 0.35) or t.c1) or T.accent) or Color3.fromRGB(92, 98, 160)
-		local b = UI.button(t.label, col, nil, { Size = UDim2.new(1 / #list, -8 * (#list - 1) / #list, 0, 46), TextSize = 18, LayoutOrder = i, ZIndex = 23, Parent = row })
+		local col = on and (t.c1 and (t.c2 and t.c1:Lerp(t.c2, 0.35) or t.c1) or T.accent) or UI.TAB_OFF
+		local b = UI.button(t.label, col, nil, { Size = UDim2.new(1 / #list, -8 * (#list - 1) / #list, 0, 50), TextSize = 19, LayoutOrder = i, ZIndex = 23,
+			Icon = t.icon, Parent = row })
 		b.Name = "Tab_" .. t.id
 		if not on then
 			local l = b:FindFirstChild("Label")
-			if l then l.TextColor3 = Color3.fromRGB(214, 218, 245) end
+			if l then l.TextColor3 = Color3.fromRGB(200, 206, 244) end
+			local sh = b.Bg:FindFirstChild("Shine")
+			if sh then sh.ImageTransparency = 0.55 end
+			local ic = b:FindFirstChild("Icon")
+			if ic and ic:IsA("ImageLabel") then ic.ImageTransparency = 0.2 end
 		end
 		if t.badge and t.badge > 0 then
 			local d = UI.slice("circle", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 4), Size = UDim2.fromOffset(24, 24), SliceScale = 0.2,
@@ -180,6 +231,10 @@ function UI.tabs(parent, list, current, onPick, props)
 			new("UIStroke", { Thickness = 1.5, Color = T.ink, Parent = dl })
 		end
 		b.Activated:Connect(function() if not on then onPick(t.id) end end)
+	end
+	if host then
+		row.Size = UDim2.fromScale(1, 1)
+		host.changed()
 	end
 	return row
 end
