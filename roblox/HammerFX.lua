@@ -450,7 +450,8 @@ RunService.RenderStepped:Connect(function()
 					if not e.cloud then makeCloud(e) end
 					local c = e.cloud
 					local building = e.site and now - e.site.t < 2.5
-					local target = building and (e.site.pos + Vector3.new(0, 17, 0)) or (root.Position + Vector3.new(0, 9.5, 0))
+					-- high enough that the name tags over your head (VIP, company) stay clear below it
+					local target = building and (e.site.pos + Vector3.new(0, 17, 0)) or (root.Position + Vector3.new(0, 13, 0))
 					c.pos = c.pos and c.pos:Lerp(target, math.clamp(dt * (building and 2 or 4), 0, 1)) or target
 					c.core.CFrame = CFrame.new(c.pos + Vector3.new(math.sin(now * 0.7) * 0.3, math.sin(now * 0.9) * 0.2, 0)) * CFrame.Angles(0, now * 0.15, 0)
 					-- light flickering inside the cloud
