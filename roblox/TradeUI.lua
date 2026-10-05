@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Company = require(RS.Shared:WaitForChild("Company"))
 local K = require(RS.Shared:WaitForChild("MenuKit"))
+local Hammers = require(RS.Shared:WaitForChild("Hammers"))
 
 local M = {}
 local c
@@ -154,6 +155,13 @@ local function offerLines(o)
 	local lines = {}
 	for _, m in ipairs(Company.Materials) do if (o.mats[m.id] or 0) > 0 then table.insert(lines, { m.image or m.icon, m.name, o.mats[m.id] }) end end
 	for _, b in ipairs(Company.Blueprints) do if (o.bps[b.id] or 0) > 0 then table.insert(lines, { b.image or b.icon, b.name, o.bps[b.id] }) end end
+	for _, hm in ipairs(o.hams or {}) do
+		local h = Hammers.ById[hm.k]
+		if h then
+			local r = Hammers.Rarities[h.r]
+			table.insert(lines, { M.hammerArt(h), h.name, "LV " .. (hm.lv or 1), color = r.color, sub = r.name .. "  ·  " .. Hammers.PowerLabel(h.key, hm.lv or 1) .. " power" })
+		end
+	end
 	if (o.cash or 0) > 0 then table.insert(lines, { "cash", "Cash", Config.FormatMoney(o.cash) }) end
 	return lines
 end
@@ -188,6 +196,16 @@ local function render(v)
 		row.frame.Visible = have > 0 or offered > 0
 	end
 	if not win.cashBox:IsFocused() then win.cashBox.Text = (myOffer.cash or 0) > 0 and tostring(myOffer.cash) or "" end
+	-- my hammers: IN TRADE / ADD
+	local inTrade = {}
+	for _, hm in ipairs(myOffer.hams or {}) do inTrade[hm.id] = true end
+	for _, hr in ipairs(win.hamRows or {}) do
+		local on = inTrade[hr.id] == true
+		hr.btn.Label.Text = on and "REMOVE" or "ADD"
+		UI.recolor(hr.btn, on and Color3.fromRGB(255, 170, 40) or K.GREEN)
+		hr.bg.ImageColor3 = on and Color3.fromRGB(255, 236, 170) or ROW
+	end
+	win.lockEnds = (v.lock or 0) > 0 and (os.clock() + v.lock) or nil
 	-- their side
 	for _, ch in ipairs(win.theirList:GetChildren()) do if ch:IsA("Frame") then ch:Destroy() end end
 	local lines = offerLines(theirOffer)
@@ -198,7 +216,12 @@ local function render(v)
 	for i, l in ipairs(lines) do
 		local f = lineRow(win.theirList, i, 50)
 		iconAt(f, l[1], 8, 50)
-		K.text({ Position = UDim2.fromOffset(50, 0), Size = UDim2.new(1, -150, 1, 0), Text = l[2], TextSize = 18, Max = 18, Parent = f })
+		if l.sub then
+			K.text({ Position = UDim2.fromOffset(50, 4), Size = UDim2.new(1, -150, 0, 24), Text = l[2], TextSize = 18, Max = 18, Parent = f })
+			K.text({ Position = UDim2.fromOffset(50, 27), Size = UDim2.new(1, -150, 0, 18), Text = l.sub, TextSize = 14, Max = 14, TextColor3 = l.color, Font = T.chunky, Parent = f })
+		else
+			K.text({ Position = UDim2.fromOffset(50, 0), Size = UDim2.new(1, -150, 1, 0), Text = l[2], TextSize = 18, Max = 18, Parent = f })
+		end
 		K.text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.fromOffset(90, 50), Text = tostring(l[3]), Font = T.chunky, TextSize = 20,
 			TextXAlignment = Enum.TextXAlignment.Right, Parent = f })
 	end
@@ -270,6 +293,42 @@ local function openWindow(v)
 		local ok, msg = invoke("set", "cash", "cash", n)
 		if not ok then c.toast("⚠️ " .. tostring(msg), T.red) end
 	end)
+	-- my hammers (the Rusty Hammer and pass hammers can't be traded, so they are not listed)
+	local hamRows = {}
+	local hf = c.Remotes:FindFirstChild("HammerAction")
+	local okH, okRes, data = pcall(function() return hf and hf:InvokeServer("get") end)
+	if okH and okRes and type(data) == "table" then
+		local list = {}
+		for _, it in ipairs(data.hammers or {}) do
+			local h = Hammers.ById[it.k]
+			if h and not it.bound and not it.pass and it.id ~= "rusty" then table.insert(list, { it = it, h = h }) end
+		end
+		table.sort(list, function(a, b) if a.h.r ~= b.h.r then return a.h.r > b.h.r end return (a.it.lv or 1) > (b.it.lv or 1) end)
+		if #list > 0 then
+			local head = new("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, LayoutOrder = 200, Parent = myList })
+			K.text({ Position = UDim2.fromOffset(6, 0), Size = UDim2.new(1, -12, 1, 0), Text = "🔨 HAMMERS (up to 6)", Font = T.chunky, TextSize = 18, TextColor3 = K.DARK, Parent = head })
+		end
+		for i, e in ipairs(list) do
+			local r = Hammers.Rarities[e.h.r]
+			local f = lineRow(myList, 200 + i, 52)
+			iconAt(f, M.hammerArt(e.h), 6, 52)
+			K.text({ Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -160, 0, 24), Text = e.h.name, TextSize = 17, Max = 17, Parent = f })
+			K.text({ Position = UDim2.fromOffset(46, 27), Size = UDim2.new(1, -160, 0, 18), Text = r.name .. "  ·  LV " .. (e.it.lv or 1), TextSize = 13, Font = T.chunky,
+				TextColor3 = r.text and Color3.fromRGB(70, 70, 110) or r.color, Parent = f })
+			local btn = UI.button("ADD", K.GREEN, nil, { Position = UDim2.new(1, -112, 0, 7), Size = UDim2.fromOffset(104, 38), TextSize = 17, ZIndex = 4, Parent = f })
+			local id = e.it.id
+			btn.Activated:Connect(function()
+				c.click()
+				local me = tostring(c.player.UserId)
+				local mine = lastView and lastView.offers[me]
+				local on = false
+				for _, hm in ipairs(mine and mine.hams or {}) do if hm.id == id then on = true end end
+				local ok, msg = invoke("set", "ham", id, on and 0 or 1)
+				if not ok then c.toast("⚠️ " .. tostring(msg), T.red) end
+			end)
+			table.insert(hamRows, { id = id, btn = btn, bg = f:FindFirstChild("Bg") })
+		end
+	end
 
 	-- bottom bar: status + READY
 	local bar = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -16), Size = UDim2.new(1, -36, 0, 80), BackgroundTransparency = 1, ZIndex = 5, Parent = panel })
@@ -286,12 +345,15 @@ local function openWindow(v)
 		local ok, msg = invoke("ready", on)
 		if not ok then c.toast("⚠️ " .. tostring(msg), T.red) end
 	end)
-	win = { gui = gui, title = title, rows = rows, cashBox = cashBox, theirList = theirList, myReady = myReady, theirReady = theirReady, readyBtn = readyBtn, status = status }
+	win = { gui = gui, title = title, rows = rows, hamRows = hamRows, cashBox = cashBox, theirList = theirList, myReady = myReady, theirReady = theirReady, readyBtn = readyBtn, status = status }
 	-- status line / countdown
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		if not win or win.gui ~= gui then conn:Disconnect() return end
-		if win.countdownEnds then
+		if win.lockEnds and os.clock() < win.lockEnds then
+			status.Text = "🔨 Hammer changed: check it (" .. math.ceil(win.lockEnds - os.clock()) .. "s)"
+			status.TextColor3 = Color3.fromRGB(70, 120, 230)
+		elseif win.countdownEnds then
 			local left = math.max(0, math.ceil(win.countdownEnds - os.clock()))
 			status.Text = "Trading in " .. left .. "..."
 			status.TextColor3 = Color3.fromRGB(225, 110, 10)
@@ -301,6 +363,14 @@ local function openWindow(v)
 		end
 	end)
 	render(v)
+end
+
+-- the picture of a hammer (HammersUI knows the renders)
+function M.hammerArt(h)
+	local HU = script.Parent:FindFirstChild("HammersUI")
+	local ok, mod = pcall(require, HU)
+	if ok and mod and mod.art then return mod.art(h) end
+	return "shop"
 end
 
 function M.Init(ctx)
