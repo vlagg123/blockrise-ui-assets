@@ -62,7 +62,7 @@ EquipToolRF.OnServerInvoke = function(plr, which)
 		local t = tonumber(which)
 		if not t or t ~= math.floor(t) or t < 1 or t > st.data.ToolTier then return false, "You don't own that hammer yet" end
 		-- your best hammer is the default (unless the Thunderclap is): no need to remember it
-		st.data.EquipTool = (t == st.data.ToolTier and not storm) and nil or t
+		if t == st.data.ToolTier and not storm then st.data.EquipTool = nil else st.data.EquipTool = t end
 	end
 	st.lastEquip = os.clock()
 	plr:SetAttribute("EquipTool", st.data.EquipTool and tostring(st.data.EquipTool) or "")
