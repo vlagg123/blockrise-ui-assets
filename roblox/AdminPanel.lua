@@ -62,9 +62,11 @@ local function parse(text)
 end
 
 ---------------------------------------------------------------------------
--- the ADMIN button (right side, under MORE)
+-- the ADMIN button (bottom right, only on the owner's screen)
 ---------------------------------------------------------------------------
-local openBtn = UI.button("ADMIN", RED, C3(170, 30, 50), { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 478), -- under MORE and its popup
+-- bottom-right corner (on phones a bit higher, clear of the jump button)
+local touchOnly = UIS.TouchEnabled and not UIS.KeyboardEnabled
+local openBtn = UI.button("ADMIN", RED, C3(170, 30, 50), { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, touchOnly and -190 or -14),
 	Size = UDim2.fromOffset(100, 44), TextSize = 20, Font = T.chunky, Icon = "vip", ZIndex = 2, Parent = gui })
 openBtn.Name = "AdminButton"
 
