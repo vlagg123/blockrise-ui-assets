@@ -5,6 +5,7 @@ local Icons = require(RS.Shared:WaitForChild("Icons"))
 
 local M = {}
 local c, UI, T, new, Config
+local tab = "upgrades"
 local G1, G2 = Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70)
 local INK = Color3.fromRGB(20, 17, 32)
 local TINT = { up_power = Color3.fromRGB(255, 170, 60), up_strength = Color3.fromRGB(255, 120, 80), up_cash = Color3.fromRGB(80, 200, 110),
@@ -74,11 +75,26 @@ end
 render = function(tok, data)
 	c.modalSub.Text = money(data.money or 0)
 	for _, ch in ipairs(c.content:GetChildren()) do if not ch:IsA("UIListLayout") then ch:Destroy() end end
+	local nMats, nBps = 0, 0
+	for _, m in ipairs(Company.Materials) do if (data.mats[m.id] or 0) > 0 then nMats += 1 end end
+	for _, b in ipairs(Company.Blueprints) do nBps += data.bps[b.id] or 0 end
+	UI.tabs(c.content, {
+		{ id = "upgrades", label = "UPGRADES", c1 = G1, c2 = G2 },
+		{ id = "materials", label = "MATERIALS", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
+		{ id = "blueprints", label = "BLUEPRINTS", c1 = Color3.fromRGB(120, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = nBps },
+	}, tab, function(id)
+		c.click()
+		tab = id
+		local scroll = Vector2.zero
+		render(tok, data)
+		c.content.CanvasPosition = scroll
+	end, { LayoutOrder = -100 })
+	local order = 1
+	if tab == "upgrades" then
 	local info = c.card(1, 46)
 	info.BackgroundTransparency = 0.5
 	UI.label({ Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), TextSize = 13, TextWrapped = true, TextColor3 = T.muted, ZIndex = 22, Parent = info,
 		Text = "💡 Upgrades make you stronger for the whole run (a Rebirth resets them). Higher levels also need materials — they drop while you build." })
-	local order = 1
 	for _, dp in ipairs(Company.Departments) do
 		local d
 		for _, x in ipairs(data.depts) do if x.id == dp.id then d = x end end
@@ -107,7 +123,9 @@ render = function(tok, data)
 			end
 		end
 	end
+	end
 	-- materials
+	if tab == "materials" then
 	order += 1
 	header(order, "MATERIALS  <font color='#9ea5b8' size='15' face='FredokaOne'>drop while you build — bigger contracts drop rarer ones</font>", Color3.fromRGB(255, 205, 70))
 	for _, m in ipairs(Company.Materials) do
@@ -123,6 +141,8 @@ render = function(tok, data)
 			actionButton(f, "Sell all", T.red, Color3.fromRGB(170, 40, 40), UDim2.new(1, -14, 0, 12), UDim2.fromOffset(112, 40), function() act(tok, "sell", m.id, n) end)
 		end
 	end
+	end
+	if tab == "blueprints" then
 	order += 1
 	header(order, "BLUEPRINTS  <font color='#9ea5b8' size='15' face='FredokaOne'>use one on the Job Board for a premium contract</font>", Color3.fromRGB(255, 205, 60))
 	for _, b in ipairs(Company.Blueprints) do
@@ -134,9 +154,11 @@ render = function(tok, data)
 		UI.label({ Position = UDim2.fromOffset(66, 6), Size = UDim2.fromOffset(330, 26), Text = "<font color='#" .. b.color:ToHex() .. "'>" .. b.name .. "</font>  x" .. n, Font = T.title, TextSize = 20, ZIndex = 22, Parent = f })
 		UI.label({ Position = UDim2.fromOffset(66, 32), Size = UDim2.fromOffset(420, 20), Text = b.desc .. " (a bit more work)", Font = T.bold, TextSize = 13, TextColor3 = T.muted, ZIndex = 22, Parent = f })
 	end
+	end
 end
 
-function M.Show()
+function M.Show(t)
+	if type(t) == "string" then tab = t end
 	local tok = c.openModal("Upgrades", "Upgrades", "", G1, G2)
 	local loading = c.loadingCard()
 	local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
