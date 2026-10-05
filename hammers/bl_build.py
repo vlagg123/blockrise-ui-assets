@@ -153,13 +153,14 @@ def piece_mesh(piece, S):
             geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
             bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-6, plane_co=co, plane_no=n, clear_outer=True)
         # every cut piece is convex: rebuild it as the hull of what is left (closes the cut faces)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-4)
         pts = [v.co.copy() for v in bm.verts]
         bm.free()
         bm = bmesh.new()
         for p in pts:
             bm.verts.new(p)
         ret = bmesh.ops.convex_hull(bm, input=bm.verts[:])
-        kill = [g for g in ret["geom_interior"] + ret["geom_unused"] if isinstance(g, bmesh.types.BMVert)]
+        kill = list({g for g in ret["geom_interior"] + ret["geom_unused"] if isinstance(g, bmesh.types.BMVert)})
         if kill:
             bmesh.ops.delete(bm, geom=kill, context="VERTS")
         bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(0.5), verts=bm.verts[:], edges=bm.edges[:])
