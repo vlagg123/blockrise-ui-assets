@@ -180,7 +180,7 @@ end
 -- hammer crates for Robux (the Gem and cash crates are in Shop → HAMMERS)
 local function crates(tok)
 	local Hammers = require(RS.Shared:WaitForChild("Hammers"))
-	K.section(c.content, 2, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "odds shown on each · open them in Shop → HAMMERS")
+	K.section(c.content, 2, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "odds shown on each · open them in Inventory → HAMMERS")
 	if c.paidRandomRestricted then
 		K.empty(c.content, 3, "Crates for Robux are not available in your region. Get them with Gems or cash in Shop → HAMMERS.", "gift")
 		return
@@ -200,7 +200,7 @@ local function crates(tok)
 					Hammers.Rarities[r].text and Color3.fromRGB(70, 70, 110) or Hammers.Rarities[r].color })
 			end
 		end
-		local o = { name = p.name, icon = cr and cr.image or "gift", color = cr and cr.color or T.accent, stats = { parts[1], parts[2] },
+		local o = { name = p.name, icon = (Config.ProductImages and Config.ProductImages[p.key]) or (cr and cr.image) or "gift", color = cr and cr.color or T.accent, stats = { parts[1], parts[2] },
 			badge = (p.count or 1) > 1 and { "x" .. p.count, T.red } or nil, tag = cr and cr.pity and { "PITY " .. cr.pity.every, Color3.fromRGB(255, 176, 40) } or nil, spin = (p.count or 1) > 1 }
 		return o
 	end })
