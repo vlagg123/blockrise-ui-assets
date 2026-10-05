@@ -84,9 +84,11 @@ window.ZIndex = 5
 -- 1) the player
 local who = K.text({ Position = UDim2.fromOffset(28, 56), Size = UDim2.fromOffset(300, 30), Text = "1. ALEGE JUCATORUL", Font = T.chunky, TextSize = 22,
 	TextColor3 = GOLD, Stroke = 2.5, ZIndex = 6, Parent = window })
-local strip = new("ScrollingFrame", { Position = UDim2.fromOffset(24, 88), Size = UDim2.new(1, -48, 0, 78), BackgroundTransparency = 1, BorderSizePixel = 0,
-	ScrollBarThickness = 4, ScrollingDirection = Enum.ScrollingDirection.X, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.X, ZIndex = 6, Parent = window })
+local strip = new("ScrollingFrame", { Position = UDim2.fromOffset(24, 84), Size = UDim2.new(1, -48, 0, 86), BackgroundTransparency = 1, BorderSizePixel = 0,
+	ScrollBarThickness = 0, ScrollingDirection = Enum.ScrollingDirection.X, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.X, ZIndex = 6, Parent = window })
 new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = strip })
+-- room above the cards for the ALES chip (a scrolling frame cuts off anything outside it)
+new("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 2), PaddingRight = UDim.new(0, 8), Parent = strip })
 
 -- what that player has now
 local summary = new("Frame", { Position = UDim2.fromOffset(24, 172), Size = UDim2.new(1, -48, 0, 30), BackgroundTransparency = 1, ZIndex = 6, Parent = window })
@@ -96,7 +98,7 @@ new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = U
 K.text({ Position = UDim2.fromOffset(28, 210), Size = UDim2.fromOffset(200, 30), Text = "2. CE II DAI?", Font = T.chunky, TextSize = 22,
 	TextColor3 = GOLD, Stroke = 2.5, ZIndex = 6, Parent = window })
 local cats = new("ScrollingFrame", { Position = UDim2.fromOffset(24, 244), Size = UDim2.fromOffset(200, 384), BackgroundTransparency = 1, BorderSizePixel = 0,
-	ScrollBarThickness = 4, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
+	ScrollBarThickness = 0, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
 new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = cats })
 local page = new("ScrollingFrame", { Position = UDim2.fromOffset(238, 214), Size = UDim2.new(1, -262, 0, 414), BackgroundColor3 = C3(36, 30, 92),
 	BackgroundTransparency = 0.35, BorderSizePixel = 0, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
@@ -529,13 +531,10 @@ function redrawPage(keep)
 		local bg = b:FindFirstChild("Bg")
 		local col = i == cat and PAGES[i][3] or C3(70, 66, 130)
 		if bg then bg.ImageColor3 = col; bg:SetAttribute("Color", col) end
-		local s = b:FindFirstChildOfClass("UIStroke")
-		if s then s.Enabled = i == cat end
 	end
 end
 for i, pg in ipairs(PAGES) do
-	local b = UI.button(pg[1], C3(70, 66, 130), nil, { Size = UDim2.new(1, -8, 0, 50), TextSize = 19, Font = T.chunky, Icon = pg[2], LayoutOrder = i, ZIndex = 7, Parent = cats })
-	new("UIStroke", { Thickness = 3, Color = GOLD, Enabled = false, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = b })
+	local b = UI.button(pg[1], C3(70, 66, 130), nil, { Size = UDim2.new(1, -4, 0, 50), TextSize = 19, Font = T.chunky, Icon = pg[2], LayoutOrder = i, ZIndex = 7, Parent = cats })
 	catButtons[i] = b
 	b.Activated:Connect(function() cat = i; clearPending(); redrawPage() end)
 end
@@ -588,4 +587,4 @@ local function setOpen(on)
 end
 openBtn.Activated:Connect(function() setOpen(not window.Visible) end)
 if closeBtn then closeBtn.Activated:Connect(function() setOpen(false) end) end
-back.Activated:Connect(function() setOpen(false) end)
+-- (the dark backdrop only catches taps, so nothing behind the panel gets clicked; it never closes it)
