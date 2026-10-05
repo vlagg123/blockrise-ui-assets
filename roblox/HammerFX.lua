@@ -275,32 +275,33 @@ local function makeFeet(e, f)
 end
 
 -- the Thunderclap's own storm cloud: it follows you, and moves over the house while you build
-local CLOUD = C3(52, 56, 70)
-local CLOUD_LIT = C3(150, 180, 235)
+-- a cartoon storm cloud (picture rendered in Blender): three layers facing the camera at different depths, so it looks
+-- round from every side; grey-blue normally, lit white for a blink when lightning flashes inside
+local CLOUD_IMG = "rbxassetid://84361525477052"
+local CLOUD_TINT = C3(118, 126, 152)
+local CLOUD_LIT = C3(240, 246, 255)
 local function makeCloud(e)
-	-- soft rolling smoke only (solid balls looked like dark balloons): five puffs locked to an invisible core that follows you
 	local core = fxPart({ Name = "Cloud", Transparency = 1, Size = Vector3.new(1, 1, 1) })
 	local c = { parts = { { part = core } }, pos = nil, core = core, puffs = {} }
-	local spots = { Vector3.new(0, 0.3, 0), Vector3.new(3, -0.2, 0.7), Vector3.new(-3, -0.1, -0.6), Vector3.new(1.1, 0.5, -1.8), Vector3.new(-1.3, 0.4, 1.8) }
-	for _, off in ipairs(spots) do
-		local a = new("Attachment", { Position = off, Parent = core })
-		local pe = new("ParticleEmitter", { Texture = SMOKE, Color = seq(CLOUD), LightEmission = 0, LightInfluence = 0, Rate = 5, Lifetime = NumberRange.new(2.4, 3.4),
-			Speed = NumberRange.new(0.1, 0.35), SpreadAngle = Vector2.new(180, 180), LockedToPart = true, Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-10, 10),
-			Size = NumberSequence.new({ NSK(0, 3.2), NSK(0.5, 5), NSK(1, 5.6) }), Transparency = NumberSequence.new({ NSK(0, 1), NSK(0.2, 0.12), NSK(0.75, 0.18), NSK(1, 1) }),
-			Parent = a })
-		pe:Emit(5)
-		table.insert(c.puffs, pe)
+	-- { offset, size (studs), darker }
+	local layers = { { Vector3.new(-3.6, -0.4, -0.8), 11, 0.18 }, { Vector3.new(3.8, -0.3, -0.6), 12, 0.14 }, { Vector3.new(0, 0.3, 0.4), 16, 0 } }
+	for _, L in ipairs(layers) do
+		local bb = new("BillboardGui", { Name = "CloudLayer", Size = UDim2.fromScale(L[2], L[2]), StudsOffsetWorldSpace = L[1], LightInfluence = 0, MaxDistance = 160,
+			ResetOnSpawn = false, Adornee = core, Parent = core })
+		local tint = CLOUD_TINT:Lerp(Color3.new(0, 0, 0), L[3])
+		local img = new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = CLOUD_IMG, ImageColor3 = tint, Parent = bb })
+		table.insert(c.puffs, { img = img, tint = tint })
 	end
 	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 12, Shadows = false, Parent = core })
 	e.cloud = c
 end
--- a flash inside the cloud: a puff lights up for a blink
+-- a flash inside the cloud: one layer (or all of them) lights up for a blink
 local function cloudBlink(c, all)
 	local pick = math.random(#c.puffs)
-	for i, pe in ipairs(c.puffs) do
+	for i, pf in ipairs(c.puffs) do
 		if all or i == pick then
-			pe.Color, pe.LightEmission = seq(CLOUD_LIT), 0.35
-			task.delay(0.08, function() if pe.Parent then pe.Color, pe.LightEmission = seq(CLOUD), 0 end end)
+			pf.img.ImageColor3 = CLOUD_LIT
+			task.delay(all and 0.12 or 0.08, function() if pf.img.Parent then pf.img.ImageColor3 = pf.tint end end)
 		end
 	end
 end
