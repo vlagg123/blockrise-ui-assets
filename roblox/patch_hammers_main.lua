@@ -222,6 +222,11 @@ s = replaceOnce(s, [[		elseif cmd == "tool" then S[plr].data.ToolTier = v; giveT
 			giveTool(plr); sync(plr)
 			return it and it.id
 		elseif cmd == "crate" then HammerService.AddCrate(plr, S[plr], v[1], v[2] or 1, "debug")
+		elseif cmd == "migrate" then S[plr].data.HammerV = nil; S[plr].data.ToolTier = v; local r = HammerService.Migrate(plr, S[plr]); giveTool(plr); sync(plr); return r
+		elseif cmd == "hammers" then
+			local t = {}
+			for _, it in ipairs(S[plr].data.Hammers) do table.insert(t, it.k .. ":" .. it.lv .. (it.bound and "(b)" or "")) end
+			return { list = t, equip = S[plr].data.EquipHammer, power = HammerService.Power(S[plr]), cd = HammerService.Cooldown(S[plr]), crates = S[plr].data.Crates, tier = S[plr].data.ToolTier }
 		elseif cmd == "hammerAction" then
 			return ReplicatedStorage.Remotes.HammerAction.OnServerInvoke(plr, v[1], v[2], v[3])]])
 s = replaceOnce(s, [[		local n = int(v, 1, #Config.Tools)
