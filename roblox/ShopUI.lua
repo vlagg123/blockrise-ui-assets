@@ -45,7 +45,7 @@ local function tierTiles(list, current, remote, icon, stat, keep)
 	local mine
 	for i, it in ipairs(list) do
 		local rk, rl = K.rarityOf(i, #list)
-		local o = { order = i, name = it.name, icon = Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon, color = K.RAR[rk],
+		local o = { order = i, name = it.name, icon = it.icon or (Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon), color = K.RAR[rk], iconScale = it.icon and 1.08 or nil,
 			badge = { rl, K.RAR[rk] }, stats = { stat(it) } }
 		if i == current then
 			o.status = { "EQUIPPED", K.GREEN }
@@ -71,7 +71,33 @@ local function tierTiles(list, current, remote, icon, stat, keep)
 end
 
 local keepNext = false
+-- the Thunderclap Hammer: a Robux add-on that triples your build power, on top of the hammer you have
+local function stormBanner(order)
+	local sh = Config.StormHammer
+	if not sh then return end
+	local pass
+	for _, p in ipairs(Config.Store.passes) do if p.key == sh.pass then pass = p end end
+	if not pass then return end
+	local studio = game:GetService("RunService"):IsStudio()
+	if (pass.id or 0) <= 0 and not studio then return end -- not on sale yet
+	local owned = c.player:GetAttribute("Pass_" .. sh.pass) == true
+	local o = { name = string.upper(sh.name), line = "A storm in a hammer: x" .. sh.mult .. " build power for you and your crew. Forever.",
+		icon = sh.icon or "up_power", color = sh.color, tint = Color3.fromRGB(150, 200, 255), buttonW = 180 }
+	if owned then
+		o.status = { "OWNED", K.GREEN }
+	elseif (pass.id or 0) > 0 then
+		o.button = { "R$ " .. tostring(pass.price or ""), Color3.fromRGB(80, 170, 255), function()
+			c.click()
+			game:GetService("MarketplaceService"):PromptGamePassPurchase(c.player, pass.id)
+		end }
+	else
+		o.status = { "SOON · R$" .. tostring(pass.price or "?"), K.LOCK }
+	end
+	K.banner(c.content, order, o)
+end
+
 local function tools()
+	stormBanner(0)
 	K.section(c.content, 1, "BUILDING TOOLS", Color3.fromRGB(150, 215, 255), "more build power per hit")
 	tierTiles(Config.Tools, c.player:GetAttribute("ToolTier") or 1, "BuyTool", "shop", function(t)
 		return { "x" .. Config.FormatNum(t.power) .. " POWER", GOLD }
@@ -224,6 +250,12 @@ function M.Init(ctx)
 	UI, T, Config = c.UI, c.T, c.Config
 	c.shopAvailable = M.Available
 	-- the cash in the header follows your money while the shop is open
+	-- buying the Thunderclap redraws the TOOLS tab (OWNED)
+	if Config.StormHammer then
+		c.player:GetAttributeChangedSignal("Pass_" .. Config.StormHammer.pass):Connect(function()
+			if c.modalOpen() and c.modalTitle.Text == "Shop" and tab == "tools" then M.Show(nil, true) end
+		end)
+	end
 	c.player:GetAttributeChangedSignal("Money"):Connect(function()
 		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab ~= "crew" then c.modalSub.Text = fmt(money()) end
 	end)

@@ -26,7 +26,7 @@ local CASH_COLS = { Color3.fromRGB(120, 210, 90), Color3.fromRGB(60, 190, 120), 
 local ICON = {
 	-- passes
 	vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
-	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations",
+	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations", stormhammer = "up_power",
 	-- products
 	starter = "gift", rushcrew = "up_crew", cashpack = "cash", cashstack = "cash", cashvault = "coins", cashbank = "store", cashboost = "up_cash",
 	spins3 = "spin",
@@ -37,6 +37,7 @@ local PASS_COL = {
 	vip = Color3.fromRGB(255, 190, 40), bigcrew = Color3.fromRGB(90, 200, 120), cash2x = Color3.fromRGB(80, 210, 110), strength2x = Color3.fromRGB(255, 120, 80),
 	autobuild = Color3.fromRGB(90, 170, 255), autotrain = Color3.fromRGB(255, 150, 90), gems2x = Color3.fromRGB(70, 190, 255), fasttools = Color3.fromRGB(255, 200, 60),
 	monster = Color3.fromRGB(255, 110, 110), goldcar = Color3.fromRGB(255, 196, 46), teleporter = Color3.fromRGB(235, 70, 130),
+	stormhammer = Color3.fromRGB(80, 170, 255),
 }
 
 -- Robux prices load in the background so the Store opens instantly
@@ -253,6 +254,7 @@ end
 
 function M.Init(ctx)
 	c = ctx
+	if c.Config.StormHammer and c.Config.StormHammer.icon then ICON.stormhammer = c.Config.StormHammer.icon end
 	UI, T, Config = c.UI, c.T, c.Config
 	task.spawn(function()
 		for _, p in ipairs(Config.Store.passes) do robuxPrice(p.id, Enum.InfoType.GamePass) end

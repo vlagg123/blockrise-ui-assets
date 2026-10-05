@@ -61,6 +61,11 @@ K.text = text
 
 -- art: an atlas icon, or an emoji when the item has no icon yet
 function K.art(parent, icon, size, z)
+	if type(icon) == "string" and icon:find("^rbxassetid://") then
+		-- an image of its own (the hammers rendered in Blender)
+		return new("ImageLabel", { Name = "Icon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = size or UDim2.fromScale(0.95, 0.95),
+			BackgroundTransparency = 1, Image = icon, ScaleType = Enum.ScaleType.Fit, ZIndex = z or 6, Parent = parent })
+	end
 	if Icons.has(icon) then
 		return Icons.make(icon, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = size or UDim2.fromScale(0.95, 0.95), ZIndex = z or 6, Parent = parent })
 	end
