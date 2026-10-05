@@ -598,9 +598,21 @@ task.spawn(function()
 	end
 end)
 
+local StarterGuiS = game:GetService("StarterGui")
+local backpackWas
 local function setOpen(on)
 	window.Visible = on
 	back.Visible = on
+	-- the tool bar at the bottom of the screen would sit over the panel: hidden while it is open
+	pcall(function()
+		if on then
+			if backpackWas == nil then backpackWas = StarterGuiS:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack) end
+			StarterGuiS:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+		elseif backpackWas ~= nil then
+			StarterGuiS:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, backpackWas)
+			backpackWas = nil
+		end
+	end)
 	clearPending()
 	if on then
 		if not target() then targetId = player.UserId end
