@@ -126,7 +126,8 @@ def sparkle(canvas, cx, cy, r, ink_w):
     return over(canvas, solid(WHITE, m))
 
 
-def finish(raw, name, out_size=124):
+def canvas_of(raw, name):
+    """Full-resolution finished icon: outline, drop shadow, sparkles."""
     S = raw.shape[0]
     a = raw[..., 3]
     outline = dilate(a, S * 0.026)
@@ -136,11 +137,66 @@ def finish(raw, name, out_size=124):
     canvas = over(canvas, raw)
     for x, y, r in SPARKLE.get(name, []):
         canvas = sparkle(canvas, x * S, y * S, r * S * 1.55, max(2.0, S * 0.009))
-    f = S // out_size
-    pm = canvas[..., :3] * canvas[..., 3:4]
-    pm = pm.reshape(out_size, f, out_size, f, 3).mean((1, 3))
-    al = canvas[..., 3].reshape(out_size, f, out_size, f).mean((1, 3))[..., None]
-    return np.concatenate([pm / np.maximum(al, 1e-6), al], -1)
+    return canvas
+
+
+def _pm(img):
+    return np.concatenate([img[..., :3] * img[..., 3:4], img[..., 3:4]], -1)
+
+
+def _unpm(pm):
+    a = pm[..., 3:4]
+    return np.concatenate([pm[..., :3] / np.maximum(a, 1e-6), a], -1)
+
+
+def resize(img, n):
+    """Square RGBA canvas -> n x n (box halving, then premultiplied bilinear)."""
+    pm = _pm(img)
+    while pm.shape[0] >= 2 * n and pm.shape[0] % 2 == 0:
+        S = pm.shape[0]
+        pm = pm.reshape(S // 2, 2, S // 2, 2, 4).mean((1, 3))
+    S = pm.shape[0]
+    if S != n:
+        if S % n == 0:
+            f = S // n
+            pm = pm.reshape(n, f, n, f, 4).mean((1, 3))
+        else:
+            c = np.clip((np.arange(n) + 0.5) * S / n - 0.5, 0, S - 1)
+            i0 = np.floor(c).astype(int)
+            i1 = np.minimum(i0 + 1, S - 1)
+            f = (c - i0).astype(np.float32)
+            rows = pm[i0] * (1 - f)[:, None, None] + pm[i1] * f[:, None, None]
+            pm = rows[:, i0] * (1 - f)[None, :, None] + rows[:, i1] * f[None, :, None]
+    return _unpm(pm)
+
+
+def finish(raw, name, out_size=124):
+    return resize(canvas_of(raw, name), out_size)
+
+
+def badge_canvas(raw):
+    """Corner badge (up arrow / plus): white rim inside a thick dark rim, so it reads on top of anything."""
+    S = raw.shape[0]
+    a = raw[..., 3]
+    white = dilate(a, S * 0.035)
+    ink = dilate(a, S * 0.075)
+    sh = blur(shift_down(ink, int(S * 0.03)), S * 0.02) * 0.5
+    c = solid(INK, sh)
+    c = over(c, solid(INK, ink))
+    c = over(c, solid(WHITE, white))
+    return over(c, raw)
+
+
+def finish_badged(raw, badge_raw, name, out_size=124, item_scale=0.8, badge_scale=0.5):
+    """Item in the top-left 80 %, the badge always in front, same size and place, bottom-right."""
+    S = raw.shape[0]
+    canvas = np.zeros((S, S, 4), np.float32)
+    ni = int(S * item_scale)
+    canvas[:ni, :ni] = resize(canvas_of(raw, name), ni)
+    nb = int(S * badge_scale)
+    b = resize(badge_canvas(badge_raw), nb)
+    canvas[S - nb:, S - nb:] = over(canvas[S - nb:, S - nb:], b)
+    return resize(canvas, out_size)
 
 
 def atlas(cells, names, size=1024, cell=128, pad=2):

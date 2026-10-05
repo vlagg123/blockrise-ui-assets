@@ -209,9 +209,48 @@ def icon_downtown():
     lib("kenneyA", loc=(0.9, -0.3, 0), rot=(0, 0, 20), scale=0.7, paint={"_defaultMat": "#ff9f6e"})
 
 
+# ---- upgrade icons: the item alone; the green badge is added in 2D (same size and place on every icon, always in front)
 def icon_up_rent():
-    lib("house", loc=(-0.3, 0.2, 0), rot=(0, 0, 205), paint={"Main": "#a25cff"})
-    I.coin(loc=(0.95, -0.75, 0.45), rot=(78, 0, -20), r=0.55)
+    lib("house", rot=(0, 0, 205), paint={"Main": "#a25cff"})
+
+
+def icon_up_power():
+    I.hammer(rot=(0, -32, 0))
+
+
+def icon_up_strength():
+    I.dumbbell(rot=(0, -28, -18), color=I.ORANGE)
+
+
+def icon_up_cash():
+    P.coin_stack(4, loc=(0, 0, -0.35))
+
+
+def icon_up_crew():
+    I.hardhat(rot=(16, 0, 22))
+
+
+def icon_hire():
+    I.hardhat(rot=(16, 0, 22))
+
+
+def icon_up_luck():
+    P.icon_up_luck()
+
+
+def icon_badge_up():
+    pts = [(-0.34, -0.62), (0.34, -0.62), (0.34, 0.02), (0.72, 0.02), (0, 0.78), (-0.72, 0.02), (-0.34, 0.02)]
+    I.poly(pts, 0.42, color="#3ad65a", bevel=0.08, gloss=0.55)
+
+
+def icon_badge_plus():
+    I.box((1.3, 0.42, 0.44), color="#3ad65a", bevel=0.1, gloss=0.55)
+    I.box((0.44, 0.42, 1.3), color="#3ad65a", bevel=0.1, gloss=0.55)
+
+
+BADGED = {"up_power": "badge_up", "up_strength": "badge_up", "up_cash": "badge_up", "up_crew": "badge_up",
+          "up_rent": "badge_up", "up_luck": "badge_up", "hire": "badge_plus"}
+BADGES = {"badge_up": icon_badge_up, "badge_plus": icon_badge_plus}
 
 
 def icon_vip():
@@ -223,9 +262,14 @@ LIB_ICONS = {"up_rent": icon_up_rent, "home": icon_home, "suburbs": icon_suburbs
              "downtown": icon_downtown, "vip": icon_vip}
 ICONS = dict(I.ICONS)
 ICONS.update(LIB_ICONS)
+ICONS.update({"up_power": icon_up_power, "up_strength": icon_up_strength, "up_cash": icon_up_cash, "up_crew": icon_up_crew,
+              "hire": icon_hire, "up_luck": icon_up_luck})
+ALL = dict(ICONS)
+ALL.update(BADGES)
 VIEWS = dict(P.VIEWS)
 VIEWS.update({"home": (0, -1, 0.5), "suburbs": (0, -1, 0.5), "company": (0, -1, 0.35), "downtown": (0, -1, 0.3),
-              "up_rent": (0, -1, 0.5), "vip": (0, -1, 0.35)})
+              "up_rent": (0, -1, 0.5), "vip": (0, -1, 0.35), "badge_up": (0, -1, 0.22), "badge_plus": (0, -1, 0.22),
+              "up_cash": (0, -1, 0.45)})
 
 
 # ----------------------------------------------------------------------------------------- run
@@ -234,8 +278,8 @@ def render(names):
     done = []
     for n in names:
         reset()
-        ICONS[n]()
-        if n not in LIB_ICONS:
+        ALL[n]()
+        if n not in LIB_ICONS and n not in BADGES:
             P.turn(n)
         P.puff()
         I.add_outlines()
@@ -252,8 +296,13 @@ def finish(names=None):
     names = names or sorted(f[:-4] for f in os.listdir(raw) if f.endswith(".png"))
     os.makedirs(os.path.join(OUT, "cells"), exist_ok=True)
     cells = {}
+    names = [n for n in names if n not in BADGES]
     for n in names:
-        cells[n] = postnp.finish(postnp.load(os.path.join(raw, n + ".png")), n)
+        img = postnp.load(os.path.join(raw, n + ".png"))
+        if n in BADGED:
+            cells[n] = postnp.finish_badged(img, postnp.load(os.path.join(raw, BADGED[n] + ".png")), n)
+        else:
+            cells[n] = postnp.finish(img, n)
         postnp.save(cells[n], os.path.join(OUT, "cells", n + ".png"))
     at, pos = postnp.atlas(cells, names)
     postnp.save(at, os.path.join(OUT, "icons_atlas.png"))
