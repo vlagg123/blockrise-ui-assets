@@ -128,8 +128,8 @@ function K.chip(parent, label, color, props)
 	local c = UI.slice("pill", { Name = "Chip", Size = UDim2.fromOffset(0, 26), AutomaticSize = Enum.AutomaticSize.X, SliceScale = 0.36, ImageColor3 = color or T.blue, ZIndex = 5, Parent = parent })
 	for k, v in pairs(props or {}) do c[k] = v end
 	new("UIPadding", { PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9), Parent = c })
-	text({ Size = UDim2.new(0, 0, 1, -2), AutomaticSize = Enum.AutomaticSize.X, Text = label, Font = T.chunky, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
-		ZIndex = 6, Parent = c })
+	text({ Position = UDim2.fromOffset(0, 2), Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = label, Font = T.chunky, TextSize = 15,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 2, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6, Parent = c })
 	return c
 end
 
@@ -189,18 +189,18 @@ function K.tile(grid, o)
 	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
 	local artH = o.artH or 128
 	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = o.iconScale })
-	if o.badge then K.chip(t, o.badge[1], o.badge[2] or T.red, { Position = UDim2.fromOffset(14, 14), ZIndex = 8 }) end
-	if o.tag then K.chip(t, o.tag[1], o.tag[2] or K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 14), ZIndex = 8 }) end
+	if o.badge then K.chip(t, o.badge[1], o.badge[2] or T.red, { Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
+	if o.tag then K.chip(t, o.tag[1], o.tag[2] or K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), ZIndex = 8 }) end
 	if o.corner then cornerButton(t, o.corner) end
-	local y = artH + 14
+	local y = artH + 12
 	text({ Name = "Title", Position = UDim2.fromOffset(13, y), Size = UDim2.new(1, -26, 0, 26), Text = o.name or "", TextSize = 22, Max = 22, TextColor3 = o.dim and K.SUB or K.DARK, Parent = t })
-	y += 30
+	y += 32
 	if o.bar then
 		local bar, fill = UI.bar({ Position = UDim2.fromOffset(12, y + 3), Size = UDim2.new(1, -24, 0, 20), ZIndex = 3 }, o.bar[2] or K.GREEN)
 		bar.Parent = t
 		fill.Size = UDim2.fromScale(math.clamp(o.bar[1] or 0, 0.06, 1), 1)
 		if o.bar[3] then
-			text({ Size = UDim2.fromScale(1, 1), Text = o.bar[3], Font = T.chunky, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+			text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = o.bar[3], Font = T.chunky, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
 				TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = bar })
 		end
 	elseif o.stats and #o.stats > 0 then
@@ -244,7 +244,7 @@ function K.banner(parent, order, o)
 		new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 236, 150)), Rotation = 90, Parent = tl })
 	end
 	if o.line then
-		text({ Name = "Line", Position = UDim2.fromOffset(x, 52), Size = UDim2.new(1, -x - bw - 26, 0, h - 64), Text = o.line, TextSize = 18, TextWrapped = true,
+		text({ Name = "Line", Position = UDim2.fromOffset(x, 56), Size = UDim2.new(1, -x - bw - 26, 0, h - 68), Text = o.line, TextSize = 18, TextWrapped = true,
 			TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.DARK, Max = 18, Parent = f })
 	end
 	local bp = { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(bw, 58) }
@@ -273,29 +273,31 @@ function K.row(parent, order, o)
 	if o.extra then right += (o.extra.w or 60) + 8 end
 	local x = h + 4
 	local hasChips = o.chips and #o.chips > 0
-	local lines = (o.line and 1 or 0) + (hasChips and 1 or 0) + (o.bar and 1 or 0)
-	local nameY = lines >= 2 and 8 or (lines == 1 and 20 or 0)
-	text({ Name = "Title", Position = UDim2.fromOffset(x, nameY), Size = UDim2.new(1, -x - right, 0, lines > 0 and 30 or h), Text = o.name, TextSize = 25, Max = 25,
+	-- title, line, bar and chips stacked with even 6 px gaps, the whole block centred in the row
+	local total = 28 + (o.line and 26 or 0) + (o.bar and 26 or 0) + (hasChips and 32 or 0)
+	local y = math.floor((h - total) / 2)
+	local w = UDim2.new(1, -x - right, 0, 0)
+	text({ Name = "Title", Position = UDim2.fromOffset(x, y), Size = w + UDim2.fromOffset(0, 28), Text = o.name, TextSize = 25, Max = 25,
 		TextColor3 = o.dim and K.SUB or K.DARK, Parent = f })
-	local y = nameY + 30
+	y += 34
 	if o.line then
-		text({ Name = "Line", Position = UDim2.fromOffset(x, y), Size = UDim2.new(1, -x - right, 0, 22), Text = o.line, TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = f })
+		text({ Name = "Line", Position = UDim2.fromOffset(x, y), Size = w + UDim2.fromOffset(0, 20), Text = o.line, TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = f })
 		y += 26
 	end
 	if o.bar then
-		local bar, fill = UI.bar({ Position = UDim2.fromOffset(x, y + 2), Size = UDim2.new(1, -x - right, 0, 20), ZIndex = 3 }, o.bar[2] or K.GREEN)
+		local bar, fill = UI.bar({ Position = UDim2.fromOffset(x, y), Size = w + UDim2.fromOffset(0, 20), ZIndex = 3 }, o.bar[2] or K.GREEN)
 		bar.Parent = f
 		fill.Size = UDim2.fromScale(math.clamp(o.bar[1] or 0, 0.05, 1), 1)
 		if o.bar[3] then
-			text({ Size = UDim2.fromScale(1, 1), Text = o.bar[3], Font = T.chunky, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+			text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = o.bar[3], Font = T.chunky, TextSize = 14, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
 				TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = bar })
 		end
-		y += 28
+		y += 26
 	end
 	if hasChips then
-		local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(x - 2, y + 2), Size = UDim2.new(1, -x - right, 0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+		local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(x - 2, y), Size = w + UDim2.fromOffset(0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
-		for i, s in ipairs(o.chips) do K.chip(row, s[1], s[2], { LayoutOrder = i }) end
+		for i, sdef in ipairs(o.chips) do K.chip(row, sdef[1], sdef[2], { LayoutOrder = i }) end
 	end
 	local bp = { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(bw, 54) }
 	if o.button then
