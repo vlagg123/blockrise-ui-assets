@@ -384,9 +384,9 @@ function M.Init(ctx)
 	end
 
 	---------------------------------------------------------------------------
-	-- RIGHT: Store, Gift (playtime timer), More (daily, spin, codes, invite, trade, cars, trophies, music)
+	-- RIGHT: Store, Gift (playtime timer), Cars, More (daily, spin, codes, invite, trade, trophies, music)
 	---------------------------------------------------------------------------
-	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 300), Parent = root })
+	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 400), Parent = root })
 	local rightScale = new("UIScale", { Parent = right })
 	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
 
@@ -425,9 +425,11 @@ function M.Init(ctx)
 	storeB.button.LayoutOrder = 1
 	local giftB = bigButton(right, "gift", "GIFT", Color3.fromRGB(255, 160, 220), Color3.fromRGB(215, 60, 160), 84, 94, A.gift)
 	giftB.button.LayoutOrder = 2
+	local carsB = bigButton(right, "cars", "CARS", Color3.fromRGB(255, 140, 120), Color3.fromRGB(215, 55, 55), 84, 94, function() toggle("Garage", _G.__CE_ShowGarage) end)
+	carsB.button.LayoutOrder = 3
 	local more
 	local moreB = bigButton(right, "more", "MORE", Color3.fromRGB(170, 185, 225), Color3.fromRGB(85, 95, 150), 84, 94, function() openPopup(more) end)
-	moreB.button.LayoutOrder = 3
+	moreB.button.LayoutOrder = 4
 
 	more = popup("MorePopup", {
 		{ "daily", "DAILY", Color3.fromRGB(255, 150, 175), Color3.fromRGB(225, 60, 105), A.daily },
@@ -435,7 +437,6 @@ function M.Init(ctx)
 		{ "codes", "CODES", Color3.fromRGB(185, 155, 255), Color3.fromRGB(105, 70, 225), function() toggle("Codes", _G.__CE_ShowCodes) end },
 		{ "invite", "INVITE", Color3.fromRGB(255, 160, 200), Color3.fromRGB(225, 70, 140), function() if _G.__CE_Invite then _G.__CE_Invite() end end },
 		{ "trade", "TRADE", Color3.fromRGB(130, 240, 140), Color3.fromRGB(30, 160, 80), function() toggle("Trade", _G.__CE_ShowTrade) end },
-		{ "cars", "CARS", Color3.fromRGB(255, 140, 120), Color3.fromRGB(215, 55, 55), function() toggle("Garage", _G.__CE_ShowGarage) end },
 		{ "portfolio", "TROPHIES", Color3.fromRGB(255, 220, 110), Color3.fromRGB(230, 145, 25), function() toggle("Portfolio", _G.__CE_ShowPortfolio) end },
 		{ "music", "MUSIC", Color3.fromRGB(150, 205, 255), Color3.fromRGB(70, 110, 230), function() if _G.__CE_ToggleMusic then _G.__CE_ToggleMusic() end end, keepOpen = true },
 	}, moreB, 4)
@@ -529,7 +530,7 @@ function M.Init(ctx)
 		lvlScale.Scale = compact and 0.85 or 1
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
-			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 100 * rs)
+			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 200 * rs) -- level with CARS / MORE
 		end
 	end
 	gui:GetAttributeChangedSignal("Compact"):Connect(function() task.defer(layout) end)
