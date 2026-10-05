@@ -646,6 +646,9 @@ def pouch(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, col="#8a3df0"):
     obj("pouch", bm, c, loc=(0, 0, 0.9), parent=P, smooth=80)
     t = torus(0.5, 0.09, gold())
     t.matrix_world = P @ _xf((0, 0, 1.68)) @ t.matrix_world
+    obj("emblem", bm_prism(circle(0.36, 48), 0.12, axis="Y"), gold(), loc=(0, -1.02, 0.85), parent=P, smooth=40, bevel=0.03)
+    g = gem(PINK_GEM, rot=(90, 0, 0), s=0.24)
+    g.matrix_world = P @ _xf((0, -1.12, 0.85)) @ g.matrix_world
 
 
 def i_gems1700():
@@ -723,7 +726,7 @@ ICONS = {
     "cashbank": i_cashbank, "cashboost": i_cashboost, "spin1": i_spin1, "spins3": i_spins3, "gems100": i_gems100, "gems300": i_gems300,
     "gems750": i_gems750, "gems1700": i_gems1700, "gems4500": i_gems4500, "gems12000": i_gems12000,
 }
-VIEW = {"stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "goldcar": (-0.3, -1, 0.35), "teleporter": (0, -1, 0.35),
+VIEW = {"cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "goldcar": (-0.3, -1, 0.35), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (-0.1, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
