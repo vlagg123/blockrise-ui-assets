@@ -395,7 +395,7 @@ function K.window(parent, size, title, c1, c2, icon, noClose)
 	local close
 	if not noClose then
 		close = UI.button("X", T.red, nil, { Position = UDim2.new(1, -48, 0, -20), Size = UDim2.fromOffset(62, 62), TextSize = 34, Font = T.chunky, ZIndex = 30, Parent = w })
-		UI.drawX(close)
+		UI.closeStyle(close)
 	end
 	return w, close, tl
 end

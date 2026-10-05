@@ -201,19 +201,36 @@ function UI.button(text, c1, c2, props)
 	return b
 end
 
--- a clean drawn X (close buttons): two rounded white bars with an ink outline, centred on the button's face
-function UI.drawX(btn, z)
+-- a clean drawn X (close buttons): two rounded white bars with an ink outline
+function UI.drawX(btn, z, yOff)
 	z = z or (btn.ZIndex + 2)
 	local l = btn:FindFirstChild("Label")
 	if l then l.Visible = false end
 	for pass = 1, 2 do
 		for _, r in ipairs({ 45, -45 }) do
-			local bar = new("Frame", { Name = pass == 1 and "XInk" or "XBar", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, -4),
+			local bar = new("Frame", { Name = pass == 1 and "XInk" or "XBar", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, yOff or 0),
 				Size = pass == 1 and UDim2.new(0.5, 6, 0.12, 6) or UDim2.new(0.5, 0, 0.12, 0), Rotation = r, BorderSizePixel = 0,
 				BackgroundColor3 = pass == 1 and T.ink or Color3.new(1, 1, 1), ZIndex = z + pass, Parent = btn })
 			new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = bar })
 		end
 	end
+end
+
+-- close button: a plain red rounded square with an ink outline and the X, nothing else (no 3D lip, no gloss, no shadow)
+function UI.closeStyle(btn, z)
+	local bg = btn:FindFirstChild("Bg")
+	if bg then
+		for _, d in ipairs(bg:GetChildren()) do d:Destroy() end
+		bg.ImageTransparency = 1
+		bg.BackgroundTransparency = 0
+		local red = Color3.fromRGB(235, 64, 72)
+		bg.BackgroundColor3 = red
+		new("UICorner", { CornerRadius = UDim.new(0, 14), Parent = bg })
+		new("UIStroke", { Thickness = 3, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = bg })
+		btn.MouseEnter:Connect(function() bg.BackgroundColor3 = red:Lerp(Color3.new(1, 1, 1), 0.12) end)
+		btn.MouseLeave:Connect(function() bg.BackgroundColor3 = red end)
+	end
+	UI.drawX(btn, z, 0)
 end
 
 -- recolour a button made by UI.button
