@@ -534,7 +534,8 @@ function redrawPage(keep)
 	end
 end
 for i, pg in ipairs(PAGES) do
-	local b = UI.button(pg[1], C3(70, 66, 130), nil, { Size = UDim2.new(1, -4, 0, 50), TextSize = 19, Font = T.chunky, Icon = pg[2], LayoutOrder = i, ZIndex = 7, Parent = cats })
+	local b = UI.button(pg[1], C3(70, 66, 130), nil, { Size = UDim2.new(1, -14, 0, 50), TextSize = 19, Font = T.chunky, Icon = pg[2], LayoutOrder = i, ZIndex = 7, Parent = cats })
+	-- (narrower than the list: the button's 3D lip would be cut by the list's edge and draw a thin line there)
 	catButtons[i] = b
 	b.Activated:Connect(function() cat = i; clearPending(); redrawPage() end)
 end
