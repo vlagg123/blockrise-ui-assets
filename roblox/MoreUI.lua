@@ -182,6 +182,31 @@ function M.Property()
 	end
 end
 
+-- How to play (first join, and from the menu) --------------------------------------------------------------------
+local STEPS = {
+	{ "Take contracts", "Job Board, build, get paid", "jobs", Color3.fromRGB(255, 190, 60) },
+	{ "Grow your crew", "Tools, workers, machines", "crew", Color3.fromRGB(90, 200, 120) },
+	{ "Get stronger", "Train at the Training Yard", "strength", Color3.fromRGB(255, 120, 80) },
+	{ "Find Gems", "They drop while you build", "gem", Color3.fromRGB(60, 160, 255) },
+	{ "Empire Road", "The top bar shows your goal", "quest", Color3.fromRGB(165, 110, 255) },
+	{ "Own a company", "Properties pay you rent", "company", Color3.fromRGB(80, 170, 240) },
+}
+function M.HowTo()
+	c.openModal("Welcome", "Welcome, builder!", "", Color3.fromRGB(255, 205, 80), Color3.fromRGB(240, 130, 20))
+	local grid = K.grid(c.content, 1, 2, 96, 12)
+	for i, st in ipairs(STEPS) do
+		K.row(grid, i, { name = st[1], line = st[2], icon = st[3], color = st[4], height = 96 })
+	end
+	-- the main button, on its own (no card behind it)
+	local foot = c.new("Frame", { Name = "Footer", Size = UDim2.new(1, 0, 0, 72), BackgroundTransparency = 1, LayoutOrder = 2, ZIndex = 2, Parent = c.content })
+	K.button(foot, "LET'S BUILD!", K.GREEN, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 2), Size = UDim2.fromOffset(300, 62), TextSize = 30,
+		Shine = true }, function()
+		c.click()
+		c.closeModal()
+		if (c.player:GetAttribute("ContractJob") or "") == "" then c.setWaypoint("board") end
+	end)
+end
+
 function M.Init(ctx)
 	c = ctx
 	UI, T, Config = c.UI, c.T, c.Config
