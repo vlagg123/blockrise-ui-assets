@@ -79,8 +79,13 @@ def material(key, pal):
     tex = b.get("tex")
     c = np.array(col)
     if tex == "rust":
-        r, _ = _noise_ramp(nt, 9, 8, tuple(c * 0.55), tuple(np.minimum(c * 1.7, 1)), (0.3, 0.75))
+        # ugly on purpose: dark crusty brown, bright orange rust, and a few patches of bare grey metal
+        r, _ = _noise_ramp(nt, 7, 10, (0.07, 0.03, 0.012), (0.55, 0.2, 0.05), (0.25, 0.5))
+        el = r.color_ramp.elements
+        e1 = el.new(0.66); e1.color = (0.78, 0.36, 0.08, 1)
+        e2 = el.new(0.82); e2.color = (0.22, 0.21, 0.2, 1)
         nt.links.new(r.outputs["Color"], p.inputs["Base Color"])
+        nt.links.new(r.outputs["Color"], p.inputs["Emission Color"])
         r2, _ = _noise_ramp(nt, 24, 4, (0.75, 0.75, 0.75), (1, 1, 1), (0.4, 0.6))
         nt.links.new(r2.outputs["Color"], p.inputs["Roughness"])
     elif tex == "wood":
@@ -179,7 +184,7 @@ def piece_mesh(piece, S):
     return me
 
 
-def build(h, pal, S=1.0, pose=(0.0, -38.0, 18.0)):
+def build(h, pal, S=1.0, pose=(0.0, -45.0, 18.0)):
     """the hammer as Blender objects; pose = degrees about Blender X, Y (view axis), Z"""
     scn = I3.iscene()
     objs = []
