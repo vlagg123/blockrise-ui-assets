@@ -184,18 +184,10 @@ local function stormBanner(order)
 	K.banner(c.content, order, o)
 end
 
--- HAMMERS tab ----------------------------------------------------------------------------------------------------
-function M.Hammers(tok)
-	local loading = K.loading(c.content)
-	local data = fetch()
-	if not c.live(tok) then return end
-	loading:Destroy()
-	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Shop again.", "shop") return end
-	local byId = {}
-	for _, it in ipairs(data.hammers) do byId[it.id] = it end
-	local eq = byId[data.equip]
-	stormBanner(0)
-	-- in your hand
+-- the hammer in your hand, with LEVEL UP
+local function handBanner(data, order)
+	local eq
+	for _, it in ipairs(data.hammers) do if it.id == data.equip then eq = it end end
 	if eq then
 		local h = Hammers.ById[eq.k]
 		local r = rar(h)
@@ -208,14 +200,17 @@ function M.Hammers(tok)
 		else
 			o.status = { "MAX LEVEL", GOLD }
 		end
-		K.banner(c.content, 1, o)
+		K.banner(c.content, order, o)
 	end
-	-- crates
+end
+
+-- the crates as tiles: shop = every crate with its price and odds; mine = only the ones you have, to OPEN
+local function crateTiles(data, order, shop)
 	local zone = data.zone or "town"
-	K.section(c.content, 2, "CRATES", Color3.fromRGB(255, 220, 110), "every crate holds one hammer  ·  a Supply Crate drops every 6 contracts")
-	local grid = K.grid(c.content, 3, cols(), 300)
+	local grid = K.grid(c.content, order, cols(), 300)
 	for i, cr in ipairs(Hammers.Crates) do
 		local have = data.crates[cr.id] or 0
+		if not shop and have == 0 then continue end
 		local prod = cr.product and product(cr.product)
 		local robuxOk = prod and (prod.id or 0) > 0 and not c.paidRandomRestricted
 		local o = { order = i, name = cr.name, icon = crateArt(cr), iconScale = cr.image and 1.06 or 0.9, color = cr.color, stats = {}, spin = have > 0 }
@@ -226,7 +221,9 @@ function M.Hammers(tok)
 		if (data.luck or 1) > 1 and not cr.exclusiveOnly then table.insert(o.stats, { "🍀 2x LUCK", K.GREEN }) end
 		local buttons = {}
 		if have > 0 then table.insert(buttons, { "OPEN", K.GREEN, function() c.click(); openCrate(cr.id) end, shine = true }) end
-		if cr.cash then
+		if not shop then
+			-- (the inventory only opens them)
+		elseif cr.cash then
 			local price = data.supplyPrice or Hammers.SupplyPrice(60)
 			local can = money() >= price
 			table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function()
@@ -240,7 +237,7 @@ function M.Hammers(tok)
 				c.click(); buyCrate(cr.id, 1, have == 0)
 			end, shine = can and have == 0 })
 		end
-		if prod and not cr.gems then
+		if shop and prod and not cr.gems then
 			if robuxOk then
 				table.insert(buttons, { K.robux(prod.price), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, prod.id) end, shine = have == 0 })
 			elseif #buttons == 0 then
@@ -267,90 +264,293 @@ function M.Hammers(tok)
 		K.text({ Position = UDim2.fromOffset(12, 196), Size = UDim2.new(1, -24, 0, 38), Text = #parts > 0 and table.concat(parts, " · ") or "Nothing to drop yet", TextSize = 14,
 			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 	end
-	-- the hammers you own
-	table.sort(data.hammers, function(a, b)
+	return grid
+end
+
+-- Shop → CRATES: the hammer in your hand, every crate (buy / open) --------------------------------------------------
+function M.Crates(tok)
+	local loading = K.loading(c.content)
+	local data = fetch()
+	if not c.live(tok) then return end
+	loading:Destroy()
+	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
+	stormBanner(0)
+	handBanner(data, 1)
+	K.section(c.content, 2, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "every crate holds one hammer  ·  a Supply Crate drops every 6 contracts")
+	crateTiles(data, 3, true)
+	K.row(c.content, 4, { name = "Your hammers are in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up and the Index", icon = "backpack",
+		color = Color3.fromRGB(255, 176, 40), height = 92, buttonW = 190, button = { "INVENTORY", Color3.fromRGB(255, 176, 40), function()
+			c.click()
+			if _G.__CE_ShowInventory then _G.__CE_ShowInventory("hammers") end
+		end } })
+end
+
+-- Inventory: small item tiles (6 a row), so a big collection fits on a page ---------------------------------------
+local function invCols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 6 or 4 end
+local function clearBody()
+	for _, ch in ipairs(c.content:GetChildren()) do
+		if not ch:IsA("UIListLayout") and ch.Name ~= "Tabs" then ch:Destroy() end
+	end
+end
+local function small(chip, s) new("UIScale", { Scale = s or 0.78, Parent = chip }) return chip end
+
+-- one hammer as a small tile: art, rarity, level, name, power. The whole tile is a button.
+local function miniTile(grid, o)
+	local t = new("TextButton", { Name = "Item", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, LayoutOrder = o.order or 0, ZIndex = 2, Parent = grid })
+	local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = o.selected and Color3.fromRGB(255, 236, 160) or (o.dim and K.DIM or K.TILE), ZIndex = 1, Parent = t })
+	local artH = o.artH or 84
+	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(6, 6), Size = UDim2.new(1, -12, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = 1.04 })
+	if o.badge then small(K.chip(t, o.badge[1], o.badge[2], { Position = UDim2.fromOffset(9, 9), ZIndex = 8 }), 0.66) end
+	if o.tag then small(K.chip(t, o.tag[1], o.tag[2], { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -9, 0, 9), ZIndex = 8 }), 0.66) end
+	K.text({ Position = UDim2.fromOffset(8, artH + 9), Size = UDim2.new(1, -16, 0, 18), Text = o.name, TextSize = 15, Max = 15, TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
+	if o.line then
+		K.text({ Position = UDim2.fromOffset(8, artH + 28), Size = UDim2.new(1, -16, 0, 16), Text = o.line, TextSize = 13, Max = 13, Font = T.chunky,
+			TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.lineColor or K.SUB, ZIndex = 3, Parent = t })
+	end
+	if o.ring then
+		-- the hammer in your hand / picked for a trade-up
+		new("UIStroke", { Thickness = 3, Color = o.ring, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = new("Frame", { Name = "Ring",
+			Position = UDim2.fromOffset(2, 2), Size = UDim2.new(1, -4, 1, -4), BackgroundTransparency = 1, ZIndex = 9, Parent = t }, { UI.corner(16) }) })
+	end
+	if o.onClick then
+		t.Activated:Connect(function() o.onClick(t) end)
+		local sc = new("UIScale", { Parent = t })
+		t.MouseButton1Down:Connect(function() UI.tween(sc, 0.08, { Scale = 0.95 }) end)
+		t.MouseButton1Up:Connect(function() UI.tween(sc, 0.12, { Scale = 1 }, Enum.EasingStyle.Back) end)
+		t.MouseLeave:Connect(function() UI.tween(sc, 0.12, { Scale = 1 }) end)
+	end
+	return t, bg
+end
+
+local function sortHammers(list, equipId)
+	table.sort(list, function(a, b)
 		local ha, hb = Hammers.ById[a.k], Hammers.ById[b.k]
-		if a.id == data.equip then return true elseif b.id == data.equip then return false end
+		if equipId then
+			if a.id == equipId then return true elseif b.id == equipId then return false end
+		end
 		if ha.r ~= hb.r then return ha.r > hb.r end
 		if a.lv ~= b.lv then return a.lv > b.lv end
 		return ha.order < hb.order
 	end)
-	K.section(c.content, 4, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  10 of a rarity make 1 of the next (INDEX tab)")
-	local g2 = K.grid(c.content, 5, cols(), 268)
+end
+
+-- Inventory → HAMMERS ----------------------------------------------------------------------------------------------
+local selected -- the hammer shown on top (its EQUIP / LEVEL UP); nil = the one in your hand
+local function drawHammers(tok, data)
+	if not c.live(tok) then return end
+	clearBody()
+	local byId = {}
+	for _, it in ipairs(data.hammers) do byId[it.id] = it end
+	if selected and not byId[selected] then selected = nil end
+	local cur = byId[selected or data.equip] or byId[data.equip]
+	-- the selected hammer, big: what it is, EQUIP, LEVEL UP
+	if cur then
+		local h = Hammers.ById[cur.k]
+		local r = rar(h)
+		local inHand = cur.id == data.equip
+		local cost = Hammers.LevelCost(cur.k, cur.lv)
+		local o = { name = h.name, line = h.desc, icon = art(h), color = r.color, height = 112, buttonW = 190, spin = inHand,
+			chips = { { inHand and "IN YOUR HAND" or "IN YOUR BAG", inHand and K.GREEN or K.LOCK }, { string.upper(r.name), r.color }, { "LV " .. cur.lv .. "/" .. Hammers.MaxLevel, K.DARK },
+				{ Hammers.PowerLabel(cur.k, cur.lv) .. " POWER", GOLD } } }
+		if cost then
+			local can = money() >= cost
+			o.button = { "⬆ LV " .. (cur.lv + 1) .. "  " .. fmt(cost), can and GOLD or K.LOCK, function() levelUp(cur, h) end, shine = can, size = 19 }
+		else
+			o.status = { "MAX LEVEL", GOLD }
+		end
+		if not inHand then o.extra = { label = "EQUIP", color = EQUIP_BLUE, w = 110, onClick = function() equip(cur, h) end } end
+		K.row(c.content, 1, o)
+	end
+	-- crates waiting to be opened
+	local total = 0
+	for _, n in pairs(data.crates) do total += n end
+	if total > 0 then
+		K.section(c.content, 2, "CRATES TO OPEN", Color3.fromRGB(255, 220, 110), total .. " waiting")
+		crateTiles(data, 3, false)
+	end
+	sortHammers(data.hammers, data.equip)
+	K.section(c.content, 4, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
+	local grid = K.grid(c.content, 5, invCols(), 158, 8)
 	for i, it in ipairs(data.hammers) do
 		local h = Hammers.ById[it.k]
 		local r = rar(h)
-		local cost = Hammers.LevelCost(it.k, it.lv)
-		local o = { order = i, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK },
-			stats = { { Hammers.PowerLabel(it.k, it.lv) .. " POWER", GOLD } } }
-		if it.id == "rusty" then table.insert(o.stats, { "FOREVER", K.SUB }) elseif it.pass then table.insert(o.stats, { "PASS", EQUIP_BLUE }) elseif h.exclusive then table.insert(o.stats, { "EXCLUSIVE", T.red }) end
-		local buttons = {}
-		if it.id == data.equip then
-			o.spin = true
-			table.insert(buttons, { "IN HAND", K.GREEN, function() end })
-		else
-			table.insert(buttons, { "EQUIP", EQUIP_BLUE, function() equip(it, h) end })
-		end
-		if cost then
-			local can = money() >= cost
-			table.insert(buttons, { "⬆ " .. fmt(cost), can and GOLD or K.LOCK, function() levelUp(it, h) end, shine = can and it.id == data.equip })
-		else
-			table.insert(buttons, { "MAX", GOLD, function() end })
-		end
-		o.buttons = buttons
-		K.tile(g2, o)
+		local isCur = cur and it.id == cur.id
+		miniTile(grid, { order = i, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK },
+			line = it.id == data.equip and "✋ IN HAND" or (Hammers.PowerLabel(it.k, it.lv) .. " power"), lineColor = it.id == data.equip and Color3.fromRGB(35, 154, 69) or nil,
+			ring = isCur and GOLD or nil, spin = it.id == data.equip,
+			onClick = function()
+				c.click()
+				selected = it.id
+				local y = c.content.CanvasPosition
+				drawHammers(tok, data)
+				c.content.CanvasPosition = Vector2.new(0, 0) -- the selected hammer is on top
+			end })
 	end
 	K.note(c.content, 6, "Trade hammers with other builders (TRADE). The Rusty Hammer and pass hammers always stay yours.")
 end
 
--- INDEX tab: trade-up + the collection book --------------------------------------------------------------------
+function M.Hammers(tok)
+	local loading = K.loading(c.content)
+	local data = fetch()
+	if not c.live(tok) then return end
+	loading:Destroy()
+	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
+	drawHammers(tok, data)
+end
+
+-- Inventory → TRADE-UP: a contract like CS:GO. Put 10 hammers of one rarity in the slots, get 1 random of the next.
+local picked = {} -- item ids in the contract, in order
+local function canTrade(it, h) return not it.bound and not it.pass and not h.exclusive and not h.event and it.id ~= "rusty" end
+local function drawTradeUp(tok, data)
+	if not c.live(tok) then return end
+	clearBody()
+	local byId = {}
+	for _, it in ipairs(data.hammers) do byId[it.id] = it end
+	-- drop picks that are gone
+	local keep = {}
+	for _, id in ipairs(picked) do if byId[id] then table.insert(keep, id) end end
+	picked = keep
+	local rarity = picked[1] and Hammers.ById[byId[picked[1]].k].r or nil
+	local N = Hammers.TradeUpCount
+	local regular = { exclusiveOnly = false }
+	-- the contract
+	local panel = new("Frame", { Name = "Contract", Size = UDim2.new(1, 0, 0, 228), BackgroundTransparency = 1, LayoutOrder = 1, ZIndex = 2, Parent = c.content })
+	UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.fromRGB(240, 236, 255), ZIndex = 1, Parent = panel })
+	local from, to = rarity and Hammers.Rarities[rarity], rarity and Hammers.Rarities[rarity + 1]
+	local title = rarity and (string.upper(from.name) .. "  →  " .. (to and string.upper(to.name) or "—")) or "TRADE-UP CONTRACT"
+	local tl = K.text({ Position = UDim2.fromOffset(18, 10), Size = UDim2.new(1, -250, 0, 34), Text = title, Font = T.chunky, TextSize = 28, Max = 28,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 3, Parent = panel })
+	if from then new("UIGradient", { Color = ColorSequence.new(from.color:Lerp(Color3.new(1, 1, 1), 0.3), to and to.color or from.color), Parent = tl }) end
+	K.text({ Position = UDim2.fromOffset(18, 44), Size = UDim2.new(1, -250, 0, 22), TextSize = 16, Max = 16, TextColor3 = K.SUB, ZIndex = 3, Parent = panel,
+		Text = rarity and ("Put in " .. N .. " " .. from.name .. " hammers: you get 1 random " .. (to and to.name or "?") .. " hammer. Levels are not kept.")
+			or ("Tap " .. N .. " hammers of the same rarity below. You get 1 random hammer of the next rarity.") })
+	-- the 10 slots
+	local slots = new("Frame", { Position = UDim2.fromOffset(14, 76), Size = UDim2.new(1, -28, 0, 82), BackgroundTransparency = 1, ZIndex = 3, Parent = panel })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder, Parent = slots })
+	for i = 1, N do
+		local id = picked[i]
+		local it = id and byId[id]
+		local s = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.new(1 / N, -6, 1, 0), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 3, Parent = slots })
+		new("UIAspectRatioConstraint", { AspectRatio = 1, Parent = s })
+		if it then
+			local h = Hammers.ById[it.k]
+			K.artBox(s, art(h), rar(h).color, { Size = UDim2.fromScale(1, 1), IconScale = 1.04 })
+			s.Activated:Connect(function()
+				c.click()
+				table.remove(picked, i)
+				drawTradeUp(tok, data)
+			end)
+		else
+			UI.slice("inset", { ImageColor3 = Color3.fromRGB(200, 196, 230), ZIndex = 3, Parent = s })
+			K.text({ Size = UDim2.fromScale(1, 1), Text = tostring(i), Font = T.chunky, TextSize = 22, TextColor3 = Color3.fromRGB(150, 146, 190), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = s })
+		end
+	end
+	-- progress + buttons
+	local bar, fill = UI.bar({ Position = UDim2.fromOffset(18, 172), Size = UDim2.new(1, -440, 0, 24), ZIndex = 3 }, from and from.color or K.GREEN)
+	bar.Parent = panel
+	fill.Size = UDim2.fromScale(math.clamp(#picked / N, 0.04, 1), 1)
+	K.text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = #picked .. " / " .. N, Font = T.chunky, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = bar })
+	local ready = #picked == N and to ~= nil and #Hammers.PoolAt(regular, rarity + 1) > 0
+	K.button(panel, "AUTO-FILL", EQUIP_BLUE, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -224, 0, 160), Size = UDim2.fromOffset(190, 52), TextSize = 19 }, function()
+		c.click()
+		-- the rarity you picked (or the one you have most of), lowest levels first, never the hammer in your hand when there are enough others
+		local want = rarity
+		if not want then
+			local count = {}
+			for _, it in ipairs(data.hammers) do
+				local h = Hammers.ById[it.k]
+				if canTrade(it, h) and h.r < #Hammers.Rarities then count[h.r] = (count[h.r] or 0) + 1 end
+			end
+			local best = 0
+			for r, n in pairs(count) do if n >= N and (not want or r < want) then want = r end; best = math.max(best, n) end
+			if not want then for r, n in pairs(count) do if n == best then want = r end end end
+		end
+		if not want then c.toast("No hammers to trade up yet", T.muted, 2.5) return end
+		local pool = {}
+		for _, it in ipairs(data.hammers) do
+			local h = Hammers.ById[it.k]
+			if h.r == want and canTrade(it, h) and not table.find(picked, it.id) then table.insert(pool, it) end
+		end
+		table.sort(pool, function(a, b)
+			if (a.id == data.equip) ~= (b.id == data.equip) then return b.id == data.equip end
+			return (a.lv or 1) < (b.lv or 1)
+		end)
+		for _, it in ipairs(pool) do if #picked < N then table.insert(picked, it.id) end end
+		drawTradeUp(tok, data)
+	end)
+	K.button(panel, ready and "TRADE UP!" or ("TRADE UP " .. #picked .. "/" .. N), ready and K.GREEN or K.LOCK,
+		{ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 160), Size = UDim2.fromOffset(200, 52), TextSize = 21, Shine = ready }, function()
+		c.click()
+		if not ready then
+			c.toast(#picked < N and ("Put " .. (N - #picked) .. " more in the contract") or "Nothing of the next rarity exists yet", T.muted, 2.5)
+			return
+		end
+		local ok, res = call("tradeup", rarity, picked)
+		if ok then
+			picked = {}
+			local h = Hammers.ById[res.key]
+			if h then revealHammer(h, { head = "TRADE-UP!", isNew = res.new, button = "NICE!", onClose = function() M.Redraw() end }) else M.Redraw() end
+		else
+			c.toast("⚠️ " .. tostring(res), T.red)
+		end
+	end)
+	-- what you can put in (others dimmed)
+	sortHammers(data.hammers)
+	K.section(c.content, 2, "YOUR HAMMERS", Color3.fromRGB(200, 170, 255), "tap to put in · tap a slot to take out · Rusty, pass and exclusive hammers stay out")
+	local grid = K.grid(c.content, 3, invCols(), 158, 8)
+	local n = 0
+	for _, it in ipairs(data.hammers) do
+		local h = Hammers.ById[it.k]
+		local r = rar(h)
+		local inside = table.find(picked, it.id) ~= nil
+		local ok = canTrade(it, h) and h.r < #Hammers.Rarities and (not rarity or h.r == rarity)
+		n += 1
+		miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK },
+			line = inside and "IN CONTRACT" or (it.id == data.equip and "✋ IN HAND" or nil), lineColor = inside and Color3.fromRGB(35, 154, 69) or nil,
+			dim = not ok and not inside, selected = inside, ring = inside and K.GREEN or nil,
+			onClick = function()
+				c.click()
+				if inside then
+					table.remove(picked, table.find(picked, it.id))
+				elseif not ok then
+					c.toast(not canTrade(it, h) and "This hammer can't be traded up" or ("Only " .. Hammers.Rarities[rarity].name .. " hammers in this contract"), T.muted, 2)
+					return
+				elseif #picked >= N then
+					c.toast("The contract is full", T.muted, 2)
+					return
+				else
+					table.insert(picked, it.id)
+				end
+				local y = c.content.CanvasPosition
+				drawTradeUp(tok, data)
+				c.content.CanvasPosition = y
+			end })
+	end
+end
+
+function M.TradeUp(tok)
+	local loading = K.loading(c.content)
+	local data = fetch()
+	if not c.live(tok) then return end
+	loading:Destroy()
+	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
+	drawTradeUp(tok, data)
+end
+
+-- Inventory → INDEX: the collection book ----------------------------------------------------------------------------
 function M.Index(tok)
 	local loading = K.loading(c.content)
 	local data = fetch()
 	if not c.live(tok) then return end
 	loading:Destroy()
-	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Shop again.", "shop") return end
-	local eligible = {}
-	for _, it in ipairs(data.hammers) do
-		local h = Hammers.ById[it.k]
-		if not it.bound and not it.pass and not h.exclusive and not h.event and it.id ~= "rusty" then eligible[h.r] = (eligible[h.r] or 0) + 1 end
-	end
+	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
 	local owned, total = 0, #Hammers.List
 	for _, h in ipairs(Hammers.List) do if data.index[h.key] then owned += 1 end end
 	K.banner(c.content, 1, { name = "HAMMER INDEX", line = "Found " .. owned .. " of " .. total .. " hammers. Open crates, trade up, trade with friends.", icon = "star", color = GOLD,
 		tint = Color3.fromRGB(255, 240, 200), bar = { owned / total, GOLD, owned .. " / " .. total }, height = 124 })
-	K.section(c.content, 2, "TRADE-UP", Color3.fromRGB(200, 170, 255), Hammers.TradeUpCount .. " of one rarity → 1 random hammer of the next (levels are not kept)")
-	local regular = { exclusiveOnly = false }
-	for r = 1, #Hammers.Rarities - 1 do
-		local rr, nr = Hammers.Rarities[r], Hammers.Rarities[r + 1]
-		local n = eligible[r] or 0
-		local can = n >= Hammers.TradeUpCount
-		local up = Hammers.PoolAt(regular, r + 1)
-		local o = { order = 2 + r, name = rr.name .. "  →  " .. nr.name, line = n .. " / " .. Hammers.TradeUpCount .. " " .. rr.name .. " hammers ready",
-			icon = up[1] and art(up[1]) or "shop", color = nr.color, height = 96, buttonW = 170, spin = can }
-		if #up > 0 then o.chips = { { Hammers.PowerLabel(up[1].key, 1) .. " POWER", GOLD } } end
-		if #up == 0 then
-			o.status = { "COMING SOON", K.LOCK }
-			o.dim = true
-		elseif can then
-			o.button = { "TRADE UP", K.GREEN, function()
-				c.click()
-				local ok, res = call("tradeup", r)
-				if ok then
-					local h = Hammers.ById[res.key]
-					if h then revealHammer(h, { head = "TRADE-UP!", isNew = res.new, button = "NICE!", onClose = function() M.Redraw() end }) else M.Redraw() end
-				else
-					c.toast("⚠️ " .. tostring(res), T.red)
-				end
-			end, shine = true }
-		else
-			o.status = { n .. " / " .. Hammers.TradeUpCount, K.LOCK }
-			o.dim = n == 0
-		end
-		K.row(c.content, 2 + r, o)
-	end
-	-- the book, best rarity first
-	local order = 20
+	local order = 2
 	for r = #Hammers.Rarities, 1, -1 do
 		local rr = Hammers.Rarities[r]
 		local list = {}
@@ -358,18 +558,14 @@ function M.Index(tok)
 		local have = 0
 		for _, h in ipairs(list) do if data.index[h.key] then have += 1 end end
 		K.section(c.content, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color, have .. " / " .. #list .. "  ·  " .. Hammers.PowerLabel(list[1].key, 1) .. " power")
-		local grid = K.grid(c.content, order + 1, cols(), 214)
+		local grid = K.grid(c.content, order + 1, invCols(), 158, 8)
 		for i, h in ipairs(list) do
 			local got = data.index[h.key] == true
-			local o = { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got, artH = 110, iconScale = h.soon and 0.7 or 1.06 }
-			if got then
-				o.badge = { "✓", K.GREEN }
-				o.status = { h.exclusive and "EXCLUSIVE" or string.upper(rr.name), rr.color }
-			else
-				o.status = { h.soon and "COMING SOON" or (h.event and "EVENT ONLY" or (h.exclusive and "EXCLUSIVE CRATE" or (h.pass and "GAME PASS" or "NOT FOUND YET"))), K.LOCK }
-			end
-			if h.exclusive and not got then o.tag = { "EXCLUSIVE", T.red } end
-			K.tile(grid, o)
+			miniTile(grid, { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got,
+				badge = got and { "✓", K.GREEN } or (h.exclusive and { "EXCLUSIVE", T.red } or nil),
+				line = got and "FOUND" or (h.soon and "COMING SOON" or (h.event and "EVENT ONLY" or (h.exclusive and "EXCLUSIVE CRATE" or (h.pass and "GAME PASS" or "NOT FOUND")))),
+				lineColor = got and Color3.fromRGB(35, 154, 69) or nil,
+				onClick = function() c.click(); c.toast(h.name .. ": " .. h.desc, rr.color, 4) end })
 		end
 		order += 2
 	end
@@ -385,7 +581,17 @@ function M.Available()
 end
 
 function M.Redraw()
-	if c.redrawShop then c.redrawShop() end
+	if c.modalOpen() and c.modalTitle.Text == "Inventory" then
+		if c.redrawInventory then c.redrawInventory() end
+	elseif c.redrawShop then
+		c.redrawShop()
+	end
+end
+-- is a hammer view on screen? (the Shop's CRATES tab or the Inventory's hammer tabs): it follows your hammers live
+function M.Showing()
+	if not c.modalOpen() then return false end
+	if c.modalTitle.Text == "Inventory" then return c.inventoryHammerTab and c.inventoryHammerTab() or false end
+	return c.modalTitle.Text == "Shop" and c.shopHammerTab and c.shopHammerTab() or false
 end
 
 function M.Init(ctx)
@@ -403,7 +609,7 @@ function M.Init(ctx)
 		if d.kind == "crate" and d.reason ~= "silent" then
 			local cr = Hammers.CrateById[d.crate]
 			local n = tonumber(d.n) or 1
-			c.toast("📦 " .. (n > 1 and (n .. "x ") or "") .. (cr and cr.name or "Crate") .. (d.reason == "drop" and " found! Open it: Shop → HAMMERS" or " added: Shop → HAMMERS"), cr and cr.color or T.green, 4)
+			c.toast("📦 " .. (n > 1 and (n .. "x ") or "") .. (cr and cr.name or "Crate") .. (d.reason == "drop" and " found! Open it: Inventory → HAMMERS" or " added: Inventory → HAMMERS"), cr and cr.color or T.green, 4)
 			c.sound2D(c.S.Chime, 0.4, 1.1)
 		end
 	end)

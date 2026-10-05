@@ -9,8 +9,7 @@ local c, UI, T, Config
 local tab = "hammers"
 
 local TABS = {
-	{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230) },
-	{ id = "index", label = "INDEX", icon = "star", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(220, 140, 30) },
+	{ id = "hammers", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230) },
 	{ id = "gear", label = "TRAINING", icon = "strength", c1 = Color3.fromRGB(255, 170, 110), c2 = Color3.fromRGB(225, 85, 40) },
 	{ id = "machines", label = "MACHINES", icon = "mega", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
 	{ id = "crew", label = "CREW", icon = "crew", c1 = Color3.fromRGB(130, 240, 140), c2 = Color3.fromRGB(30, 160, 80) },
@@ -178,7 +177,7 @@ end
 function M.Available()
 	local p = c.player
 	local cash = money()
-	local out = { hammers = false, index = false, gear = false, machines = false, crew = false, count = 0 }
+	local out = { hammers = false, gear = false, machines = false, crew = false, count = 0 }
 	local gt = p:GetAttribute("GearTier") or 1
 	local ng = Config.TrainingGear[gt + 1]
 	out.hammers = HammersUI.Available()
@@ -206,7 +205,7 @@ end
 function M.Show(t, keepScroll)
 	-- opening the window (not a redraw while it is open) always starts on the first tab
 	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Shop") then tab = "hammers" end
-	if type(t) == "string" then tab = (t == "tools" and "hammers") or t end
+	if type(t) == "string" then tab = (t == "tools" or t == "index") and "hammers" or t end
 	if not THEME[tab] then tab = "hammers" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	keepNext = scroll ~= nil
@@ -225,7 +224,7 @@ function M.Show(t, keepScroll)
 		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
 		M.Show(id)
 	end)
-	if tab == "hammers" then HammersUI.Hammers(tok) elseif tab == "index" then HammersUI.Index(tok)
+	if tab == "hammers" then HammersUI.Crates(tok)
 	elseif tab == "gear" then gear() elseif tab == "machines" then machines() else crew() end
 end
 
@@ -242,12 +241,12 @@ function M.Init(ctx)
 		queued = true
 		task.delay(0.15, function()
 			queued = false
-			if c.modalOpen() and c.modalTitle.Text == "Shop" and (tab == "hammers" or tab == "index") and not c.player.PlayerGui:FindFirstChild("CrateShake")
-				and not (_G.__CE_RevealOpen and _G.__CE_RevealOpen()) then
-				M.Show(nil, true)
+			if HammersUI.Showing() and not c.player.PlayerGui:FindFirstChild("CrateShake") and not (_G.__CE_RevealOpen and _G.__CE_RevealOpen()) then
+				HammersUI.Redraw()
 			end
 		end)
 	end
+	c.shopHammerTab = function() return tab == "hammers" end
 	c.redrawShop = function()
 		if c.modalOpen() and c.modalTitle.Text == "Shop" then M.Show(nil, true) end
 	end

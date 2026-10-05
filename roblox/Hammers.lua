@@ -92,20 +92,20 @@ end
 -- crates: price in cash (scaled per zone, see Hammers.SupplyPrice), gems, or a Robux developer product (Store key)
 -- odds = chance in % per rarity index 1..8 (they add up to 100). Pools by zone for the cash crate.
 Hammers.Crates = {
-	{ id = "supply", name = "Supply Crate", icon = "crate_supply", color = C3(255, 186, 60), cash = true,
+	{ id = "supply", image = "rbxassetid://82594037678634", name = "Supply Crate", icon = "crate_supply", color = C3(255, 186, 60), cash = true,
 		desc = "The builders' crate: Common to Epic in Town, Legendary from the Suburbs. It also drops while you build.",
 		pools = {
 			town = { 62, 28, 9, 1, 0, 0, 0, 0 },
 			suburbs = { 30, 38, 22, 8, 2, 0, 0, 0 },
 			downtown = { 0, 30, 40, 24, 6, 0, 0, 0 },
 		} },
-	{ id = "builder", name = "Builder's Crate", icon = "crate_builder", color = C3(70, 160, 255), gems = 150,
+	{ id = "builder", image = "rbxassetid://93823486590204", name = "Builder's Crate", icon = "crate_builder", color = C3(70, 160, 255), gems = 150,
 		desc = "Uncommon or better, with a real shot at Legendary. 1 in 200 is Mythic.",
 		odds = { 0, 45, 35, 15, 4.5, 0.5, 0, 0 } },
-	{ id = "golden", name = "Golden Crate", icon = "crate_golden", color = C3(255, 206, 40), gems = 600, product = "crate_golden",
+	{ id = "golden", image = "rbxassetid://89693710220545", name = "Golden Crate", icon = "crate_golden", color = C3(255, 206, 40), gems = 600, product = "crate_golden",
 		desc = "Rare or better. Mythic, Secret and even Divine hammers live here. Pity: Legendary+ guaranteed every 20.",
 		odds = { 0, 0, 40, 35, 18, 6, 0.9, 0.1 }, pity = { every = 20, min = 5 } },
-	{ id = "exclusive", name = "Exclusive Crate", icon = "crate_exclusive", color = C3(255, 90, 200), product = "crate_exclusive", exclusiveOnly = true,
+	{ id = "exclusive", image = "rbxassetid://104986103095719", name = "Exclusive Crate", icon = "crate_exclusive", color = C3(255, 90, 200), product = "crate_exclusive", exclusiveOnly = true,
 		desc = "Hammers nobody else can get: Legendary, Mythic and Secret exclusives. Pity: Secret guaranteed every 25.",
 		odds = { 0, 0, 0, 0, 60, 32, 8, 0 }, pity = { every = 25, min = 7 } },
 }
