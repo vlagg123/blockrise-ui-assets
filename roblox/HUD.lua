@@ -544,7 +544,7 @@ function M.Init(ctx)
 		powLbl.Text = c.fmtMult(c.buildPower()) .. " power/hit"
 		if os.clock() - lastStr > 0.15 then lastStr = os.clock(); bounce(strSc, 1.1) end
 	end
-	for _, a in ipairs({ "Strength", "PowerMult", "ToolTier" }) do player:GetAttributeChangedSignal(a):Connect(refreshStrength) end
+	for _, a in ipairs({ "Strength", "PowerMult", "ToolTier", "HammerPower" }) do player:GetAttributeChangedSignal(a):Connect(refreshStrength) end
 	refreshStrength()
 
 	local grid = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(176, 400), Parent = left })

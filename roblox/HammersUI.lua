@@ -247,6 +247,11 @@ function M.Hammers(tok)
 				o.status = { studio and ("SOON · " .. K.robux(prod.price)) or "COMING SOON", K.LOCK }
 			end
 		end
+		if next(Hammers.Odds(cr.id, zone, 1)) == nil and have == 0 then
+			-- its hammers are still being made
+			buttons = {}
+			o.status = { "COMING SOON", K.LOCK }
+		end
 		if #buttons > 0 then o.buttons = buttons end
 		local t = K.tile(grid, o)
 		-- the odds (Roblox: paid random items must show them)

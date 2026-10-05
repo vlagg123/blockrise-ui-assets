@@ -186,7 +186,10 @@ local function crates(tok)
 		return
 	end
 	local list = {}
-	for _, p in ipairs(Config.Store.products) do if p.crate and visible(p) then table.insert(list, p) end end
+	for _, p in ipairs(Config.Store.products) do
+		-- (a crate whose hammers are still being made isn't sold)
+		if p.crate and visible(p) and next(Hammers.Odds(p.crate, "town", 1)) ~= nil then table.insert(list, p) end
+	end
 	itemTiles(tok, list, 3, { h = 300, make = function(p)
 		local cr = Hammers.CrateById[p.crate]
 		local odds = Hammers.Odds(p.crate, c.player:GetAttribute("CrateZone") or "town", 1)

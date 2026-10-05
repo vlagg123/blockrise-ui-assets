@@ -39,7 +39,8 @@ function M.Show(keepScroll)
 
 	-- the big card: progress, what you get, the button (two taps)
 	local frac = math.clamp(f.run / math.max(f.cost, 1), 0, 1)
-	local ready = f.run >= f.cost
+	local gateOk = not f.gate or f.gate.done
+	local ready = f.run >= f.cost and gateOk
 	local confirm = false
 	K.banner(c.content, 1, { name = "REBIRTH #" .. (f.rebirths + 1), icon = "rebirth", color = P2, tint = Color3.fromRGB(215, 185, 255), height = 130, buttonW = 210,
 		bar = { frac, GOLD, money(f.run) .. " / " .. money(f.cost) },
@@ -47,6 +48,7 @@ function M.Show(keepScroll)
 			{ "+" .. math.floor(Company.FranchiseStrengthPer * 100) .. "% STRENGTH", Color3.fromRGB(255, 120, 80) } },
 		button = { ready and "REBIRTH!" or "NOT YET", ready and P2 or K.LOCK, function(b)
 			c.click()
+			if not gateOk then c.toast("🏗️ Build the " .. f.gate.name .. " once first (Job Board)", T.muted, 3) return end
 			if not ready then c.toast("Earn " .. money(f.cost - f.run) .. " more to Rebirth", T.muted, 3) return end
 			local lbl = b:FindFirstChild("Label")
 			if not confirm then
@@ -58,7 +60,13 @@ function M.Show(keepScroll)
 			local ok2, res, msg = pcall(function() return c.R.FranchiseAction:InvokeServer("franchise") end)
 			if ok2 and res then c.closeModal() else c.toast("⚠️ " .. tostring(msg or "Can't Rebirth right now"), T.red) end
 		end, shine = ready } })
-	K.note(c.content, 2, "You keep your Level, Rep, house, Gems, materials, blueprints and cars." .. (f.rebirths == 0 and "  The first Rebirth opens Downtown!" or ""))
+	local opens = f.rebirths == 0 and "  Rebirth 1 opens the SUBURBS!" or (f.rebirths == 1 and "  Rebirth 2 opens DOWNTOWN!" or "")
+	K.note(c.content, 2, "You keep your Level, Rep, house, Gems, materials, blueprints, cars and hammers." .. opens)
+	if f.gate then
+		K.row(c.content, 2.5, { name = (f.gate.done and "✓ " or "") .. "Build the " .. f.gate.name, line = f.gate.done and "Done: this zone is finished" or "Finish this zone's top building once to Rebirth",
+			icon = "contract", color = f.gate.done and K.GREEN or Color3.fromRGB(255, 176, 40), height = 84, buttonW = 150,
+			status = { f.gate.done and "DONE" or "TO DO", f.gate.done and K.GREEN or K.LOCK } })
+	end
 
 	-- Star Shop
 	K.section(c.content, 3, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐")
