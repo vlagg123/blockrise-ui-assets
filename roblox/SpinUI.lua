@@ -93,7 +93,7 @@ function M.Show()
 	UI.corner(18).Parent = marker
 	new("UIStroke", { Thickness = 5, Color = GOLD1, Parent = marker })
 	for _, y in ipairs({ 0, 1 }) do
-		local tri = new("TextLabel", { AnchorPoint = Vector2.new(0.5, y), Position = UDim2.new(0.5, 0, y, y == 0 and -2 or 2), Size = UDim2.fromOffset(30, 20), BackgroundTransparency = 1,
+		local tri = new("TextLabel", { AnchorPoint = Vector2.new(0.5, y), Position = UDim2.new(0.5, 0, y, y == 0 and -2 or 2), Size = UDim2.fromOffset(34, 28), BackgroundTransparency = 1,
 			Text = y == 0 and "▼" or "▲", TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = GOLD1, ZIndex = 9, Parent = reel })
 		UI.textStroke(0, 2.5).Parent = tri
 	end
@@ -107,7 +107,7 @@ function M.Show()
 	-- status + button
 	local ctrl = controlRow(2, 92)
 	local status = K.text({ Position = UDim2.fromOffset(18, 14), Size = UDim2.new(1, -370, 0, 32), Text = "", TextSize = 25, Max = 25, Parent = ctrl })
-	local sub = K.text({ Position = UDim2.fromOffset(18, 50), Size = UDim2.new(1, -370, 0, 24), Text = "", TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = ctrl })
+	local sub = K.text({ Position = UDim2.fromOffset(18, 52), Size = UDim2.new(1, -370, 0, 24), Text = "", TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = ctrl })
 	-- one big button for a free / extra spin; otherwise two side by side: Gems and Robux
 	local btn = UI.button("SPIN!", K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(330, 60), TextSize = 27,
 		ZIndex = 7, Shine = true, Parent = ctrl })

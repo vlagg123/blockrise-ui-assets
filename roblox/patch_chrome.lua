@@ -32,7 +32,7 @@ do
 		if d:IsA("UIStroke") or d:IsA("UIGradient") then d.Enabled = false end
 	end
 	UI.slice("shadow", { Name = "Shadow", Position = UDim2.fromOffset(-12, -2), Size = UDim2.new(1, 26, 1, 28), ImageTransparency = 0.05, ZIndex = 1, Parent = modal })
-	local body = UI.slice("panel", { Name = "Body", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Parent = modal })
+	local body = UI.slice("panel", { Name = "Body", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Active = true, Parent = modal })
 	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(104, 104, 240), Color3.fromRGB(52, 46, 150)), Rotation = 90, Parent = body })
 	local stripes = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 1, -10), BackgroundTransparency = 1, ZIndex = 3, Parent = modal })
 	UI.corner(17).Parent = stripes
@@ -49,7 +49,7 @@ do
 	modalHeader.Position = UDim2.fromOffset(80, -30)
 	modalHeader.Size = UDim2.new(1, -160, 0, 78)
 	modalHeader.ZIndex = 24
-	local ribbon = UI.slice("button", { Name = "Ribbon", ImageColor3 = T.accent, ZIndex = 1, Parent = modalHeader })
+	local ribbon = UI.slice("button", { Name = "Ribbon", ImageColor3 = T.accent, ZIndex = 1, Active = true, Parent = modalHeader })
 	local hs = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -16), BackgroundTransparency = 1, ZIndex = 2, Parent = modalHeader })
 	UI.corner(13).Parent = hs
 	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(96, 96),

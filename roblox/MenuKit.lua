@@ -372,7 +372,7 @@ function K.window(parent, size, title, c1, c2, icon, noClose)
 	local w = new("Frame", { Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 20), Size = size, BackgroundTransparency = 1,
 		Active = true, Parent = parent })
 	UI.slice("shadow", { Name = "Shadow", Position = UDim2.fromOffset(-12, -2), Size = UDim2.new(1, 26, 1, 28), ImageTransparency = 0.05, ZIndex = 1, Parent = w })
-	local body = UI.slice("panel", { Name = "Body", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Parent = w })
+	local body = UI.slice("panel", { Name = "Body", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Active = true, Parent = w })
 	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(104, 104, 240), Color3.fromRGB(52, 46, 150)), Rotation = 90, Parent = body })
 	local stripes = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 1, -10), BackgroundTransparency = 1, ZIndex = 3, Parent = w })
 	UI.corner(17).Parent = stripes
