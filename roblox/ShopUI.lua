@@ -1,14 +1,16 @@
--- BlockRise Empire - Shop window: tools, training gear, heavy machines and the crew, as item tiles
+-- BlockRise Empire - Shop window: hammers (collection, crates, index), training gear, heavy machines and the crew, as item tiles
 local RS = game:GetService("ReplicatedStorage")
 local Icons = require(RS.Shared:WaitForChild("Icons"))
 local K = require(RS.Shared:WaitForChild("MenuKit"))
+local HammersUI = require(script.Parent:WaitForChild("HammersUI"))
 
 local M = {}
 local c, UI, T, Config
-local tab = "tools"
+local tab = "hammers"
 
 local TABS = {
-	{ id = "tools", label = "TOOLS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230) },
+	{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230) },
+	{ id = "index", label = "INDEX", icon = "star", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(220, 140, 30) },
 	{ id = "gear", label = "TRAINING", icon = "strength", c1 = Color3.fromRGB(255, 170, 110), c2 = Color3.fromRGB(225, 85, 40) },
 	{ id = "machines", label = "MACHINES", icon = "mega", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
 	{ id = "crew", label = "CREW", icon = "crew", c1 = Color3.fromRGB(130, 240, 140), c2 = Color3.fromRGB(30, 160, 80) },
@@ -37,29 +39,6 @@ local function buy(remote, arg, keep)
 	end
 end
 
--- the hammer in your hand: the one you picked, the Thunderclap if you own it, or your best
-local function equippedTool()
-	local cur = c.player:GetAttribute("ToolTier") or 1
-	local eq = tonumber(c.player:GetAttribute("EquipTool") or "")
-	if eq and eq >= 1 and eq <= cur then return eq end
-	local sh = Config.StormHammer
-	if sh and c.player:GetAttribute("Pass_" .. sh.pass) == true then return sh.key end
-	return cur
-end
-local function equipTool(which)
-	c.click()
-	local rf = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("EquipTool")
-	if not rf then return end
-	local ok, res, msg = pcall(function() return rf:InvokeServer(which) end)
-	if ok and res then
-		local sh = Config.StormHammer
-		local name = (sh and which == sh.key) and sh.name or (Config.Tools[which] and Config.Tools[which].name) or "Hammer"
-		c.toast("🔨 " .. name .. " equipped", T.green, 2)
-		M.Show(nil, true)
-	else
-		c.toast("⚠️ " .. tostring(msg or "Can't equip that"), T.red)
-	end
-end
 local EQUIP_BLUE = Color3.fromRGB(70, 160, 255)
 
 -- a tier list (tools / gear): every tier, the locked ones show their price; the window opens on your row
@@ -104,40 +83,6 @@ local function tierTiles(list, current, remote, icon, stat, keep, equip)
 end
 
 local keepNext = false
--- the Thunderclap Hammer: a Robux add-on that triples your build power, on top of the hammer you have
-local function stormBanner(order)
-	local sh = Config.StormHammer
-	if not sh then return end
-	local pass
-	for _, p in ipairs(Config.Store.passes) do if p.key == sh.pass then pass = p end end
-	if not pass then return end
-	local studio = game:GetService("RunService"):IsStudio()
-	if (pass.id or 0) <= 0 and not studio then return end -- not on sale yet
-	local owned = c.player:GetAttribute("Pass_" .. sh.pass) == true
-	local o = { name = string.upper(sh.name), line = "A storm in a hammer: x" .. sh.mult .. " build power for you and your crew. Forever.",
-		icon = sh.icon or "up_power", color = sh.color, tint = Color3.fromRGB(150, 200, 255), buttonW = 180 }
-	if owned and equippedTool() == sh.key then
-		o.status = { "EQUIPPED", K.GREEN }
-	elseif owned then
-		o.button = { "EQUIP", EQUIP_BLUE, function() equipTool(sh.key) end }
-	elseif (pass.id or 0) > 0 then
-		o.button = { "R$ " .. tostring(pass.price or ""), Color3.fromRGB(80, 170, 255), function()
-			c.click()
-			game:GetService("MarketplaceService"):PromptGamePassPurchase(c.player, pass.id)
-		end }
-	else
-		o.status = { "SOON · R$" .. tostring(pass.price or "?"), K.LOCK }
-	end
-	K.banner(c.content, order, o)
-end
-
-local function tools()
-	stormBanner(0)
-	K.section(c.content, 1, "BUILDING TOOLS", Color3.fromRGB(150, 215, 255), "more build power per hit")
-	tierTiles(Config.Tools, c.player:GetAttribute("ToolTier") or 1, "BuyTool", "shop", function(t)
-		return { "x" .. Config.FormatNum(t.power) .. " POWER", GOLD }
-	end, keepNext, { which = equippedTool(), onEquip = equipTool })
-end
 
 local function gear()
 	K.section(c.content, 1, "TRAINING GEAR", Color3.fromRGB(255, 190, 140), "more Strength per hit")
@@ -233,12 +178,12 @@ end
 function M.Available()
 	local p = c.player
 	local cash = money()
-	local out = { tools = false, gear = false, machines = false, crew = false, count = 0 }
-	local tier, gt = p:GetAttribute("ToolTier") or 1, p:GetAttribute("GearTier") or 1
-	local nt, ng = Config.Tools[tier + 1], Config.TrainingGear[gt + 1]
-	out.tools = nt ~= nil and cash >= nt.price
+	local out = { hammers = false, index = false, gear = false, machines = false, crew = false, count = 0 }
+	local gt = p:GetAttribute("GearTier") or 1
+	local ng = Config.TrainingGear[gt + 1]
+	out.hammers = HammersUI.Available()
 	out.gear = ng ~= nil and cash >= ng.price
-	if out.tools then out.count += 1 end
+	if out.hammers then out.count += 1 end
 	if out.gear then out.count += 1 end
 	local lvl = p:GetAttribute("Level") or 1
 	for _, m in ipairs(Config.Machines) do
@@ -260,13 +205,13 @@ end
 
 function M.Show(t, keepScroll)
 	-- opening the window (not a redraw while it is open) always starts on the first tab
-	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Shop") then tab = "tools" end
-	if type(t) == "string" then tab = t end
-	if not THEME[tab] then tab = "tools" end
+	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Shop") then tab = "hammers" end
+	if type(t) == "string" then tab = (t == "tools" and "hammers") or t end
+	if not THEME[tab] then tab = "hammers" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	keepNext = scroll ~= nil
 	local th = THEME[tab]
-	c.openModal("Shop", "Shop", "", th.c1, th.c2)
+	local tok = c.openModal("Shop", "Shop", "", th.c1, th.c2)
 	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
 	c.modalSub.Text = fmt(money())
 	local avail = M.Available()
@@ -280,20 +225,34 @@ function M.Show(t, keepScroll)
 		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
 		M.Show(id)
 	end)
-	if tab == "tools" then tools() elseif tab == "gear" then gear() elseif tab == "machines" then machines() else crew() end
+	if tab == "hammers" then HammersUI.Hammers(tok) elseif tab == "index" then HammersUI.Index(tok)
+	elseif tab == "gear" then gear() elseif tab == "machines" then machines() else crew() end
 end
 
 function M.Init(ctx)
 	c = ctx
 	UI, T, Config = c.UI, c.T, c.Config
 	c.shopAvailable = M.Available
-	-- the cash in the header follows your money while the shop is open
-	-- buying the Thunderclap or picking another hammer redraws the TOOLS tab
-	local function redrawTools()
-		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab == "tools" then M.Show(nil, true) end
+	HammersUI.Init(ctx)
+	-- the hammer tabs redraw when your hammers or crates change (a crate bought with Robux, a trade, the Thunderclap pass);
+	-- several changes at once make one redraw, and never while a crate is being opened
+	local queued = false
+	local function redrawHammers()
+		if queued then return end
+		queued = true
+		task.delay(0.15, function()
+			queued = false
+			if c.modalOpen() and c.modalTitle.Text == "Shop" and (tab == "hammers" or tab == "index") and not c.player.PlayerGui:FindFirstChild("CrateShake")
+				and not (_G.__CE_RevealOpen and _G.__CE_RevealOpen()) then
+				M.Show(nil, true)
+			end
+		end)
 	end
-	if Config.StormHammer then c.player:GetAttributeChangedSignal("Pass_" .. Config.StormHammer.pass):Connect(redrawTools) end
-	c.player:GetAttributeChangedSignal("EquipTool"):Connect(redrawTools)
+	c.redrawShop = function()
+		if c.modalOpen() and c.modalTitle.Text == "Shop" then M.Show(nil, true) end
+	end
+	if Config.StormHammer then c.player:GetAttributeChangedSignal("Pass_" .. Config.StormHammer.pass):Connect(redrawHammers) end
+	for _, a in ipairs({ "EquipId", "EquipLevel", "CrateTotal", "HammerCount" }) do c.player:GetAttributeChangedSignal(a):Connect(redrawHammers) end
 	c.player:GetAttributeChangedSignal("Money"):Connect(function()
 		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab ~= "crew" then c.modalSub.Text = fmt(money()) end
 	end)

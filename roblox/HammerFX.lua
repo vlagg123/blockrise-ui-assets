@@ -230,6 +230,20 @@ local AURA = {
 		feet = { count = 10, kind = "spark", colors = { C3(200, 230, 255), C3(110, 170, 255) }, r = 2.5, speed = 2.2, glow = C3(90, 160, 255) } },
 }
 
+-- hammers without a look of their own get one by rarity (Tool attribute Rarity = 1..8)
+local RARITY_AURA = {
+	[3] = { glints = { every = { 0.45, 0.9 }, color = C3(170, 210, 255) } },
+	[4] = { shade = { every = { 0.07, 0.11 }, color = C3(110, 60, 190) }, glints = { every = { 0.4, 0.8 }, color = C3(215, 170, 255) } },
+	[5] = { shade = { every = { 0.06, 0.1 }, color = C3(255, 170, 40), glow = true }, glints = { every = { 0.35, 0.7 }, color = C3(255, 220, 120) } },
+	[6] = { rings = { { count = 3, shape = "ball", size = 0.16, colors = { C3(255, 120, 160), C3(255, 220, 240) }, speed = 1.8, tilt = 0.4, r = 1.15, trail = { C3(255, 90, 140), 0.3 } } },
+		feet = { count = 10, kind = "star", colors = { C3(255, 140, 180), C3(255, 255, 255) }, r = 2.6, speed = 0.7, glow = C3(255, 80, 130) } },
+	[7] = { rings = { { count = 4, shape = "ball", size = 0.18, colors = { C3(200, 200, 255), C3(90, 90, 140) }, speed = 1.4, tilt = 0.5, r = 1.25, trail = { C3(160, 150, 255), 0.35 } } },
+		shade = { every = { 0.05, 0.09 }, color = C3(40, 40, 70) }, feet = { count = 14, kind = "star", colors = { C3(220, 220, 255), C3(120, 110, 200) }, r = 2.8, speed = -0.6, glow = C3(110, 90, 220) } },
+	[8] = { rings = { { count = 6, shape = "ball", size = 0.16, colors = { C3(255, 245, 200), C3(255, 220, 120) }, speed = 1.0, tilt = 0.45, r = 1.4, trail = { C3(255, 230, 150), 0.4 } } },
+		shade = { every = { 0.05, 0.09 }, color = C3(255, 230, 150), glow = true }, feet = { count = 16, kind = "star", colors = { C3(255, 255, 255), C3(255, 225, 140) }, r = 3, speed = 0.5, glow = C3(255, 220, 120) },
+		shooting = { every = { 1.6, 3 } } },
+}
+
 local live = {} -- tool -> state
 
 local function trailOn(p, size, color, life)
@@ -323,7 +337,7 @@ function track(tool)
 	local key = tool:GetAttribute("Key")
 	local thunder = Config.StormHammer and key == Config.StormHammer.key
 	local e = { key = key, spaces = {}, neon = {}, emitters = {}, galaxy = key == "galaxy", thunder = thunder, nextFlash = os.clock() + 1,
-		aura = AURA[key], next = {} }
+		aura = AURA[key] or RARITY_AURA[tonumber(tool:GetAttribute("Rarity")) or 0], next = {} }
 	for _, d in ipairs(tool:GetDescendants()) do
 		if d:IsA("Texture") and d.Name == "Space" then
 			table.insert(e.spaces, { tx = d, su = d.StudsPerTileU, sv = d.StudsPerTileV, k = (#e.spaces % 3) - 1 })
@@ -571,6 +585,16 @@ local BURST = {
 		ColorSequenceKeypoint.new(1, C3(90, 180, 255)) }), 18, C3(170, 120, 255) },
 	thunder = { "sparks", seq(C3(230, 245, 255), C3(90, 170, 255)), 18, C3(140, 200, 255) },
 }
+-- hits of hammers without their own burst: by rarity (Tool attribute Rarity)
+local RARITY_BURST = {
+	[2] = { "glint", seq(C3(200, 255, 200), C3(80, 200, 100)), 5 },
+	[3] = { "glint", seq(C3(190, 220, 255), C3(60, 150, 255)), 8 },
+	[4] = { "glint", seq(C3(225, 180, 255), C3(165, 90, 255)), 10 },
+	[5] = { "fire", seq(C3(255, 230, 140), C3(255, 150, 30)), 12, C3(255, 180, 60) },
+	[6] = { "sparks", seq(C3(255, 200, 220), C3(255, 70, 120)), 14, C3(255, 110, 150) },
+	[7] = { "glint", seq(C3(230, 230, 255), C3(80, 70, 160)), 16, C3(150, 140, 255) },
+	[8] = { "glint", seq(C3(255, 255, 255), C3(255, 220, 120)), 18, C3(255, 235, 160) },
+}
 
 -- crystals that shoot out of the ground and shatter (amethyst / frost / diamond)
 local function crystals(pos, n, colors, mat, h0, h1)
@@ -742,7 +766,7 @@ local function burst(tool, pos, mine, who)
 	local key = tool:GetAttribute("Key")
 	local e = live[tool]
 	if e then e.site = { pos = pos, t = os.clock() } end
-	local b = BURST[key]
+	local b = BURST[key] or RARITY_BURST[tonumber(tool:GetAttribute("Rarity")) or 0]
 	if b then
 		emitAt(pos + Vector3.new(0, 0.6, 0), b[1], b[2], mine and b[3] or math.ceil(b[3] / 2))
 		if b[4] then
@@ -809,6 +833,7 @@ local function closeCard(fast)
 	card = nil
 	c.closing = true
 	gui:SetAttribute("Open", false)
+	if c.onClose then task.defer(c.onClose) end
 	if fast then c.root:Destroy() return end
 	UI.tween(c.sc, 0.2, { Scale = 0.75 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	UI.tween(c.dim, 0.2, { BackgroundTransparency = 1 })
@@ -822,7 +847,7 @@ end
 
 local function reveal(o)
 	closeCard(true)
-	local c = {}
+	local c = { onClose = o.onClose }
 	card = c
 	gui:SetAttribute("Open", true) -- Client's big banners wait while the card is up
 	-- the root covers the screen (UIScale makes the design space bigger or smaller than the screen)
@@ -907,10 +932,27 @@ local function reveal(o)
 		if c.closing then return end
 		UI.tween(eff, 0.25, { TextTransparency = 0 }); UI.tween(es, 0.25, { Transparency = 0 })
 	end)
-	local btn = UI.button(o.button or "AWESOME!", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(280, 420), Size = UDim2.fromOffset(230, 58),
-		TextSize = 26, Font = T.chunky, ZIndex = 7, Shine = true, Parent = box })
+	local btn = UI.button(o.button or "AWESOME!", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(o.again and 160 or 280, 420), Size = UDim2.fromOffset(o.again and 200 or 230, 58),
+		TextSize = 26, Font = T.chunky, ZIndex = 7, Shine = not o.again, Parent = box })
 	btn.Visible = false
-	task.delay(0.75, function() if not c.closing then btn.Visible = true end end)
+	local again
+	if o.again then
+		-- open the next crate straight from the card
+		again = UI.button(o.again.label, Color3.fromRGB(255, 176, 40), nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(392, 420), Size = UDim2.fromOffset(250, 58),
+			TextSize = 21, Font = T.chunky, ZIndex = 7, Shine = true, Parent = box })
+		again.Visible = false
+		again.Activated:Connect(function()
+			sound(S.Click, 0.35)
+			c.onClose = nil -- the next card follows, the Shop redraws after the last one
+			closeCard(true)
+			o.again.fn()
+		end)
+	end
+	if o.tag then
+		local tg = K.chip(box, o.tag, Color3.fromRGB(255, 176, 40), { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(280, 80), ZIndex = 6 })
+		tg.ZIndex = 6
+	end
+	task.delay(0.75, function() if not c.closing then btn.Visible = true; if again then again.Visible = true end end end)
 	btn.Activated:Connect(function() sound(S.Click, 0.35); closeCard() end)
 	dim.Activated:Connect(function() if os.clock() - c.t0 > 1.2 then closeCard() end end)
 	c.t0 = os.clock()
@@ -926,9 +968,19 @@ local function reveal(o)
 		icon.Rotation = math.sin(t * 1.6) * 4
 		glow.Size = UDim2.fromOffset(420 + math.sin(t * 3) * 18, 420 + math.sin(t * 3) * 18)
 	end)
-	task.delay(9, function() if card == c then closeCard() end end)
-	if o.big then sound(S.Fanfare, 0.45, 1.05) end
+	task.delay(o.again and 30 or 9, function() if card == c then closeCard() end end)
+	if o.big then sound(S.Fanfare, 0.45, (o.tier or 0) >= 7 and 0.9 or 1.05) end
+	-- the rarer, the louder: Secret and Divine shake the screen and flash
+	if (o.tier or 0) >= 6 then
+		local f = new("Frame", { Size = UDim2.fromScale(4, 4), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), BackgroundColor3 = col:Lerp(Color3.new(1, 1, 1), 0.6),
+			BackgroundTransparency = 0.2, ZIndex = 10, Parent = root })
+		UI.tween(f, 0.6, { BackgroundTransparency = 1 })
+		Debris:AddItem(f, 0.7)
+	end
 end
+-- the hammer collection (Client.HammersUI) shows its crates and trade-ups with this card
+_G.__CE_RevealHammer = reveal
+_G.__CE_RevealOpen = function() return card ~= nil end
 
 local function revealTool(name, effect)
 	for i, t in ipairs(Config.Tools) do

@@ -461,6 +461,6 @@ function K.scrollTo(list, item, pad)
 end
 
 -- money text helpers used by the windows
-function K.robux(n) return n and ("R$ " .. tostring(n)) or "R$ ..." end
+function K.robux(n) return n and ("\u{E002} " .. tostring(n)) or "\u{E002} ..." end
 
 return K

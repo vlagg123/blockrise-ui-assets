@@ -13,6 +13,7 @@ local GEM1, GEM2 = Color3.fromRGB(120, 230, 255), Color3.fromRGB(30, 140, 220)
 local TABS = {
 	{ id = "gems", label = "GEMS", icon = "gem", c1 = GEM1, c2 = GEM2 },
 	{ id = "cash", label = "CASH", icon = "cash", c1 = Color3.fromRGB(130, 240, 120), c2 = Color3.fromRGB(30, 160, 70) },
+	{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 120, 30) },
 	{ id = "boosts", label = "BOOSTS", icon = "up_power", c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20) },
 	{ id = "passes", label = "PASSES", icon = "vip", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
 	{ id = "gemshop", label = "GEM SHOP", icon = "store", c1 = Color3.fromRGB(255, 150, 200), c2 = Color3.fromRGB(215, 60, 140) },
@@ -26,7 +27,7 @@ local CASH_COLS = { Color3.fromRGB(120, 210, 90), Color3.fromRGB(60, 190, 120), 
 local ICON = {
 	-- passes
 	vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
-	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations", stormhammer = "up_power", skipanim = "⏭️",
+	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations", stormhammer = "up_power", skipanim = "⏭️", luck = "up_luck", offline = "up_rent",
 	-- products
 	starter = "gift", rushcrew = "up_crew", cashpack = "cash", cashstack = "cash", cashvault = "coins", cashbank = "store", cashboost = "up_cash",
 	spins3 = "spin",
@@ -42,7 +43,7 @@ local PASS_COL = {
 	vip = Color3.fromRGB(255, 190, 40), bigcrew = Color3.fromRGB(90, 200, 120), cash2x = Color3.fromRGB(80, 210, 110), strength2x = Color3.fromRGB(255, 120, 80),
 	autobuild = Color3.fromRGB(90, 170, 255), autotrain = Color3.fromRGB(255, 150, 90), gems2x = Color3.fromRGB(70, 190, 255), fasttools = Color3.fromRGB(255, 200, 60),
 	monster = Color3.fromRGB(255, 110, 110), goldcar = Color3.fromRGB(255, 196, 46), teleporter = Color3.fromRGB(235, 70, 130),
-	stormhammer = Color3.fromRGB(80, 170, 255), skipanim = Color3.fromRGB(90, 200, 255),
+	stormhammer = Color3.fromRGB(80, 170, 255), skipanim = Color3.fromRGB(90, 200, 255), luck = Color3.fromRGB(80, 200, 100), offline = Color3.fromRGB(110, 110, 230),
 }
 
 -- Robux prices load in the background so the Store opens instantly
@@ -56,6 +57,13 @@ local function robuxPrice(id, infoType)
 end
 
 -- best contract reward you can take right now (cash packs grow with it, like on the server)
+local function perMin() return c.player:GetAttribute("IncomePerMin") or 0 end
+-- what a cash pack gives right now: minutes of your income (or, the old way, contract rewards)
+local function packCash(p)
+	if p.minutes then return math.floor(perMin() * p.minutes) end
+	return 0
+end
+local function minLabel(m) return m >= 60 and ((m % 60 == 0) and (m // 60 .. "H") or (string.format("%.1fH", m / 60))) .. " OF INCOME" or (m .. " MIN OF INCOME") end
 local function bestReward()
 	local p = c.player
 	local rep, lvl, str = p:GetAttribute("Rep") or 0, p:GetAttribute("Level") or 1, p:GetAttribute("Strength") or 0
@@ -74,17 +82,17 @@ local function find(list, key) for _, p in ipairs(list) do if p.key == key then 
 -- the Robux button for a product or a pass (or "soon" while it has no id)
 local function robuxButton(it, isPass, tok)
 	if (it.id or 0) <= 0 then
-		return nil, { studio and ("SOON · R$" .. tostring(it.price or "?")) or "SOON", K.LOCK }
+		return nil, { studio and ("SOON · \u{E002} " .. tostring(it.price or "?")) or "SOON", K.LOCK }
 	end
 	local infoType = isPass and Enum.InfoType.GamePass or Enum.InfoType.Product
 	local price = priceCache[it.id]
-	return { price and ("R$ " .. price) or "R$ ...", K.GREEN, function(b)
+	return { price and ("\u{E002} " .. price) or "\u{E002} ...", K.GREEN, function(b)
 		c.click()
 		if isPass then MarketplaceService:PromptGamePassPurchase(c.player, it.id) else MarketplaceService:PromptProductPurchase(c.player, it.id) end
 	end, shine = true, fill = price == nil and function(b)
 		local pr = robuxPrice(it.id, infoType)
 		local l = b and b:FindFirstChild("Label")
-		if c.live(tok) and l then l.Text = pr and ("R$ " .. pr) or "BUY" end
+		if c.live(tok) and l then l.Text = pr and ("\u{E002} " .. pr) or "BUY" end
 	end }
 end
 
@@ -131,7 +139,7 @@ local function starterBanner(tok, order)
 	local st = find(Config.Store.products, "starter")
 	if not st or not visible(st) or c.player:GetAttribute("StarterBought") then return end
 	local btn, status = robuxButton(st, false, tok)
-	local b = K.banner(c.content, order, { name = "STARTER PACK", line = "500 Gems + " .. Config.FormatMoney(bestReward() * 20) .. " + 30 min of 2x Cash. One time only!",
+	local b = K.banner(c.content, order, { name = "STARTER PACK", line = "500 Gems + " .. Config.FormatMoney(bestReward() * 20) .. " + a Builder's Crate + 30 min of 2x Cash. One time only!",
 		icon = (iconOf("starter", "gift")), color = Color3.fromRGB(255, 110, 140), tint = Color3.fromRGB(255, 190, 210), button = btn, status = status, buttonW = 180 })
 	if btn and btn.fill then task.spawn(function() btn.fill(b:FindFirstChildOfClass("TextButton")) end) end
 end
@@ -153,13 +161,53 @@ local function cash(tok)
 	starterBanner(tok, 2)
 	K.section(c.content, 3, "CASH PACKS", Color3.fromRGB(150, 245, 140), "they grow with your progress")
 	local packs = {}
-	for _, p in ipairs(Config.Store.products) do if p.cash and visible(p) then table.insert(packs, p) end end
-	table.sort(packs, function(a, b) return a.cash < b.cash end)
 	local best = bestReward()
+	local function value(p) return p.minutes and packCash(p) or best * (p.cash or 0) end
+	for _, p in ipairs(Config.Store.products) do if (p.cash or p.minutes) and visible(p) then table.insert(packs, p) end end
+	table.sort(packs, function(a, b) return (a.price or 0) < (b.price or 0) end)
 	itemTiles(tok, packs, 4, { make = function(p, i)
 		local icon, sc = iconOf(p.key, "cash")
-		return { name = p.name, icon = icon, iconScale = sc, color = CASH_COLS[math.min(i, #CASH_COLS)], stats = { { "+" .. Config.FormatMoney(best * p.cash), K.GREEN } } }
+		local o = { name = p.name, icon = icon, iconScale = sc, color = CASH_COLS[math.min(i, #CASH_COLS)], stats = { { "+" .. Config.FormatMoney(value(p)), K.GREEN } } }
+		if p.minutes then
+			o.badge = { minLabel(p.minutes), T.blue }
+			if p.key == "cashvault" then o.tag = { "BEST VALUE", T.red }; o.spin = true end
+		end
+		return o
 	end })
+	K.note(c.content, 5, "Cash packs are worth minutes of YOUR income: the further you get, the more they give.")
+end
+
+-- hammer crates for Robux (the Gem and cash crates are in Shop → HAMMERS)
+local function crates(tok)
+	local Hammers = require(RS.Shared:WaitForChild("Hammers"))
+	K.section(c.content, 2, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "odds shown on each · open them in Shop → HAMMERS")
+	if c.paidRandomRestricted then
+		K.empty(c.content, 3, "Crates for Robux are not available in your region. Get them with Gems or cash in Shop → HAMMERS.", "gift")
+		return
+	end
+	local list = {}
+	for _, p in ipairs(Config.Store.products) do if p.crate and visible(p) then table.insert(list, p) end end
+	itemTiles(tok, list, 3, { h = 300, make = function(p)
+		local cr = Hammers.CrateById[p.crate]
+		local odds = Hammers.Odds(p.crate, c.player:GetAttribute("CrateZone") or "town", 1)
+		local parts = {}
+		for r = #Hammers.Rarities, 1, -1 do
+			if odds[r] and odds[r] > 0 and #parts < 3 then
+				table.insert(parts, { Hammers.Rarities[r].name:upper() .. " " .. (odds[r] >= 1 and string.format("%.0f%%", odds[r]) or string.format("%.1f%%", odds[r])),
+					Hammers.Rarities[r].text and Color3.fromRGB(70, 70, 110) or Hammers.Rarities[r].color })
+			end
+		end
+		local o = { name = p.name, icon = cr and cr.image or "gift", color = cr and cr.color or T.accent, stats = { parts[1], parts[2] },
+			badge = (p.count or 1) > 1 and { "x" .. p.count, T.red } or nil, tag = cr and cr.pity and { "PITY " .. cr.pity.every, Color3.fromRGB(255, 176, 40) } or nil, spin = (p.count or 1) > 1 }
+		return o
+	end })
+	local luck = find(Config.Store.passes, "luck")
+	if luck and visible(luck) and not c.player:GetAttribute("Pass_luck") then
+		local btn, status = robuxButton(luck, true, tok)
+		local b = K.banner(c.content, 4, { name = "LUCKY BUILDER", line = "2x luck in every crate: Rare and better hammers drop twice as often. Forever.", icon = (iconOf("luck", "up_luck")),
+			color = Color3.fromRGB(80, 200, 100), tint = Color3.fromRGB(190, 255, 190), button = btn, status = status, buttonW = 180 })
+		if btn and btn.fill then task.spawn(function() btn.fill(b:FindFirstChildOfClass("TextButton")) end) end
+	end
 end
 
 local function boosts(tok)
@@ -209,7 +257,7 @@ local function gemshop(tok)
 	for i, it in ipairs(Config.GemShop) do
 		local cost, disabled, stat = it.gems, nil, nil
 		if it.kind == "cash" then
-			stat = { "+" .. Config.FormatMoney(bestReward() * it.mult), K.GREEN }
+			stat = { "+" .. Config.FormatMoney(it.minutes and math.floor(perMin() * it.minutes) or bestReward() * (it.mult or 1)), K.GREEN }
 		elseif it.kind == "crewslot" then
 			local owned = c.player:GetAttribute("GemCrewSlots") or 0
 			if owned >= Config.MaxGemCrewSlots then disabled = "MAX" else cost = Config.CrewSlotGems(owned) end
@@ -269,7 +317,7 @@ function M.Show(t, keepScroll)
 		M.Show(id)
 	end)
 	if tab ~= "passes" then teleporterBanner(tok, 1) end
-	if tab == "gems" then gems(tok) elseif tab == "cash" then cash(tok) elseif tab == "boosts" then boosts(tok)
+	if tab == "gems" then gems(tok) elseif tab == "cash" then cash(tok) elseif tab == "crates" then crates(tok) elseif tab == "boosts" then boosts(tok)
 	elseif tab == "passes" then passes(tok) else gemshop(tok) end
 end
 

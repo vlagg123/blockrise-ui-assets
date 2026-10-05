@@ -2,6 +2,8 @@
 local RS = game:GetService("ReplicatedStorage")
 local K = require(RS.Shared:WaitForChild("MenuKit"))
 
+local Hammers = require(RS.Shared:WaitForChild("Hammers"))
+
 local M = {}
 local c, UI, T, Config
 local blueprint -- blueprint picked for the next contract (nil = none)
@@ -56,6 +58,7 @@ function M.Show()
 	K.section(c.content, 3, "CONTRACTS", Color3.fromRGB(255, 220, 110), "finish fast for a bonus")
 	local p = c.player
 	local lvl, rep, str, reb = p:GetAttribute("Level") or 1, p:GetAttribute("Rep") or 0, p:GetAttribute("Strength") or 0, p:GetAttribute("Rebirths") or 0
+	local crew, best = p:GetAttribute("WorkerCount") or 0, p:GetAttribute("ToolTier") or 1
 	-- a locked building says exactly what it needs: a green tick for what you have, a red cross for what's missing
 	local function needs(ct)
 		local parts = {}
@@ -67,6 +70,11 @@ function M.Show()
 		if (ct.reqLevel or 1) > 1 then add(lvl >= ct.reqLevel, "Level " .. ct.reqLevel, tostring(lvl)) end
 		if (ct.reqRep or 0) > 0 then add(rep >= ct.reqRep, Config.FormatNum(ct.reqRep) .. " Rep ⭐", Config.FormatNum(rep)) end
 		if (ct.reqStrength or 0) > 0 then add(str >= ct.reqStrength, Config.Short(ct.reqStrength) .. " Strength 💪", Config.Short(math.floor(str))) end
+		if (ct.reqCrew or 0) > 0 then add(crew >= ct.reqCrew, "Crew of " .. ct.reqCrew .. " 👷", tostring(crew)) end
+		if (ct.reqHammer or 1) > 1 then
+			local r = Hammers.Rarities[ct.reqHammer]
+			add(best >= ct.reqHammer, r.name .. "+ hammer 🔨", Hammers.Rarities[math.clamp(best, 1, #Hammers.Rarities)].name)
+		end
 		return "<b>To unlock:</b>  " .. table.concat(parts, "   ")
 	end
 	for i, ct in ipairs(data.contracts) do
@@ -80,6 +88,10 @@ function M.Show()
 		}
 		-- (a locked building lists its Strength need in the "To unlock" line instead)
 		if ct.unlocked and (ct.reqStrength or 0) > 0 then table.insert(chips, { "💪 " .. Config.Short(ct.reqStrength), Color3.fromRGB(255, 120, 80) }) end
+		if ct.unlocked and (ct.reqHammer or 1) > 1 then
+			local r = Hammers.Rarities[ct.reqHammer]
+			table.insert(chips, { "🔨 " .. string.upper(r.name) .. "+", r.text and Color3.fromRGB(70, 70, 110) or r.color })
+		end
 		if (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) < 700 then
 			-- narrow window (phones): only the reward, the stars and the strength you need
 			table.remove(chips, 4)
@@ -100,6 +112,12 @@ function M.Show()
 		elseif reb < (ct.reqRebirth or 0) then
 			o.dim = true
 			o.status = { "🔒 REBIRTH " .. ct.reqRebirth, K.LOCK }
+		elseif lvl >= ct.reqLevel and rep >= ct.reqRep and best < (ct.reqHammer or 1) then
+			-- a better hammer is missing: straight to the crates
+			o.button = { "🔨 HAMMERS", Color3.fromRGB(70, 160, 255), function() c.click(); if _G.__CE_ShopUI then _G.__CE_ShopUI.Show("hammers") end end }
+		elseif lvl >= ct.reqLevel and rep >= ct.reqRep and crew < (ct.reqCrew or 0) then
+			-- the crew is too small: hire
+			o.button = { "👷 HIRE", K.GREEN, function() c.click(); if _G.__CE_ShopUI then _G.__CE_ShopUI.Show("crew") end end }
 		elseif lvl >= ct.reqLevel and rep >= ct.reqRep and str < (ct.reqStrength or 0) then
 			-- only Strength is missing: send them to the Training Yard
 			o.button = { "💪 TRAIN", Color3.fromRGB(255, 140, 80), function() c.click(); c.closeModal(); c.setWaypoint("gym") end }
