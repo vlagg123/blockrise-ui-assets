@@ -62,7 +62,7 @@ function M.Show()
 		local chips = {
 			{ Config.FormatMoney(ct.reward * mult), K.GREEN },
 			{ "+" .. ct.xp .. " XP", T.blue },
-			{ "+" .. ct.rep .. " ⭐", Color3.fromRGB(255, 170, 30) },
+			{ "+" .. ct.rep .. " REP", Color3.fromRGB(240, 140, 20) },
 			{ "⚡ " .. c.fmtTime(ct.targetTime), T.purple },
 		}
 		if (ct.reqStrength or 0) > 0 then table.insert(chips, { "💪 " .. Config.Short(ct.reqStrength), Color3.fromRGB(255, 120, 80) }) end

@@ -41,7 +41,7 @@ function M.Show()
 	local confirm = false
 	K.banner(c.content, 1, { name = "REBIRTH #" .. (f.rebirths + 1), icon = "rebirth", color = P2, tint = Color3.fromRGB(215, 185, 255), height = 130, buttonW = 210,
 		bar = { frac, GOLD, money(f.run) .. " / " .. money(f.cost) },
-		chips = { { "+" .. f.starsNow .. " ⭐", GOLD }, { "+" .. math.floor(Company.FranchiseCashPer * 100) .. "% CASH", K.GREEN },
+		chips = { { "+" .. f.starsNow .. (f.starsNow == 1 and " STAR" or " STARS"), Color3.fromRGB(150, 90, 230) }, { "+" .. math.floor(Company.FranchiseCashPer * 100) .. "% CASH", K.GREEN },
 			{ "+" .. math.floor(Company.FranchiseStrengthPer * 100) .. "% STRENGTH", Color3.fromRGB(255, 120, 80) } },
 		button = { ready and "REBIRTH!" or "NOT YET", ready and P2 or K.LOCK, function(b)
 			c.click()
