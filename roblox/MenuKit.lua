@@ -228,8 +228,19 @@ function K.tile(grid, o)
 		end
 	elseif o.stats and #o.stats > 0 then
 		local row = new("Frame", { Name = "Stats", Position = UDim2.fromOffset(11, y), Size = UDim2.new(1, -22, 0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = t })
-		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
+		local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
 		for i, s in ipairs(o.stats) do K.chip(row, s[1], s[2], { LayoutOrder = i }) end
+		-- the chips always fit inside the tile: a row too long for it shrinks a little (never spills onto the next tile)
+		local fit = new("UIScale", { Parent = row })
+		local function refit()
+			local k = math.max(fit.Scale, 0.01)
+			local w, cw = row.AbsoluteSize.X / k, lay.AbsoluteContentSize.X / k
+			local want = (w > 0 and cw > w) and math.max(0.55, w / cw) or 1
+			if math.abs(want - fit.Scale) > 0.005 then fit.Scale = want end
+		end
+		lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refit)
+		row:GetPropertyChangedSignal("AbsoluteSize"):Connect(refit)
+		task.defer(refit)
 	end
 	local bp = { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -20, 0, 50) }
 	if o.buttons then

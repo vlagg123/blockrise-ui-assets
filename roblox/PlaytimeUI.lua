@@ -35,7 +35,10 @@ end
 -- the gift's contents as short chips
 local function rewardChips(g)
 	local out = {}
-	if g.cash then table.insert(out, { Config.FormatMoney(math.floor(bestReward() * g.cash)), K.GREEN }) end
+	if g.cash then
+		local n = math.floor(bestReward() * g.cash)
+		table.insert(out, { "$" .. (n >= 1e4 and Config.Short(n) or Config.FormatNum(n)), K.GREEN }) -- short ($780K): two chips fit the tile
+	end
 	if g.gems then table.insert(out, { g.gems .. " 💎", Color3.fromRGB(60, 160, 255) }) end
 	if g.boost then
 		local b = Config.Boosts[g.boost]
