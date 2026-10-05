@@ -104,7 +104,11 @@ local function renderEstate(tok, data)
 				o.stats = matChips(p.mats, data.mats)
 				table.insert(o.stats, 1, { "+" .. money(info.nextRent) .. "/MIN", Color3.fromRGB(80, 200, 110) })
 				while #o.stats > 2 do table.remove(o.stats) end
+				-- green only when you have the cash AND every material it needs
 				local can = (data.money or 0) >= info.cost
+				for id, q in pairs(p.mats or {}) do
+					if ((data.mats or {})[id] or 0) < q then can = false end
+				end
 				o.buttons = {
 					{ money(info.cost), can and K.GREEN or K.LOCK, function() c.click(); act(tok, "buyProp", p.id, 1) end, shine = can },
 					{ "x10", GOLD, function() c.click(); act(tok, "buyProp", p.id, 10) end },

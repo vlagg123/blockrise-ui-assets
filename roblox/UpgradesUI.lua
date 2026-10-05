@@ -83,7 +83,11 @@ render = function(tok, data)
 					local nextPct = math.floor(dp.per * (d.level + 1) * 100 + 0.5)
 					o.chips = { { "+" .. now .. "% → +" .. nextPct .. "%", G2 } }
 					for _, mc in ipairs(matChips(d.mats, data.mats)) do table.insert(o.chips, mc) end
+					-- green only when you have the cash AND every material it needs
 					local can = (data.money or 0) >= d.cash
+					for id, q in pairs(d.mats or {}) do
+						if ((data.mats or {})[id] or 0) < q then can = false end
+					end
 					o.button = { money(d.cash), can and K.GREEN or K.LOCK, function()
 						c.click()
 						act(tok, "upgrade", dp.id)
