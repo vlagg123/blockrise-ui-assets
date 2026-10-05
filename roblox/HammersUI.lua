@@ -351,8 +351,8 @@ local function drawHammers(tok, data)
 		local inHand = cur.id == data.equip
 		local cost = Hammers.LevelCost(cur.k, cur.lv)
 		local o = { name = h.name, line = h.desc, icon = art(h), color = r.color, height = 112, buttonW = 190, spin = inHand,
-			chips = { { inHand and "IN YOUR HAND" or "IN YOUR BAG", inHand and K.GREEN or K.LOCK }, { string.upper(r.name), r.color }, { "LV " .. cur.lv .. "/" .. Hammers.MaxLevel, K.DARK },
-				{ Hammers.PowerLabel(cur.k, cur.lv) .. " POWER", GOLD } } }
+			chips = { { string.upper(r.name), r.color }, { "LV " .. cur.lv .. "/" .. Hammers.MaxLevel, K.DARK }, { Hammers.PowerLabel(cur.k, cur.lv) .. " POWER", GOLD } } }
+		if inHand then table.insert(o.chips, 1, { "IN YOUR HAND", K.GREEN }) end
 		if cost then
 			local can = money() >= cost
 			o.button = { "⬆ LV " .. (cur.lv + 1) .. "  " .. fmt(cost), can and GOLD or K.LOCK, function() levelUp(cur, h) end, shine = can, size = 19 }
@@ -366,8 +366,16 @@ local function drawHammers(tok, data)
 	local total = 0
 	for _, n in pairs(data.crates) do total += n end
 	if total > 0 then
-		K.section(c.content, 2, "CRATES TO OPEN", Color3.fromRGB(255, 220, 110), total .. " waiting")
-		crateTiles(data, 3, false)
+		K.section(c.content, 2, "CRATES TO OPEN", Color3.fromRGB(255, 220, 110), total .. " waiting  ·  tap one to open it")
+		local cg = K.grid(c.content, 3, invCols(), 158, 8)
+		for i, cr in ipairs(Hammers.Crates) do
+			local have = data.crates[cr.id] or 0
+			if have > 0 then
+				miniTile(cg, { order = i, name = cr.name, icon = crateArt(cr), color = cr.color, badge = { "x" .. have, T.red }, spin = true,
+					tag = cr.pity and { "PITY " .. tostring(data.pity[cr.id] or cr.pity.every), GOLD } or nil,
+					line = "TAP TO OPEN", lineColor = Color3.fromRGB(35, 154, 69), onClick = function() c.click(); openCrate(cr.id) end })
+			end
+		end
 	end
 	sortHammers(data.hammers, data.equip)
 	K.section(c.content, 4, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
@@ -447,7 +455,7 @@ local function drawTradeUp(tok, data)
 		end
 	end
 	-- progress + buttons
-	local bar, fill = UI.bar({ Position = UDim2.fromOffset(18, 172), Size = UDim2.new(1, -440, 0, 24), ZIndex = 3 }, from and from.color or K.GREEN)
+	local bar, fill = UI.bar({ Position = UDim2.fromOffset(18, 172), Size = UDim2.new(1, -440, 0, 24), ZIndex = 3 }, K.GREEN)
 	bar.Parent = panel
 	fill.Size = UDim2.fromScale(math.clamp(#picked / N, 0.04, 1), 1)
 	K.text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = #picked .. " / " .. N, Font = T.chunky, TextSize = 15, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
