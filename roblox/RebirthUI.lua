@@ -63,14 +63,14 @@ function M.Show(keepScroll)
 	local opens = f.rebirths == 0 and "  Rebirth 1 opens the SUBURBS!" or (f.rebirths == 1 and "  Rebirth 2 opens DOWNTOWN!" or "")
 	K.note(c.content, 2, "You keep your Level, Rep, house, Gems, materials, blueprints, cars and hammers." .. opens)
 	if f.gate then
-		K.row(c.content, 2.5, { name = (f.gate.done and "✓ " or "") .. "Build the " .. f.gate.name, line = f.gate.done and "Done: this zone is finished" or "Finish this zone's top building once to Rebirth",
+		K.row(c.content, 3, { name = (f.gate.done and "✓ " or "") .. "Build the " .. f.gate.name, line = f.gate.done and "Done: this zone is finished" or "Finish this zone's top building once to Rebirth",
 			icon = "contract", color = f.gate.done and K.GREEN or Color3.fromRGB(255, 176, 40), height = 84, buttonW = 150,
 			status = { f.gate.done and "DONE" or "TO DO", f.gate.done and K.GREEN or K.LOCK } })
 	end
 
 	-- Star Shop
-	K.section(c.content, 3, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐")
-	local grid = K.grid(c.content, 4, cols(), 268)
+	K.section(c.content, 4, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐")
+	local grid = K.grid(c.content, 5, cols(), 268)
 	for i, p in ipairs(Company.StarPerks) do
 		local info
 		for _, x in ipairs(f.perks) do if x.id == p.id then info = x end end
