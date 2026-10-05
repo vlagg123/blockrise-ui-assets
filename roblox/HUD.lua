@@ -138,8 +138,9 @@ end
 
 local function pill(parent, key, width, color)
 	local f = panel({ Size = UDim2.fromOffset(width, 40), Parent = parent }, 20)
-	local ic = Icons.make(key, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(16, 19), Size = UDim2.fromOffset(50, 50), ZIndex = 3, Parent = f })
-	local val = text({ Name = "Value", Position = UDim2.fromOffset(46, 0), Size = UDim2.new(1, -88, 1, 0), Text = "0", TextSize = 23,
+	-- the icon sits inside the pill (a little bigger than the pill's height, never past its left edge)
+	local ic = Icons.make(key, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(25, 19), Size = UDim2.fromOffset(46, 46), ZIndex = 3, Parent = f })
+	local val = text({ Name = "Value", Position = UDim2.fromOffset(52, 0), Size = UDim2.new(1, -94, 1, 0), Text = "0", TextSize = 23,
 		TextColor3 = color, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 3, Parent = f })
 	tstroke(val, 2.5)
 	local sc = new("UIScale", { Parent = val })
@@ -342,7 +343,7 @@ function M.Init(ctx)
 	plusButton(gemPill, function() A.store("gems") end)
 	local strPill, strVal, strSc = pill(left, "strength", 236, Color3.fromRGB(255, 180, 110))
 	strPill.Position = UDim2.fromOffset(0, 92)
-	strVal.Size = UDim2.new(1, -52, 1, 0)
+	strVal.Size = UDim2.new(1, -58, 1, 0)
 	local powLbl = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(100, 18), Font = ROUND, TextSize = 12,
 		TextColor3 = Color3.fromRGB(170, 215, 255), TextXAlignment = Enum.TextXAlignment.Right, Text = "", ZIndex = 3, Parent = strPill })
 	tstroke(powLbl, 1.5)

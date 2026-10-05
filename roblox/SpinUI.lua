@@ -106,11 +106,18 @@ function M.Show()
 	task.defer(function() strip.Position = UDim2.fromOffset(centerOn(4), 9) end)
 	-- status + button
 	local ctrl = controlRow(2, 92)
-	local status = K.text({ Position = UDim2.fromOffset(18, 14), Size = UDim2.new(1, -230, 0, 32), Text = "", TextSize = 25, Max = 25, Parent = ctrl })
-	local sub = K.text({ Position = UDim2.fromOffset(18, 50), Size = UDim2.new(1, -230, 0, 24), Text = "", TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = ctrl })
-	local btn = UI.button("SPIN!", K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(196, 58), TextSize = 25,
+	local status = K.text({ Position = UDim2.fromOffset(18, 14), Size = UDim2.new(1, -370, 0, 32), Text = "", TextSize = 25, Max = 25, Parent = ctrl })
+	local sub = K.text({ Position = UDim2.fromOffset(18, 50), Size = UDim2.new(1, -370, 0, 24), Text = "", TextSize = 17, Max = 17, TextColor3 = K.SUB, Parent = ctrl })
+	-- one big button for a free / extra spin; otherwise two side by side: Gems and Robux
+	local btn = UI.button("SPIN!", K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0), Size = UDim2.fromOffset(330, 60), TextSize = 27,
 		ZIndex = 7, Shine = true, Parent = ctrl })
 	local btnLbl = btn:FindFirstChild("Label")
+	local p1 = packOf("spin1")
+	local robuxBtn = UI.button("R$ " .. tostring(p1 and p1.price or 10), K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0.5, 0),
+		Size = UDim2.fromOffset(160, 60), TextSize = 26, ZIndex = 7, Shine = true, Parent = ctrl })
+	local gemBtn = UI.button(tostring(Config.Spin.gemCost), Color3.fromRGB(60, 170, 255), nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -186, 0.5, 0),
+		Size = UDim2.fromOffset(160, 60), TextSize = 26, ZIndex = 7, Icon = "gem", Parent = ctrl })
+	local mode = "free"
 	local resultUntil = 0
 	local statusScale = new("UIScale", { Parent = status })
 	local function refresh()
@@ -119,26 +126,31 @@ function M.Show()
 		local left = freeLeft()
 		local extra = c.player:GetAttribute("SpinExtra") or 0
 		local gems = c.player:GetAttribute("Gems") or 0
+		local restricted = c.player:GetAttribute("PaidRandomRestricted") == true
 		if left <= 0 then
+			mode = "free"
 			stText = "Your FREE spin is ready!"
 			if btnLbl then btnLbl.Text = "FREE SPIN" end
 		elseif extra > 0 then
+			mode = "free"
 			stText = "Extra spins: " .. extra
 			if btnLbl then btnLbl.Text = "SPIN (" .. extra .. ")" end
-		elseif c.player:GetAttribute("PaidRandomRestricted") == true then
+		elseif restricted then
 			-- Roblox policy: no paid spins in this region, only the free one
+			mode = "wait"
 			stText = "Free spin in " .. fmtLong(left)
 			if btnLbl then btnLbl.Text = "⏱ " .. fmtLong(left) end
-		elseif gems >= Config.Spin.gemCost then
-			stText = "Free spin in " .. fmtLong(left)
-			if btnLbl then btnLbl.Text = "SPIN · 💎 " .. Config.Spin.gemCost end
 		else
-			-- not enough Gems: one spin for Robux
+			mode = "paid"
 			stText = "Free spin in " .. fmtLong(left)
-			local p1 = packOf("spin1")
-			if btnLbl then btnLbl.Text = "SPIN · R$ " .. tostring(p1 and p1.price or 10) end
 		end
-		sub.Text = c.player:GetAttribute("PaidRandomRestricted") == true and "One free spin every 4 hours" or ("One free spin every 4 hours · you have " .. Config.FormatNum(gems) .. " 💎")
+		btn.Visible = mode ~= "paid"
+		UI.recolor(btn, mode == "wait" and K.LOCK or K.GREEN)
+		robuxBtn.Visible = mode == "paid"
+		gemBtn.Visible = mode == "paid"
+		-- the Gems button stays, greyed out when you don't have enough
+		UI.recolor(gemBtn, gems >= Config.Spin.gemCost and Color3.fromRGB(60, 170, 255) or K.LOCK)
+		sub.Text = restricted and "One free spin every 4 hours" or ("One free spin every 4 hours · you have " .. Config.FormatNum(gems) .. " 💎")
 		if os.clock() >= resultUntil then
 			status.Text = stText
 			status.TextColor3 = K.DARK
@@ -169,19 +181,27 @@ function M.Show()
 	btn.Activated:Connect(function()
 		if spinning then return end
 		c.click()
-		local free = freeLeft() <= 0 or (c.player:GetAttribute("SpinExtra") or 0) > 0
-		local gemsOk = (c.player:GetAttribute("Gems") or 0) >= Config.Spin.gemCost
-		if not free and not gemsOk and c.player:GetAttribute("PaidRandomRestricted") ~= true then
-			local p1 = packOf("spin1")
-			if p1 and (p1.id or 0) > 0 then
-				waitingBuy = os.clock()
-				MarketplaceService:PromptProductPurchase(c.player, p1.id)
-			else
-				c.toast("🎰 Robux spins are coming soon", T.muted, 2.5)
-			end
+		if mode == "wait" then c.toast("⏱ Your next free spin isn't ready yet", T.muted, 2.5) return end
+		doSpin()
+	end)
+	gemBtn.Activated:Connect(function()
+		if spinning then return end
+		c.click()
+		if (c.player:GetAttribute("Gems") or 0) < Config.Spin.gemCost then
+			c.toast("💎 Not enough Gems. Spin with Robux or get Gems in the Store", T.red, 3)
 			return
 		end
 		doSpin()
+	end)
+	robuxBtn.Activated:Connect(function()
+		if spinning then return end
+		c.click()
+		if p1 and (p1.id or 0) > 0 then
+			waitingBuy = os.clock()
+			MarketplaceService:PromptProductPurchase(c.player, p1.id)
+		else
+			c.toast("🎰 Robux spins are coming soon", T.muted, 2.5)
+		end
 	end)
 	doSpin = function()
 		if spinning then return end

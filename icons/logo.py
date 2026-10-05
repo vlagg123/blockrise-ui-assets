@@ -137,16 +137,9 @@ def build():
     # the word: one letter at a time, gold face, deep orange sides
     side = P.mat("#d2560a", gloss=0.45)
     word("BLOCKRISE", 1.75, 0.34, (0, 0, 1.0), gold, side, bevel=0.045, gap=0.03, bounce=0.16, tilt=4)
-    # EMPIRE banner: red bar with folded tails behind
-    RED, RED2 = "#ff4a3d", "#c42f2a"
-    I.box((4.1, 0.34, 1.02), loc=(0, 0.05, -0.52), color=RED, bevel=0.12, gloss=0.5)
-    for sx in (-1, 1):
-        tail = [(0, 0.42), (0.95, 0.42), (0.62, 0.0), (0.95, -0.42), (0, -0.42)]
-        I.poly([(sx * (2.0 + x), z) for x, z in tail], 0.26, loc=(0, 0.3, -0.72), color=RED2, bevel=0.06)
-        I.poly([(sx * 2.0, 0.42), (sx * 2.25, 0.42), (sx * 2.25, -0.16), (sx * 2.0, 0.08)], 0.2, loc=(0, 0.22, -0.72), color="#8f1f1d", bevel=0.02)
-    white = grad_mat("logo_white", [(0.0, "#ffe9d6"), (1.0, "#ffffff")], gloss=0.5)
-    for o in word("EMPIRE", 0.95, 0.16, (0, -0.2, -0.6), white, P.mat("#b8b3c9", gloss=0.4), bevel=0.025, gap=0.09, bounce=0.0, tilt=0, outline=0.055):
-        o.location.y = -0.2
+    # EMPIRE: big 3D letters in a red-orange gradient with deep red sides (no banner)
+    red = grad_mat("logo_red", [(0.0, "#e8231f"), (0.5, "#ff5a2e"), (1.0, "#ffb15a")])
+    word("EMPIRE", 1.3, 0.3, (0, 0, -0.55), red, P.mat("#9e1a17", gloss=0.45), bevel=0.04, gap=0.05, bounce=0.06, tilt=3, seed=2)
     # hard hat on the B, coins and a gem around
     hh = I.hardhat(rot=(12, 0, -18))
     hh.location = (-3.05, 0.05, 1.9)
