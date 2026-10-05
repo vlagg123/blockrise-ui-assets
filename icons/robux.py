@@ -394,7 +394,7 @@ def i_stormhammer():
         if o.parent is None:
             o.matrix_world = move @ o.matrix_world
     # the head is top left and the handle runs to the bottom right: top right and bottom left are free
-    poly(BOLT, 0.25, glow("#ffe14a", 3.5), loc=(1.05, 0.4, 0.95), rot=(0, 18, 0)).scale = (0.55, 0.55, 0.55)
+    poly(BOLT, 0.25, glow("#ffe14a", 3.5), loc=(1.35, 0.4, 1.1), rot=(0, 18, 0)).scale = (0.55, 0.55, 0.55)
     poly(BOLT, 0.25, glow("#7fd4ff", 3.5), loc=(-1.05, 0.4, -0.9), rot=(0, -20, 0)).scale = (0.5, 0.5, 0.5)
 
 
@@ -541,8 +541,14 @@ def i_fasttools():
         if ob.type == "MESH" and ob.data.materials and "9aa3b8" in ob.data.materials[0].name:
             ob.data.materials[0] = gold()
     hm.matrix_world = _xf((0.55, 0, 0), (0, -40, 0))
-    for z, l, c, right in ((0.85, 1.1, "#ffc534", -1.42), (0.45, 1.5, "#ff8a26", -1.36), (0.05, 0.95, "#ffc534", -1.46)):
-        box((l, 0.12, 0.16), candy(c, emit=0.5), loc=(right - l / 2, 0.35, z), bevel=0.06)
+    # the speed lines trail behind the head with a clear gap (measured from the hammer itself)
+    bpy.context.view_layer.update()
+    corners = [o.matrix_world @ Vector(c) for o in hm.children_recursive if o.type == "MESH" for c in o.bound_box]
+    left = min(p.x for p in corners)
+    head = [p for p in corners if p.x < left + 0.6]
+    zmid = (min(p.z for p in head) + max(p.z for p in head)) / 2
+    for dz, l, c, gap in ((0.42, 1.1, "#ffc534", 0.3), (0.0, 1.5, "#ff8a26", 0.22), (-0.42, 0.95, "#ffc534", 0.34)):
+        box((l, 0.12, 0.16), candy(c, emit=0.5), loc=(left - gap - l / 2, 0.35, zmid + dz), bevel=0.06)
     poly(BOLT, 0.25, glow("#ffe14a", 2.5), loc=(1.6, -0.5, -0.9), rot=(0, 15, 0)).scale = (0.7, 0.7, 0.7)
 
 
@@ -742,19 +748,32 @@ def i_gems300():
     gem(GREEN_GEM, loc=(0.95, -0.25, -0.4), rot=(8, 0, 25), s=0.6)
 
 
-def cushion(loc=(0, 0, 0), size=(3.0, 2.2, 0.5), col="#c8203c"):
-    """a red velvet jewellery cushion with gold corner tassels"""
+def cushion(loc=(0, 0, 0), size=(3.0, 2.2, 0.55), col="#c8203c"):
+    """a puffy red velvet jewellery cushion with a gold cord round its middle"""
     vel = pbr("velvet" + col, col, rough=0.75, coat=0.05, tex="leaf", scale=30.0, bump=0.12, dark="#b51c36", light="#d42a46", emit=0.12)
-    o = obj("cushion", bm_box(*size), vel, loc=loc, smooth=85, bevel=0.22, segs=3)
+    o = obj("cushion", bm_box(*size), vel, loc=loc, smooth=85, bevel=0.24, segs=3)
     m = o.modifiers.new("soft", "SUBSURF")
     m.levels = m.render_levels = 2
-    g = gold()
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            p = Vector(loc) + Vector((sx * (size[0] / 2 - 0.12), sy * (size[1] / 2 - 0.12), 0.0))
-            sphere(0.12, g, loc=tuple(p))
-            obj("tassel", bm_cyl(0.11, 0.3, 24, r2=0.02), g, loc=tuple(p + Vector((sx * 0.08, sy * 0.08, -0.2))), rot=(sy * 25, -sx * 25, 0),
-                smooth=40, bevel=0.0, outline=False)
+    # the cord: a rounded rectangle tube just outside the cushion's widest line
+    w, d, r = size[0] / 2 - 0.08, size[1] / 2 - 0.08, 0.3
+    path = []
+    for (cx, cy, a0) in ((w - r, d - r, 0), (-w + r, d - r, 90), (-w + r, -d + r, 180), (w - r, -d + r, 270)):
+        for k in range(9):
+            aa = math.radians(a0 + 90 * k / 8)
+            path.append((loc[0] + cx + math.cos(aa) * r, loc[1] + cy + math.sin(aa) * r, loc[2]))
+    bm = bmesh.new()
+    rings = []
+    n = len(path)
+    for i in range(n):
+        p = Vector(path[i])
+        t = (Vector(path[(i + 1) % n]) - Vector(path[i - 1])).normalized()
+        nn = t.cross(Vector((0, 0, 1))).normalized()
+        rings.append([bm.verts.new(p + (nn * math.cos(TAU * j / 10) + Vector((0, 0, 1)) * math.sin(TAU * j / 10)) * 0.05) for j in range(10)])
+    for i in range(n):
+        a_, b_ = rings[i], rings[(i + 1) % n]
+        for j in range(10):
+            bm.faces.new((a_[j], a_[(j + 1) % 10], b_[(j + 1) % 10], b_[j]))
+    obj("cord", bm, gold(), smooth=80, outline=False)
 
 
 def i_gems750():
