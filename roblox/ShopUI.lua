@@ -71,7 +71,7 @@ local function tierTiles(list, current, remote, icon, stat, keep, equip)
 	local mine
 	for i, it in ipairs(list) do
 		local rk, rl = K.rarityOf(i, #list)
-		local o = { order = i, name = it.name, icon = it.icon or (Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon), color = K.RAR[rk], iconScale = it.icon and 1.08 or nil,
+		local o = { order = i, name = it.name, icon = it.image or it.icon or (Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon), color = K.RAR[rk], iconScale = (it.image or it.icon) and 1.08 or nil,
 			badge = { rl, K.RAR[rk] }, stats = { stat(it) } }
 		if equip and i <= current then
 			if i == equip.which then
@@ -155,7 +155,7 @@ local function machines()
 		local owned = c.player:GetAttribute("M_" .. m.id) == true
 		local mlv = owned and math.max(1, c.player:GetAttribute("ML_" .. m.id) or 1) or 1
 		local rate = m.rate * Config.MachineMult(mlv) * c.buildPower()
-		local o = { order = i, name = m.name, icon = MACHINE_ICON[m.id] or m.icon, color = MACHINE_COL[m.id] or GOLD,
+		local o = { order = i, name = m.name, icon = m.image or MACHINE_ICON[m.id] or m.icon, iconScale = m.image and 1.06 or nil, color = MACHINE_COL[m.id] or GOLD,
 			stats = { { Config.FormatNum(math.floor(rate)) .. " WORK/S", GOLD } } }
 		if owned then
 			o.tag = { "MK " .. mlv, K.DARK }
