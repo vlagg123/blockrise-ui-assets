@@ -78,7 +78,7 @@ def build(seed=3, width=5.2):
     el = mb.elements.new()
     el.type = "ELLIPSOID"
     el.co = (0, 0, -0.05)
-    el.size_x, el.size_y, el.size_z = width * 0.46, 0.6, 0.22
+    el.size_x, el.size_y, el.size_z = width * 0.4, 0.55, 0.34
     el.radius = 0.9
     el.stiffness = 2.6
     bpy.context.view_layer.update()
@@ -91,10 +91,6 @@ def build(seed=3, width=5.2):
     for p in me.polygons:
         p.use_smooth = True
     me.materials.append(_mat())
-    # flatten the very bottom a little more
-    for v in me.vertices:
-        if v.co.z < -0.25:
-            v.co.z = -0.25 + (v.co.z + 0.25) * 0.25
     cl["no_outline"] = True
     return cl
 
