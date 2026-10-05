@@ -660,13 +660,12 @@ function M.Init(ctx)
 	---------------------------------------------------------------------------
 	-- at most 10 lines (fewer if the menu buttons are closer): more than that scroll, they never climb over the HUD
 	local fx = new("ScrollingFrame", { Name = "Effects", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -64), Size = UDim2.fromOffset(460, 0),
-		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollingDirection = Enum.ScrollingDirection.Y, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollingDirection = Enum.ScrollingDirection.Y, CanvasSize = UDim2.new(),
 		ScrollBarThickness = 0, ScrollBarImageColor3 = Color3.new(1, 1, 1), ScrollBarImageTransparency = 0.35, ElasticBehavior = Enum.ElasticBehavior.Never,
 		ScrollingEnabled = false, Active = false, Parent = root })
 	local fxScale = new("UIScale", { Parent = fx })
-	-- small lines of text, one per effect, stacked upwards from the level bar
-	new("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 1), VerticalAlignment = Enum.VerticalAlignment.Bottom,
-		SortOrder = Enum.SortOrder.LayoutOrder, Parent = fx })
+	-- small lines of text, one per effect, stacked upwards from the level bar (the box is exactly as tall as its lines, bottom-anchored)
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder, Parent = fx })
 	local PASS_ICON = { vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
 		fasttools = "up_power", teleporter = "locations" }
 	local PASS_COL = { vip = Color3.fromRGB(255, 190, 40), bigcrew = Color3.fromRGB(90, 200, 120), cash2x = Color3.fromRGB(80, 210, 110),
@@ -757,6 +756,7 @@ function M.Init(ctx)
 			local over = n > lines
 			local h = (over and lines or n) * 21 - 1
 			if fx.Size.Y.Offset ~= h then fx.Size = UDim2.fromOffset(fx.Size.X.Offset, math.max(h, 0)) end
+			fx.CanvasSize = UDim2.fromOffset(0, math.max(n * 21 - 1, 0))
 			if fx.ScrollingEnabled ~= over then
 				fx.ScrollingEnabled, fx.Active = over, over
 				fx.ScrollBarThickness = over and 4 or 0
