@@ -111,16 +111,16 @@ local function sources(h)
 	if h.event then return { "The launch event only" } end
 	if h.soon then table.insert(out, "Coming soon") end
 	for _, cr in ipairs(Hammers.Crates) do
-		local inPool = false
-		for _, p in ipairs(Hammers.PoolAt(cr, h.r)) do if p.key == h.key then inPool = true end end
-		if h.soon then inPool = (cr.exclusiveOnly and h.exclusive) or (not cr.exclusiveOnly and not h.exclusive) end
-		if inPool then
-			local zones = {}
-			if cr.pools then
-				for _, z in ipairs({ "town", "suburbs", "downtown" }) do if (cr.pools[z] or {})[h.r] and cr.pools[z][h.r] > 0 then table.insert(zones, z:sub(1, 1):upper() .. z:sub(2)) end end
-			end
-			table.insert(out, cr.name .. (#zones > 0 and (" (" .. table.concat(zones, ", ") .. ")") or ""))
+		-- the crate must be able to drop this rarity (its odds), and the hammer must be in its pool
+		local fits = (cr.exclusiveOnly and h.exclusive) or (not cr.exclusiveOnly and not h.exclusive)
+		local zones = {}
+		if cr.pools then
+			for _, z in ipairs({ "town", "suburbs", "downtown" }) do if (cr.pools[z] or {})[h.r] and cr.pools[z][h.r] > 0 then table.insert(zones, z:sub(1, 1):upper() .. z:sub(2)) end end
+			fits = fits and #zones > 0
+		else
+			fits = fits and (cr.odds[h.r] or 0) > 0
 		end
+		if fits then table.insert(out, cr.name .. (#zones > 0 and (" (" .. table.concat(zones, ", ") .. ")") or "")) end
 	end
 	if not h.exclusive and h.r > 1 then table.insert(out, "Trade-up: " .. Hammers.TradeUpCount .. " " .. Hammers.Rarities[h.r - 1].name .. " hammers") end
 	if not h.exclusive or h.r >= 5 then table.insert(out, "Trades with other builders") end
@@ -187,15 +187,16 @@ local function cratePopup(cr, data)
 		if v and v > 0 then
 			n += 1
 			local rr = Hammers.Rarities[r]
-			local row = new("Frame", { Size = UDim2.new(1, -8, 0, 72), BackgroundTransparency = 1, LayoutOrder = n, ZIndex = 6, Parent = list })
+			local row = new("Frame", { Size = UDim2.new(1, -8, 0, 92), BackgroundTransparency = 1, LayoutOrder = n, ZIndex = 6, Parent = list })
 			UI.slice("tile", { ImageColor3 = K.TILE, ZIndex = 1, Parent = row })
-			K.chip(row, string.upper(rr.name), rr.color, { Position = UDim2.fromOffset(12, 10), ZIndex = 8 })
-			K.text({ Position = UDim2.fromOffset(12, 40), Size = UDim2.fromOffset(130, 24), Text = pct(v), Font = T.chunky, TextSize = 22, TextColor3 = rarText(rr), ZIndex = 8, Parent = row })
-			local pics = new("Frame", { Position = UDim2.fromOffset(150, 6), Size = UDim2.new(1, -160, 0, 60), BackgroundTransparency = 1, ZIndex = 7, Parent = row })
-			new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = pics })
+			K.chip(row, string.upper(rr.name), rr.color, { Position = UDim2.fromOffset(12, 18), ZIndex = 8 })
+			K.text({ Position = UDim2.fromOffset(12, 50), Size = UDim2.fromOffset(130, 26), Text = pct(v), Font = T.chunky, TextSize = 24, TextColor3 = rarText(rr), ZIndex = 8, Parent = row })
+			local pics = new("Frame", { Position = UDim2.fromOffset(150, 6), Size = UDim2.new(1, -160, 0, 82), BackgroundTransparency = 1, ZIndex = 7, Parent = row })
+			new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = pics })
 			for i, h in ipairs(Hammers.PoolAt(cr, r)) do
-				local b = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(60, 60), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 7, Parent = pics })
-				K.artBox(b, art(h), rr.color, { Size = UDim2.fromScale(1, 1), IconScale = 1.06 })
+				local b = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(96, 82), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 7, Parent = pics })
+				K.artBox(b, art(h), rr.color, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.fromOffset(58, 58), IconScale = 1.06 })
+				K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 20), Text = h.name, TextSize = 12, Max = 12, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, ZIndex = 8, Parent = b })
 				b.Activated:Connect(function() c.click(); hammerPopup(h) end)
 			end
 		end
@@ -541,7 +542,7 @@ local function miniTile(grid, o)
 	end
 	if o.new then
 		-- a pulsing NEW pill on the picture's corner
-		local pill = new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, -6), Size = UDim2.fromOffset(44, 20), BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 10, Parent = t })
+		local pill = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -7), Size = UDim2.fromOffset(44, 20), BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 10, Parent = t })
 		UI.corner(8).Parent = pill
 		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = pill })
 		new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "NEW", Font = T.chunky, TextSize = 13, TextColor3 = Color3.new(1, 1, 1), ZIndex = 11, Parent = pill })

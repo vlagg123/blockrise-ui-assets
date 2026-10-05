@@ -1068,8 +1068,11 @@ def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, m
             st = poly(star_pts(r, r * 0.34, 4, 90), 0.05, glow("#ffffff", 4.5), bevel=0.0, outline=False)
             st.matrix_world = P @ _xf((x, -0.3, z), (0, 0, 0))
         if mark:
-            q = text("?", 1.5, 0.16, candy(L["mark"], rough=0.25, emit=0.55), bevel=0.025, outline=True, center=True)
-            q.matrix_world = P @ _xf((0.1, -0.7, H + 1.45), (90, -10, 0))
+            # a big, readable "?": the glyph is thin enough for its hook to stay open under the outline
+            q = text("?", 2.3, 0.18, candy(L["mark"], rough=0.25, emit=0.55), bevel=0.03, outline=True, center=True)
+            q.matrix_world = P @ _xf((0.15, -1.0, H + 1.75), (90, -12, 0))
+            sh = text("?", 2.3, 0.18, candy("#1b1530", rough=0.6, coat=0.0, emit=0.0), bevel=0.03, outline=False, center=True)
+            sh.matrix_world = P @ _xf((0.22, -0.92, H + 1.68), (90, -12, 0))
     return P
 
 
