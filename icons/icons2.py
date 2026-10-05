@@ -206,6 +206,21 @@ def icon_rebirth():
         I.poly([p1, tip, p2], 0.42, color=P, bevel=0.07)
     star3d(0.46, 0.22, 0.22, color=GOLD)
 
+def icon_gift():
+    # seen from a corner, a bit from above: two sides + the ribbon cross on the lid
+    PK, PK2 = I.PINK, "#ff86cf"
+    objs = [I.box((1.6, 1.6, 1.2), loc=(0, 0, -0.3), color=PK, bevel=0.06),
+            I.box((1.78, 1.78, 0.4), loc=(0, 0, 0.42), color=PK2, bevel=0.07),
+            I.box((0.32, 1.66, 1.24), loc=(0, 0, -0.3), color=GOLD, bevel=0.03, gloss=0.5),
+            I.box((1.66, 0.32, 1.24), loc=(0, 0, -0.3), color=GOLD, bevel=0.03, gloss=0.5),
+            I.box((0.34, 1.84, 0.44), loc=(0, 0, 0.42), color=GOLD, bevel=0.03, gloss=0.5),
+            I.box((1.84, 0.34, 0.44), loc=(0, 0, 0.42), color=GOLD, bevel=0.03, gloss=0.5)]
+    I.group(objs, rot=(0, 0, 40))
+    # the bow stays turned to the camera
+    I.torus(0.38, 0.14, loc=(-0.36, 0, 0.9), rot=(90, 0, 28), color=GOLD, gloss=0.5)
+    I.torus(0.38, 0.14, loc=(0.36, 0, 0.9), rot=(90, 0, -28), color=GOLD, gloss=0.5)
+    I.sphere(0.22, loc=(0, -0.06, 0.74), color="#ffc21a", gloss=0.5)
+
 def icon_crew():
     I.hardhat(rot=(16, 0, 22))
 
@@ -225,6 +240,8 @@ def frame_and_render(path, view=(0, -1, 0.42), margin=1.12):
     scn.render.resolution_x = scn.render.resolution_y = RES
     I.frame_and_render(path, view=view, margin=margin)
 
+VIEWS = {"gift": (0, -1, 0.8)}
+
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
     out = args[0]
@@ -235,5 +252,5 @@ if __name__ == "__main__":
         I.ICONS[n]()
         puff()
         I.add_outlines()
-        frame_and_render(os.path.join(out, n + ".png"))
+        frame_and_render(os.path.join(out, n + ".png"), view=VIEWS.get(n, (0, -1, 0.42)))
         print("rendered", n, flush=True)
