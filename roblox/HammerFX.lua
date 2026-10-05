@@ -81,8 +81,9 @@ local function around(pos, r0, r1)
 end
 
 local function lightFlash(pos, color, brightness, range, t)
+	-- kept soft: on the light roads a strong light burns the ground white (and everyone sees it)
 	local a = new("Attachment", { WorldPosition = pos, Parent = workspace.Terrain })
-	local l = new("PointLight", { Color = color, Brightness = brightness, Range = range, Shadows = false, Parent = a })
+	local l = new("PointLight", { Color = color, Brightness = math.min(brightness * 0.35, 2.2), Range = math.min(range * 0.55, 16), Shadows = false, Parent = a })
 	UI.tween(l, t or 0.3, { Brightness = 0 })
 	Debris:AddItem(a, (t or 0.3) + 0.05)
 end
@@ -274,25 +275,34 @@ local function makeFeet(e, f)
 end
 
 -- the Thunderclap's own storm cloud: it follows you, and moves over the house while you build
-local CLOUD = C3(34, 36, 46)
+local CLOUD = C3(52, 56, 70)
+local CLOUD_LIT = C3(150, 180, 235)
 local function makeCloud(e)
-	-- flattened dark puffs, and dark smoke rolling off them so the edges look soft
-	local c = { parts = {}, pos = nil }
-	for i = 1, 11 do
-		local s = 3.2 + math.random() * 3
-		-- flat dark (Neon ignores the light): a cartoon storm cloud, and the puffs light up when it flashes inside
-		local p = fxPart({ Name = "Cloud", Shape = Enum.PartType.Ball, Color = CLOUD:Lerp(C3(70, 74, 90), math.random() * 0.6),
-			Transparency = 0.08, Size = Vector3.new(s, s, s) })
-		local r = math.random() * 4.5
-		local a = math.random() * math.pi * 2
-		table.insert(c.parts, { part = p, off = Vector3.new(math.cos(a) * r * 1.3, (math.random() - 0.5) * 1.0 - (i == 1 and 0 or 0.4), math.sin(a) * r), ph = math.random() * 6, color = p.Color })
+	-- soft rolling smoke only (solid balls looked like dark balloons): five puffs locked to an invisible core that follows you
+	local core = fxPart({ Name = "Cloud", Transparency = 1, Size = Vector3.new(1, 1, 1) })
+	local c = { parts = { { part = core } }, pos = nil, core = core, puffs = {} }
+	local spots = { Vector3.new(0, 0.3, 0), Vector3.new(3, -0.2, 0.7), Vector3.new(-3, -0.1, -0.6), Vector3.new(1.1, 0.5, -1.8), Vector3.new(-1.3, 0.4, 1.8) }
+	for _, off in ipairs(spots) do
+		local a = new("Attachment", { Position = off, Parent = core })
+		local pe = new("ParticleEmitter", { Texture = SMOKE, Color = seq(CLOUD), LightEmission = 0, LightInfluence = 0, Rate = 5, Lifetime = NumberRange.new(2.4, 3.4),
+			Speed = NumberRange.new(0.1, 0.35), SpreadAngle = Vector2.new(180, 180), LockedToPart = true, Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-10, 10),
+			Size = NumberSequence.new({ NSK(0, 3.2), NSK(0.5, 5), NSK(1, 5.6) }), Transparency = NumberSequence.new({ NSK(0, 1), NSK(0.2, 0.12), NSK(0.75, 0.18), NSK(1, 1) }),
+			Parent = a })
+		pe:Emit(5)
+		table.insert(c.puffs, pe)
 	end
-	local core = c.parts[1].part
-	new("ParticleEmitter", { Texture = SMOKE, Color = seq(C3(55, 58, 72), C3(35, 37, 48)), Rate = 7, Lifetime = NumberRange.new(1.6, 2.4), Speed = NumberRange.new(0.3, 0.8),
-		SpreadAngle = Vector2.new(180, 30), Size = NumberSequence.new({ NSK(0, 4), NSK(1, 7) }), Transparency = NumberSequence.new({ NSK(0, 1), NSK(0.3, 0.45), NSK(1, 1) }),
-		LightEmission = 0, LightInfluence = 0.4, Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-15, 15), Parent = core })
-	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 18, Shadows = false, Parent = core })
+	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 12, Shadows = false, Parent = core })
 	e.cloud = c
+end
+-- a flash inside the cloud: a puff lights up for a blink
+local function cloudBlink(c, all)
+	local pick = math.random(#c.puffs)
+	for i, pe in ipairs(c.puffs) do
+		if all or i == pick then
+			pe.Color, pe.LightEmission = seq(CLOUD_LIT), 0.35
+			task.delay(0.08, function() if pe.Parent then pe.Color, pe.LightEmission = seq(CLOUD), 0 end end)
+		end
+	end
 end
 
 local function dropOrbs(e)
@@ -354,9 +364,9 @@ for _, d in ipairs(workspace:GetDescendants()) do scan(d) end
 local function flash(e)
 	-- a crack of lightning inside the hammer: the light jumps, the cores go white, sparks fly
 	if e.light then
-		e.light.Brightness = e.base * 3.2
-		task.delay(0.05, function() if e.light then e.light.Brightness = e.base * 0.5 end end)
-		task.delay(0.1, function() if e.light then e.light.Brightness = e.base * 2.4 end end)
+		e.light.Brightness = e.base * 1.9
+		task.delay(0.05, function() if e.light then e.light.Brightness = e.base * 0.6 end end)
+		task.delay(0.1, function() if e.light then e.light.Brightness = e.base * 1.5 end end)
 	end
 	for _, n in ipairs(e.neon) do
 		n.part.Color = n.color:Lerp(Color3.new(1, 1, 1), 0.7)
@@ -441,16 +451,12 @@ RunService.RenderStepped:Connect(function()
 					local building = e.site and now - e.site.t < 2.5
 					local target = building and (e.site.pos + Vector3.new(0, 17, 0)) or (root.Position + Vector3.new(0, 10.5, 0))
 					c.pos = c.pos and c.pos:Lerp(target, math.clamp(dt * (building and 2 or 4), 0, 1)) or target
-					for _, b in ipairs(c.parts) do
-						b.part.CFrame = CFrame.new(c.pos + b.off + Vector3.new(math.sin(now * 0.7 + b.ph) * 0.4, math.sin(now * 0.9 + b.ph) * 0.25, 0))
-					end
+					c.core.CFrame = CFrame.new(c.pos + Vector3.new(math.sin(now * 0.7) * 0.3, math.sin(now * 0.9) * 0.2, 0)) * CFrame.Angles(0, now * 0.15, 0)
 					-- light flickering inside the cloud
-					if c.light.Brightness > 0 then c.light.Brightness = math.max(0, c.light.Brightness - dt * 30) end
-					if due(e, "cloudFlick", { 0.35, 1.1 }, now) then
-						c.light.Brightness = 2 + math.random() * 3
-						local b = c.parts[math.random(#c.parts)]
-						b.part.Color = C3(140, 170, 220)
-						task.delay(0.07, function() if b.part.Parent then b.part.Color = b.color end end)
+					if c.light.Brightness > 0 then c.light.Brightness = math.max(0, c.light.Brightness - dt * 12) end
+					if due(e, "cloudFlick", { 0.5, 1.4 }, now) then
+						c.light.Brightness = 0.5 + math.random() * 0.6
+						cloudBlink(c)
 					end
 				end
 			elseif (e.orbs and #e.orbs > 0) or e.feet or e.cloud then
@@ -515,7 +521,8 @@ RunService.RenderStepped:Connect(function()
 				if aura.cloudBolt and e.cloud and e.cloud.pos and not (e.site and now - e.site.t < 2.5) and due(e, "cloudBolt", aura.cloudBolt.every, now) then
 					zap(e.cloud.pos - Vector3.new(0, 1.5, 0), e.head.Position, { n = 7, amp = 1.1, w = 0.3, forks = 0.35, life = 0.2 })
 					lightFlash(e.head.Position, C3(170, 210, 255), 6, 20, 0.25)
-					e.cloud.light.Brightness = 8
+					e.cloud.light.Brightness = 1.6
+					cloudBlink(e.cloud, true)
 					flash(e)
 				end
 				-- the diamond's gems twinkle
@@ -757,7 +764,7 @@ local function burst(tool, pos, mine, who)
 			local cloud = e and e.cloud and e.cloud.pos
 			strike(pos, true, cloud and (cloud - Vector3.new(0, 1.5, 0)))
 			scorch(groundAt(pos))
-			if e and e.cloud then e.cloud.light.Brightness = 10 end
+			if e and e.cloud then e.cloud.light.Brightness = 2; cloudBlink(e.cloud, true) end
 			sound3D(THUNDER_SFX, pos, mine and 0.45 or 0.3, 0.95 + math.random() * 0.15, 1.1)
 			if mine then
 				screenFlash(C3(200, 225, 255), 0.8)
