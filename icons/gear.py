@@ -68,43 +68,145 @@ def meta(elements, mat, name="meta", P=None, resolution=0.035, threshold=0.6, ou
     return o
 
 
+def _catmull(ctrl, rad, sub):
+    """Catmull-Rom curve through the control points, with a radius per point"""
+    P = [Vector(p) for p in ctrl]
+    n = len(P)
+    pts, rs = [], []
+    for i in range(n - 1):
+        p1, p2 = P[i], P[i + 1]
+        p0 = P[i - 1] if i > 0 else p1 + (p1 - p2)
+        p3 = P[i + 2] if i + 2 < n else p2 + (p2 - p1)
+        for s in range(sub):
+            t = s / sub
+            pt = 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t)
+            pts.append(pt)
+            rs.append(rad[i] + (rad[i + 1] - rad[i]) * t)
+    pts.append(P[-1])
+    rs.append(rad[-1])
+    return pts, rs
+
+
+def rtube(name, ctrl, rad, mat, parent=None, ring=32, sub=8, cap=10, outline=True):
+    """a smooth round tube through the control points with round ends (fingers, thumbs)"""
+    pts, rs = _catmull(ctrl, rad, sub)
+    t0 = (pts[1] - pts[0]).normalized()
+    t1 = (pts[-1] - pts[-2]).normalized()
+    head, headr, tail, tailr = [], [], [], []
+    for k in range(cap, 0, -1):
+        th = (math.pi / 2) * k / (cap + 0.35)
+        head.append(pts[0] - t0 * rs[0] * math.sin(th))
+        headr.append(rs[0] * math.cos(th))
+    for k in range(1, cap + 1):
+        th = (math.pi / 2) * k / (cap + 0.35)
+        tail.append(pts[-1] + t1 * rs[-1] * math.sin(th))
+        tailr.append(rs[-1] * math.cos(th))
+    path, radii = head + pts + tail, headr + rs + tailr
+    n = len(path)
+    bm = bm_tube(path, lambda f: radii[min(n - 1, round(f * (n - 1)))], ring=ring, caps=True)
+    o = obj(name, bm, mat, smooth=85, outline=outline)
+    if parent is not None:
+        o.matrix_world = parent @ o.matrix_world
+    return o
+
+
+def pillow(name, size, mat, loc=(0, 0, 0), parent=None, bevel=0.16, taper=None, levels=2, outline=True):
+    """a soft rounded block (bevelled box + subdivision): palms, the back of the hand"""
+    bm = bm_box(*size)
+    if taper:
+        for v in bm.verts:
+            if v.co.z < 0:
+                v.co.x *= taper
+    o = obj(name, bm, mat, loc=loc, parent=parent, smooth=85, bevel=bevel, segs=3, outline=outline)
+    s = o.modifiers.new("soft", "SUBSURF")
+    s.levels = s.render_levels = levels
+    return o
+
+
+def ribbed(name, r, h, mat, r2=None, sy=1.0, ribs=28, amp=0.016, loc=(0, 0, 0), parent=None, bevel=0.05, outline=True):
+    """a knitted cuff / sweatband: a (flattened) cylinder with soft vertical ribs"""
+    bm = bm_cyl(r, h, 112, r2=r2)
+    for v in bm.verts:
+        a = math.atan2(v.co.y, v.co.x)
+        k = 1 + amp * math.cos(ribs * a) / max(r, 0.01)
+        v.co.x *= k
+        v.co.y *= k * sy
+    return obj(name, bm, mat, loc=loc, parent=parent, smooth=40, bevel=bevel, segs=4, outline=outline)
+
+
 def g_hands():
-    """Bare Hands: a big round cartoon fist (soft, like the gloves of a mascot) with a sweatband"""
-    sk = pbr("skin", "#f4b07a", rough=0.45, coat=0.3, emit=0.05)
-    P = _xf((0, 0, 0), (0, 0, -16))
-    els = [("ELLIPSOID", (0, 0.08, 0.72), 1.0, (0.62, 0.48, 0.55), None, 2.0)]
-    for k in range(4):
-        x = -0.4 + k * 0.268
-        z = 1.02 - abs(k - 1.5) * 0.05
-        # each finger: knuckle roll on top and the bent part down the front
-        els.append(("CAPSULE", (x, -0.3, z), 0.235, (0.15, 0, 0), (0, 0, 90), 2.4))
-        els.append(("CAPSULE", (x, -0.5, z - 0.3), 0.215, (0.1, 0, 0), (0, 90, 0), 2.4))
-    els.append(("CAPSULE", (-0.1, -0.6, 0.38), 0.21, (0.3, 0, 0), (0, 12, 0), 3.0))      # thumb across the front
-    els.append(("CAPSULE", (0.05, 0.12, 0.16), 0.42, (0.1, 0, 0), (0, 90, 0), 2.0))     # wrist
-    meta(els, sk, "fist", P=P, resolution=0.03)
-    band = candy("#ff8a26", rough=0.65, coat=0.1, tex="leaf", scale=16, bump=0.25, dark="#f07d1c", light="#ff9a3c")
-    obj("band", bm_cyl(0.5, 0.36, 64), band, loc=(0.05, 0.12, -0.06), parent=P, smooth=40, bevel=0.12, segs=4)
+    """Bare Hands: a clean cartoon fist (like the raised-fist emoji): four curled fingers, the thumb across them,
+    a soft back of the hand and a red terry sweatband on the wrist"""
+    sk = pbr("skin2", "#f7b98b", rough=0.42, coat=0.15, emit=0.07)
+    P = _xf((0, 0, 0), (0, 0, -14))
+    pillow("hand", (1.24, 0.8, 0.95), sk, loc=(0, 0.38, 0.6), parent=P, bevel=0.22)
+    # fingers, index (next to the thumb) to pinky: x, size, height
+    for x, s, dz in ((-0.44, 1.0, 0.0), (-0.14, 1.03, 0.05), (0.16, 1.0, 0.02), (0.44, 0.86, -0.07)):
+        r = 0.165 * s
+        rtube("finger", [(x, 0.42, 1.0 + dz), (x, -0.02, 1.08 + dz), (x, -0.2, 0.93 + dz), (x, -0.24, 0.62 + dz * 0.5), (x, -0.08, 0.42)],
+              [r, r * 1.02, r, r * 0.96, r * 0.9], sk, parent=P)
+    rtube("thumb", [(-0.62, 0.42, 0.42), (-0.66, 0.02, 0.5), (-0.5, -0.36, 0.56), (-0.18, -0.48, 0.6), (0.06, -0.47, 0.6)],
+          [0.2, 0.2, 0.19, 0.175, 0.16], sk, parent=P)
+    nail = sphere(0.1, pbr("nail", "#ffd9c6", rough=0.22, coat=0.6, emit=0.1), outline=False)
+    nail.matrix_world = P @ _xf((0.0, -0.6, 0.66), (-35, 0, 0), (1.1, 0.45, 0.85))
+    obj("wrist", bm_cyl(0.44, 0.6, 64), sk, loc=(0, 0.38, 0.05), scale=(1, 0.86, 1), parent=P, smooth=40, outline=False)
+    band = pbr("band_red", "#ff4a3d", rough=0.7, coat=0.05, emit=0.1, tex="leaf", scale=18, bump=0.3, dark="#ef3b30", light="#ff5d50")
+    ribbed("band", 0.54, 0.44, band, sy=0.88, loc=(0, 0.38, -0.1), parent=P, ribs=30, amp=0.012, bevel=0.1)
+    ribbed("stripe", 0.555, 0.09, candy("#ffffff", rough=0.5), sy=0.88, loc=(0, 0.38, -0.1), parent=P, ribs=30, amp=0.012, bevel=0.02,
+           outline=False)
 
-
-def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
-    """a chunky cartoon work glove: one soft piece (palm + fingers + thumb), a rolled cuff"""
-    m = pbr("glove" + col, col, rough=0.5, coat=0.3, emit=0.08)
-    els = [("ELLIPSOID", (0, 0, 0.78), 1.0, (0.6, 0.3, 0.5), None, 2.0), ("ELLIPSOID", (0, 0, 0.38), 1.0, (0.52, 0.27, 0.36), None, 2.0)]
-    for k, h in enumerate((0.3, 0.38, 0.35, 0.26)):
-        x = -0.41 + k * 0.275
-        z = 1.2 + h * 0.75 - abs(k - 1.5) * 0.06
-        els.append(("CAPSULE", (x, 0, z), 0.235, (h, 0, 0), (0, 90 + (k - 1.5) * 6, 0), 2.2))
-    els.append(("CAPSULE", (0.66, -0.02, 0.78), 0.23, (0.22, 0, 0), (0, 52, 0), 2.2))   # thumb
-    meta(els, m, "glove", P=P, resolution=0.028)
-    c = candy(cuff, rough=0.45)
-    # a tall flared cuff (gauntlet) that the hand comes out of
-    obj("cuff", bm_cyl(0.56, 0.78, 64, r2=0.66), c, loc=(0, 0, 0.36), parent=P, smooth=40, bevel=0.14, segs=5)
-    for z in (0.16, 0.5):
-        t = torus(0.56 + (z + 0.03) * 0.13, 0.04, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
-        t.matrix_world = P @ _xf((0, 0, z))
 
 def g_gloves():
-    glove(_xf((0, 0, 0), (8, -12, -14)))
+    """Work Gloves: a yellow leather work glove, palm to the front, with a stitched palm patch and a blue knitted cuff"""
+    lea = pbr("leather_y", "#f6b53c", rough=0.55, coat=0.2, emit=0.1, tex="hammered", scale=10.0, bump=0.12, dark="#eba62e", light="#fbc451")
+    P = _xf((0, 0, 0), (0, -6, -10))
+    pillow("palm", (1.12, 0.46, 1.0), lea, loc=(0, 0, 0.55), parent=P, bevel=0.16, taper=0.88)
+    # fingers, pinky to index (the thumb is on the right): x, lean (deg), length, radius
+    for x, ang, L, r in ((-0.4, -9, 0.62, 0.155), (-0.135, -3, 0.82, 0.172), (0.135, 3, 0.9, 0.176), (0.4, 9, 0.8, 0.172)):
+        a = math.radians(ang)
+        d = Vector((math.sin(a), 0, math.cos(a)))
+        b = Vector((x, 0, 0.88))
+        rtube("finger", [b, b + d * L * 0.5 + Vector((0, -0.03, 0)), b + d * L + Vector((0, -0.08, 0))], [r * 1.05, r, r * 0.97], lea, parent=P)
+    rtube("thumb", [(0.34, 0.02, 0.32), (0.62, -0.04, 0.5), (0.82, -0.1, 0.74), (0.92, -0.14, 0.93)], [0.21, 0.2, 0.185, 0.172], lea, parent=P)
+    # the darker leather palm patch with white stitching around it
+    patch = pbr("leather_d", "#d4822a", rough=0.6, coat=0.15, emit=0.08, tex="hammered", scale=12.0, bump=0.15, dark="#c97526", light="#dd8f35")
+    w, z0, z1, cr = 0.36, 0.3, 0.8, 0.12
+    pts = []
+    for (cx, cz, a0) in ((w - cr, z1 - cr, 0), (-w + cr, z1 - cr, 90), (-w + cr, z0 + cr, 180), (w - cr, z0 + cr, 270)):
+        for k in range(7):
+            aa = math.radians(a0 + 90 * k / 6)
+            pts.append((cx + math.cos(aa) * cr, cz + math.sin(aa) * cr))
+    bm = bm_prism(pts, 0.08, axis="Y")
+    for v in bm.verts:
+        v.co.z = -v.co.z
+    o = obj("patch", bm, patch, loc=(0, -0.19, 0), bevel=0.025, segs=3)
+    o.matrix_world = P @ o.matrix_world
+    st = candy("#fff2cf", rough=0.5)
+    inset = 0.055
+    ring = []
+    for (cx, cz, a0) in ((w - cr, z1 - cr, 0), (-w + cr, z1 - cr, 90), (-w + cr, z0 + cr, 180), (w - cr, z0 + cr, 270)):
+        for k in range(24):
+            aa = math.radians(a0 + 90 * k / 24)
+            ring.append(Vector((cx + math.cos(aa) * (cr - inset), 0, cz + math.sin(aa) * (cr - inset))))
+    per = [0.0]
+    for i in range(1, len(ring) + 1):
+        per.append(per[-1] + (ring[i % len(ring)] - ring[i - 1]).length)
+    total, dash, step = per[-1], 0.055, 0.1
+    s = 0.0
+    while s < total - step * 0.5:
+        i = max(j for j in range(len(ring)) if per[j] <= s)
+        p0, p1 = ring[i], ring[(i + 1) % len(ring)]
+        f = (s - per[i]) / max(per[i + 1] - per[i], 1e-6)
+        p = p0.lerp(p1, f)
+        dirv = (p1 - p0).normalized()
+        ang = math.degrees(math.atan2(dirv.z, dirv.x))
+        d = obj("stitch", bm_box(dash, 0.02, 0.02), st, loc=(p.x, -0.235, p.z), rot=(0, -ang, 0), bevel=0.008, segs=2, outline=False)
+        d.matrix_world = P @ d.matrix_world
+        s += step
+    knit = pbr("knit_b", "#2f7cf6", rough=0.7, coat=0.05, emit=0.12, tex="leaf", scale=22.0, bump=0.25, dark="#2a70e6", light="#3a88ff")
+    ribbed("cuff", 0.6, 0.56, knit, r2=0.56, sy=0.56, loc=(0, 0, -0.14), parent=P, ribs=28, amp=0.016, bevel=0.07)
+    ribbed("cuffline", 0.6, 0.09, candy("#ffffff", rough=0.5), sy=0.56, loc=(0, 0, 0.0), parent=P, ribs=28, amp=0.016, bevel=0.02,
+           outline=False)
 
 
 def g_belt():
@@ -394,7 +496,7 @@ ICONS = {
     "gear7": g_ibeam, "gear8": g_block, "gear9": g_anvil, "gear10": g_wreck, "gear11": g_girder, "gear12": g_hook,
     "excavator": m_excavator, "mixer": m_mixer, "crane": m_crane, "st_tires": s_tires, "st_hoist": s_hoist,
 }
-VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.35, -1, 0.3), "gear2": (-0.1, -1, 0.12),
+VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.3, -1, 0.35), "gear2": (-0.22, -1, 0.18),
         "excavator": (-0.3, -1, 0.35), "mixer": (-0.3, -1, 0.3), "crane": (-0.3, -1, 0.3), "st_tires": (-0.2, -1, 0.25), "st_hoist": (-0.2, -1, 0.25)}
 SPARK = {"gear9": [(0.82, 0.2, 0.07), (0.66, 0.1, 0.045)], "gear5": [(0.82, 0.2, 0.06)], "gear12": [(0.84, 0.18, 0.06)], "gear10": [(0.84, 0.16, 0.06)]}
 
