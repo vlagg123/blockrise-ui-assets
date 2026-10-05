@@ -145,7 +145,6 @@ function M.Show()
 		if not c.live(tok) then conn:Disconnect() return end
 		if not spinning then refresh() end
 	end)
-	local rest = 0
 	btn.Activated:Connect(function()
 		if spinning then return end
 		c.click()
@@ -162,9 +161,10 @@ function M.Show()
 		local target = 50
 		tiles[target]:Destroy()
 		tiles[target] = tile(strip, p, (target - 1) * (TILE + GAP))
-		local jitter = (math.random() - 0.5) * TILE * 0.6
-		strip.Position = UDim2.fromOffset(centerOn(4, rest), 9)
-		local tw = TweenService:Create(strip, TweenInfo.new(4.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(centerOn(target, jitter), 9) })
+		-- lands a little to one side (suspense), then glides exactly onto the frame
+		local jitter = (math.random() < 0.5 and -1 or 1) * TILE * (0.18 + math.random() * 0.22)
+		strip.Position = UDim2.fromOffset(centerOn(4), 9)
+		local tw = TweenService:Create(strip, TweenInfo.new(4.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(centerOn(target, jitter), 9) })
 		local lastTick = -1
 		local tickConn = RunService.RenderStepped:Connect(function()
 			local x = -strip.Position.X.Offset
@@ -176,18 +176,27 @@ function M.Show()
 		end)
 		tw:Play()
 		tw.Completed:Wait()
+		task.wait(0.12)
+		local settle = TweenService:Create(strip, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(centerOn(target), 9) })
+		settle:Play()
+		settle.Completed:Wait()
+		strip.Position = UDim2.fromOffset(centerOn(target), 9)
 		tickConn:Disconnect()
 		spinning = false
 		if c.live(tok) then
 			light(tiles[target], true)
+			-- the prize pops
+			local ps = Instance.new("UIScale")
+			ps.Parent = tiles[target]
+			ps.Scale = 1.14
+			UI.tween(ps, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
 			-- the next spin starts from tile 4: show the same prize there so the reset isn't visible
 			task.delay(1.2, function()
 				if not c.live(tok) or spinning then return end
 				tiles[4]:Destroy()
 				tiles[4] = tile(strip, p, 3 * (TILE + GAP))
 				tiles[4].Bg.ImageColor3 = WIN
-				rest = jitter
-				strip.Position = UDim2.fromOffset(centerOn(4, rest), 9)
+				strip.Position = UDim2.fromOffset(centerOn(4), 9)
 				light(tiles[4], false)
 			end)
 		end
