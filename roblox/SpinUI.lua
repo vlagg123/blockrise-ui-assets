@@ -129,9 +129,14 @@ function M.Show()
 			-- Roblox policy: no paid spins in this region, only the free one
 			stText = "Free spin in " .. fmtLong(left)
 			if btnLbl then btnLbl.Text = "⏱ " .. fmtLong(left) end
-		else
+		elseif gems >= Config.Spin.gemCost then
 			stText = "Free spin in " .. fmtLong(left)
 			if btnLbl then btnLbl.Text = "SPIN · 💎 " .. Config.Spin.gemCost end
+		else
+			-- not enough Gems: one spin for Robux
+			stText = "Free spin in " .. fmtLong(left)
+			local p1 = packOf("spin1")
+			if btnLbl then btnLbl.Text = "SPIN · R$ " .. tostring(p1 and p1.price or 10) end
 		end
 		sub.Text = c.player:GetAttribute("PaidRandomRestricted") == true and "One free spin every 4 hours" or ("One free spin every 4 hours · you have " .. Config.FormatNum(gems) .. " 💎")
 		if os.clock() >= resultUntil then
@@ -145,9 +150,41 @@ function M.Show()
 		if not c.live(tok) then conn:Disconnect() return end
 		if not spinning then refresh() end
 	end)
+	local doSpin
+	local waitingBuy = 0
+	local lastExtra = c.player:GetAttribute("SpinExtra") or 0
+	-- a Robux spin that was just bought starts by itself
+	local extraConn = c.player:GetAttributeChangedSignal("SpinExtra"):Connect(function()
+		local now = c.player:GetAttribute("SpinExtra") or 0
+		if now > lastExtra and os.clock() - waitingBuy < 90 and c.live(tok) and not spinning then
+			waitingBuy = 0
+			task.defer(doSpin)
+		end
+		lastExtra = now
+	end)
+	task.spawn(function()
+		while c.live(tok) do task.wait(1) end
+		extraConn:Disconnect()
+	end)
 	btn.Activated:Connect(function()
 		if spinning then return end
 		c.click()
+		local free = freeLeft() <= 0 or (c.player:GetAttribute("SpinExtra") or 0) > 0
+		local gemsOk = (c.player:GetAttribute("Gems") or 0) >= Config.Spin.gemCost
+		if not free and not gemsOk and c.player:GetAttribute("PaidRandomRestricted") ~= true then
+			local p1 = packOf("spin1")
+			if p1 and (p1.id or 0) > 0 then
+				waitingBuy = os.clock()
+				MarketplaceService:PromptProductPurchase(c.player, p1.id)
+			else
+				c.toast("🎰 Robux spins are coming soon", T.muted, 2.5)
+			end
+			return
+		end
+		doSpin()
+	end)
+	doSpin = function()
+		if spinning then return end
 		spinning = true
 		local ok, res, data = pcall(function() return SpinRF:InvokeServer("spin") end)
 		if not (ok and res) then
@@ -219,7 +256,7 @@ function M.Show()
 			c.sound2D(c.S.Coins, 0.6, 1.1)
 		end
 		refresh()
-	end)
+	end
 	-- Robux pack
 	local pack = packOf("spins3")
 	if pack and (pack.id or 0) > 0 and c.player:GetAttribute("PaidRandomRestricted") ~= true then

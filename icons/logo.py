@@ -41,7 +41,7 @@ def grad_mat(name, stops, gloss=0.6):
     return m
 
 
-def text3d(body, size, depth, loc, mat, bevel=0.035, spacing=1.0, rot=(90, 0, 0)):
+def text3d(body, size, depth, loc, mat, bevel=0.035, spacing=1.0, rot=(90, 0, 0), offset=0.0):
     bpy.ops.object.text_add(location=loc, rotation=[math.radians(a) for a in rot])
     ob = bpy.context.object
     cu = ob.data
@@ -52,6 +52,7 @@ def text3d(body, size, depth, loc, mat, bevel=0.035, spacing=1.0, rot=(90, 0, 0)
     cu.bevel_depth = bevel
     cu.bevel_resolution = 4
     cu.space_character = spacing
+    cu.offset = offset
     cu.align_x = "CENTER"
     cu.align_y = "CENTER"
     bpy.ops.object.convert(target="MESH")
@@ -73,7 +74,7 @@ def side_split(ob, side_mat):
         p.material_index = 0 if p.normal.z > 0.92 else 1
 
 
-def word(body, size, depth, center, face, side, bevel=0.04, gap=0.06, bounce=0.12, tilt=5.0, seed=0):
+def word(body, size, depth, center, face, side, bevel=0.04, gap=0.06, bounce=0.12, tilt=5.0, seed=0, outline=0.0):
     """one text object per letter, laid out left to right, each with a little hop and tilt (playful logo look)"""
     letters = []
     for ch in body:
@@ -91,6 +92,13 @@ def word(body, size, depth, center, face, side, bevel=0.04, gap=0.06, bounce=0.1
         hop = bounce * (1 - t * t) + (0.05 if i % 2 else -0.02)
         o.location = (x + w / 2, center[1], center[2] + hop)
         o.rotation_euler = (math.radians(90), math.radians((tilt if i % 2 else -tilt) * (0.6 + 0.4 * ((i * 7 + seed) % 3) / 2)), 0)
+        if outline > 0:
+            # a thick dark border: the same letter grown by 'outline', flat and dark, just behind it
+            ink = P.mat("#1d1830", gloss=0.1)
+            b = text3d(body[i], size, depth * 0.5, (0, 0, 0), ink, bevel=0.0, offset=outline)
+            b["no_outline"] = True
+            b.location = (o.location.x, o.location.y + depth * 0.9, o.location.z)
+            b.rotation_euler = o.rotation_euler
         x += w + gap
     return letters
 
@@ -137,7 +145,7 @@ def build():
         I.poly([(sx * (2.0 + x), z) for x, z in tail], 0.26, loc=(0, 0.3, -0.58), color=RED2, bevel=0.06)
         I.poly([(sx * 2.0, 0.42), (sx * 2.25, 0.42), (sx * 2.25, -0.16), (sx * 2.0, 0.08)], 0.2, loc=(0, 0.22, -0.58), color="#8f1f1d", bevel=0.02)
     white = grad_mat("logo_white", [(0.0, "#ffe9d6"), (1.0, "#ffffff")], gloss=0.5)
-    for o in word("EMPIRE", 0.95, 0.16, (0, -0.2, -0.38), white, P.mat("#b8b3c9", gloss=0.4), bevel=0.025, gap=0.05, bounce=0.0, tilt=0):
+    for o in word("EMPIRE", 0.95, 0.16, (0, -0.2, -0.38), white, P.mat("#b8b3c9", gloss=0.4), bevel=0.025, gap=0.09, bounce=0.0, tilt=0, outline=0.055):
         o.location.y = -0.2
     # hard hat on the B, coins and a gem around
     hh = I.hardhat(rot=(12, 0, -18))
