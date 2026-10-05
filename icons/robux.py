@@ -1067,7 +1067,7 @@ def _three(kind):
     # three crates: two on the floor, one on top of them
     track(crate, loc=(-1.42, 0, 0), rot=(0, 0, 14), s=0.72, kind=kind)
     track(crate, loc=(1.42, 0, 0), rot=(0, 0, 30), s=0.72, kind=kind)
-    track(crate, loc=(0.0, 0.0, 1.62), rot=(0, 0, 22), s=0.7, kind=kind)
+    track(crate, loc=(0.0, 0.0, 1.7), rot=(0, 0, 22), s=0.7, kind=kind)
 
 
 def i_crate_golden3():
