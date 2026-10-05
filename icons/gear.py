@@ -135,24 +135,23 @@ def ribbed(name, r, h, mat, r2=None, sy=1.0, ribs=28, amp=0.016, loc=(0, 0, 0), 
 
 
 def g_hands():
-    """Bare Hands: a clean cartoon fist (like the raised-fist emoji): four curled fingers, the thumb across them,
-    a soft back of the hand and a red terry sweatband on the wrist"""
-    sk = pbr("skin2", "#f7b98b", rough=0.42, coat=0.15, emit=0.07)
+    """Bare Hands: a clean cartoon fist (the raised-fist emoji): four soft square fingers side by side with the knuckles
+    on top, the thumb wrapped across them, a red terry sweatband on the wrist"""
+    sk = pbr("skin3", "#f7b98b", rough=0.42, coat=0.15, emit=0.07)
     P = _xf((0, 0, 0), (0, 0, -14))
-    pillow("hand", (1.24, 0.8, 0.95), sk, loc=(0, 0.38, 0.6), parent=P, bevel=0.22)
-    # fingers, index (next to the thumb) to pinky: x, size, height
-    for x, s, dz in ((-0.44, 1.0, 0.0), (-0.14, 1.03, 0.05), (0.16, 1.0, 0.02), (0.44, 0.86, -0.07)):
-        r = 0.165 * s
-        rtube("finger", [(x, 0.42, 1.0 + dz), (x, -0.02, 1.08 + dz), (x, -0.2, 0.93 + dz), (x, -0.24, 0.62 + dz * 0.5), (x, -0.08, 0.42)],
-              [r, r * 1.02, r, r * 0.96, r * 0.9], sk, parent=P)
-    rtube("thumb", [(-0.62, 0.42, 0.42), (-0.66, 0.02, 0.5), (-0.5, -0.36, 0.56), (-0.18, -0.48, 0.6), (0.06, -0.47, 0.6)],
-          [0.2, 0.2, 0.19, 0.175, 0.16], sk, parent=P)
-    nail = sphere(0.1, pbr("nail2", "#ffc8b0", rough=0.25, coat=0.5, emit=0.05), outline=False)
-    nail.matrix_world = P @ _xf((0.02, -0.6, 0.655), (-35, 0, 0), (0.95, 0.4, 0.72))
-    obj("wrist", bm_cyl(0.44, 0.6, 64), sk, loc=(0, 0.38, 0.05), scale=(1, 0.86, 1), parent=P, smooth=40, outline=False)
+    pillow("hand", (1.18, 0.78, 0.92), sk, loc=(0, 0.3, 0.52), parent=P, bevel=0.25)
+    # fingers index -> pinky: x, width, top
+    for x, w, top in ((-0.44, 0.3, 1.14), (-0.147, 0.3, 1.18), (0.147, 0.3, 1.14), (0.43, 0.27, 1.06)):
+        h = top - 0.56
+        pillow("finger", (w, 0.74, h), sk, loc=(x, 0.06, 0.56 + h / 2), parent=P, bevel=0.1)
+    rtube("thumb", [(-0.5, 0.25, 0.32), (-0.64, -0.08, 0.44), (-0.46, -0.4, 0.5), (-0.12, -0.5, 0.5), (0.16, -0.48, 0.47)],
+          [0.22, 0.21, 0.195, 0.18, 0.165], sk, parent=P)
+    nail = sphere(0.1, pbr("nail3", "#ffcab4", rough=0.25, coat=0.5, emit=0.05), outline=False)
+    nail.matrix_world = P @ _xf((0.12, -0.6, 0.53), (-40, 0, -4), (0.9, 0.38, 0.7))
+    obj("wrist", bm_cyl(0.42, 0.6, 64), sk, loc=(0, 0.3, 0.0), scale=(1, 0.85, 1), parent=P, smooth=40, outline=False)
     band = pbr("band_red", "#ff4a3d", rough=0.7, coat=0.05, emit=0.1, tex="leaf", scale=18, bump=0.3, dark="#ef3b30", light="#ff5d50")
-    ribbed("band", 0.54, 0.44, band, sy=0.88, loc=(0, 0.38, -0.1), parent=P, ribs=30, amp=0.012, bevel=0.1)
-    ribbed("stripe", 0.555, 0.09, candy("#ffffff", rough=0.5), sy=0.88, loc=(0, 0.38, -0.1), parent=P, ribs=30, amp=0.012, bevel=0.02,
+    ribbed("band", 0.52, 0.42, band, sy=0.86, loc=(0, 0.3, -0.12), parent=P, ribs=30, amp=0.012, bevel=0.1)
+    ribbed("stripe", 0.535, 0.09, candy("#ffffff", rough=0.5), sy=0.86, loc=(0, 0.3, -0.12), parent=P, ribs=30, amp=0.012, bevel=0.02,
            outline=False)
 
 
