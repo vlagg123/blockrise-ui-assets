@@ -97,9 +97,10 @@ def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
     els.append(("CAPSULE", (0.66, -0.02, 0.78), 0.23, (0.22, 0, 0), (0, 52, 0), 2.2))   # thumb
     meta(els, m, "glove", P=P, resolution=0.028)
     c = candy(cuff, rough=0.45)
-    obj("cuff", bm_cyl(0.6, 0.6, 64, r2=0.56), c, loc=(0, 0, 0.2), parent=P, smooth=40, bevel=0.14, segs=5)
-    for z in (0.07, 0.33):
-        t = torus(0.585, 0.04, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
+    # a tall flared cuff (gauntlet) that the hand comes out of
+    obj("cuff", bm_cyl(0.56, 0.78, 64, r2=0.66), c, loc=(0, 0, 0.36), parent=P, smooth=40, bevel=0.14, segs=5)
+    for z in (0.16, 0.5):
+        t = torus(0.56 + (z + 0.03) * 0.13, 0.04, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
         t.matrix_world = P @ _xf((0, 0, z))
 
 def g_gloves():
