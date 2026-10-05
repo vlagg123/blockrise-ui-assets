@@ -75,7 +75,7 @@ def font():
     return _FONT
 
 
-def text(s, size, depth, mat, loc=(0, 0, 0), rot=(90, 0, 0), bevel=0.02, outline=True):
+def text(s, size, depth, mat, loc=(0, 0, 0), rot=(90, 0, 0), bevel=0.02, outline=True, center=False):
     cu = bpy.data.curves.new("txt", "FONT")
     cu.body = s
     cu.size = size
@@ -93,6 +93,13 @@ def text(s, size, depth, mat, loc=(0, 0, 0), rot=(90, 0, 0), bevel=0.02, outline
     me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg), depsgraph=dg)
     bpy.data.objects.remove(ob, do_unlink=True)
     bpy.data.curves.remove(cu)
+    if center and me.vertices:
+        xs = [v.co.x for v in me.vertices]
+        ys = [v.co.y for v in me.vertices]
+        cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+        for v in me.vertices:
+            v.co.x -= cx
+            v.co.y -= cy
     me.materials.clear()
     me.materials.append(mat)
     t = bpy.data.objects.new("txt", me)
@@ -182,6 +189,35 @@ def gem(cols, loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, glow_=0.42):
     return obj("gem", bm, mats, loc=loc, rot=rot)
 
 
+def gem_at(cols, P, loc, s, rz=0.0, tilt=12.0):
+    """an upright brilliant at loc (in the frame P), turned rz degrees, tipped tilt degrees towards the camera"""
+    g = gem(cols, rot=(tilt, 0, rz), s=s)
+    g.matrix_world = P @ _xf(loc) @ g.matrix_world
+    return g
+
+
+def touching(objs):
+    """pairs of meshes that cut into each other (world space). Gems must sit side by side, never inside each other."""
+    from mathutils.bvhtree import BVHTree
+    bpy.context.view_layer.update()
+    trees = []
+    for o in objs:
+        mw = o.matrix_world
+        trees.append((o, BVHTree.FromPolygons([mw @ v.co for v in o.data.vertices], [p.vertices for p in o.data.polygons])))
+    bad = []
+    for i in range(len(trees)):
+        for j in range(i + 1, len(trees)):
+            if trees[i][1].overlap(trees[j][1]):
+                bad.append((i, j))
+    TOUCH_LOG.append(bad)
+    if bad:
+        print("GEMS TOUCHING:", bad, flush=True)
+    return bad
+
+
+TOUCH_LOG = []
+
+
 BLUE_GEM = ("#c8f6ff", "#62d8ff", "#2cb4ff", "#1c8cf0", "#1667ff", "#2a8cff")
 PINK_GEM = ("#ffd2ef", "#ff7ccc", "#ff4aa8", "#e8308c", "#c4206e", "#e83a8c")
 GREEN_GEM = ("#d4ffd9", "#7ef09a", "#3fd36a", "#22b14e", "#178a3b", "#26a64c")
@@ -200,22 +236,26 @@ def coin(loc=(0, 0, 0), rot=(75, 0, 15), r=0.8):
     t2.matrix_world = P @ Matrix.Translation((0, 0, -0.14)) @ t2.matrix_world
 
 
-def bills(loc=(0, 0, 0), rot=(0, 0, 0), n=7, s=1.0, band="#ffffff"):
-    """a brick of green bank notes with a paper band and a $ seal on top"""
+def bills(loc=(0, 0, 0), rot=(0, 0, 0), n=7, s=1.0, band="#f7d35a"):
+    """a neat brick of green bank notes: a golden paper band round the middle, a printed $ medallion each side of it"""
     P = _xf(loc, rot, s)
-    random.seed(n)
-    g1 = candy("#56c46a", rough=0.5, coat=0.3)
-    g2 = candy("#7fdc8a", rough=0.5, coat=0.3)
+    g1 = candy("#4fbf66", rough=0.5, coat=0.3)
+    g2 = candy("#79d988", rough=0.5, coat=0.3)
+    th = 0.065
     for i in range(n):
-        obj("bill", bm_box(1.9, 0.95, 0.06), g1 if i % 2 else g2, loc=(random.uniform(-0.04, 0.04), random.uniform(-0.03, 0.03), 0.03 + i * 0.065),
-            rot=(0, 0, random.uniform(-2.5, 2.5)), parent=P, bevel=0.01, outline=i == n - 1)
-    top = 0.065 * n
-    obj("bill_border", bm_box(1.62, 0.7, 0.02), candy("#3fa856", rough=0.5, coat=0.3), loc=(0, 0, top + 0.012), parent=P, bevel=0.005, outline=False)
-    obj("bill_face", bm_box(1.5, 0.6, 0.025), candy("#8fe39a", rough=0.5, coat=0.3), loc=(0, 0, top + 0.02), parent=P, bevel=0.005, outline=False)
-    obj("band", bm_box(0.42, 1.0, 0.065 * n + 0.08), candy(band, rough=0.45, coat=0.3), loc=(0, 0, top / 2 + 0.02), parent=P, bevel=0.01)
-    obj("seal", bm_cyl(0.26, 0.05, 40), candy("#2f9a4a", rough=0.4), loc=(0.55, 0, top + 0.035), parent=P, smooth=40, outline=False)
-    t = text("$", 0.4, 0.02, candy("#e9fbe9", rough=0.4), rot=(0, 0, 90), outline=False)
-    t.matrix_world = P @ Matrix.Translation((0.55, 0, top + 0.065)) @ t.matrix_world
+        dx = 0.022 * math.sin(i * 1.7)   # a tiny regular shift: the edges read as separate notes
+        obj("bill", bm_box(1.9, 0.95, th), g1 if i % 2 else g2, loc=(dx, 0, th / 2 + i * th), parent=P, bevel=0.012,
+            outline=i == n - 1)
+    top = th * n
+    obj("bill_border", bm_box(1.66, 0.74, 0.02), candy("#3fa856", rough=0.5, coat=0.3), loc=(0, 0, top + 0.008), parent=P, bevel=0.005,
+        outline=False)
+    obj("bill_face", bm_box(1.54, 0.62, 0.025), candy("#8fe39a", rough=0.5, coat=0.3), loc=(0, 0, top + 0.014), parent=P, bevel=0.005,
+        outline=False)
+    obj("band", bm_box(0.38, 0.99, top + 0.05), candy(band, rough=0.35, coat=0.5), loc=(0, 0, top / 2 + 0.01), parent=P, bevel=0.012)
+    for x in (-0.56, 0.56):
+        obj("seal", bm_cyl(0.23, 0.03, 40), candy("#2f9a4a", rough=0.4), loc=(x, 0, top + 0.03), parent=P, smooth=40, outline=False)
+        t = text("$", 0.34, 0.012, candy("#e9fbe9", rough=0.4), rot=(0, 0, 0), bevel=0.006, outline=False, center=True)
+        t.matrix_world = P @ Matrix.Translation((x, 0, top + 0.05)) @ t.matrix_world
 
 
 def money_bag(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, cloth="#d6a35a", sign="#2e9e4a"):
@@ -236,7 +276,7 @@ def money_bag(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, cloth="#d6a35a", sign="#2e9e4
     obj("ruffle", bm_cyl(0.34, 0.5, 40, r2=0.62), c, loc=(0, 0, 2.3), parent=P, smooth=40, bevel=0.06)
     torus(0.4, 0.11, candy("#8a4a20", rough=0.6, coat=0.1)).matrix_world = P @ _xf((0, 0, 1.98))
     # the $ sits in the middle of the round part, facing the camera, bent to follow the cloth
-    t = text("$", 1.05, 0.1, candy(sign, rough=0.3), rot=(90, 0, 0))
+    t = text("$", 1.25, 0.1, candy(sign, rough=0.3), rot=(90, 0, 0), center=True)
     for v in t.data.vertices:
         v.co.z -= (v.co.x ** 2 + v.co.y ** 2) / 2.0
     t.matrix_world = P @ _xf((0, -0.89, 1.26), (70.6, 0, 0))
@@ -250,8 +290,11 @@ def badge(label, loc, s=1.0, col="#ff3b4a", txt="#ffffff", rot=(0, 0, 0), shape=
     obj("badge", bm, candy(col, rough=0.25), parent=P, bevel=0.06)
     bm2 = bm_prism([(x * 0.86, y * 0.86) for x, y in (pts)], 0.3, axis="Y")
     obj("badge_in", bm2, candy(col, rough=0.18, emit=0.3), loc=(0, -0.02, 0), parent=P, bevel=0.03, outline=False)
-    t = text(label, 0.78 if len(label) <= 2 else 0.6, 0.12, candy(txt, rough=0.3, emit=0.4))
-    t.matrix_world = P @ _xf((0, -0.2, -0.02), (90, 0, 0))
+    size = 0.74 if len(label) <= 2 else 0.56
+    t = text(label, size, 0.07, candy(txt, rough=0.3, emit=0.4), bevel=0.012, outline=False, center=True)
+    t.matrix_world = P @ _xf((0, -0.25, 0), (90, 0, 0))
+    sh = text(label, size, 0.07, candy("#1b1530", rough=0.6, coat=0.0, emit=0.0), bevel=0.012, outline=False, center=True)
+    sh.matrix_world = P @ _xf((0.03, -0.19, -0.045), (90, 0, 0))
 
 
 def arrow_loop(loc, rot=(0, 0, 0), R=1.25, col="#3fd36a"):
@@ -611,7 +654,7 @@ def i_spin1():
 
 def i_spins3():
     spin_wheel(rot=(0, 0, 0))
-    badge("x5", (1.15, -0.6, -1.2), s=0.75, col="#a25cff")
+    badge("x5", (1.15, -0.75, -1.2), s=0.78, col="#ff3fa8")
 
 
 def i_gems100():
@@ -624,21 +667,41 @@ def i_gems300():
     gem(GREEN_GEM, loc=(0.95, -0.25, -0.4), rot=(8, 0, 25), s=0.6)
 
 
-def gem_pile(n, r, seed=3, base=0.0, sets=(BLUE_GEM, PINK_GEM, GREEN_GEM, PURPLE_GEM)):
-    random.seed(seed)
-    for k in range(n):
-        a = random.uniform(0, TAU)
-        d = r * math.sqrt(random.random())
-        s = random.uniform(0.35, 0.55)
-        z = base + (r - d) * 0.55 + s * 0.6
-        gem(sets[k % len(sets)], loc=(math.cos(a) * d, math.sin(a) * d * 0.7, z), rot=(random.uniform(-30, 30), random.uniform(-30, 30), random.uniform(0, 360)), s=s)
+def cushion(loc=(0, 0, 0), size=(3.0, 2.2, 0.5), col="#c8203c"):
+    """a red velvet jewellery cushion with gold corner tassels"""
+    vel = pbr("velvet" + col, col, rough=0.75, coat=0.05, tex="leaf", scale=30.0, bump=0.12, dark="#b51c36", light="#d42a46", emit=0.12)
+    o = obj("cushion", bm_box(*size), vel, loc=loc, smooth=85, bevel=0.22, segs=3)
+    m = o.modifiers.new("soft", "SUBSURF")
+    m.levels = m.render_levels = 2
+    g = gold()
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            p = Vector(loc) + Vector((sx * (size[0] / 2 - 0.12), sy * (size[1] / 2 - 0.12), 0.0))
+            sphere(0.12, g, loc=tuple(p))
+            obj("tassel", bm_cyl(0.11, 0.3, 24, r2=0.02), g, loc=tuple(p + Vector((sx * 0.08, sy * 0.08, -0.2))), rot=(sy * 25, -sx * 25, 0),
+                smooth=40, bevel=0.0, outline=False)
 
 
 def i_gems750():
-    # a heap of gems on a little golden dish
-    obj("dish", bm_cyl(1.5, 0.22, 64, r2=1.3), gold(), loc=(0, 0, 0.0), smooth=40, bevel=0.05)
-    gem_pile(9, 1.1, seed=7, base=0.1)
-    gem(BLUE_GEM, loc=(0, -0.1, 1.25), rot=(8, 0, 14), s=0.75)
+    # a little pyramid of gems on a red velvet cushion: 3 in front, 2 behind and higher, a big one on top
+    cushion(loc=(0, 0.2, 0.0))
+    P = Matrix.Identity(4)
+    top = 0.2
+    gs = [gem_at(PINK_GEM, P, (-0.82, -0.5, top + 0.36), 0.4, 18), gem_at(BLUE_GEM, P, (0, -0.5, top + 0.36), 0.4, -8),
+          gem_at(PURPLE_GEM, P, (0.82, -0.5, top + 0.36), 0.4, 22),
+          gem_at(GREEN_GEM, P, (-0.47, 0.3, top + 0.8), 0.44, -14), gem_at(PINK_GEM, P, (0.47, 0.3, top + 0.8), 0.44, 10),
+          gem_at(BLUE_GEM, P, (0, 1.05, top + 1.3), 0.56, 12)]
+    touching(gs)
+
+
+def chest_gems(P, hero=None):
+    """a chest full to the brim: 3 gems along the front, 2 behind them and higher, an optional big one on top"""
+    gs = [gem_at(PINK_GEM, P, (-0.78, -0.33, 1.4), 0.38, 16), gem_at(BLUE_GEM, P, (0, -0.33, 1.42), 0.38, -10),
+          gem_at(GREEN_GEM, P, (0.78, -0.33, 1.4), 0.38, 20),
+          gem_at(PURPLE_GEM, P, (-0.46, 0.36, 1.78), 0.42, -12), gem_at(RED_GEM, P, (0.46, 0.36, 1.78), 0.42, 14)]
+    if hero:
+        gs.append(gem_at(BLUE_GEM, P, (0, 0.3, 2.5), hero, 10))
+    return gs
 
 
 def pouch(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, col="#8a3df0"):
@@ -698,33 +761,19 @@ def chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, fill=None):
 
 
 def i_gems4500():
-    def fill(P):
-        random.seed(11)
-        for k in range(10):
-            x = random.uniform(-0.9, 0.9)
-            y = random.uniform(-0.45, 0.35)
-            sets = (BLUE_GEM, PINK_GEM, GREEN_GEM, PURPLE_GEM, RED_GEM)
-            g = gem(sets[k % 5], rot=(random.uniform(-25, 25), random.uniform(-25, 25), random.uniform(0, 360)), s=random.uniform(0.32, 0.45))
-            g.matrix_world = P @ _xf((x, y, 1.3 + random.uniform(0, 0.35))) @ g.matrix_world
-    chest(rot=(0, 0, 14), fill=fill)
+    gs = []
+    chest(rot=(0, 0, 14), fill=lambda P: gs.extend(chest_gems(P)))
+    touching(gs)
 
 
 def i_gems12000():
-    def fill(P):
-        random.seed(5)
-        sets = (BLUE_GEM, PINK_GEM, GREEN_GEM, PURPLE_GEM, RED_GEM)
-        for k in range(16):
-            x = random.uniform(-1.0, 1.0)
-            y = random.uniform(-0.5, 0.4)
-            g = gem(sets[k % 5], rot=(random.uniform(-30, 30), random.uniform(-30, 30), random.uniform(0, 360)), s=random.uniform(0.32, 0.5))
-            g.matrix_world = P @ _xf((x, y, 1.35 + random.uniform(0, 0.6) + (0.4 - abs(x) * 0.35))) @ g.matrix_world
-        big = gem(BLUE_GEM, rot=(10, 0, 10), s=0.75)
-        big.matrix_world = P @ _xf((0, -0.1, 2.25)) @ big.matrix_world
-    chest(rot=(0, 0, 14), fill=fill, s=1.0)
-    # spilled in front
-    for k, (x, cols) in enumerate(((-1.35, PINK_GEM), (1.3, GREEN_GEM), (0.6, PURPLE_GEM))):
-        gem(cols, loc=(x, -1.15, 0.35), rot=(10, 0, 20 * k), s=0.4)
-    coin(loc=(-0.5, -1.25, 0.32), rot=(75, 0, 20), r=0.4)
+    # the biggest pack: the chest overflows (a big diamond on top) and a row of gems spilled in front
+    gs = []
+    chest(rot=(0, 0, 14), fill=lambda P: gs.extend(chest_gems(P, hero=0.56)))
+    P = _xf((0, 0, 0), (0, 0, 14))
+    for x, cols, rz in ((-1.32, PINK_GEM, 14), (-0.45, GREEN_GEM, -12), (0.45, PURPLE_GEM, 18), (1.32, BLUE_GEM, -6)):
+        gs.append(gem_at(cols, P, (x, -1.32, 0.42), 0.4, rz))
+    touching(gs)
 
 
 ICONS = {
@@ -746,7 +795,7 @@ CARD = {
     "autotrain": ("#b6f59a", "#1d6a35"), "gems2x": ("#9fe8ff", "#1c3d9a"), "fasttools": ("#ffd98a", "#9a3a12"), "monster": ("#ff9aa2", "#7a1630"),
     "goldcar": ("#fff0a0", "#7a4a0c"), "starter": ("#ffb3e1", "#7a1f6a"), "rushcrew": ("#ffe08a", "#9a4a0f"), "cashpack": ("#a8f0a0", "#14603a"),
     "cashstack": ("#a8f0a0", "#14603a"), "cashvault": ("#c0f5b0", "#103f3a"), "cashbank": ("#fff1a6", "#6a3c0c"), "cashboost": ("#b8f5a8", "#145a40"),
-    "spin1": ("#ffb0f0", "#5a1a8a"), "spins3": ("#e0b0ff", "#3a1a8a"), "gems100": ("#a8ecff", "#14408a"), "gems300": ("#b8e8ff", "#1c3a96"),
+    "spin1": ("#ffb0f0", "#5a1a8a"), "spins3": ("#8fe6ff", "#103d8c"), "gems100": ("#a8ecff", "#14408a"), "gems300": ("#b8e8ff", "#1c3a96"),
     "gems750": ("#b8e0ff", "#22348a"), "gems1700": ("#d8c0ff", "#3a1f8a"), "gems4500": ("#ffd8a0", "#5a2a7a"), "gems12000": ("#fff0b0", "#6a1f7a"),
 }
 SPARK = {"vip": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "goldcar": [(0.84, 0.2, 0.07)], "gems100": [(0.82, 0.18, 0.08), (0.18, 0.7, 0.05)],
