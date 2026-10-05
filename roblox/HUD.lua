@@ -1,6 +1,6 @@
 -- BlockRise Empire - main HUD (kept light on purpose)
---   top: one slim strip in Roblox's own top bar, right of the Roblox buttons (Empire Road goal · contract · Mega)
---   left: money, gems, Strength + six menu buttons   right: Store, Rewards, More   bottom: level + XP
+--   top: Roblox's own top bar row, edge to edge: a big construction progress bar, the Empire Road goal, the City Tower
+--   left: money, gems, Strength + six menu buttons   right: Store, Gift, More   bottom: level + XP
 -- The middle of the screen stays free for playing.
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -235,71 +235,44 @@ function M.Init(ctx)
 	end
 
 	---------------------------------------------------------------------------
-	-- TOP STRIP (in the Roblox top bar, right of the Roblox buttons)
+	-- TOP ROW: in Roblox's own top bar, from the Roblox buttons to the right edge
+	--   [ big construction progress bar ......................... ] [ Empire Road goal ] [ City Tower ]
 	---------------------------------------------------------------------------
-	local strip = panel({ Name = "Strip", Size = UDim2.fromOffset(600, 44), Parent = topGui }, 14)
-	local function segment(name)
-		local s = new("TextButton", { Name = name, BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Size = UDim2.new(0.5, 0, 1, 0), Parent = strip })
-		local hl = new("Frame", { Position = UDim2.fromOffset(3, 3), Size = UDim2.new(1, -6, 1, -6), BackgroundColor3 = WHITE, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = s })
-		corner(hl, 11)
-		s.MouseEnter:Connect(function() UI.tween(hl, 0.12, { BackgroundTransparency = 0.92 }) end)
-		s.MouseLeave:Connect(function() UI.tween(hl, 0.12, { BackgroundTransparency = 1 }) end)
-		return s
-	end
-	local function divider()
-		local d = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 2, 1, -16), BackgroundColor3 = INK, BackgroundTransparency = 0.2, BorderSizePixel = 0, Parent = strip })
-		return d
-	end
-	local function segIcon(seg, key)
-		return Icons.make(key, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 2, 0.5, 0), Size = UDim2.fromOffset(44, 44), Parent = seg })
+	local row = new("Frame", { Name = "Row", BackgroundTransparency = 1, Size = UDim2.fromOffset(800, 44), Parent = topGui })
+	local function chip(name)
+		local f = panel({ Name = name, Size = UDim2.fromOffset(100, 44), Parent = row }, 14)
+		local b = new("TextButton", { Name = "Hit", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, ZIndex = 6, Parent = f })
+		local sc = new("UIScale", { Parent = f })
+		b.MouseEnter:Connect(function() UI.tween(sc, 0.12, { Scale = 1.03 }) end)
+		b.MouseLeave:Connect(function() UI.tween(sc, 0.12, { Scale = 1 }) end)
+		b.MouseButton1Down:Connect(function() UI.tween(sc, 0.05, { Scale = 0.97 }) end)
+		b.MouseButton1Up:Connect(function() UI.tween(sc, 0.15, { Scale = 1 }, Enum.EasingStyle.Back) end)
+		return f, b
 	end
 
-	-- Empire Road goal
-	local segQ = segment("Quest")
-	local qIcon = segIcon(segQ, "quest")
-	local qTitle = text({ Position = UDim2.fromOffset(46, 3), Size = UDim2.new(1, -54, 0, 20), TextSize = 16, TextTruncate = Enum.TextTruncate.AtEnd, Text = "", Parent = segQ })
-	tstroke(qTitle, 2)
-	local qBar, qFill = progress(segQ, { Position = UDim2.new(0, 46, 1, -17), Size = UDim2.new(1, -54, 0, 11) }, Color3.fromRGB(130, 240, 120), Color3.fromRGB(40, 175, 80))
-	local qVal = text({ Size = UDim2.fromScale(1, 1), Font = ROUND, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Text = "", Parent = qBar })
-	tstroke(qVal, 1.5)
-	local qPlace
-	segQ.Activated:Connect(function() c.click(); goPlace(qPlace) end)
-	local function refreshQuest()
-		local i = player:GetAttribute("RoadStep") or 1
-		local step = Config.Road[i]
-		if not step then
-			qTitle.Text = "Empire Road complete!"
-			qVal.Text = ""
-			setFill(qFill, 1)
-			qPlace = nil
-			return
-		end
-		qTitle.Text = step.title .. "  <font color='#8ff09a' size='12' face='FredokaOne'>+" .. Config.FormatMoney(step.cash) .. "</font>"
-		local v = player:GetAttribute("RoadValue") or 0
-		setFill(qFill, v / math.max(step.target, 1))
-		qVal.Text = step.target > 1 and (short(v) .. " / " .. short(step.target)) or ""
-		qPlace = step.place
-	end
-	player:GetAttributeChangedSignal("RoadStep"):Connect(refreshQuest)
-	player:GetAttributeChangedSignal("RoadValue"):Connect(refreshQuest)
-	refreshQuest()
-	local div1 = divider()
-
-	-- Active contract (mirrors the job tracker: contract, home build, helping, mega)
-	local segC = segment("Contract")
-	local cIcon = segIcon(segC, "contract")
-	local cTitle = text({ Position = UDim2.fromOffset(46, 3), Size = UDim2.new(1, -54, 0, 20), TextSize = 16, TextTruncate = Enum.TextTruncate.AtEnd, Text = "", Parent = segC })
-	tstroke(cTitle, 2)
-	local cBar, cFill = progress(segC, { Position = UDim2.new(0, 46, 1, -18), Size = UDim2.new(1, -54, 0, 13) }, Color3.fromRGB(255, 220, 80), Color3.fromRGB(255, 140, 30))
-	local cPct = text({ Size = UDim2.fromScale(1, 1), Font = ROUND, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Text = "", Parent = cBar })
-	tstroke(cPct, 1.5)
-	-- abandon: a small X, two taps
-	local cX = new("TextButton", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 4), Size = UDim2.fromOffset(20, 18), BackgroundColor3 = WHITE,
-		Text = "", AutoButtonColor = false, Visible = false, ZIndex = 4, Parent = segC })
-	corner(cX, 6)
+	-- 1) construction: the whole chip is a progress bar that fills up as the building goes up
+	local build, buildHit = chip("Build")
+	local bFill = new("Frame", { Name = "Fill", Position = UDim2.fromOffset(3, 3), Size = UDim2.new(0, 0, 1, -6), BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 2, Parent = build })
+	corner(bFill, 11)
+	grad(bFill, Color3.fromRGB(255, 214, 72), Color3.fromRGB(246, 128, 24))
+	local bShine = new("Frame", { Position = UDim2.fromOffset(4, 2), Size = UDim2.new(1, -8, 0.4, 0), BackgroundColor3 = WHITE, BackgroundTransparency = 0.55, BorderSizePixel = 0, ZIndex = 2, Parent = bFill })
+	corner(bShine, 8)
+	new("UIGradient", { Transparency = NumberSequence.new(0.2, 1), Rotation = 90, Parent = bShine })
+	local bIcon = Icons.make("contract", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -2, 0.5, 0), Size = UDim2.fromOffset(52, 52), ZIndex = 4, Parent = build })
+	local bText = text({ Position = UDim2.fromOffset(52, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 19, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4, Text = "", Parent = build })
+	tstroke(bText, 2.5)
+	local bPct = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 0), Size = UDim2.fromOffset(90, 44), TextSize = 22, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 4, Text = "", Parent = build })
+	tstroke(bPct, 2.5)
+	local bBonus = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -78, 0.5, 0), Size = UDim2.fromOffset(110, 20), Font = ROUND, TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 4, Text = "", Parent = build })
+	tstroke(bBonus, 2)
+	-- abandon: a small X hanging off the chip's corner, two taps
+	local cX = new("TextButton", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -2, 0, 4), Size = UDim2.fromOffset(20, 20), BackgroundColor3 = WHITE,
+		Text = "", AutoButtonColor = false, Visible = false, ZIndex = 8, Parent = build })
+	corner(cX, 10)
 	grad(cX, Color3.fromRGB(255, 110, 110), Color3.fromRGB(205, 45, 60))
 	stroke(cX, 2)
-	local cXl = text({ Size = UDim2.fromScale(1, 1), Text = "X", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5, Parent = cX })
+	local cXl = text({ Size = UDim2.fromScale(1, 1), Text = "X", TextSize = 11, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 9, Parent = cX })
 	tstroke(cXl, 1.5)
 	local confirmUntil = 0
 	cX.Activated:Connect(function()
@@ -312,21 +285,50 @@ function M.Init(ctx)
 			c.toast("Tap X again to abandon this contract", T.muted, 2.5)
 		end
 	end)
-	segC.Activated:Connect(function()
+	buildHit.Activated:Connect(function()
 		c.click()
 		if c.legacyJob.panel.Visible then A.go("site") else A.jobs() end
 	end)
-	local div2 = divider()
 
-	-- Mega Project (only while a tower is being built)
-	local segM = segment("Mega")
-	local mIcon = segIcon(segM, "mega")
-	local mTitle = text({ Position = UDim2.fromOffset(46, 3), Size = UDim2.new(1, -54, 0, 20), TextSize = 16, TextTruncate = Enum.TextTruncate.AtEnd, Text = "City Tower", Parent = segM })
+	-- 2) Empire Road goal
+	local quest, questHit = chip("Quest")
+	local qIcon = Icons.make("quest", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -2, 0.5, 0), Size = UDim2.fromOffset(48, 48), ZIndex = 4, Parent = quest })
+	local qTitle = text({ Position = UDim2.fromOffset(46, 3), Size = UDim2.new(1, -54, 0, 20), TextSize = 15, TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4, Text = "", Parent = quest })
+	tstroke(qTitle, 2)
+	local qBar, qFill = progress(quest, { Position = UDim2.new(0, 46, 1, -18), Size = UDim2.new(1, -54, 0, 12), ZIndex = 3 }, Color3.fromRGB(130, 240, 120), Color3.fromRGB(40, 175, 80))
+	local qVal = text({ Size = UDim2.fromScale(1, 1), Font = ROUND, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Text = "", Parent = qBar })
+	tstroke(qVal, 1.5)
+	local qPlace
+	questHit.Activated:Connect(function() c.click(); goPlace(qPlace) end)
+	local function refreshQuest()
+		local i = player:GetAttribute("RoadStep") or 1
+		local step = Config.Road[i]
+		if not step then
+			qTitle.Text = "Empire Road complete!"
+			qVal.Text = ""
+			setFill(qFill, 1)
+			qPlace = nil
+			return
+		end
+		qTitle.Text = step.title
+		local v = player:GetAttribute("RoadValue") or 0
+		setFill(qFill, v / math.max(step.target, 1))
+		qVal.Text = (step.target > 1 and (short(v) .. " / " .. short(step.target) .. "   ") or "") .. "+" .. Config.FormatMoney(step.cash)
+		qPlace = step.place
+	end
+	player:GetAttributeChangedSignal("RoadStep"):Connect(refreshQuest)
+	player:GetAttributeChangedSignal("RoadValue"):Connect(refreshQuest)
+	refreshQuest()
+
+	-- 3) City Tower (only while one is being built)
+	local mega, megaHit = chip("Mega")
+	Icons.make("mega", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -2, 0.5, 0), Size = UDim2.fromOffset(48, 48), ZIndex = 4, Parent = mega })
+	local mTitle = text({ Position = UDim2.fromOffset(44, 3), Size = UDim2.new(1, -50, 0, 20), TextSize = 15, ZIndex = 4, Text = "City Tower", Parent = mega })
 	tstroke(mTitle, 2)
-	local mBar, mFill = progress(segM, { Position = UDim2.new(0, 46, 1, -18), Size = UDim2.new(1, -54, 0, 13) }, Color3.fromRGB(215, 170, 255), Color3.fromRGB(130, 80, 235))
-	local mPct = text({ Size = UDim2.fromScale(1, 1), Font = ROUND, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Text = "", Parent = mBar })
+	local mBar, mFill = progress(mega, { Position = UDim2.new(0, 44, 1, -18), Size = UDim2.new(1, -52, 0, 12), ZIndex = 3 }, Color3.fromRGB(215, 170, 255), Color3.fromRGB(130, 80, 235))
+	local mPct = text({ Size = UDim2.fromScale(1, 1), Font = ROUND, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Text = "", Parent = mBar })
 	tstroke(mPct, 1.5)
-	segM.Activated:Connect(function() c.click(); A.go("mega") end)
+	megaHit.Activated:Connect(function() c.click(); A.go("mega") end)
 
 	---------------------------------------------------------------------------
 	-- LEFT: money, gems, Strength + the six menu buttons
@@ -381,15 +383,15 @@ function M.Init(ctx)
 	end
 
 	---------------------------------------------------------------------------
-	-- RIGHT: Store, Rewards (daily · spin · gift · codes · invite), More
+	-- RIGHT: Store, Gift (playtime timer), More (daily, spin, codes, invite, trade, cars, trophies, music)
 	---------------------------------------------------------------------------
 	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 300), Parent = root })
 	local rightScale = new("UIScale", { Parent = right })
 	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
 
 	local popups = {}
-	local function popup(name, defs2, anchorBtn)
-		local cols = 3
+	local function popup(name, defs2, anchorBtn, cols)
+		cols = cols or 3
 		local rows = math.ceil(#defs2 / cols)
 		local pop = panel({ Name = name, AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(cols * 78 + 20, rows * 86 + 20), Visible = false, ZIndex = 8, Parent = root }, 18)
 		local g = new("Frame", { Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 1, -20), BackgroundTransparency = 1, Parent = pop })
@@ -420,26 +422,22 @@ function M.Init(ctx)
 
 	local storeB = bigButton(right, "store", "STORE", Color3.fromRGB(255, 225, 90), Color3.fromRGB(245, 150, 20), 84, 94, function() A.store() end)
 	storeB.button.LayoutOrder = 1
-	local rewards
-	local rewardsB = bigButton(right, "gift", "REWARDS", Color3.fromRGB(255, 160, 220), Color3.fromRGB(215, 60, 160), 84, 94, function() openPopup(rewards) end)
-	rewardsB.button.LayoutOrder = 2
+	local giftB = bigButton(right, "gift", "GIFT", Color3.fromRGB(255, 160, 220), Color3.fromRGB(215, 60, 160), 84, 94, A.gift)
+	giftB.button.LayoutOrder = 2
 	local more
 	local moreB = bigButton(right, "more", "MORE", Color3.fromRGB(170, 185, 225), Color3.fromRGB(85, 95, 150), 84, 94, function() openPopup(more) end)
 	moreB.button.LayoutOrder = 3
 
-	rewards = popup("RewardsPopup", {
-		{ "gift", "GIFT", Color3.fromRGB(255, 160, 220), Color3.fromRGB(215, 60, 160), A.gift },
+	more = popup("MorePopup", {
 		{ "daily", "DAILY", Color3.fromRGB(255, 150, 175), Color3.fromRGB(225, 60, 105), A.daily },
 		{ "spin", "SPIN", Color3.fromRGB(190, 150, 255), Color3.fromRGB(110, 60, 220), A.spin },
 		{ "codes", "CODES", Color3.fromRGB(185, 155, 255), Color3.fromRGB(105, 70, 225), function() toggle("Codes", _G.__CE_ShowCodes) end },
 		{ "invite", "INVITE", Color3.fromRGB(255, 160, 200), Color3.fromRGB(225, 70, 140), function() if _G.__CE_Invite then _G.__CE_Invite() end end },
-	}, rewardsB)
-	more = popup("MorePopup", {
 		{ "trade", "TRADE", Color3.fromRGB(130, 240, 140), Color3.fromRGB(30, 160, 80), function() toggle("Trade", _G.__CE_ShowTrade) end },
 		{ "cars", "CARS", Color3.fromRGB(255, 140, 120), Color3.fromRGB(215, 55, 55), function() toggle("Garage", _G.__CE_ShowGarage) end },
 		{ "portfolio", "TROPHIES", Color3.fromRGB(255, 220, 110), Color3.fromRGB(230, 145, 25), function() toggle("Portfolio", _G.__CE_ShowPortfolio) end },
 		{ "music", "MUSIC", Color3.fromRGB(150, 205, 255), Color3.fromRGB(70, 110, 230), function() if _G.__CE_ToggleMusic then _G.__CE_ToggleMusic() end end, keepOpen = true },
-	}, moreB)
+	}, moreB, 4)
 	local musicB = more.items.music
 	local function refreshMusic() musicB.setLabel(gui:GetAttribute("MusicOn") == false and "MUSIC OFF" or "MUSIC") end
 	gui:GetAttributeChangedSignal("MusicOn"):Connect(refreshMusic)
@@ -484,29 +482,33 @@ function M.Init(ctx)
 		local inset = GuiService.TopbarInset
 		local x0, w, h = inset.Min.X, inset.Width, inset.Height
 		if w < 200 or h < 24 then
-			x0, w, h = 160, camera.ViewportSize.X - 172, 44
+			x0, w, h = 160, camera.ViewportSize.X - 160, 44
 		end
-		local sh = math.clamp(h - 10, 34, 48)
-		local sw = math.min(w - 12, megaOn and 760 or 600)
-		strip.Position = UDim2.fromOffset(x0 + 4, math.floor((h - sh) / 2))
-		strip.Size = UDim2.fromOffset(sw, sh)
-		local qw, cw = 0.5, 0.5
-		if megaOn then qw, cw = 0.37, 0.37 end
-		segQ.Size = UDim2.new(qw, 0, 1, 0)
-		segC.Position = UDim2.new(qw, 0, 0, 0)
-		segC.Size = UDim2.new(cw, 0, 1, 0)
-		segM.Position = UDim2.new(qw + cw, 0, 0, 0)
-		segM.Size = UDim2.new(1 - qw - cw, 0, 1, 0)
-		segM.Visible = megaOn
-		div1.Position = UDim2.new(qw, 0, 0.5, 0)
-		div2.Position = UDim2.new(qw + cw, 0, 0.5, 0)
-		div2.Visible = megaOn
-		local ic = sh + 2
-		for _, o in ipairs({ qIcon, cIcon, mIcon }) do o.Size = UDim2.fromOffset(ic, ic) end
-		for _, o in ipairs({ qTitle, cTitle, mTitle }) do o.Position = UDim2.fromOffset(ic + 2, 3); o.Size = UDim2.new(1, -(ic + 10), 0, sh * 0.42) end
-		for _, o in ipairs({ qBar, cBar, mBar }) do o.Position = UDim2.new(0, ic + 2, 1, -(sh * 0.36) - 3); o.Size = UDim2.new(1, -(ic + 10), 0, sh * 0.32) end
+		local ch = math.clamp(h - 12, 32, 44)
+		local gap = 8
+		row.Position = UDim2.fromOffset(x0 + 6, math.floor((h - ch) / 2))
+		local total = w - 6 - 12
+		row.Size = UDim2.fromOffset(total, ch)
+		local mw = megaOn and math.clamp(math.floor(total * 0.16), 130, 190) or 0
+		local qw = math.clamp(math.floor(total * 0.3), 170, 340)
+		local bw = total - qw - (megaOn and (mw + gap) or 0) - gap
+		build.Position = UDim2.fromOffset(0, 0)
+		build.Size = UDim2.fromOffset(bw, ch)
+		quest.Position = UDim2.fromOffset(bw + gap, 0)
+		quest.Size = UDim2.fromOffset(qw, ch)
+		mega.Visible = megaOn
+		mega.Position = UDim2.fromOffset(bw + gap + qw + gap, 0)
+		mega.Size = UDim2.fromOffset(mw, ch)
+		local ic = ch + 6
+		bIcon.Size = UDim2.fromOffset(ic + 4, ic + 4)
+		qIcon.Size = UDim2.fromOffset(ic, ic)
+		bText.Position = UDim2.fromOffset(ic + 2, 0)
+		bText.TextSize = ch >= 40 and 19 or 16
+		bPct.TextSize = ch >= 40 and 22 or 18
+		bPct.Size = UDim2.fromOffset(90, ch)
 		gui:SetAttribute("TopBand", 10)
 	end
+
 	local function layout()
 		local compact = gui:GetAttribute("Compact") == true
 		local s = math.max(c.uiScale.Scale, 0.01)
@@ -524,7 +526,7 @@ function M.Init(ctx)
 		lvlScale.Scale = compact and 0.85 or 1
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
-			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + (p.anchor == rewardsB and 100 or 200) * rs)
+			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 100 * rs)
 		end
 	end
 	gui:GetAttributeChangedSignal("Compact"):Connect(function() task.defer(layout) end)
@@ -547,36 +549,47 @@ function M.Init(ctx)
 		local target = player:GetAttribute("Money") or 0
 		if math.abs(target - shownMoney) < 0.5 then shownMoney = target else shownMoney += (target - shownMoney) * math.min(1, dt * 8) end
 		cashVal.Text = Config.FormatMoney(shownMoney)
-		-- contract
+		-- construction bar
 		if lj.panel.Visible then
 			local tag = lj.tag.Text
 			local kind = tag:find("MEGA") and "mega" or (tag:find("HELPING") and "help") or (tag:find("HOME") and "home") or "contract"
 			if kind ~= lastKind then
 				lastKind = kind
-				Icons.set(cIcon, KIND_ICON[kind])
+				Icons.set(bIcon, KIND_ICON[kind])
 			end
 			local stage = lj.stage.Text -- "2/5  Walls"
 			local n, name = stage:match("^(%d+/%d+)%s+(.+)$")
-			local timer = ""
+			local title = lj.title.Text ~= "" and lj.title.Text or "Construction"
+			bText.Text = string.upper(title) .. (name and ("  <font color='#fff1c4' size='15' face='FredokaOne'>" .. name .. " " .. n .. "</font>") or "")
+			bText.TextColor3 = WHITE
+			local f = math.clamp(lj.fill.Size.X.Scale, 0, 1)
+			bFill.Visible = f > 0.002
+			bFill.Size = bFill.Size:Lerp(UDim2.new(math.max(f, 0.03), -6 * math.max(f, 0.03), 1, -6), math.min(1, dt * 10))
+			bPct.Text = lj.pct.Text
 			local t = lj.timer.Text
 			local bonus = t:match("Speed bonus: ([%d:]+)")
 			local rush = t:match("RUSH ORDER: (%d+)s")
-			if rush then timer = "  <font color='#ffa060' size='12' face='FredokaOne'>RUSH " .. rush .. "s</font>"
-			elseif bonus then timer = "  <font color='#8ff09a' size='12' face='FredokaOne'>bonus " .. bonus .. "</font>" end
-			cTitle.Text = (lj.title.Text ~= "" and lj.title.Text or "Construction") .. timer
-			setFill(cFill, lj.fill.Size.X.Scale)
-			cPct.Text = (name and (name .. " " .. n .. "  ·  ") or "") .. lj.pct.Text
-			cBar.Visible = true
+			if rush then
+				bBonus.Text = "RUSH " .. rush .. "s"
+				bBonus.TextColor3 = Color3.fromRGB(255, 170, 90)
+			elseif bonus then
+				bBonus.Text = "BONUS " .. bonus
+				bBonus.TextColor3 = Color3.fromRGB(150, 255, 150)
+			else
+				bBonus.Text = ""
+			end
 			cX.Visible = lj.abandon.Visible
-			cTitle.Size = UDim2.new(1, -(cIcon.Size.X.Offset + (cX.Visible and 34 or 10)), 0, cTitle.Size.Y.Offset)
 			cXl.Text = os.clock() < confirmUntil and "?" or "X"
 		else
-			if lastKind ~= "none" then lastKind = "none"; Icons.set(cIcon, "contract") end
-			cTitle.Text = "No contract  <font color='#ffd27a' size='12' face='FredokaOne'>tap to find a job</font>"
-			cBar.Visible = false
+			if lastKind ~= "none" then lastKind = "none"; Icons.set(bIcon, "jobs") end
+			bFill.Visible = false
+			bText.Text = "NO CONTRACT  <font color='#ffd45a' size='15' face='FredokaOne'>tap here to find a job</font>"
+			bText.TextColor3 = Color3.fromRGB(255, 255, 255)
+			bPct.Text = ""
+			bBonus.Text = ""
 			cX.Visible = false
 		end
-		-- mega: a third segment only while the tower is being built
+		-- City Tower chip only while a tower is being built
 		local active = RS:GetAttribute("MegaStatus") == "active"
 		if active ~= megaOn then megaOn = active; layoutStrip() end
 		if active then
@@ -585,6 +598,7 @@ function M.Init(ctx)
 			setFill(mFill, tot)
 			mPct.Text = math.floor(tot * 100) .. "%"
 		end
+
 		-- badge pulse
 		local p = 1 + math.sin(os.clock() * 6) * 0.08
 		for sc in pairs(pulsing) do sc.Scale = p end
@@ -592,31 +606,25 @@ function M.Init(ctx)
 		if c.modalOpen() then for _, q in ipairs(popups) do q.frame.Visible = false end end
 	end)
 
-	-- rewards: label shows the next gift timer, badge counts everything waiting to be claimed
+	-- gift timer on the GIFT button; MORE shows a badge when daily missions or a spin are waiting
 	RunService.Heartbeat:Connect(function()
-		local waiting = 0
 		local i, _, gleft = c.playtime.Next()
-		local gift = rewards.items.gift
 		if not i then
-			gift.setLabel("GIFTS")
-			gift.setBadge(false)
+			giftB.setLabel("GIFTS")
+			giftB.setBadge(false)
 		elseif gleft <= 0 then
-			gift.setLabel("OPEN!")
-			gift.setBadge(true)
-			waiting += 1
+			giftB.setLabel("OPEN!")
+			giftB.setBadge(true)
 		else
-			gift.setLabel(fmtTime(gleft))
-			gift.setBadge(false)
+			giftB.setLabel(fmtTime(gleft))
+			giftB.setBadge(false)
 		end
 		local ready, sleft = c.spinReady()
-		rewards.items.spin.setLabel(ready and "SPIN!" or (sleft and sleft > 0 and fmtTime(sleft) or "SPIN"))
-		rewards.items.spin.setBadge(ready)
-		if ready then waiting += 1 end
+		more.items.spin.setLabel(ready and "SPIN!" or (sleft and sleft > 0 and fmtTime(sleft) or "SPIN"))
+		more.items.spin.setBadge(ready)
 		local missions = player:GetAttribute("MissionsReady") or 0
-		rewards.items.daily.setBadge(missions)
-		waiting += missions
-		rewardsB.setBadge(waiting)
-		rewardsB.setLabel((i and gleft > 0) and fmtTime(gleft) or "REWARDS")
+		more.items.daily.setBadge(missions)
+		moreB.setBadge(missions + (ready and 1 or 0))
 	end)
 
 	-- "something to do here" badges on the menu buttons (checked twice a second)
