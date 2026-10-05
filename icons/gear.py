@@ -70,7 +70,7 @@ def meta(elements, mat, name="meta", P=None, resolution=0.035, threshold=0.6, ou
 
 def g_hands():
     """Bare Hands: a big round cartoon fist (soft, like the gloves of a mascot) with a sweatband"""
-    sk = pbr("skin", SKIN, rough=0.42, coat=0.35, emit=0.2, tex="leaf", scale=3.0, bump=0.02, dark="#f5b986", light="#ffd2a6")
+    sk = pbr("skin", "#f4b07a", rough=0.45, coat=0.3, emit=0.05)
     P = _xf((0, 0, 0), (0, 0, -16))
     els = [("ELLIPSOID", (0, 0.08, 0.72), 1.0, (0.62, 0.48, 0.55), None, 2.0)]
     for k in range(4):
@@ -88,14 +88,13 @@ def g_hands():
 
 def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
     """a chunky cartoon work glove: one soft piece (palm + fingers + thumb), a rolled cuff"""
-    m = pbr("glove" + col, col, rough=0.5, coat=0.3, emit=0.2)
-    els = [("ELLIPSOID", (0, 0, 0.66), 1.0, (0.6, 0.3, 0.6), None, 2.0)]
+    m = pbr("glove" + col, col, rough=0.5, coat=0.3, emit=0.08)
+    els = [("ELLIPSOID", (0, 0, 0.8), 1.0, (0.6, 0.3, 0.55), None, 2.0), ("CUBE", (0, 0, 0.45), 0.5, (0.42, 0.2, 0.3), None, 2.0)]
     for k, h in enumerate((0.3, 0.38, 0.35, 0.26)):
         x = -0.41 + k * 0.275
         z = 1.2 + h * 0.75 - abs(k - 1.5) * 0.06
         els.append(("CAPSULE", (x, 0, z), 0.235, (h, 0, 0), (0, 90 + (k - 1.5) * 6, 0), 2.2))
     els.append(("CAPSULE", (0.66, -0.02, 0.78), 0.23, (0.22, 0, 0), (0, 52, 0), 2.2))   # thumb
-    els.append(("CAPSULE", (0, 0, 0.36), 0.56, (0.08, 0, 0), (0, 90, 0), 2.0))         # wrist
     meta(els, m, "glove", P=P, resolution=0.028)
     c = candy(cuff, rough=0.45)
     obj("cuff", bm_cyl(0.6, 0.6, 64, r2=0.56), c, loc=(0, 0, 0.2), parent=P, smooth=40, bevel=0.14, segs=5)
