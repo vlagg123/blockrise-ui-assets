@@ -254,7 +254,7 @@ local function openWindow(v)
 	end
 	local cashRow = lineRow(myList, 100, 54)
 	K.text({ Position = UDim2.fromOffset(12, 0), Size = UDim2.fromOffset(100, 54), Text = "💵 Cash", TextSize = 18, Parent = cashRow })
-	local field = UI.slice("inset", { Position = UDim2.fromOffset(110, 8), Size = UDim2.new(1, -122, 0, 38), SliceScale = 0.4, ImageTransparency = 0.15, ZIndex = 2, Parent = cashRow })
+	local field = UI.slice("tile", { ImageColor3 = Color3.fromRGB(74, 78, 166), Position = UDim2.fromOffset(110, 8), Size = UDim2.new(1, -122, 0, 38), SliceScale = 0.36, ZIndex = 2, Parent = cashRow })
 	local cashBox = new("TextBox", { Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "0 (5% fee)",
 		Font = T.body, TextSize = 18, TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(200, 205, 240), TextXAlignment = Enum.TextXAlignment.Left,
 		ClearTextOnFocus = false, ZIndex = 3, Parent = field })

@@ -71,7 +71,7 @@ local function renderFound(tok, data)
 	local ready = lvl >= Company.FoundLevel and mon >= Company.FoundCost and steel >= Company.FoundSteel
 	local row = new("Frame", { Name = "Row", Size = UDim2.new(1, 0, 0, 82), BackgroundTransparency = 1, LayoutOrder = 3, ZIndex = 2, Parent = c.content })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = row })
-	local field = UI.slice("inset", { Name = "Field", Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -244, 0, 54), SliceScale = 0.45, ImageTransparency = 0.12,
+	local field = UI.slice("tile", { ImageColor3 = Color3.fromRGB(74, 78, 166), Name = "Field", Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -244, 0, 54), SliceScale = 0.4,
 		ZIndex = 2, Parent = row })
 	local box = new("TextBox", { Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -32, 1, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Company name (3-20 letters)",
 		Font = T.body, TextSize = 22, TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(205, 210, 240), TextXAlignment = Enum.TextXAlignment.Left,
