@@ -987,87 +987,121 @@ def i_gems12000():
 
 
 # ------------------------------------------------------------------------------------------- hammer crates
-def crate(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply"):
-    """a chunky loot crate: a body with framed edges, a glowing seam under the lid and a mark on the front"""
+# loot chests: a chunky rounded chest with metal straps, the lid thrown open, light pouring out in cartoon beams,
+# sparkles in the air and a big floating "?" (what's inside is a mystery). One look per crate.
+CRATE_LOOK = {
+    "supply": dict(body=("#c98546", "grain", "#a8672f", "#dc9a58"), lid="#b0703a", trim=("#6b7388", 0.9), inner="#4a2c18",
+                   glow="#ffd23f", beam="#ffe26a", mark="#ffd23f", gem=None),
+    "builder": dict(body=("#3f8cff", None, None, None), lid="#2a62d8", trim=("#ffc534", 1.0), inner="#163a8a",
+                    glow="#9fe0ff", beam="#c8f0ff", mark="#ffffff", gem=None),
+    "golden": dict(body=("#ffc534", "hammered", "#f2ae22", "#ffd86a"), lid="#e39a1a", trim=("#fff1c0", 1.0), inner="#8a4a10",
+                   glow="#fff2a0", beam="#fff7d0", mark="#fff7d6", gem=None),
+    "exclusive": dict(body=("#ff4fc8", None, None, None), lid="#d42c9e", trim=("#8a4df8", 0.6), inner="#4a1070",
+                      glow="#ffb3f0", beam="#ffd6fa", mark="#ffffff", gem="pink"),
+}
+
+
+def _chest_mats(kind):
+    L = CRATE_LOOK[kind]
+    col, tex, dark, light = L["body"]
+    if tex == "grain":
+        body = pbr("lc_body_" + kind, col, rough=0.5, coat=0.4, tex="grain", dark=dark, light=light, emit=0.15)
+    elif tex == "hammered":
+        body = pbr("lc_body_" + kind, col, metal=1.0, rough=0.14, coat=0.45, tex="hammered", scale=3.0, bump=0.04, dark=dark, light=light, emit=0.32)
+    else:
+        body = candy(col, rough=0.25)
+    lid = (pbr("lc_lid_" + kind, L["lid"], metal=1.0, rough=0.22, coat=0.3, emit=0.25) if kind == "golden"
+           else (pbr("lc_lid_" + kind, L["lid"], rough=0.55, coat=0.3, tex="grain", dark="#8a5224", light="#b8773a", emit=0.08) if kind == "supply"
+                 else candy(L["lid"], emit=0.08)))
+    tc, tm = L["trim"]
+    trim = pbr("lc_trim_" + kind, tc, metal=tm, rough=0.22 if tm > 0.8 else 0.3, coat=0.5, emit=0.22)
+    inner = candy(L["inner"], rough=0.6, coat=0.1, emit=0.05)
+    return body, lid, trim, inner, L
+
+
+def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, mark=True):
     P = _xf(loc, rot, s)
-    if kind == "supply":
-        body = pbr("crate_wood", "#c98546", rough=0.5, coat=0.4, tex="grain", dark="#a8672f", light="#dc9a58", emit=0.15)
-        trim = pbr("crate_iron", "#6b7388", metal=0.9, rough=0.3, coat=0.4, emit=0.15)
-        seam, mark_col = None, "#ffd23f"
-        lid = pbr("crate_wood_lid", "#a8672f", rough=0.55, coat=0.3, tex="grain", dark="#8a5224", light="#b8773a", emit=0.08)
-    elif kind == "builder":
-        body = candy("#3f8cff")
-        trim = candy("#ffc534", rough=0.3)
-        seam, mark_col = "#9fe0ff", "#ffffff"
-        lid = candy("#2a62d8", emit=0.08)
-    elif kind == "golden":
-        body = gold()
-        trim = gold_dark()
-        seam, mark_col = "#fff2a0", "#fff7d6"
-        lid = pbr("crate_gold_lid", "#d88f12", metal=1.0, rough=0.25, coat=0.3, emit=0.12)
-    else:
-        body = candy("#ff4fc8", rough=0.22)
-        trim = pbr("crate_violet", "#7a3df0", metal=0.6, rough=0.25, coat=0.6, emit=0.2)
-        seam, mark_col = "#ffb3f0", "#ffffff"
-        lid = candy("#d42c9e", emit=0.08)
-    W, H = 2.0, 1.7
-    obj("crate_body", bm_box(W, W, H), body, loc=(0, 0, H / 2), parent=P, bevel=0.1)
-    if kind == "supply":
-        # planks: darker grooves across the front and the side
-        groove = pbr("crate_groove", "#7a4a22", rough=0.7, coat=0.0, emit=0.05)
-        for z in (0.55, 1.12):
-            obj("groove", bm_box(W * 0.86, 0.04, 0.05), groove, loc=(0, -W / 2 - 0.005, z), parent=P, bevel=0.0, outline=False)
-            obj("groove", bm_box(0.04, W * 0.86, 0.05), groove, loc=(W / 2 + 0.005, 0, z), parent=P, bevel=0.0, outline=False)
-    # the frame: four posts and the top and bottom rails
+    body, lidm, trim, inner, L = _chest_mats(kind)
+    W, D, H = 2.6, 1.7, 1.35
     t = 0.26
-    for x in (-1, 1):
-        for y in (-1, 1):
-            obj("post", bm_box(t, t, H + 0.04), trim, loc=(x * (W / 2 - t / 2 + 0.03), y * (W / 2 - t / 2 + 0.03), H / 2), parent=P, bevel=0.05)
-    for z in (t / 2 - 0.02, H - t / 2 + 0.02):
-        for y in (-1, 1):
-            obj("rail", bm_box(W + 0.06, t, t), trim, loc=(0, y * (W / 2 - t / 2 + 0.03), z), parent=P, bevel=0.05)
-        for x in (-1, 1):
-            obj("rail", bm_box(t, W + 0.06, t), trim, loc=(x * (W / 2 - t / 2 + 0.03), 0, z), parent=P, bevel=0.05)
-    # the lid, a little bigger, lifted by the light inside
-    lift = 0.24 if seam else 0.0
-    obj("lid", bm_box(W + 0.16, W + 0.16, 0.34), lid, loc=(0, 0, H + 0.17 + lift), parent=P, bevel=0.1)
-    obj("lid_rim", bm_box(W + 0.22, W + 0.22, 0.12), trim, loc=(0, 0, H + 0.06 + lift), parent=P, bevel=0.04)
-    if seam:
-        obj("seam", bm_box(W - 0.1, W - 0.1, lift + 0.06), glow(seam, 9.0), loc=(0, 0, H + lift / 2 - 0.01), parent=P, bevel=0.0, outline=False)
-    # the mark on the front: a big ? (the gem crate has a gem)
-    if kind == "exclusive":
-        g = gem(PINK_GEM, s=0.6)
-        g.matrix_world = P @ _xf((0, -W / 2 + 0.12, H / 2 + 0.02), (90, 0, 0))
+    obj("chest", bm_box(W, D, H), body, loc=(0, 0, H / 2), parent=P, bevel=0.12)
+    # the dark inside (seen through the opening), the glow sits on top of it
+    obj("inside", bm_box(W - 0.3, D - 0.3, 0.3), inner, loc=(0, 0, H - 0.2), parent=P, bevel=0.03, outline=False)
+    # straps and rims
+    for x in (-0.86, 0.86):
+        obj("strap", bm_box(t, D + 0.06, H + 0.04), trim, loc=(x, 0, H / 2), parent=P, bevel=0.05)
+    for z in (0.12, H - 0.12):
+        obj("rim", bm_box(W + 0.06, D + 0.06, 0.22), trim, loc=(0, 0, z), parent=P, bevel=0.05)
+    # the lock plate on the front: a keyhole, or a gem on the exclusive crate
+    obj("plate", bm_box(0.56, 0.1, 0.5), trim, loc=(0, -D / 2 - 0.04, H * 0.5), parent=P, bevel=0.05)
+    if L["gem"]:
+        g = gem(PINK_GEM, s=0.3)
+        g.matrix_world = P @ _xf((0, -D / 2 - 0.12, H * 0.5), (90, 0, 0))
     else:
-        q = text("?", 1.25, 0.09, candy(mark_col, rough=0.3, emit=0.45), bevel=0.02, outline=True, center=True)
-        q.matrix_world = P @ _xf((0, -W / 2 - 0.02, H / 2 + 0.02), (90, 0, 0))
+        obj("keyhole", bm_cyl(0.07, 0.12, 20, axis="Y"), inner, loc=(0, -D / 2 - 0.1, H * 0.5 + 0.06), parent=P, smooth=40, outline=False)
+        obj("keyslot", bm_box(0.07, 0.12, 0.16), inner, loc=(0, -D / 2 - 0.1, H * 0.5 - 0.06), parent=P, bevel=0.0, outline=False)
+    # the lid: a half cylinder on a hinge at the back top edge, thrown open (or shut)
+    ang = -112 if open_ else -3
+    Lf = P @ _xf((0, D / 2, H), (ang, 0, 0))
+    bm = bm_cyl(D / 2, W, 48, axis="X")
+    for v in bm.verts:
+        if v.co.z < 0:
+            v.co.z = 0
+    obj("lid", bm, lidm, loc=(0, -D / 2, 0), parent=Lf, smooth=30, bevel=0.04)
+    for x in (-0.86, 0.86):
+        bm = bm_cyl(D / 2 + 0.03, t, 48, axis="X")
+        for v in bm.verts:
+            if v.co.z < 0:
+                v.co.z = 0
+        obj("lidband", bm, trim, loc=(x, -D / 2, 0), parent=Lf, smooth=30, bevel=0.02)
+    obj("lidrim", bm_box(W + 0.06, 0.22, 0.16), trim, loc=(0, -D + 0.05, 0.02), parent=Lf, bevel=0.04)
+    if open_:
+        # light pouring out: a bright slab in the opening and cartoon beams fanning up
+        obj("light", bm_box(W - 0.34, D - 0.34, 0.26), glow(L["glow"], 8.0), loc=(0, 0, H - 0.02), parent=P, bevel=0.06, outline=False)
+        beams = [(-34, 2.2, 0.22), (-17, 2.7, 0.2), (0, 3.1, 0.26), (17, 2.7, 0.2), (34, 2.2, 0.22)]
+        for a, ln, w in beams:
+            pts = [(-w, 0.0), (w, 0.0), (w * 0.45, ln), (-w * 0.45, ln)]
+            b = poly(pts, 0.04, glow(L["beam"], 3.2), bevel=0.0, outline=False)
+            b.matrix_world = P @ _xf((0, 0.1, H - 0.05), (0, a, 0))
+        # sparkles in the air
+        for (x, z, r) in ((-1.55, 2.35, 0.2), (1.6, 2.1, 0.17), (-0.9, 3.4, 0.14), (1.15, 3.35, 0.2), (0.3, 2.65, 0.1), (-1.9, 1.35, 0.11), (2.0, 3.0, 0.1)):
+            st = poly(star_pts(r, r * 0.34, 4, 90), 0.05, glow("#ffffff", 4.5), bevel=0.0, outline=False)
+            st.matrix_world = P @ _xf((x, -0.3, z), (0, 0, 0))
+        if mark:
+            q = text("?", 1.15, 0.14, candy(L["mark"], rough=0.25, emit=0.55), bevel=0.02, outline=True, center=True)
+            q.matrix_world = P @ _xf((0.05, -0.35, H + 1.25), (90, 0, -8))
     return P
 
 
 def i_crate_supply():
-    track(crate, rot=(0, 0, 22), kind="supply")
+    track(loot_chest, rot=(0, 0, 22), kind="supply")
 
 
 def i_crate_builder():
-    track(crate, rot=(0, 0, 22), kind="builder")
+    track(loot_chest, rot=(0, 0, 22), kind="builder")
 
 
 def i_crate_golden():
-    track(crate, rot=(0, 0, 22), kind="golden")
-    track(coin, loc=(1.75, -1.25, 0.45), rot=(75, 0, -25), r=0.42)
+    track(loot_chest, rot=(0, 0, 22), kind="golden")
+    track(coin, loc=(-0.55, -0.2, 1.42), rot=(62, 0, 24), r=0.4)
+    track(coin, loc=(0.5, -0.1, 1.38), rot=(70, 0, -30), r=0.36)
+    track(coin, loc=(2.0, -1.15, 0.42), rot=(75, 0, -25), r=0.42)
+    track(coin, loc=(-2.05, -0.95, 0.42), rot=(75, 0, 25), r=0.42)
 
 
 def i_crate_exclusive():
-    track(crate, rot=(0, 0, 22), kind="exclusive")
-    track(gem, BLUE_GEM, loc=(1.75, -1.2, 0.45), rot=(8, 0, -20), s=0.42)
-    track(gem, PURPLE_GEM, loc=(-1.75, -1.0, 0.42), rot=(8, 0, 20), s=0.38)
+    track(loot_chest, rot=(0, 0, 22), kind="exclusive")
+    track(gem, PURPLE_GEM, loc=(-0.5, -0.15, 1.5), rot=(12, 0, 25), s=0.36)
+    track(gem, PINK_GEM, loc=(0.55, -0.1, 1.46), rot=(12, 0, -20), s=0.34)
+    track(gem, BLUE_GEM, loc=(2.0, -1.15, 0.45), rot=(8, 0, -20), s=0.42)
+    track(gem, PINK_GEM, loc=(-2.05, -0.95, 0.42), rot=(8, 0, 20), s=0.38)
 
 
 def _three(kind):
-    # three crates: two on the floor, one on top of them
-    track(crate, loc=(-1.42, 0, 0), rot=(0, 0, 14), s=0.72, kind=kind)
-    track(crate, loc=(1.42, 0, 0), rot=(0, 0, 30), s=0.72, kind=kind)
-    track(crate, loc=(0.0, 0.0, 1.7), rot=(0, 0, 22), s=0.7, kind=kind)
+    # three chests: two shut at the back, the front one open with the light and the "?"
+    track(loot_chest, loc=(-1.6, 1.3, 0), rot=(0, 0, 12), s=0.74, kind=kind, open_=False)
+    track(loot_chest, loc=(1.7, 1.3, 0), rot=(0, 0, 32), s=0.74, kind=kind, open_=False)
+    track(loot_chest, loc=(0.0, -0.9, 0), rot=(0, 0, 22), s=0.8, kind=kind)
 
 
 def i_crate_golden3():
@@ -1092,8 +1126,8 @@ ICONS = {
     "crate_golden3": i_crate_golden3, "crate_exclusive3": i_crate_exclusive3,
 }
 VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
-        "vip": (0, -1, 0.42), "crate_supply": (-0.25, -1, 0.2), "crate_builder": (-0.25, -1, 0.2), "crate_golden": (-0.25, -1, 0.2),
-        "crate_exclusive": (-0.25, -1, 0.2), "crate_golden3": (-0.15, -1, 0.15), "crate_exclusive3": (-0.15, -1, 0.15), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
+        "vip": (0, -1, 0.42), "crate_supply": (-0.3, -1, 0.4), "crate_builder": (-0.3, -1, 0.4), "crate_golden": (-0.3, -1, 0.4),
+        "crate_exclusive": (-0.3, -1, 0.4), "crate_golden3": (-0.22, -1, 0.38), "crate_exclusive3": (-0.22, -1, 0.38), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
     "skipanim": ("#6fc3ff", "#1b2f86"), "stormhammer": ("#8fd8ff", "#1a1f6e"), "teleporter": ("#7ff2ff", "#11406e"), "vip": ("#ffe27a", "#8a3a10"),
