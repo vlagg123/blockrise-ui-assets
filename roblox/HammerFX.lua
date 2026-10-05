@@ -126,7 +126,7 @@ end
 local function strike(pos, big, from)
 	local top = from or (pos + Vector3.new((math.random() - 0.5) * 10, big and 40 or 30, (math.random() - 0.5) * 10))
 	zap(top, pos, { n = big and 9 or 7, amp = big and 3.2 or 2.4, w = big and 0.6 or 0.42, forks = 0.4, life = big and 0.32 or 0.24 })
-	lightFlash(pos + Vector3.new(0, 3, 0), Color3.fromRGB(170, 210, 255), big and 10 or 6, big and 44 or 30)
+	lightFlash(pos + Vector3.new(0, 3, 0), Color3.fromRGB(170, 210, 255), big and 6 or 3.5, big and 34 or 24)
 end
 
 -- particle emitters for bursts (one set, moved to where they are needed)
@@ -215,15 +215,15 @@ local AURA = {
 	solar = { rings = { { count = 3, shape = "ball", size = 0.28, colors = { C3(255, 230, 120), C3(255, 160, 40), C3(255, 110, 30) }, speed = 1.2, tilt = 0.25, r = 1.15, trail = { C3(255, 150, 30), 0.4 } },
 		{ count = 2, shape = "ball", size = 0.18, colors = { C3(255, 245, 190) }, speed = -2, tilt = -0.8, r = 1.45, trail = { C3(255, 200, 80), 0.3 } } },
 		flare = { every = { 0.5, 1.0 } }, shade = { every = { 0.05, 0.09 }, color = C3(255, 150, 40), glow = true },
-		feet = { count = 12, kind = "flame", colors = { C3(255, 230, 120), C3(255, 150, 40), C3(255, 100, 30) }, r = 2.7, speed = 0.8 } },
-	galaxy = { rings = { { count = 8, shape = "ball", size = 0.11, colors = { C3(255, 255, 255), C3(255, 170, 240), C3(150, 190, 255) }, speed = 0.9, tilt = 0.45, r = 1.35, trail = { C3(190, 140, 255), 0.3 } },
-		{ count = 5, shape = "ball", size = 0.08, colors = { C3(255, 255, 255), C3(170, 220, 255) }, speed = -1.3, tilt = -0.9, r = 1.15 } },
+		feet = { count = 12, kind = "flame", colors = { C3(255, 230, 120), C3(255, 150, 40), C3(255, 100, 30) }, r = 2.7, speed = 0.8, glow = C3(255, 150, 40) } },
+	galaxy = { rings = { { count = 8, shape = "ball", size = 0.16, colors = { C3(255, 255, 255), C3(255, 170, 240), C3(150, 190, 255) }, speed = 0.9, tilt = 0.45, r = 1.4, trail = { C3(190, 140, 255), 0.4 } },
+		{ count = 5, shape = "ball", size = 0.12, colors = { C3(255, 255, 255), C3(170, 220, 255) }, speed = -1.3, tilt = -0.9, r = 1.15, trail = { C3(140, 190, 255), 0.25 } } },
 		shade = { every = { 0.05, 0.09 }, color = C3(150, 90, 255), glow = true },
-		feet = { count = 16, kind = "star", colors = { C3(255, 255, 255), C3(255, 170, 240), C3(150, 190, 255) }, r = 2.9, speed = -0.5 },
+		feet = { count = 16, kind = "star", colors = { C3(255, 255, 255), C3(255, 170, 240), C3(150, 190, 255) }, r = 2.9, speed = -0.5, glow = C3(150, 100, 255) },
 		shooting = { every = { 1.4, 2.8 } } },
 	thunder = { arcs = { every = { 0.05, 0.16 }, color = C3(120, 190, 255) }, cloud = true, bodyArcs = { every = { 0.15, 0.35 } }, groundArcs = { every = { 0.5, 1.1 } },
 		cloudBolt = { every = { 1.4, 2.8 } }, shade = { every = { 0.05, 0.08 }, color = C3(110, 170, 255), glow = true },
-		feet = { count = 10, kind = "spark", colors = { C3(200, 230, 255), C3(110, 170, 255) }, r = 2.5, speed = 2.2 } },
+		feet = { count = 10, kind = "spark", colors = { C3(200, 230, 255), C3(110, 170, 255) }, r = 2.5, speed = 2.2, glow = C3(90, 160, 255) } },
 }
 
 local live = {} -- tool -> state
@@ -259,22 +259,33 @@ local function makeFeet(e, f)
 			p = fxPart({ Name = "Feet", Size = Vector3.new(0.12, 0.12, 0.5), Color = f.colors[(i - 1) % #f.colors + 1] })
 			trailOn(p, 0.12, C3(120, 190, 255), 0.2)
 		else
-			p = fxPart({ Name = "Feet", Shape = Enum.PartType.Ball, Size = Vector3.one * (0.14 + (i % 3) * 0.05), Color = f.colors[(i - 1) % #f.colors + 1] })
+			p = fxPart({ Name = "Feet", Shape = Enum.PartType.Ball, Size = Vector3.one * (0.22 + (i % 3) * 0.07), Color = f.colors[(i - 1) % #f.colors + 1] })
 		end
 		table.insert(e.feet, { part = p, phase = (i - 1) / f.count * math.pi * 2 })
+	end
+	if f.glow then
+		e.feetGlow = fxPart({ Name = "FeetGlow", Shape = Enum.PartType.Cylinder, Color = f.glow, Transparency = 0.88, Size = Vector3.new(0.05, f.r * 2 + 0.6, f.r * 2 + 0.6) })
 	end
 end
 
 -- the Thunderclap's own storm cloud: it follows you, and moves over the house while you build
+local CLOUD = C3(46, 49, 62)
 local function makeCloud(e)
+	-- flattened dark puffs, and dark smoke rolling off them so the edges look soft
 	local c = { parts = {}, pos = nil }
-	for i = 1, 7 do
-		local s = 3 + math.random() * 2.6
-		local p = fxPart({ Name = "Cloud", Shape = Enum.PartType.Ball, Material = Enum.Material.SmoothPlastic, Color = C3(52, 56, 72), Transparency = 0.12,
-			Size = Vector3.new(s, s * 0.8, s) })
-		table.insert(c.parts, { part = p, off = Vector3.new((math.random() - 0.5) * 6, (math.random() - 0.5) * 1.2, (math.random() - 0.5) * 4.5), ph = math.random() * 6 })
+	for i = 1, 11 do
+		local s = 3.2 + math.random() * 3
+		local p = fxPart({ Name = "Cloud", Shape = Enum.PartType.Ball, Material = Enum.Material.SmoothPlastic, Color = CLOUD:Lerp(C3(80, 84, 100), math.random() * 0.5),
+			Transparency = 0.18, Size = Vector3.new(s, s, s) })
+		local r = math.random() * 4.5
+		local a = math.random() * math.pi * 2
+		table.insert(c.parts, { part = p, off = Vector3.new(math.cos(a) * r * 1.3, (math.random() - 0.5) * 1.0 - (i == 1 and 0 or 0.4), math.sin(a) * r), ph = math.random() * 6, color = p.Color })
 	end
-	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 22, Shadows = false, Parent = c.parts[1].part })
+	local core = c.parts[1].part
+	new("ParticleEmitter", { Texture = SMOKE, Color = seq(C3(55, 58, 72), C3(35, 37, 48)), Rate = 7, Lifetime = NumberRange.new(1.6, 2.4), Speed = NumberRange.new(0.3, 0.8),
+		SpreadAngle = Vector2.new(180, 30), Size = NumberSequence.new({ NSK(0, 4), NSK(1, 7) }), Transparency = NumberSequence.new({ NSK(0, 1), NSK(0.3, 0.45), NSK(1, 1) }),
+		LightEmission = 0, LightInfluence = 0.4, Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-15, 15), Parent = core })
+	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 18, Shadows = false, Parent = core })
 	e.cloud = c
 end
 
@@ -283,6 +294,8 @@ local function dropOrbs(e)
 	e.orbs = {}
 	for _, o in ipairs(e.feet or {}) do o.part:Destroy() end
 	e.feet = nil
+	if e.feetGlow then e.feetGlow:Destroy() end
+	e.feetGlow = nil
 	if e.cloud then for _, c in ipairs(e.cloud.parts) do c.part:Destroy() end end
 	e.cloud = nil
 end
@@ -397,6 +410,10 @@ RunService.RenderStepped:Connect(function()
 					if not e.feet then makeFeet(e, aura.feet) end
 					local f = aura.feet
 					local ground = root.Position - Vector3.new(0, root.Size.Y / 2 + hum.HipHeight - 0.25, 0)
+					if e.feetGlow then
+						e.feetGlow.CFrame = CFrame.new(ground - Vector3.new(0, 0.18, 0)) * CFrame.Angles(0, 0, math.pi / 2)
+						e.feetGlow.Transparency = 0.86 + 0.06 * math.sin(now * 2.5)
+					end
 					for i, o in ipairs(e.feet) do
 						local a = o.phase + now * f.speed
 						local bob = math.sin(now * 3 + i) * 0.12
@@ -423,14 +440,14 @@ RunService.RenderStepped:Connect(function()
 					end
 					-- light flickering inside the cloud
 					if c.light.Brightness > 0 then c.light.Brightness = math.max(0, c.light.Brightness - dt * 30) end
-					if due(e, "cloudFlick", { 0.25, 0.9 }, now) then
-						c.light.Brightness = 3 + math.random() * 4
-						local b = c.parts[math.random(#c.parts)].part
-						b.Color = C3(150, 180, 230)
-						task.delay(0.07, function() if b.Parent then b.Color = C3(52, 56, 72) end end)
+					if due(e, "cloudFlick", { 0.35, 1.1 }, now) then
+						c.light.Brightness = 2 + math.random() * 3
+						local b = c.parts[math.random(#c.parts)]
+						b.part.Color = C3(140, 170, 220)
+						task.delay(0.07, function() if b.part.Parent then b.part.Color = b.color end end)
 					end
 				end
-			elseif e.orbs and #e.orbs > 0 or e.feet or e.cloud then
+			elseif (e.orbs and #e.orbs > 0) or e.feet or e.cloud then
 				dropOrbs(e)
 			end
 			if d < 150 then
