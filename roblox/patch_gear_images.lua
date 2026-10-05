@@ -17,7 +17,7 @@ if not s:find("GEAR_IMAGES", 1, true) then
 -- GEAR_IMAGES: pictures for the training gear (by tier), the machines and the Training Yard stations
 do
 	local gearImg = {
-		"rbxassetid://115097415330583", "rbxassetid://100244648837781", "rbxassetid://101401296563260", "rbxassetid://102484263523345",
+		"rbxassetid://137887060990667", "rbxassetid://100244648837781", "rbxassetid://101401296563260", "rbxassetid://102484263523345",
 		"rbxassetid://75200160905438", "rbxassetid://135567021439394", "rbxassetid://122449649779714", "rbxassetid://117063317084660",
 		"rbxassetid://113707203716255", "rbxassetid://101924819275060", "rbxassetid://127389695645738", "rbxassetid://108541104556016",
 	}
