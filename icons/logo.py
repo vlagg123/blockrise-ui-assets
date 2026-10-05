@@ -89,7 +89,7 @@ def word(body, size, depth, center, face, side, bevel=0.04, gap=0.06, bounce=0.1
     n = len(letters)
     for i, (o, w) in enumerate(zip(letters, widths)):
         t = (i / max(1, n - 1)) * 2 - 1
-        hop = bounce * (1 - t * t) + (0.05 if i % 2 else -0.02)
+        hop = (bounce * (1 - t * t) + (0.05 if i % 2 else -0.02)) if bounce > 0 else 0.0
         o.location = (x + w / 2, center[1], center[2] + hop)
         o.rotation_euler = (math.radians(90), math.radians((tilt if i % 2 else -tilt) * (0.6 + 0.4 * ((i * 7 + seed) % 3) / 2)), 0)
         if outline > 0:
@@ -139,13 +139,13 @@ def build():
     word("BLOCKRISE", 1.75, 0.34, (0, 0, 1.0), gold, side, bevel=0.045, gap=0.03, bounce=0.16, tilt=4)
     # EMPIRE banner: red bar with folded tails behind
     RED, RED2 = "#ff4a3d", "#c42f2a"
-    I.box((4.1, 0.34, 1.02), loc=(0, 0.05, -0.38), color=RED, bevel=0.12, gloss=0.5)
+    I.box((4.1, 0.34, 1.02), loc=(0, 0.05, -0.52), color=RED, bevel=0.12, gloss=0.5)
     for sx in (-1, 1):
         tail = [(0, 0.42), (0.95, 0.42), (0.62, 0.0), (0.95, -0.42), (0, -0.42)]
-        I.poly([(sx * (2.0 + x), z) for x, z in tail], 0.26, loc=(0, 0.3, -0.58), color=RED2, bevel=0.06)
-        I.poly([(sx * 2.0, 0.42), (sx * 2.25, 0.42), (sx * 2.25, -0.16), (sx * 2.0, 0.08)], 0.2, loc=(0, 0.22, -0.58), color="#8f1f1d", bevel=0.02)
+        I.poly([(sx * (2.0 + x), z) for x, z in tail], 0.26, loc=(0, 0.3, -0.72), color=RED2, bevel=0.06)
+        I.poly([(sx * 2.0, 0.42), (sx * 2.25, 0.42), (sx * 2.25, -0.16), (sx * 2.0, 0.08)], 0.2, loc=(0, 0.22, -0.72), color="#8f1f1d", bevel=0.02)
     white = grad_mat("logo_white", [(0.0, "#ffe9d6"), (1.0, "#ffffff")], gloss=0.5)
-    for o in word("EMPIRE", 0.95, 0.16, (0, -0.2, -0.38), white, P.mat("#b8b3c9", gloss=0.4), bevel=0.025, gap=0.09, bounce=0.0, tilt=0, outline=0.055):
+    for o in word("EMPIRE", 0.95, 0.16, (0, -0.2, -0.6), white, P.mat("#b8b3c9", gloss=0.4), bevel=0.025, gap=0.09, bounce=0.0, tilt=0, outline=0.055):
         o.location.y = -0.2
     # hard hat on the B, coins and a gem around
     hh = I.hardhat(rot=(12, 0, -18))
