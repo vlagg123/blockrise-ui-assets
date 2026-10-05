@@ -31,36 +31,81 @@ def rounded(size, mat, loc=(0, 0, 0), rot=(0, 0, 0), r=0.12, parent=None, outlin
 
 
 # ------------------------------------------------------------------------------------------- training gear
+def meta(elements, mat, name="meta", P=None, resolution=0.035, threshold=0.6, outline=True):
+    """organic shapes from metaballs (hands, gloves): elements = [(type, co, radius, size(x,y,z), rot(deg xyz), stiffness)]"""
+    from mathutils import Euler
+    scn = I3.iscene()
+    mb = bpy.data.metaballs.new("mb_" + name)
+    mb.resolution = resolution
+    mb.render_resolution = resolution
+    mb.threshold = threshold
+    ob = bpy.data.objects.new("mb_" + name, mb)
+    scn.collection.objects.link(ob)
+    for typ, co, r, size, rot, stiff in elements:
+        el = mb.elements.new()
+        el.type = typ
+        el.co = co
+        el.radius = r
+        el.stiffness = stiff
+        if size:
+            el.size_x, el.size_y, el.size_z = size
+        if rot:
+            el.rotation = Euler([math.radians(v) for v in rot]).to_quaternion()
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg), depsgraph=dg)
+    bpy.data.objects.remove(ob, do_unlink=True)
+    bpy.data.metaballs.remove(mb)
+    for poly_ in me.polygons:
+        poly_.use_smooth = True
+    me.materials.append(mat)
+    o = bpy.data.objects.new(name, me)
+    scn.collection.objects.link(o)
+    if P is not None:
+        o.matrix_world = P
+    if not outline:
+        o["no_outline"] = True
+    return o
+
+
 def g_hands():
-    """Bare Hands: a big cartoon fist with an orange sweatband"""
-    sk = candy(SKIN, rough=0.45, coat=0.2)
-    P = _xf((0, 0, 0), (0, 0, -18))
-    rounded((1.25, 1.0, 1.15), sk, loc=(0, 0.05, 0.6), r=0.32, parent=P)
+    """Bare Hands: a big round cartoon fist (soft, like the gloves of a mascot) with a sweatband"""
+    sk = pbr("skin", SKIN, rough=0.42, coat=0.35, emit=0.2, tex="leaf", scale=3.0, bump=0.02, dark="#f5b986", light="#ffd2a6")
+    P = _xf((0, 0, 0), (0, 0, -16))
+    els = [("ELLIPSOID", (0, 0.08, 0.72), 1.0, (0.62, 0.48, 0.55), None, 2.0)]
     for k in range(4):
-        x = -0.45 + k * 0.3
-        rounded((0.3, 0.42, 0.36), sk, loc=(x, -0.42, 0.95 - abs(k - 1.5) * 0.04), r=0.13, parent=P)
-        rounded((0.29, 0.3, 0.3), sk, loc=(x, -0.5, 0.62 - abs(k - 1.5) * 0.03), r=0.12, parent=P, outline=False)
-    rounded((0.85, 0.32, 0.3), sk, loc=(-0.12, -0.58, 0.32), rot=(0, -8, 0), r=0.13, parent=P)
-    obj("wrist", bm_cyl(0.5, 0.55, 48), sk, loc=(0.05, 0.1, -0.05), parent=P, smooth=40, bevel=0.06)
-    obj("band", bm_cyl(0.56, 0.32, 48), candy("#ff8a26", rough=0.6, coat=0.1, tex="leaf", scale=14, bump=0.2), loc=(0.05, 0.1, -0.12), parent=P, smooth=40, bevel=0.08)
-    for k, (z, l) in enumerate(((1.25, 0.6), (0.85, 0.85), (0.45, 0.55))):
-        box((l, 0.08, 0.1), candy("#ffffff", emit=0.5), loc=(1.25 + l * 0.2, 0.2, z), bevel=0.04)
+        x = -0.43 + k * 0.29
+        z = 1.02 - abs(k - 1.5) * 0.05
+        # each finger: knuckle roll on top and the bent part down the front
+        els.append(("CAPSULE", (x, -0.3, z), 0.22, (0.16, 0, 0), (0, 0, 90), 3.0))
+        els.append(("CAPSULE", (x, -0.5, z - 0.3), 0.2, (0.1, 0, 0), (0, 90, 0), 3.0))
+    els.append(("CAPSULE", (-0.1, -0.6, 0.38), 0.21, (0.3, 0, 0), (0, 12, 0), 3.0))      # thumb across the front
+    els.append(("CAPSULE", (0.05, 0.12, 0.05), 0.42, (0.22, 0, 0), (0, 90, 0), 2.0))     # wrist
+    meta(els, sk, "fist", P=P, resolution=0.03)
+    band = candy("#ff8a26", rough=0.65, coat=0.1, tex="leaf", scale=16, bump=0.25, dark="#f07d1c", light="#ff9a3c")
+    obj("band", bm_cyl(0.5, 0.36, 64), band, loc=(0.05, 0.12, -0.06), parent=P, smooth=40, bevel=0.12, segs=4)
+    for k, (z, l) in enumerate(((1.3, 0.55), (0.9, 0.8), (0.5, 0.5))):
+        box((l, 0.08, 0.1), candy("#ffffff", emit=0.6), loc=(1.3 + l * 0.2, 0.25, z), bevel=0.045)
 
 
-def glove(P, col="#e6a64e", cuff="#ff8a26"):
-    m = candy(col, rough=0.55, coat=0.15, tex="leaf", scale=6, bump=0.25, dark="#d89a44", light="#efb460")
-    rounded((1.0, 0.36, 0.95), m, loc=(0, 0, 0.55), r=0.16, parent=P)
-    for k, h in enumerate((0.62, 0.72, 0.68, 0.55)):
+def glove(P, col="#e6a64e", cuff="#ff8a26", dark="#d39440", light="#f0b863"):
+    m = pbr("glove" + col, col, rough=0.6, coat=0.15, tex="leaf", scale=6, bump=0.3, dark=dark, light=light, emit=0.18)
+    els = [("ELLIPSOID", (0, 0, 0.62), 1.0, (0.52, 0.2, 0.5), None, 2.0)]
+    for k, h in enumerate((0.36, 0.44, 0.41, 0.32)):
         x = -0.36 + k * 0.24
-        rounded((0.22, 0.32, h), m, loc=(x, 0, 1.05 + h / 2 - 0.05), r=0.1, parent=P)
-    rounded((0.24, 0.32, 0.55), m, loc=(0.62, 0, 0.75), rot=(0, 40, 0), r=0.1, parent=P)
-    rounded((1.08, 0.44, 0.38), candy(cuff, rough=0.5), loc=(0, 0, 0.0), r=0.12, parent=P)
-    box((0.9, 0.05, 0.06), candy("#ffffff"), loc=(0, -0.23, 0.0), parent=P, bevel=0.02, outline=False)
+        els.append(("CAPSULE", (x * 1.05, 0, 1.12 + h * 0.6), 0.17, (h, 0, 0), (0, 90 - (x * 8), 0), 2.6))
+    els.append(("CAPSULE", (0.62, 0, 0.72), 0.17, (0.26, 0, 0), (0, 40, 0), 2.6))  # thumb
+    meta(els, m, "glove", P=P, resolution=0.03)
+    obj("cuff", bm_cyl(0.56, 0.38, 64), candy(cuff, rough=0.55), loc=(0, 0, 0.1), parent=P, smooth=40, bevel=0.12, segs=4)
+    t = torus(0.57, 0.035, candy("#ffffff", rough=0.4), seg=64, ring=8, outline=False)
+    t.matrix_world = P @ _xf((0, 0, 0.1))
+    # a stitched seam down the back of the hand
+    obj("seam", bm_box(0.04, 0.03, 0.6), candy(dark, rough=0.6), loc=(0, -0.21, 0.66), parent=P, bevel=0.0, outline=False)
 
 
 def g_gloves():
-    glove(_xf((-0.45, 0.35, 0.1), (0, 18, 10)), col="#d9973f")
-    glove(_xf((0.45, -0.25, 0), (0, -14, -8)))
+    glove(_xf((-0.5, 0.45, 0.15), (0, 20, 12), (0.95, 0.95, 0.95)), col="#d9973f", dark="#c88a36", light="#e6a650")
+    glove(_xf((0.45, -0.25, 0), (8, -16, -10)))
 
 
 def g_belt():
@@ -203,22 +248,36 @@ def g_girder():
 
 
 def g_hook():
-    """Tower Crane Hook: a yellow pulley block and a big steel hook on two cables"""
+    """Tower Crane Hook: a yellow pulley block on two cables and a forged J hook with its safety latch"""
     y = candy("#ffc534", rough=0.3)
-    rounded((1.15, 0.6, 0.85), y, loc=(0, 0, 1.6), r=0.15)
+    dk = candy("#2b2d38", rough=0.45)
+    rounded((1.2, 0.62, 0.9), y, loc=(0, 0, 1.75), r=0.18)
     for x in (-0.3, 0.3):
-        cyl(0.27, 0.66, chrome(), loc=(x, 0, 1.75), rot=(90, 0, 0), bevel=0.03)
-        cyl(0.03, 1.2, candy("#2b2d38"), loc=(x, 0, 2.6), bevel=0.0)
-    box((1.18, 0.64, 0.12), candy("#2b2d38"), loc=(0, 0, 1.3), bevel=0.03)
-    for k in range(5):
-        box((0.12, 0.05, 0.42), candy("#2b2d38"), loc=(-0.48 + k * 0.24, -0.31, 1.6), rot=(0, 30, 0), bevel=0.0, outline=False)
-    cyl(0.12, 0.45, chrome(), loc=(0, 0, 1.0), bevel=0.02)
-    hk = pbr("hook", "#c9d3e6", metal=1.0, rough=0.18, coat=0.5, emit=0.22)
-    t = torus(0.5, 0.17, hk, a0=-math.pi * 0.45, a1=math.pi * 1.2, seg=48)
-    t.matrix_world = _xf((0, 0, 0.32), (90, 0, 0)) @ t.matrix_world
-    sphere(0.19, hk, loc=(math.cos(-math.pi * 0.45) * 0.5, 0, 0.32 + math.sin(-math.pi * 0.45) * 0.5 + 0.0))
-    cyl(0.15, 0.4, hk, loc=(math.cos(math.pi * 1.2) * 0.5, 0, 0.32 + math.sin(math.pi * 1.2) * 0.5 + 0.2), bevel=0.02)
-    box((0.08, 0.05, 0.22), candy("#e0302f"), loc=(0.42, -0.18, 0.1), bevel=0.02, outline=False)
+        cyl(0.3, 0.7, chrome(), loc=(x, 0, 1.92), rot=(90, 0, 0), bevel=0.04)
+        cyl(0.035, 1.3, dk, loc=(x, 0, 2.85), bevel=0.0, outline=False)
+    obj("cheek", bm_box(1.24, 0.66, 0.14), dk, loc=(0, 0, 1.36), bevel=0.04)
+    for k in range(4):
+        obj("haz", bm_box(0.14, 0.03, 0.5), dk, loc=(-0.42 + k * 0.28, -0.32, 1.78), rot=(0, 32, 0), bevel=0.0, outline=False)
+    hk = pbr("hook", "#cfd8e8", metal=1.0, rough=0.16, coat=0.6, emit=0.22)
+    cyl(0.16, 0.22, hk, loc=(0, 0, 1.2), bevel=0.03)
+    t = torus(0.17, 0.07, hk, seg=32, ring=12)
+    t.matrix_world = _xf((0, 0, 1.0), (90, 0, 0)) @ t.matrix_world
+    # the J: shank down, round the bottom, up to a blunt tip (thick to thin)
+    R0, cx, cz = 0.46, 0.46, 0.15
+    path = [(0, 0, 0.84), (0, 0, 0.55), (0, 0, cz)]
+    n = 36
+    for k in range(1, n + 1):
+        a = math.pi + (math.pi + 0.55) * k / n
+        path.append((cx + math.cos(a) * R0, 0, cz + math.sin(a) * R0))
+    bm = bm_tube(path, lambda t: 0.19 - 0.09 * t, ring=20)
+    obj("hook", bm, hk, smooth=70)
+    tip = Vector(path[-1])
+    sphere(0.1, hk, loc=tuple(tip))
+    # safety latch: a red spring bar from the shank to the tip
+    a0 = Vector((0.0, 0, 0.62))
+    d = tip - a0
+    lat = obj("latch", bm_box(d.length, 0.1, 0.05), candy("#e0302f", rough=0.3), bevel=0.02)
+    lat.matrix_world = Matrix.Translation((a0 + tip) / 2) @ Matrix.Rotation(-math.atan2(d.z, d.x), 4, "Y")
 
 
 # ------------------------------------------------------------------------------------------- machines
@@ -336,7 +395,7 @@ ICONS = {
     "gear7": g_ibeam, "gear8": g_block, "gear9": g_anvil, "gear10": g_wreck, "gear11": g_girder, "gear12": g_hook,
     "excavator": m_excavator, "mixer": m_mixer, "crane": m_crane, "st_tires": s_tires, "st_hoist": s_hoist,
 }
-VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.15, -1, 0.15),
+VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.15, -1, 0.25), "gear2": (-0.1, -1, 0.2),
         "excavator": (-0.3, -1, 0.35), "mixer": (-0.3, -1, 0.3), "crane": (-0.3, -1, 0.3), "st_tires": (-0.2, -1, 0.25), "st_hoist": (-0.2, -1, 0.25)}
 SPARK = {"gear9": [(0.82, 0.2, 0.07), (0.66, 0.1, 0.045)], "gear5": [(0.82, 0.2, 0.06)], "gear12": [(0.84, 0.18, 0.06)], "gear10": [(0.84, 0.16, 0.06)]}
 
