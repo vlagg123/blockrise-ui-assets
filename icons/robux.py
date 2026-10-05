@@ -216,6 +216,37 @@ def touching(objs):
 
 
 TOUCH_LOG = []
+GROUPS = []
+
+
+def track(fn, *a, **k):
+    """build one part (a coin, a stack of notes, a badge...) and remember its meshes for the clash check"""
+    before = set(bpy.data.objects)
+    r = fn(*a, **k)
+    GROUPS.append([o for o in bpy.data.objects if o not in before and o.type == "MESH"])
+    return r
+
+
+def clashes():
+    """pairs of tracked parts that cut into each other (world space, modifiers applied)"""
+    from mathutils.bvhtree import BVHTree
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    trees = []
+    for g in GROUPS:
+        vs, fs = [], []
+        for o in g:
+            ev = o.evaluated_get(dg)
+            me = ev.to_mesh()
+            off = len(vs)
+            vs += [o.matrix_world @ v.co for v in me.vertices]
+            fs += [[off + i for i in p.vertices] for p in me.polygons]
+            ev.to_mesh_clear()
+        trees.append(BVHTree.FromPolygons(vs, fs) if fs else None)
+    bad = [(i, j) for i in range(len(trees)) for j in range(i + 1, len(trees))
+           if trees[i] and trees[j] and trees[i].overlap(trees[j])]
+    GROUPS.clear()
+    return bad
 
 
 BLUE_GEM = ("#c8f6ff", "#62d8ff", "#2cb4ff", "#1c8cf0", "#1667ff", "#2a8cff")
@@ -335,25 +366,36 @@ def wheel_(loc, r=0.55, w=0.45, rim=None, rot=(90, 0, 0), tread=True, parent=Non
 
 # ------------------------------------------------------------------------------------------- the icons
 def i_skipanim():
-    """a big glossy play button with a skip-forward symbol"""
+    """a big glossy play button with a skip-forward symbol, centred"""
     cyl(1.25, 0.4, candy("#2f8cff"), rot=(90, 0, 0), bevel=0.12, segs=72)
     cyl(1.05, 0.44, candy("#58b0ff", rough=0.18, emit=0.3), loc=(0, -0.03, 0), rot=(90, 0, 0), bevel=0.06, segs=72, outline=False)
     w = candy("#ffffff", rough=0.25, emit=0.5)
-    poly([(-0.62, 0.48), (0.02, 0.0), (-0.62, -0.48)], 0.3, w, loc=(0.0, -0.3, 0))
-    poly([(-0.06, 0.48), (0.58, 0.0), (-0.06, -0.48)], 0.3, w, loc=(0.0, -0.3, 0))
-    box((0.16, 0.3, 0.96), w, loc=(0.66, -0.3, 0), bevel=0.04)
+    dx = -0.06  # the whole symbol (two triangles + bar) spans -0.68 .. 0.68
+    poly([(-0.62 + dx, 0.48), (0.02 + dx, 0.0), (-0.62 + dx, -0.48)], 0.3, w, loc=(0.0, -0.3, 0))
+    poly([(-0.06 + dx, 0.48), (0.58 + dx, 0.0), (-0.06 + dx, -0.48)], 0.3, w, loc=(0.0, -0.3, 0))
+    box((0.16, 0.3, 0.96), w, loc=(0.66 + dx, -0.3, 0), bevel=0.04)
 
 
 def i_stormhammer():
-    """the Thunderclap Hammer: rendered from its spec (hammers/bl_build.py), with lightning bolts behind"""
+    """the Thunderclap Hammer (from its spec, hammers/bl_build.py), centred, with a bolt in each free corner"""
     import bl_build as B
     spec = B.load_spec()
     h = [x for x in spec["hammers"] if x["key"] == "thunder"][0]
     B._M.clear()
+    before = set(bpy.data.objects)
     B.build(h, spec["palette"])
-    yb = glow("#ffe14a", 3.5)
-    poly(BOLT, 0.25, yb, loc=(0.85, 0.8, 0.95), rot=(0, 18, 0)).scale = (0.55, 0.55, 0.55)
-    poly(BOLT, 0.25, glow("#7fd4ff", 3.5), loc=(-0.95, 0.8, 0.55), rot=(0, -20, 0)).scale = (0.45, 0.45, 0.45)
+    parts = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(c) for o in parts if o.type == "MESH" for c in o.bound_box]
+    cx = (min(p.x for p in pts) + max(p.x for p in pts)) / 2
+    cz = (min(p.z for p in pts) + max(p.z for p in pts)) / 2
+    move = Matrix.Translation((-cx, 0, -cz))
+    for o in parts:
+        if o.parent is None:
+            o.matrix_world = move @ o.matrix_world
+    # the head is top left and the handle runs to the bottom right: top right and bottom left are free
+    poly(BOLT, 0.25, glow("#ffe14a", 3.5), loc=(1.05, 0.4, 0.95), rot=(0, 18, 0)).scale = (0.55, 0.55, 0.55)
+    poly(BOLT, 0.25, glow("#7fd4ff", 3.5), loc=(-1.05, 0.4, -0.9), rot=(0, -20, 0)).scale = (0.5, 0.5, 0.5)
 
 
 def i_teleporter():
@@ -377,34 +419,61 @@ def i_teleporter():
     sphere(0.25, candy("#ffffff"), loc=(0, -0.48, 2.82), scale=(1, 0.5, 1))
 
 
+def crown_ring(r_out, r_in, h0, amp, n_pts=5, power=2.2, segs=240):
+    """the crown band: a ring whose top edge rises into n soft rounded points (one straight at the front)"""
+    bm = bmesh.new()
+    ob_, ot_, it_, ib_ = [], [], [], []
+    for k in range(segs):
+        a = TAU * k / segs - math.pi / 2
+        h = h0 + amp * (0.5 + 0.5 * math.cos(n_pts * (a + math.pi / 2))) ** power
+        c, sn = math.cos(a), math.sin(a)
+        ob_.append(bm.verts.new((c * r_out, sn * r_out, 0)))
+        ot_.append(bm.verts.new((c * r_out, sn * r_out, h)))
+        it_.append(bm.verts.new((c * r_in, sn * r_in, h)))
+        ib_.append(bm.verts.new((c * r_in, sn * r_in, 0)))
+    for k in range(segs):
+        k2 = (k + 1) % segs
+        bm.faces.new((ob_[k], ob_[k2], ot_[k2], ot_[k]))
+        bm.faces.new((ot_[k], ot_[k2], it_[k2], it_[k]))
+        bm.faces.new((it_[k], it_[k2], ib_[k2], ib_[k]))
+        bm.faces.new((ib_[k], ib_[k2], ob_[k2], ob_[k]))
+    return bm
+
+
 def i_vip():
-    """a gold crown with rubies and a sapphire, velvet inside"""
+    """a rounded gold crown: five soft points with pearls, a velvet cap, three jewels set in the band"""
     g = gold()
-    obj("band", bm_prism(circle(1.15, 72), 0.62, holes=circle(0.98, 72)), g, loc=(0, 0, 0.3), smooth=40, bevel=0.04)
-    obj("rim_low", bm_prism(circle(1.2, 72), 0.14, holes=circle(0.98, 72)), gold_dark(), loc=(0, 0, 0.02), smooth=40, bevel=0.03)
-    sphere(1.0, candy("#a3122e", rough=0.55, coat=0.2), loc=(0, 0, 0.55), scale=(1, 1, 0.55), outline=False)
+    H0, AMP = 0.62, 0.7
+    obj("crown", crown_ring(1.15, 1.0, H0, AMP), g, loc=(0, 0, 0.12), smooth=40, bevel=0.035, segs=3)
+    obj("rim_low", bm_prism(circle(1.21, 96), 0.16, holes=circle(1.0, 96)), gold_dark(), loc=(0, 0, 0.1), smooth=40, bevel=0.04)
+    vel = pbr("crown_velvet", "#b3163a", rough=0.7, coat=0.1, tex="leaf", scale=26.0, bump=0.1, dark="#a3122e", light="#c41d44", emit=0.12)
+    sphere(1.0, vel, loc=(0, 0, 0.62), scale=(0.98, 0.98, 0.6), outline=False)
+    sphere(0.16, g, loc=(0, 0, 1.3))
+    pearl = candy("#fff6e0", rough=0.12, emit=0.35)
     for k in range(5):
         a = TAU * k / 5 - math.pi / 2
-        x, y = math.cos(a) * 1.06, math.sin(a) * 1.06
-        cyl(0.3, 0.95, g, loc=(x, y, 1.05), r2=0.04, segs=4, rot=(0, 0, math.degrees(a) + 45), bevel=0.03)
-        sphere(0.14, candy("#fff3d0", rough=0.1, emit=0.4), loc=(x * 1.02, y * 1.02, 1.56))
+        sphere(0.15, pearl, loc=(math.cos(a) * 1.075, math.sin(a) * 1.075, 0.12 + H0 + AMP + 0.08))
     for k, cols in enumerate((RED_GEM, BLUE_GEM, RED_GEM)):
         a = -math.pi / 2 + (k - 1) * 0.62
-        gem(cols, loc=(math.cos(a) * 1.18, math.sin(a) * 1.18, 0.32), rot=(90, 0, math.degrees(a) + 90), s=0.24)
+        rot = (90, 0, math.degrees(a) + 90)
+        gem(cols, loc=(math.cos(a) * 1.2, math.sin(a) * 1.2, 0.44), rot=rot, s=0.22)
+        t = torus(0.25, 0.045, g, outline=False)
+        t.matrix_world = _xf((math.cos(a) * 1.17, math.sin(a) * 1.17, 0.44), rot)
 
 
 def i_bigcrew():
-    hardhat((-0.85, 0.9, 0.75), rot=(-25, 0, 25), col="#ff8a26", s=0.75)
-    hardhat((0.85, 0.9, 0.75), rot=(-25, 0, -25), col="#3d8cff", s=0.75)
-    hardhat((0, -0.4, 0.0), rot=(-22, 0, 0), col="#ffc534", s=1.0)
-    badge("+3", (1.25, -1.2, 1.15), s=0.8, col="#3fd36a", rot=(-24, 0, 0))
+    track(hardhat, (-1.05, 1.25, 1.1), rot=(-25, 0, 0), col="#ff8a26", s=0.72)
+    track(hardhat, (1.05, 1.25, 1.1), rot=(-25, 0, 0), col="#3d8cff", s=0.72)
+    track(hardhat, (0, -0.4, 0.0), rot=(-22, 0, 0), col="#ffc534", s=1.0)
+    track(badge, "+3", (1.35, -1.4, 1.2), s=0.8, col="#3fd36a", rot=(-24, 0, 0))
 
 
 def i_cash2x():
-    bills((-0.2, 0.25, 0), rot=(0, 0, 12), n=8)
-    bills((0.25, -0.35, 0.0), rot=(0, 0, -8), n=5, s=0.95)
-    coin(loc=(-1.25, -0.55, 0.35), rot=(72, 0, 25), r=0.55)
-    badge("2X", (1.15, -1.0, 1.05), s=0.8, rot=(-36, 0, 0))
+    # one brick of notes on top of another, a coin beside them
+    track(bills, (0.0, 0.25, 0), rot=(0, 0, 8), n=8)
+    track(bills, (0.12, 0.08, 0.62), rot=(0, 0, -10), n=5, s=0.95)
+    track(coin, loc=(-1.45, -0.85, 0.42), rot=(72, 0, 25), r=0.55)
+    track(badge, "2x", (1.2, -1.1, 1.15), s=0.8, rot=(-36, 0, 0))
 
 
 def dumbbell(loc, rot=(0, 0, 0), plate="#ff3b4a", s=1.0):
@@ -417,8 +486,9 @@ def dumbbell(loc, rot=(0, 0, 0), plate="#ff3b4a", s=1.0):
 
 
 def i_strength2x():
-    dumbbell((0, 0, 0.3), rot=(0, -25, -15), plate="#ff6a2b")
-    badge("2X", (1.1, -0.9, 1.25), s=0.8, rot=(-16, 0, 0))
+    track(dumbbell, (0, 0, 0.3), rot=(0, -25, -15), plate="#ff6a2b")
+    # the badge in the free bottom right corner, clear of the plates
+    track(badge, "2x", (1.3, -0.9, -0.85), s=0.78, rot=(-16, 0, 0))
 
 
 def robot(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
@@ -442,25 +512,26 @@ def robot(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
     obj("arm", bm_box(0.3, 0.3, 0.8), body, loc=(0.85, -0.1, 0.75), rot=(0, -40, 0), parent=P, bevel=0.1)
     hm = I.hammer(s=0.85)
     repaint(hm)
-    hm.matrix_world = P @ _xf((1.2, -0.25, 1.2), (0, -35, 0))
+    hm.matrix_world = P @ _xf((1.15, -0.55, 1.15), (0, 25, 0))
     for x in (-0.38, 0.38):
         obj("leg", bm_box(0.36, 0.4, 0.35), trim, loc=(x, 0, 0.0), parent=P, bevel=0.08)
 
 
 def i_autobuild():
-    robot(rot=(0, 0, -12))
-    badge("AUTO", (-1.15, -0.8, 0.45), s=0.62, col="#3fd36a", rot=(-16, 0, 0))
+    track(robot, rot=(0, 0, -12))
+    track(badge, "AUTO", (-1.2, -0.95, 0.45), s=0.62, col="#3fd36a", rot=(-16, 0, 0))
 
 
 def i_autotrain():
-    dumbbell((0, 0, 0.1), rot=(0, -20, -10), plate="#ff8a26", s=0.85)
+    # the dumbbell sits exactly in the middle of the circle of arrows (same centre point)
+    dumbbell((0, -0.2, 0.1), rot=(0, -20, -10), plate="#ff8a26", s=0.85)
     arrow_loop((0, -0.2, 0.1), R=1.55, col="#3fd36a")
 
 
 def i_gems2x():
-    gem(BLUE_GEM, loc=(-0.35, 0.3, 0.2), rot=(10, 0, 12), s=1.0)
-    gem(PINK_GEM, loc=(0.75, -0.2, -0.2), rot=(10, 0, -18), s=0.72)
-    badge("2X", (1.1, -0.9, 0.95), s=0.75, rot=(-16, 0, 0))
+    track(gem, BLUE_GEM, loc=(-0.35, 0.3, 0.2), rot=(10, 0, 12), s=1.0)
+    track(gem, PINK_GEM, loc=(0.95, -0.75, -0.35), rot=(10, 0, -18), s=0.62)
+    track(badge, "2x", (1.15, -1.0, 1.0), s=0.72, rot=(-16, 0, 0))
 
 
 def i_fasttools():
@@ -469,10 +540,10 @@ def i_fasttools():
     for ob in hm.children_recursive:
         if ob.type == "MESH" and ob.data.materials and "9aa3b8" in ob.data.materials[0].name:
             ob.data.materials[0] = gold()
-    hm.matrix_world = _xf((0.3, 0, 0), (0, -40, 0))
-    for k, (z, l, c) in enumerate(((0.95, 1.6, "#ffc534"), (0.45, 2.1, "#ff8a26"), (-0.05, 1.4, "#ffc534"))):
-        box((l, 0.12, 0.16), candy(c, emit=0.5), loc=(-1.25 - l * 0.25, 0.35, z), bevel=0.06)
-    poly(BOLT, 0.25, glow("#ffe14a", 2.5), loc=(1.35, -0.5, -0.9), rot=(0, 15, 0)).scale = (0.7, 0.7, 0.7)
+    hm.matrix_world = _xf((0.55, 0, 0), (0, -40, 0))
+    for z, l, c, right in ((0.85, 1.1, "#ffc534", -1.42), (0.45, 1.5, "#ff8a26", -1.36), (0.05, 0.95, "#ffc534", -1.46)):
+        box((l, 0.12, 0.16), candy(c, emit=0.5), loc=(right - l / 2, 0.35, z), bevel=0.06)
+    poly(BOLT, 0.25, glow("#ffe14a", 2.5), loc=(1.6, -0.5, -0.9), rot=(0, 15, 0)).scale = (0.7, 0.7, 0.7)
 
 
 def i_monster():
@@ -522,10 +593,10 @@ def gift(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, col="#ff4fa8"):
 
 
 def i_starter():
-    gift(rot=(0, 0, 18))
-    gem(BLUE_GEM, loc=(1.15, -0.85, 0.55), rot=(10, 0, -15), s=0.48)
-    coin(loc=(-1.2, -0.9, 0.45), rot=(75, 0, 20), r=0.5)
-    bills((-0.1, -1.25, 0.0), rot=(0, 0, 4), n=3, s=0.55)
+    track(gift, rot=(0, 0, 18))
+    track(gem, BLUE_GEM, loc=(1.6, -1.0, 0.5), rot=(10, 0, -15), s=0.48)
+    track(coin, loc=(-1.35, -1.05, 0.45), rot=(75, 0, 20), r=0.5)
+    track(bills, (0.25, -1.38, 0.0), rot=(0, 0, 18), n=3, s=0.55)
 
 
 def i_rushcrew():
@@ -548,9 +619,11 @@ def i_cashpack():
 
 
 def i_cashstack():
-    bills((-0.55, 0.45, 0), rot=(0, 0, 10), n=12)
-    bills((0.6, 0.35, 0), rot=(0, 0, -8), n=9)
-    bills((0.0, -0.55, 0), rot=(0, 0, 4), n=6)
+    # two bricks side by side, one across them on top, one in front
+    track(bills, (-1.0, 0.25, 0), n=8)
+    track(bills, (1.0, 0.25, 0), n=8)
+    track(bills, (0.0, 0.25, 0.62), rot=(0, 0, 6), n=6)
+    track(bills, (0.05, -0.95, 0), rot=(0, 0, -4), n=4)
 
 
 def vault(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
@@ -573,10 +646,10 @@ def vault(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
 
 
 def i_cashvault():
-    vault(rot=(0, 0, 14))
-    for k, (x, z) in enumerate(((-1.25, 0.0), (1.2, 0.0))):
-        coin(loc=(x, -1.15, 0.45), rot=(75, 0, 25 * (1 if x < 0 else -1)), r=0.45)
-    bills((0.0, -1.35, 0.0), rot=(0, 0, 3), n=4, s=0.6)
+    track(vault, rot=(0, 0, 14))
+    track(coin, loc=(-1.55, -1.35, 0.45), rot=(75, 0, 25), r=0.45)
+    track(coin, loc=(1.75, -1.05, 0.45), rot=(75, 0, -25), r=0.45)
+    track(bills, (0.05, -1.55, 0.0), rot=(0, 0, 14), n=4, s=0.6)
 
 
 def i_cashbank():
@@ -593,10 +666,12 @@ def i_cashbank():
     obj("wall", bm_box(2.5, 0.8, 1.6), candy("#e9e3d8", rough=0.4), loc=(0, 0.3, 1.2), bevel=0.04)
     obj("beam", bm_box(2.8, 1.3, 0.28), g, loc=(0, 0.05, 2.15), bevel=0.04)
     poly([(-1.45, 0), (1.45, 0), (0, 0.85)], 1.2, g, loc=(0, 0.1, 2.28))
-    t = text("$", 0.55, 0.06, candy("#2e9e4a", rough=0.3), loc=(0, -0.55, 2.55))
-    bills((-1.05, -1.05, 0.0), rot=(0, 0, 8), n=5, s=0.6)
-    bills((1.05, -1.05, 0.0), rot=(0, 0, -8), n=7, s=0.6)
-    coin(loc=(0, -1.3, 0.35), rot=(75, 0, 0), r=0.42)
+    t = text("$", 0.55, 0.06, candy("#2e9e4a", rough=0.3), loc=(0, -0.55, 2.55), center=True)
+    GROUPS.append([o for o in I3.iscene().objects if o.type == "MESH"])  # the whole bank is one part
+    # the cash sits in front of the steps, not under them
+    track(bills, (-1.12, -1.25, 0.0), rot=(0, 0, 8), n=5, s=0.6)
+    track(bills, (1.12, -1.25, 0.0), rot=(0, 0, -8), n=7, s=0.6)
+    track(coin, loc=(0, -1.35, 0.35), rot=(75, 0, 0), r=0.42)
 
 
 def stopwatch(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
@@ -619,7 +694,7 @@ def stopwatch(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
 def i_cashboost():
     bills((-0.55, 0.5, -0.1), rot=(0, 0, 14), n=8)
     stopwatch((0.55, -0.55, 0.75), rot=(0, 0, -10), s=0.85)
-    badge("2X", (-1.15, -1.1, -0.35), s=0.68, rot=(-30, 0, 0))
+    badge("2x", (-1.15, -1.1, -0.35), s=0.68, rot=(-30, 0, 0))
 
 
 def spin_wheel(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
@@ -654,7 +729,7 @@ def i_spin1():
 
 def i_spins3():
     spin_wheel(rot=(0, 0, 0))
-    badge("x5", (1.15, -0.75, -1.2), s=0.78, col="#ff3fa8")
+    badge("5x", (1.15, -0.75, -1.2), s=0.78, col="#ff3fa8")
 
 
 def i_gems100():
@@ -787,7 +862,7 @@ ICONS = {
     "gems750": i_gems750, "gems1700": i_gems1700, "gems4500": i_gems4500, "gems12000": i_gems12000,
 }
 VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
-        "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (-0.1, -1, 0.15)}
+        "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
     "skipanim": ("#6fc3ff", "#1b2f86"), "stormhammer": ("#8fd8ff", "#1a1f6e"), "teleporter": ("#7ff2ff", "#11406e"), "vip": ("#ffe27a", "#8a3a10"),
@@ -844,7 +919,9 @@ def render(names=None, size=768, samples=80):
         I3.reset()
         T._M.clear()
         I.OUTLINE = 0.034
+        GROUPS.clear()
         ICONS[n]()
+        TOUCH_LOG.append(("clash", clashes()))
         I.add_outlines()
         scn = I3.iscene()
         scn.render.resolution_x = scn.render.resolution_y = size
