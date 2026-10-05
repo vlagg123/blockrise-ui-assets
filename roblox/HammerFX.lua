@@ -284,7 +284,7 @@ local function makeCloud(e)
 	local core = fxPart({ Name = "Cloud", Transparency = 1, Size = Vector3.new(1, 1, 1) })
 	local c = { parts = { { part = core } }, pos = nil, core = core, puffs = {} }
 	-- { offset, size (studs), darker }
-	local layers = { { Vector3.new(-3.6, -0.4, -0.8), 11, 0.18 }, { Vector3.new(3.8, -0.3, -0.6), 12, 0.14 }, { Vector3.new(0, 0.3, 0.4), 16, 0 } }
+	local layers = { { Vector3.new(-2.6, -0.3, -0.6), 8, 0.18 }, { Vector3.new(2.8, -0.2, -0.5), 8.8, 0.14 }, { Vector3.new(0, 0.2, 0.3), 11.5, 0 } }
 	for _, L in ipairs(layers) do
 		local bb = new("BillboardGui", { Name = "CloudLayer", Size = UDim2.fromScale(L[2], L[2]), StudsOffsetWorldSpace = L[1], LightInfluence = 0, MaxDistance = 160,
 			ResetOnSpawn = false, Adornee = core, Parent = core })
@@ -450,7 +450,7 @@ RunService.RenderStepped:Connect(function()
 					if not e.cloud then makeCloud(e) end
 					local c = e.cloud
 					local building = e.site and now - e.site.t < 2.5
-					local target = building and (e.site.pos + Vector3.new(0, 17, 0)) or (root.Position + Vector3.new(0, 10.5, 0))
+					local target = building and (e.site.pos + Vector3.new(0, 17, 0)) or (root.Position + Vector3.new(0, 9.5, 0))
 					c.pos = c.pos and c.pos:Lerp(target, math.clamp(dt * (building and 2 or 4), 0, 1)) or target
 					c.core.CFrame = CFrame.new(c.pos + Vector3.new(math.sin(now * 0.7) * 0.3, math.sin(now * 0.9) * 0.2, 0)) * CFrame.Angles(0, now * 0.15, 0)
 					-- light flickering inside the cloud
@@ -520,7 +520,7 @@ RunService.RenderStepped:Connect(function()
 					emitAt(to, "sparks", seq(C3(220, 240, 255), C3(90, 170, 255)), 5)
 				end
 				if aura.cloudBolt and e.cloud and e.cloud.pos and not (e.site and now - e.site.t < 2.5) and due(e, "cloudBolt", aura.cloudBolt.every, now) then
-					zap(e.cloud.pos - Vector3.new(0, 1.5, 0), e.head.Position, { n = 7, amp = 1.1, w = 0.3, forks = 0.35, life = 0.2 })
+					zap(e.cloud.pos - Vector3.new(0, 1.2, 0), e.head.Position, { n = 7, amp = 1.1, w = 0.3, forks = 0.35, life = 0.2 })
 					lightFlash(e.head.Position, C3(170, 210, 255), 6, 20, 0.25)
 					e.cloud.light.Brightness = 1.6
 					cloudBlink(e.cloud, true)
