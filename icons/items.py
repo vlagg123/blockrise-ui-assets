@@ -81,38 +81,52 @@ def pbr(name, col, metal=0.0, rough=0.35, coat=0.3, trans=0.0, ior=1.5, emit=0.1
         nt.links.new(n.outputs["Fac"], rr.inputs["Value"])
         nt.links.new(rr.outputs[0], p.inputs["Roughness"])
     elif tex == "marble":
-        # white stone, soft grey clouds, thin dark-grey veins and a few gold ones
+        # polished white stone: soft grey clouds, long flowing grey veins (distorted bands) and a few thin gold ones
         mp = nt.nodes.new("ShaderNodeMapping")
         mp.inputs["Scale"].default_value = (kw.get("scale", 1.0),) * 3
         nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
-        n = _node(nt, "ShaderNodeTexNoise", Scale=0.75, Detail=3.0, Roughness=0.5, Distortion=1.6)
-        nt.links.new(mp.outputs[0], n.inputs["Vector"])
-        r = _ramp(nt, [(0.0, "#e4e1dc"), (0.44, col), (0.485, "#d3d7e0"), (0.5, "#7d8698"), (0.515, "#d3d7e0"),
-                       (0.56, col), (1.0, "#ffffff")])
-        nt.links.new(n.outputs["Fac"], r.inputs["Fac"])
-        n2 = _node(nt, "ShaderNodeTexNoise", Scale=0.55, Detail=2.0, Roughness=0.5, Distortion=2.0)
-        nt.links.new(mp.outputs[0], n2.inputs["Vector"])
-        r2 = nt.nodes.new("ShaderNodeValToRGB")
-        e = r2.color_ramp.elements
-        e[0].position, e[0].color = 0.494, (0, 0, 0, 1)
-        e[1].position, e[1].color = 0.5, (1, 1, 1, 1)
-        e2 = e.new(0.506)
-        e2.color = (0, 0, 0, 1)
-        nt.links.new(n2.outputs["Fac"], r2.inputs["Fac"])
-        mix = nt.nodes.new("ShaderNodeMix")
-        mix.data_type = "RGBA"
-        nt.links.new(r2.outputs["Color"], mix.inputs["Factor"])
-        nt.links.new(r.outputs["Color"], mix.inputs["A"])
-        mix.inputs["B"].default_value = (*I.rgb("#e2ad3c"), 1)
-        nt.links.new(mix.outputs["Result"], p.inputs["Base Color"])
-        nt.links.new(mix.outputs["Result"], p.inputs["Emission Color"])
+        cloud = _node(nt, "ShaderNodeTexNoise", Scale=1.1, Detail=3.0, Roughness=0.5)
+        nt.links.new(mp.outputs[0], cloud.inputs["Vector"])
+        base = _ramp(nt, [(0.3, "#ffffff"), (0.75, "#dcdfe6")])
+        nt.links.new(cloud.outputs["Fac"], base.inputs["Fac"])
+
+        def veins(scale, dist, w, seed_off):
+            wv = nt.nodes.new("ShaderNodeTexWave")
+            wv.wave_type = "BANDS"
+            wv.bands_direction = "DIAGONAL"
+            wv.inputs["Scale"].default_value = scale
+            wv.inputs["Distortion"].default_value = dist
+            wv.inputs["Detail"].default_value = 4.0
+            wv.inputs["Detail Scale"].default_value = 1.4
+            wv.inputs["Phase Offset"].default_value = seed_off
+            nt.links.new(mp.outputs[0], wv.inputs["Vector"])
+            r = nt.nodes.new("ShaderNodeValToRGB")
+            e = r.color_ramp.elements
+            e[0].position, e[0].color = 0.5 - w, (0, 0, 0, 1)
+            e[1].position, e[1].color = 0.5 + w, (0, 0, 0, 1)
+            m = e.new(0.5)
+            m.color = (1, 1, 1, 1)
+            nt.links.new(wv.outputs["Fac"], r.inputs["Fac"])
+            return r
+
+        def mixc(fac_node, a_out, col_b):
+            mx = nt.nodes.new("ShaderNodeMix")
+            mx.data_type = "RGBA"
+            nt.links.new(fac_node.outputs["Color"], mx.inputs["Factor"])
+            nt.links.new(a_out, mx.inputs["A"])
+            mx.inputs["B"].default_value = (*I.rgb(col_b), 1)
+            return mx.outputs["Result"]
+        grey = mixc(veins(0.9, 10.0, 0.03, 0.0), base.outputs["Color"], "#8e97ab")
+        gold = mixc(veins(0.6, 14.0, 0.012, 2.0), grey, "#e0a93c")
+        nt.links.new(gold, p.inputs["Base Color"])
+        nt.links.new(gold, p.inputs["Emission Color"])
     elif tex == "grain":
         # plywood face: soft straight grain bands (no rings: rings read as a target at icon size)
         w = nt.nodes.new("ShaderNodeTexWave")
         w.wave_type = "BANDS"
         w.bands_direction = "Z"
-        w.inputs["Scale"].default_value = 2.2
-        w.inputs["Distortion"].default_value = 7.0
+        w.inputs["Scale"].default_value = 1.3
+        w.inputs["Distortion"].default_value = 3.0
         w.inputs["Detail"].default_value = 2.0
         w.inputs["Detail Scale"].default_value = 1.2
         nt.links.new(tc.outputs["Object"], w.inputs["Vector"])
@@ -378,8 +392,8 @@ def i_beam(m, loc, rot=(0, 0, 0), L=2.4, w=0.84, h=0.9, tf=0.15, tw=0.15, rivets
 # ------------------------------------------------------------------------------------------- icons
 def icon_steel():
     """Steel Beams: a pyramid of three I-beams (ends to the camera) and a big bolt with its nut"""
-    steel = pbr("steel", "#6f86b4", metal=1.0, rough=0.26, coat=0.45, tex="brushed", axis="Y", dark="#556d9c", light="#a9bde0",
-                aniso=0.4, emit=0.22)
+    steel = pbr("steel", "#5f78aa", metal=0.8, rough=0.32, coat=0.45, tex="brushed", axis="Y", dark="#4a6194", light="#94acd8",
+                aniso=0.4, emit=0.2)
     chrome = pbr("chrome", "#eef2f8", metal=1.0, rough=0.12, coat=0.6, tex="brushed", axis="Z", dark="#cfd7e3", light="#ffffff", emit=0.2)
     W, H = 0.84, 0.9
     for x in (-0.47, 0.47):
@@ -393,7 +407,7 @@ def icon_copper():
     """Copper Wire: a wooden cable reel wound with shiny copper wire, the free end curling out"""
     cu = pbr("copper", "#ff8b4e", metal=1.0, rough=0.2, coat=0.45, emit=0.14)
     cu_core = pbr("copper_core", "#c45a2a", metal=1.0, rough=0.35, emit=0.1)
-    wood = pbr("reel_wood", "#e0a868", rough=0.45, coat=0.3, tex="grain", dark="#b47a42", light="#ecbd80", emit=0.18)
+    wood = pbr("reel_wood", "#e0a868", rough=0.45, coat=0.3, tex="grain", dark="#cf9454", light="#eab778", emit=0.18)
     dark = pbr("reel_hub", "#5a3a22", rough=0.5, emit=0.06)
     R0, L, Rf, wr = 0.62, 1.16, 1.05, 0.062
     for x in (-L / 2 - 0.08, L / 2 + 0.08):
@@ -434,20 +448,17 @@ def fluted(r, h, n=20, depth=0.06):
 
 
 def icon_marble():
-    """Marble: a polished veined block and a fluted column standing behind it"""
-    mb = pbr("marble", "#f7f4ef", rough=0.08, coat=0.9, tex="marble", scale=1.0, emit=0.16)
-    mb2 = pbr("marble2", "#f4f1ec", rough=0.08, coat=0.9, tex="marble", scale=1.6, emit=0.16)
-    # column (base plinth, torus, fluted shaft, capital)
-    cx, cy = 0.55, 0.55
-    obj("plinth", bm_box(1.0, 1.0, 0.22), mb2, loc=(cx, cy, 0.11), bevel=0.04)
-    obj("torus", bm_cyl(0.43, 0.14, 64), mb2, loc=(cx, cy, 0.29), smooth=40, bevel=0.05)
-    obj("shaft", fluted(0.36, 1.75), mb2, loc=(cx, cy, 0.36 + 0.875), smooth=50)
-    obj("echinus", bm_cyl(0.37, 0.16, 64, r2=0.5), mb2, loc=(cx, cy, 2.19), smooth=40, bevel=0.03)
-    obj("abacus", bm_box(1.1, 1.1, 0.2), mb2, loc=(cx, cy, 2.37), bevel=0.04)
-    # the polished block in front-left
-    obj("block", bm_box(1.5, 1.2, 0.95), mb, loc=(-0.55, -0.45, 0.475), rot=(0, 0, 12), bevel=0.07)
-    # a slab leaning on it
-    obj("slab", bm_box(1.1, 0.16, 0.8), mb2, loc=(0.35, -0.95, 0.39), rot=(-8, 0, -14), bevel=0.04)
+    """Marble: a fluted column on its plinth, and two polished slabs stacked in front of it"""
+    mb = pbr("marble", "#f7f4ef", rough=0.06, coat=0.9, tex="marble", scale=1.0, emit=0.18)
+    mb2 = pbr("marble2", "#f4f1ec", rough=0.06, coat=0.9, tex="marble", scale=1.4, emit=0.18)
+    cx, cy = 0.45, 0.5
+    obj("plinth", bm_box(1.25, 1.25, 0.26), mb2, loc=(cx, cy, 0.13), bevel=0.04)
+    obj("torus", bm_cyl(0.56, 0.16, 64), mb2, loc=(cx, cy, 0.34), smooth=40, bevel=0.06)
+    obj("shaft", fluted(0.47, 1.5, n=16, depth=0.07), mb2, loc=(cx, cy, 0.42 + 0.75), smooth=50)
+    obj("echinus", bm_cyl(0.48, 0.18, 64, r2=0.64), mb2, loc=(cx, cy, 2.01), smooth=40, bevel=0.03)
+    obj("abacus", bm_box(1.38, 1.38, 0.22), mb2, loc=(cx, cy, 2.21), bevel=0.04)
+    obj("slab1", bm_box(1.6, 1.05, 0.4), mb, loc=(-0.55, -0.75, 0.2), rot=(0, 0, 14), bevel=0.06)
+    obj("slab2", bm_box(1.3, 0.85, 0.36), mb2, loc=(-0.5, -0.78, 0.58), rot=(0, 0, -8), bevel=0.06)
 
 
 def ingot(m, m_top, loc, rot=(0, 0, 0)):
@@ -591,7 +602,7 @@ ICONS = {"steel": icon_steel, "copper": icon_copper, "marble": icon_marble, "gol
 for _t in BP:
     ICONS["bp_" + _t] = (lambda t: (lambda: icon_blueprint(t)))(_t)
 
-VIEW = {"steel": (-0.34, -1, 0.5), "copper": (-0.3, -1, 0.34), "marble": (-0.32, -1, 0.42), "gold": (-0.2, -1, 0.42),
+VIEW = {"steel": (-0.34, -1, 0.5), "copper": (-0.3, -1, 0.34), "marble": (-0.3, -1, 0.36), "gold": (-0.2, -1, 0.42),
         "diamond": (-0.25, -1, 0.3)}
 SPARKLE = {"steel": [(0.86, 0.14, 0.05)], "copper": [(0.14, 0.2, 0.06)], "marble": [(0.86, 0.12, 0.055)],
            "gold": [(0.84, 0.2, 0.08), (0.16, 0.32, 0.055)], "diamond": [(0.85, 0.15, 0.08), (0.2, 0.2, 0.05)],
