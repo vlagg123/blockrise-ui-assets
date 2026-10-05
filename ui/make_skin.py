@@ -168,6 +168,52 @@ def fillbar():
     return down(out)
 
 
+def rays():
+    # sunburst behind item art (white, fades out from the centre); used stretched, not sliced
+    S = CELL * SS
+    out = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(out)
+    n = 14
+    c = S / 2
+    for i in range(n):
+        a0 = (i / n) * 2 * math.pi
+        a1 = a0 + math.pi / n * 0.9
+        d.polygon([(c, c), (c + math.cos(a0) * S, c + math.sin(a0) * S), (c + math.cos(a1) * S, c + math.sin(a1) * S)], fill=255)
+    # radial fade
+    fade = Image.new("L", (S, S), 0)
+    px = fade.load()
+    for y in range(S):
+        for x in range(S):
+            r = math.hypot(x - c, y - c) / c
+            px[x, y] = int(255 * max(0, 1 - r) ** 1.3)
+    a = ImageChops.multiply(out, fade)
+    im = Image.merge("RGBA", (Image.new("L", (S, S), 255),) * 3 + (a,))
+    return down(im)
+
+
+def glow():
+    # soft round light (behind icons, on featured cards)
+    S = CELL
+    im = Image.new("L", (S, S), 0)
+    px = im.load()
+    c = S / 2
+    for y in range(S):
+        for x in range(S):
+            r = math.hypot(x + 0.5 - c, y + 0.5 - c) / c
+            px[x, y] = int(255 * max(0, 1 - r) ** 2)
+    return Image.merge("RGBA", (Image.new("L", (S, S), 255),) * 3 + (im,))
+
+
+def face():
+    # white mask of a button's face (inside the outline, above the lip): carries the moving shine
+    r, o, lip = 32, 7, 16
+    out = canvas()
+    m = Image.new("L", out.size, 0)
+    ImageDraw.Draw(m).rounded_rectangle((o * SS, o * SS, (CELL - o) * SS - 1, (CELL - lip - o) * SS - 1), radius=(r - o) * SS, fill=255)
+    out = Image.merge("RGBA", (Image.new("L", out.size, 255),) * 3 + (m,))
+    return down(out)
+
+
 def pattern():
     # seamless diagonal stripes, very faint white (tiled over window bodies)
     S = 128
@@ -177,7 +223,7 @@ def pattern():
     w = 12 * SS
     for k in range(-S * SS, 2 * S * SS, step):
         d.polygon([(k, 0), (k + w, 0), (k + w + S * SS, S * SS), (k + S * SS, S * SS)], fill=(255, 255, 255, 255))
-    a = im.split()[3].point(lambda v: int(v * 0.06))
+    a = im.split()[3].point(lambda v: int(v * 0.22))
     im.putalpha(a)
     return down(im)
 
@@ -185,7 +231,7 @@ def pattern():
 CELLS = {
     "panel": (0, 0, panel), "button": (128, 0, button), "tile": (256, 0, tile), "gloss": (384, 0, gloss),
     "pill": (0, 128, pill), "inset": (128, 128, inset), "shadow": (256, 128, shadow), "circle": (384, 128, circle),
-    "fill": (0, 256, fillbar),
+    "fill": (0, 256, fillbar), "rays": (128, 256, rays), "glow": (256, 256, glow), "face": (384, 256, face),
 }
 
 if __name__ == "__main__":

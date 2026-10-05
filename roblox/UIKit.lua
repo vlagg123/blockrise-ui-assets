@@ -1,0 +1,187 @@
+-- BlockRise Empire - UI toolkit. Windows, buttons, tiles and bars are drawn with 9-slice images from one skin
+-- atlas (ui_skin.png): ink outline, 3D lip, gloss and soft shading are baked in, Roblox tints them with ImageColor3.
+local TweenService = game:GetService("TweenService")
+
+local UI = {}
+
+UI.Theme = {
+	bg = Color3.fromRGB(16, 18, 26),
+	bg2 = Color3.fromRGB(28, 31, 42),
+	bg3 = Color3.fromRGB(96, 100, 150),     -- "disabled" buttons
+	accent = Color3.fromRGB(255, 196, 50),
+	accent2 = Color3.fromRGB(255, 136, 30),
+	green = Color3.fromRGB(80, 220, 110),
+	green2 = Color3.fromRGB(36, 165, 80),
+	red = Color3.fromRGB(240, 82, 82),
+	blue = Color3.fromRGB(80, 165, 255),
+	blue2 = Color3.fromRGB(40, 100, 220),
+	purple = Color3.fromRGB(175, 120, 255),
+	text = Color3.fromRGB(255, 255, 255),
+	muted = Color3.fromRGB(200, 204, 230),
+	dark = Color3.fromRGB(40, 34, 70),        -- text on light tiles
+	title = Enum.Font.FredokaOne,
+	body = Enum.Font.FredokaOne,
+	bold = Enum.Font.FredokaOne,
+	black = Enum.Font.LuckiestGuy,
+	chunky = Enum.Font.LuckiestGuy,
+	ink = Color3.fromRGB(20, 17, 32),
+	panel1 = Color3.fromRGB(62, 56, 100),
+	panel2 = Color3.fromRGB(33, 29, 56),
+}
+local T = UI.Theme
+
+UI.SKIN = "rbxassetid://90750611744286"
+UI.PATTERN = "rbxassetid://79685521043980"
+-- name -> { x, y, slice inset } inside the 512x512 skin atlas (cells are 128x128, drawn at 2x)
+local CELLS = {
+	panel = { 0, 0, 44 }, button = { 128, 0, 40 }, tile = { 256, 0, 40 }, gloss = { 384, 0, 30 },
+	pill = { 0, 128, 34 }, inset = { 128, 128, 28 }, shadow = { 256, 128, 44 }, circle = { 384, 128, 63 },
+	fill = { 0, 256, 28 },
+}
+
+function UI.new(class, props, children)
+	local o = Instance.new(class)
+	local parent
+	for k, v in pairs(props or {}) do
+		if k == "Parent" then parent = v else o[k] = v end
+	end
+	for _, c in ipairs(children or {}) do c.Parent = o end
+	if parent then o.Parent = parent end
+	return o
+end
+local new = UI.new
+
+function UI.corner(r) return new("UICorner", { CornerRadius = UDim.new(0, r or 12) }) end
+function UI.stroke(trans, color, thick)
+	return new("UIStroke", { Transparency = trans or 0.86, Color = color or Color3.new(1, 1, 1), Thickness = thick or 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border })
+end
+function UI.textStroke(trans, thick)
+	return new("UIStroke", { Transparency = trans or 0.2, Color = T.ink, Thickness = thick or 2, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual })
+end
+function UI.pad(p, pt)
+	return new("UIPadding", { PaddingLeft = UDim.new(0, p), PaddingRight = UDim.new(0, p), PaddingTop = UDim.new(0, pt or p), PaddingBottom = UDim.new(0, pt or p) })
+end
+function UI.grad(c1, c2, rot)
+	return new("UIGradient", { Color = ColorSequence.new(c1, c2), Rotation = rot or 90 })
+end
+function UI.list(dir, padding, halign, valign)
+	return new("UIListLayout", { FillDirection = dir or Enum.FillDirection.Vertical, Padding = UDim.new(0, padding or 8), SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = halign or Enum.HorizontalAlignment.Left, VerticalAlignment = valign or Enum.VerticalAlignment.Top })
+end
+
+function UI.tween(o, t, props, style, dir)
+	local tw = TweenService:Create(o, TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props)
+	tw:Play()
+	return tw
+end
+
+-- a 9-slice piece of the skin atlas
+function UI.slice(name, props)
+	local c = CELLS[name]
+	local im = new("ImageLabel", { Name = name, BackgroundTransparency = 1, Image = UI.SKIN, ImageRectOffset = Vector2.new(c[1], c[2]),
+		ImageRectSize = Vector2.new(128, 128), ScaleType = Enum.ScaleType.Slice, SliceCenter = Rect.new(c[3], c[3], 128 - c[3], 128 - c[3]),
+		SliceScale = 0.5, Size = UDim2.fromScale(1, 1) })
+	for k, v in pairs(props or {}) do if k ~= "Parent" then im[k] = v end end
+	if props and props.Parent then im.Parent = props.Parent end
+	return im
+end
+
+-- dark glass with a thick ink outline (toasts, hint, small panels)
+function UI.panel(props)
+	props = props or {}
+	local f = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.04, BorderSizePixel = 0 })
+	for k, v in pairs(props) do if k ~= "Parent" and k ~= "Radius" then f[k] = v end end
+	UI.corner(props.Radius or 14).Parent = f
+	new("UIStroke", { Thickness = 3, Color = T.ink, Transparency = 0, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }).Parent = f
+	new("UIGradient", { Color = ColorSequence.new(T.panel1, T.panel2), Rotation = 90 }).Parent = f
+	if props.Parent then f.Parent = props.Parent end
+	return f
+end
+
+function UI.label(props)
+	local l = new("TextLabel", { BackgroundTransparency = 1, Font = T.body, TextColor3 = T.text, TextSize = 16,
+		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, RichText = true })
+	for k, v in pairs(props or {}) do if k ~= "Parent" then l[k] = v end end
+	if props and props.Parent then l.Parent = props.Parent end
+	return l
+end
+
+-- chunky game button: one 9-slice image (face + 3D lip + ink outline) tinted with the colour, a gloss on top.
+-- Hover brightens it, pressing darkens and sinks it a little. Nothing grows over its neighbours.
+local LABEL_KEYS = { Text = true, TextSize = true, Font = true, TextColor3 = true }
+function UI.button(text, c1, c2, props)
+	props = props or {}
+	local z = props.ZIndex or 1
+	local color = c2 and c1:Lerp(c2, 0.35) or c1
+	local b = new("TextButton", { AutoButtonColor = false, BackgroundTransparency = 1, BorderSizePixel = 0, Text = "" })
+	for k, v in pairs(props) do
+		if k ~= "Parent" and k ~= "Radius" and not LABEL_KEYS[k] then b[k] = v end
+	end
+	local bg = UI.slice("button", { Name = "Bg", ImageColor3 = color, ZIndex = z, Parent = b })
+	UI.slice("gloss", { Name = "Shine", ImageTransparency = 0.1, ZIndex = z, Parent = bg })
+	local lbl = new("TextLabel", { Name = "Label", Size = UDim2.new(1, -8, 1, -8), Position = UDim2.fromOffset(4, 0), BackgroundTransparency = 1, Text = text,
+		Font = props.Font or T.chunky, TextSize = props.TextSize or 20, TextColor3 = props.TextColor3 or Color3.new(1, 1, 1), TextWrapped = false,
+		TextScaled = false, ZIndex = z + 1, Parent = b })
+	new("UITextSizeConstraint", { MaxTextSize = props.TextSize or 20, MinTextSize = 10, Parent = lbl })
+	lbl.TextScaled = true
+	new("UIStroke", { Thickness = 2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = lbl })
+	local sc = new("UIScale", { Parent = b })
+	local hover = false
+	local function paint(down)
+		local col = bg:GetAttribute("Color") or color
+		if down then col = col:Lerp(Color3.new(0, 0, 0), 0.18) elseif hover then col = col:Lerp(Color3.new(1, 1, 1), 0.12) end
+		bg.ImageColor3 = col
+	end
+	bg:SetAttribute("Color", color)
+	b.MouseEnter:Connect(function() hover = true; paint(false) end)
+	b.MouseLeave:Connect(function() hover = false; paint(false); UI.tween(sc, 0.1, { Scale = 1 }) end)
+	b.MouseButton1Down:Connect(function() paint(true); UI.tween(sc, 0.05, { Scale = 0.96 }) end)
+	b.MouseButton1Up:Connect(function() paint(false); UI.tween(sc, 0.15, { Scale = 1 }, Enum.EasingStyle.Back) end)
+	if props and props.Parent then b.Parent = props.Parent end
+	return b
+end
+
+-- recolour a button made by UI.button
+function UI.recolor(b, color)
+	local bg = b:FindFirstChild("Bg")
+	if bg then bg:SetAttribute("Color", color); bg.ImageColor3 = color end
+end
+
+-- progress bar: dark inset well + a glossy tinted fill (callers resize the returned fill)
+function UI.bar(props, c1, c2)
+	local f = new("Frame", { BackgroundTransparency = 1, BorderSizePixel = 0 })
+	for k, v in pairs(props or {}) do if k ~= "Parent" and k ~= "Radius" then f[k] = v end end
+	local z = f.ZIndex
+	UI.slice("inset", { Name = "Well", SliceScale = 0.4, ZIndex = z, Parent = f })
+	local fill = UI.slice("fill", { Name = "Fill", SliceScale = 0.4, ImageColor3 = c2 and c1:Lerp(c2, 0.4) or c1, Size = UDim2.fromScale(0, 1), ZIndex = z, Parent = f })
+	if props and props.Parent then f.Parent = props.Parent end
+	return f, fill
+end
+
+-- a row of tabs (sub-menus) at the top of a window; returns the row frame
+function UI.tabs(parent, list, current, onPick, props)
+	props = props or {}
+	local row = new("Frame", { Name = "Tabs", Size = UDim2.new(1, 0, 0, 52), BackgroundTransparency = 1, LayoutOrder = props.LayoutOrder or -100, ZIndex = 21, Parent = parent })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = row })
+	for i, t in ipairs(list) do
+		local on = t.id == current
+		local col = on and (t.c1 and (t.c2 and t.c1:Lerp(t.c2, 0.35) or t.c1) or T.accent) or Color3.fromRGB(92, 98, 160)
+		local b = UI.button(t.label, col, nil, { Size = UDim2.new(1 / #list, -8 * (#list - 1) / #list, 0, 46), TextSize = 18, LayoutOrder = i, ZIndex = 23, Parent = row })
+		b.Name = "Tab_" .. t.id
+		if not on then
+			local l = b:FindFirstChild("Label")
+			if l then l.TextColor3 = Color3.fromRGB(214, 218, 245) end
+		end
+		if t.badge and t.badge > 0 then
+			local d = UI.slice("circle", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 4), Size = UDim2.fromOffset(24, 24), SliceScale = 0.2,
+				ImageColor3 = Color3.fromRGB(255, 60, 90), ZIndex = 26, Parent = b })
+			local dl = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = tostring(t.badge), Font = T.chunky, TextSize = 13,
+				TextColor3 = Color3.new(1, 1, 1), ZIndex = 27, Parent = d })
+			new("UIStroke", { Thickness = 1.5, Color = T.ink, Parent = dl })
+		end
+		b.Activated:Connect(function() if not on then onPick(t.id) end end)
+	end
+	return row
+end
+
+return UI
