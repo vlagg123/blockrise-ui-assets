@@ -116,8 +116,6 @@ def g_kettlebell():
     for x in (-0.6, 0.6):
         cyl(0.17, 0.4, candy("#2b2d38", rough=0.35), loc=(x, 0, 1.55), bevel=0.0)
     # a white weight label
-    obj("plate", bm_prism(circle(0.42, 40), 0.06, axis="Y"), candy("#ffffff", rough=0.3), loc=(0, -0.99, 0.82), smooth=40, bevel=0.02)
-    R.text("KG", 0.36, 0.05, candy("#ff6a2b", rough=0.3), loc=(0, -1.04, 0.8))
 
 
 def barbell(loc, rot, plates=(("#e0302f", 1.0, 0.26), ("#2f8cff", 0.8, 0.22), ("#ffc534", 0.6, 0.18)), L=3.8, bar=None, s=1.0):
@@ -160,9 +158,6 @@ def g_block():
             t.matrix_world = P @ _xf((x, 0, 0.12 + k * 0.24), (90 if k % 2 == 0 else 0, 0, 90 if k % 2 else 0)) @ Matrix.Diagonal((1, 1.5, 1, 1))
     t = torus(0.55, 0.06, chrome(), a0=0.0, a1=math.pi, seg=30)
     t.matrix_world = P @ _xf((0, 0, 0.72), (90, 0, 0)) @ Matrix.Diagonal((1, 0.5, 1, 1))
-    # a yellow/black hazard stripe on the front
-    for k in range(6):
-        obj("haz", bm_box(0.22, 0.04, 0.3), candy("#ffc534" if k % 2 == 0 else "#2b2d38", rough=0.4), loc=(-0.55 + k * 0.22, -0.76, -0.75), rot=(0, 25, 0), parent=P, bevel=0.0, outline=False)
 
 
 def g_anvil():
@@ -171,9 +166,6 @@ def g_anvil():
     a = poly(pts, 0.95, m, loc=(0, 0, 0), rot=(0, 0, -25), bevel=0.05)
     # shiny worn top
     box((1.72, 0.9, 0.04), pbr("anviltop", "#c9d3e6", metal=1.0, rough=0.15, coat=0.6, emit=0.25), loc=(0.2, 0, 1.0), rot=(0, 0, -25), bevel=0.01, outline=False)
-    for k in range(6):
-        a2 = 0.3 + k * 0.42
-        sphere(0.09, glow("#ffd36b", 3.0), loc=(0.35 + math.cos(a2) * 0.7, -0.3, 1.15 + abs(math.sin(a2)) * 0.6), outline=False)
 
 
 def g_wreck():
@@ -346,7 +338,7 @@ ICONS = {
 }
 VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.15, -1, 0.15),
         "excavator": (-0.3, -1, 0.35), "mixer": (-0.3, -1, 0.3), "crane": (-0.3, -1, 0.3), "st_tires": (-0.2, -1, 0.25), "st_hoist": (-0.2, -1, 0.25)}
-SPARK = {"gear9": [(0.84, 0.16, 0.06)], "gear12": [(0.84, 0.18, 0.06)], "gear10": [(0.84, 0.16, 0.06)]}
+SPARK = {"gear9": [(0.82, 0.2, 0.07), (0.66, 0.1, 0.045)], "gear5": [(0.82, 0.2, 0.06)], "gear12": [(0.84, 0.18, 0.06)], "gear10": [(0.84, 0.16, 0.06)]}
 
 
 def render(names=None, size=768, samples=80):
