@@ -15,7 +15,7 @@ s = replaceOnce(s, [[	ctx.showUpgrades = UpgradesUI.Show
 	_G.__CE_ShowInventory = UpgradesUI.Inventory]])
 s = replaceOnce(s, [[Upgrades = "upgrades", Rebirth = "rebirth",
 		Locations = "locations", Welcome = "star" }]], [[Upgrades = "upgrades", Rebirth = "rebirth",
-		Locations = "locations", Welcome = "star", Inventory = "portfolio" }]])
+		Locations = "locations", Welcome = "star", Inventory = "backpack" }]])
 s = replaceOnce(s, [[	elseif name == "Upgrades" then _G.__CE_ShowUpgrades()]], [[	elseif name == "Upgrades" then _G.__CE_ShowUpgrades()
 	elseif name == "Inventory" then _G.__CE_ShowInventory()]])
 assert(loadstring(s), "Client compile")

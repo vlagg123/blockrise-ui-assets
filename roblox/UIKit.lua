@@ -284,7 +284,7 @@ function UI.tabs(parent, list, current, onPick, props)
 		if t.badge and t.badge > 0 then
 			local d = UI.slice("circle", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 4), Size = UDim2.fromOffset(24, 24), SliceScale = 0.2,
 				ImageColor3 = Color3.fromRGB(255, 60, 90), ZIndex = 26, Parent = b })
-			local dl = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = tostring(t.badge), Font = T.chunky, TextSize = 13,
+			local dl = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = tostring(t.badge), Font = Enum.Font.FredokaOne, TextSize = 15,
 				TextColor3 = Color3.new(1, 1, 1), ZIndex = 27, Parent = d })
 			new("UIStroke", { Thickness = 1.5, Color = T.ink, Parent = dl })
 		end

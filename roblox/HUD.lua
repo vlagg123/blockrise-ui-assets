@@ -103,7 +103,9 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	corner(badge, 14)
 	stroke(badge, 2.5)
 	local bsc = new("UIScale", { Parent = badge })
-	local bl = text({ Size = UDim2.fromScale(1, 1), Text = "!", TextSize = 17, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = badge })
+	-- FredokaOne: its glyphs sit in the middle of the line (Luckiest Guy leans and rides high, so "!" looked off-centre)
+	local bl = text({ Size = UDim2.fromScale(1, 1), Text = "!", Font = ROUND, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6, Parent = badge })
 	tstroke(bl, 1.5)
 	local down = false
 	local hasBadge = false
@@ -541,7 +543,7 @@ function M.Init(ctx)
 		{ "upgrades", "UPGRADES", Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70), A.upgrades },
 		{ "rebirth", "REBIRTH", Color3.fromRGB(205, 150, 255), Color3.fromRGB(125, 65, 230), A.rebirth },
 		{ "company", "COMPANY", Color3.fromRGB(120, 220, 255), Color3.fromRGB(30, 140, 210), A.company },
-		{ "inventory", "INVENTORY", Color3.fromRGB(255, 214, 90), Color3.fromRGB(226, 130, 30), A.inventory, icon = "portfolio" },
+		{ "inventory", "INVENTORY", Color3.fromRGB(255, 214, 90), Color3.fromRGB(226, 130, 30), A.inventory, icon = "backpack" },
 		{ "locations", "PLACES", Color3.fromRGB(255, 140, 150), Color3.fromRGB(225, 55, 85), A.locations },
 		{ "cars", "CARS", Color3.fromRGB(255, 140, 120), Color3.fromRGB(215, 55, 55), A.cars },
 	}
