@@ -235,7 +235,7 @@ PALETTE = {
     "amethyst":  dict(rbx=["Glass", [146, 66, 240], 0, 0.25], bl=dict(color=[0.45, 0.10, 0.95], metal=0, rough=0.03, trans=1.0, ior=1.55, emit=0.22)),
     "obsidian":  dict(rbx=["Slate", [40, 30, 56], 0, 0.05], bl=dict(color=[0.03, 0.02, 0.05], metal=0.2, rough=0.35)),
     "neon_purple": dict(rbx=["Neon", [176, 90, 255], 0, 0], bl=dict(color=[0.45, 0.12, 1.0], metal=0, rough=0.4, emit=6.0)),
-    "basalt":    dict(rbx=["Basalt", [42, 36, 36], 0, 0], bl=dict(color=[0.03, 0.025, 0.025], metal=0, rough=0.8, tex="rock")),
+    "basalt":    dict(rbx=["Basalt", [36, 30, 30], 0, 0], bl=dict(color=[0.018, 0.014, 0.014], metal=0, rough=0.8, tex="rock")),
     "lava":      dict(rbx=["Neon", [255, 112, 20], 0, 0], bl=dict(color=[1.0, 0.25, 0.02], metal=0, rough=0.5, emit=9.0)),
     "lava_hot":  dict(rbx=["Neon", [255, 196, 70], 0, 0], bl=dict(color=[1.0, 0.62, 0.15], metal=0, rough=0.5, emit=12.0)),
     "ice":       dict(rbx=["Ice", [176, 226, 255], 0.05, 0.1], bl=dict(color=[0.55, 0.82, 1.0], metal=0, rough=0.08, trans=0.85, ior=1.31, emit=0.1)),
@@ -488,10 +488,10 @@ def build():
         p = np.array(p)
         if abs(p[0]) > 0.3:  # side faces (normal X)
             R = Rx(ang)
-            size = (0.02, 0.03, ln)
+            size = (0.03, 0.055, ln * 1.25)
         else:  # top / bottom faces (normal Y)
             R = Ry(ang)
-            size = (0.03, 0.02, ln)
+            size = (0.055, 0.03, ln * 1.25)
         h.add("Crack%d" % i, "box", size, hp + p, R=R, mat="lava", cast=False)
     h.headbox(hp, (0.66, 0.66, 1.4))
     h.fx("embers", hp, [[255, 200, 80], [255, 90, 20]], 7, [0.05, 0.12], area=(0.6, 0.4, 1.2))
