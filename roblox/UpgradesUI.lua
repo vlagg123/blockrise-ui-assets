@@ -94,7 +94,7 @@ render = function(tok, data)
 		end
 	elseif tab == "materials" then
 		K.section(c.content, 1, "MATERIALS", Color3.fromRGB(255, 220, 110), "they drop while you build")
-		local grid = K.grid(c.content, 2, cols(), 262)
+		local grid = K.grid(c.content, 2, cols(), 268)
 		for i, m in ipairs(Company.Materials) do
 			local n = data.mats[m.id] or 0
 			local o = { order = i, name = m.name, icon = m.icon, color = Color3.fromRGB(255, 186, 70), tag = { "x" .. Config.FormatNum(n), K.DARK },
@@ -111,7 +111,7 @@ render = function(tok, data)
 		end
 	else
 		K.section(c.content, 1, "BLUEPRINTS", Color3.fromRGB(150, 210, 255), "use one on the Job Board")
-		local grid = K.grid(c.content, 2, cols(), 262)
+		local grid = K.grid(c.content, 2, cols(), 268)
 		for i, b in ipairs(Company.Blueprints) do
 			local n = data.bps[b.id] or 0
 			K.tile(grid, { order = i, name = (b.name:gsub(" Blueprint", "")), icon = b.icon, color = b.color, tag = { "x" .. n, K.DARK },

@@ -94,7 +94,7 @@ local function fillPrices(grid, pending)
 end
 
 local function itemTiles(tok, list, order, opts)
-	local grid = K.grid(c.content, order, cols(), opts.h or 262)
+	local grid = K.grid(c.content, order, cols(), opts.h or 268)
 	local pending = {}
 	for i, it in ipairs(list) do
 		local o = opts.make(it, i)
@@ -183,7 +183,7 @@ end
 local function gemshop(tok)
 	local have = c.player:GetAttribute("Gems") or 0
 	K.section(c.content, 2, "GEM SHOP", Color3.fromRGB(255, 180, 220), "spend your Gems here")
-	local grid = K.grid(c.content, 3, cols(), 262)
+	local grid = K.grid(c.content, 3, cols(), 268)
 	for i, it in ipairs(Config.GemShop) do
 		local cost, disabled, stat = it.gems, nil, nil
 		if it.kind == "cash" then
@@ -239,7 +239,11 @@ function M.Show(t, keepScroll)
 	local tok = c.openModal("Store", "Store", "", th.c1, th.c2)
 	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
 	c.modalSub.Text = "💎 " .. Config.FormatNum(c.player:GetAttribute("Gems") or 0)
-	UI.tabs(c.content, TABS, tab, function(id) c.click(); M.Show(id) end)
+	UI.tabs(c.content, TABS, tab, function(id)
+		c.click()
+		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
+		M.Show(id)
+	end)
 	if tab ~= "passes" then teleporterBanner(tok, 1) end
 	if tab == "gems" then gems(tok) elseif tab == "cash" then cash(tok) elseif tab == "boosts" then boosts(tok)
 	elseif tab == "passes" then passes(tok) else gemshop(tok) end

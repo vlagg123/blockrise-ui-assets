@@ -187,7 +187,7 @@ end
 function K.tile(grid, o)
 	local t = new("Frame", { Name = "Tile", BackgroundTransparency = 1, LayoutOrder = o.order or 0, ZIndex = 2, Parent = grid })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
-	local artH = o.artH or 138
+	local artH = o.artH or 128
 	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = o.iconScale })
 	if o.badge then K.chip(t, o.badge[1], o.badge[2] or T.red, { Position = UDim2.fromOffset(14, 14), ZIndex = 8 }) end
 	if o.tag then K.chip(t, o.tag[1], o.tag[2] or K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 14), ZIndex = 8 }) end

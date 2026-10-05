@@ -177,7 +177,11 @@ function M.Show(t, keepScroll)
 	c.openModal("Shop", "Shop", "", th.c1, th.c2)
 	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
 	c.modalSub.Text = fmt(money())
-	UI.tabs(c.content, TABS, tab, function(id) c.click(); M.Show(id) end)
+	UI.tabs(c.content, TABS, tab, function(id)
+		c.click()
+		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
+		M.Show(id)
+	end)
 	if tab == "tools" then tools() elseif tab == "gear" then gear() elseif tab == "machines" then machines() else crew() end
 end
 
