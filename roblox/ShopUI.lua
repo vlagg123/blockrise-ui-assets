@@ -37,16 +37,13 @@ local function buy(remote, arg, keep)
 	end
 end
 
--- a tier list (tools / gear): the one before yours, yours, then what comes next
-local function tierTiles(list, current, remote, icon, stat)
+-- a tier list (tools / gear): every tier, the locked ones show their price; the window opens on your row
+local function tierTiles(list, current, remote, icon, stat, keep)
 	local n = cols()
-	local first = math.max(1, current - 1)
-	local last = math.min(#list, first + n * 2 - 1)
-	first = math.max(1, last - n * 2 + 1)
 	local grid = K.grid(c.content, 2, n, 268)
 	local cash = money()
-	for i = first, last do
-		local it = list[i]
+	local mine
+	for i, it in ipairs(list) do
 		local rk, rl = K.rarityOf(i, #list)
 		local o = { order = i, name = it.name, icon = Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon, color = K.RAR[rk],
 			badge = { rl, K.RAR[rk] }, stats = { stat(it) } }
@@ -60,28 +57,32 @@ local function tierTiles(list, current, remote, icon, stat)
 			o.tag = { "NEXT", T.red }
 			o.button = { fmt(it.price), can and K.GREEN or K.LOCK, function()
 				if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-				buy(remote, i)
+				buy(remote, i, true)
 			end, icon = "cash", shine = can }
 		else
 			o.dim = true
 			o.status = { "🔒 " .. fmt(it.price), K.LOCK }
 		end
-		K.tile(grid, o)
+		local t = K.tile(grid, o)
+		if i == current then mine = t end
 	end
+	-- open on the row with your tier (a redraw after a purchase keeps the scroll instead)
+	if mine and not keep and current > n then K.scrollTo(c.content, mine, 4) end
 end
 
+local keepNext = false
 local function tools()
 	K.section(c.content, 1, "BUILDING TOOLS", Color3.fromRGB(150, 215, 255), "more build power per hit")
 	tierTiles(Config.Tools, c.player:GetAttribute("ToolTier") or 1, "BuyTool", "shop", function(t)
 		return { "x" .. Config.FormatNum(t.power) .. " POWER", GOLD }
-	end)
+	end, keepNext)
 end
 
 local function gear()
 	K.section(c.content, 1, "TRAINING GEAR", Color3.fromRGB(255, 190, 140), "more Strength per hit")
 	tierTiles(Config.TrainingGear, c.player:GetAttribute("GearTier") or 1, "BuyGear", "strength", function(g)
 		return { "x" .. Config.FormatNum(g.mult) .. " STRENGTH", Color3.fromRGB(255, 120, 80) }
-	end)
+	end, keepNext)
 end
 
 local function machines()
@@ -171,6 +172,7 @@ function M.Show(t, keepScroll)
 	if type(t) == "string" then tab = t end
 	if not THEME[tab] then tab = "tools" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
+	keepNext = scroll ~= nil
 	local th = THEME[tab]
 	c.openModal("Shop", "Shop", "", th.c1, th.c2)
 	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end

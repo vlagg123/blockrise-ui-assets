@@ -310,11 +310,6 @@ function K.row(parent, order, o)
 		local eb = K.button(f, e.label or "", e.color, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14 - bw - 8, 0.5, 0), Size = UDim2.fromOffset(e.w or 60, 54),
 			Icon = e.icon, TextSize = 18 }, e.onClick)
 		eb.Name = "Extra"
-		if e.icon and (e.label or "") == "" then
-			-- icon-only button: centre the icon
-			local ic = eb:FindFirstChild("Icon")
-			if ic then ic.AnchorPoint = Vector2.new(0.5, 0.5); ic.Position = UDim2.new(0.5, 0, 0.5, -4); ic.Size = UDim2.new(0, 0, 1, 2) end
-		end
 	end
 	return f
 end
@@ -333,6 +328,16 @@ function K.loading(parent)
 		while f.Parent do i = i % 3 + 1; l.Text = "Loading" .. string.rep(".", i); task.wait(0.3) end
 	end)
 	return f
+end
+
+-- scroll a list so that a child (a tile, a row) sits near the top
+function K.scrollTo(list, item, pad)
+	task.defer(function()
+		if not (item and item.Parent and list.Parent) then return end
+		local k = list.AbsoluteSize.Y > 0 and list.AbsoluteWindowSize.Y / list.AbsoluteSize.Y or 1
+		local y = item.AbsolutePosition.Y - list.AbsolutePosition.Y + list.CanvasPosition.Y * k
+		list.CanvasPosition = Vector2.new(0, math.max(0, y / k - (pad or 8)))
+	end)
 end
 
 -- money text helpers used by the windows

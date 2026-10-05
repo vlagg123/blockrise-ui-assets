@@ -148,18 +148,40 @@ function UI.button(text, c1, c2, props)
 	lbl.TextScaled = true
 	new("UIStroke", { Thickness = 2.2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = lbl })
 	if props.Icon then
+		-- icon + text centred together as one group on the face
 		local Icons = require(script.Parent:WaitForChild("Icons"))
-		local ic = Icons.make(props.Icon, { Name = "Icon", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 4, 0.5, -4), Size = UDim2.new(0, 0, 1, 4), ZIndex = z + 2, Parent = b })
-		new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height, Parent = ic })
+		local TextService = game:GetService("TextService")
+		local ic = Icons.make(props.Icon, { Name = "Icon", AnchorPoint = Vector2.new(0, 0.5), ZIndex = z + 2, Parent = b })
 		if ic:IsA("TextLabel") and not Icons.emoji[props.Icon] then ic.Text = props.Icon end -- an emoji was passed
-		-- label goes right of the icon
+		local cons = lbl:FindFirstChildOfClass("UITextSizeConstraint")
+		if cons then cons:Destroy() end
+		lbl.TextScaled = false
 		lbl.AnchorPoint = Vector2.new(0, 0)
+		lbl.TextXAlignment = Enum.TextXAlignment.Left
+		local maxSize = props.TextSize or 20
 		local function place()
-			local h = b.AbsoluteSize.Y
-			lbl.Position = UDim2.new(0, math.floor(h * 0.85) + 2, 0, 3)
-			lbl.Size = UDim2.new(1, -math.floor(h * 0.85) - 10, 1, -13)
+			local hD = b.Size.Y.Offset
+			local k = hD > 0 and b.AbsoluteSize.Y / hD or 1
+			if k <= 0 then return end
+			local w = b.AbsoluteSize.X / k
+			local h = hD > 0 and hD or b.AbsoluteSize.Y
+			local iw = math.floor((h - 9) * 0.98)
+			local gap = lbl.Text ~= "" and 4 or 0
+			local size = maxSize
+			local tw = lbl.Text ~= "" and TextService:GetTextSize(lbl.Text, size, lbl.Font, Vector2.new(4000, 200)).X or 0
+			while size > 9 and tw + iw + gap > w - 12 do
+				size -= 1
+				tw = TextService:GetTextSize(lbl.Text, size, lbl.Font, Vector2.new(4000, 200)).X
+			end
+			lbl.TextSize = size
+			local x0 = math.max(4, (w - (tw + gap + iw)) / 2)
+			ic.Size = UDim2.fromOffset(iw, iw)
+			ic.Position = UDim2.new(0, x0, 0.5, -4)
+			lbl.Position = UDim2.new(0, x0 + iw + gap, 0, 3)
+			lbl.Size = UDim2.new(0, tw + 6, 1, -13)
 		end
 		b:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
+		lbl:GetPropertyChangedSignal("Text"):Connect(place)
 		place()
 	end
 	if props.Shine then UI.shine(b, z) end
