@@ -201,6 +201,21 @@ function UI.button(text, c1, c2, props)
 	return b
 end
 
+-- a clean drawn X (close buttons): two rounded white bars with an ink outline, centred on the button's face
+function UI.drawX(btn, z)
+	z = z or (btn.ZIndex + 2)
+	local l = btn:FindFirstChild("Label")
+	if l then l.Visible = false end
+	for pass = 1, 2 do
+		for _, r in ipairs({ 45, -45 }) do
+			local bar = new("Frame", { Name = pass == 1 and "XInk" or "XBar", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, -4),
+				Size = pass == 1 and UDim2.new(0.5, 6, 0.12, 6) or UDim2.new(0.5, 0, 0.12, 0), Rotation = r, BorderSizePixel = 0,
+				BackgroundColor3 = pass == 1 and T.ink or Color3.new(1, 1, 1), ZIndex = z + pass, Parent = btn })
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = bar })
+		end
+	end
+end
+
 -- recolour a button made by UI.button
 function UI.recolor(b, color)
 	local bg = b:FindFirstChild("Bg")

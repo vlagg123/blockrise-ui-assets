@@ -223,7 +223,7 @@ local function openWindow(v)
 		K.text({ Position = UDim2.fromOffset(16, 8), Size = UDim2.new(1, -170, 0, 36), Text = text, Font = T.chunky, TextSize = 24, Max = 24, TextColor3 = K.DARK, Parent = col })
 		local ready = UI.button("NOT READY", K.LOCK, nil, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 8), Size = UDim2.fromOffset(140, 38), TextSize = 16, ZIndex = 4, Parent = col })
 		ready.Active = false
-		local list = new("ScrollingFrame", { Position = UDim2.fromOffset(12, 54), Size = UDim2.new(1, -24, 1, -66), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
+		local list = new("ScrollingFrame", { Position = UDim2.fromOffset(12, 54), Size = UDim2.new(1, -24, 1, -66), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 0,
 			ScrollBarImageColor3 = Color3.fromRGB(150, 150, 200), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y, ZIndex = 3, Parent = col })
 		UI.list(Enum.FillDirection.Vertical, 6).Parent = list
 		return list, ready
