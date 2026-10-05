@@ -15,11 +15,11 @@ Config.ProductImages = {
 	gems2x = "rbxassetid://129916717673380", fasttools = "rbxassetid://134605171184897", monster = "rbxassetid://133852132054346",
 	goldcar = "rbxassetid://111149747210442",
 	-- developer products
-	starter = "rbxassetid://126109143002031", rushcrew = "rbxassetid://78433847620290", cashpack = "rbxassetid://84828084771225",
+	starter = "rbxassetid://126109143002031", rushcrew = "rbxassetid://117292165769304", cashpack = "rbxassetid://84828084771225",
 	cashstack = "rbxassetid://123590091399618", cashvault = "rbxassetid://90790339412602", cashbank = "rbxassetid://99946262610902",
 	cashboost = "rbxassetid://118539020758858", spin1 = "rbxassetid://98074663629152", spins3 = "rbxassetid://104220772987659",
-	gems100 = "rbxassetid://92552699421535", gems300 = "rbxassetid://88490060320126", gems750 = "rbxassetid://106961580296959",
-	gems1700 = "rbxassetid://130810442796727", gems4500 = "rbxassetid://91412501588708", gems12000 = "rbxassetid://70390408715578",
+	gems100 = "rbxassetid://92552699421535", gems300 = "rbxassetid://88490060320126", gems750 = "rbxassetid://91549619059662",
+	gems1700 = "rbxassetid://130810442796727", gems4500 = "rbxassetid://111400819296862", gems12000 = "rbxassetid://113906745814581",
 }
 
 return Config
