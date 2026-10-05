@@ -49,7 +49,7 @@ function M.Go(id)
 		end
 		local flat = Vector3.new(pos.X, 0, pos.Z)
 		local dir = flat.Magnitude > 1 and -flat.Unit or Vector3.new(0, 0, 1)
-		local back = (id == "site" or id == "mega") and 5 or 8
+		local back = (id == "site" or id == "mega") and 6 or 12
 		local spot = pos + dir * back
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Exclude
@@ -59,6 +59,11 @@ function M.Go(id)
 		local stand = Vector3.new(spot.X, y, spot.Z)
 		char:PivotTo(CFrame.lookAt(stand, Vector3.new(pos.X, y, pos.Z)))
 		hrp.AssemblyLinearVelocity = Vector3.zero
+		-- swing the camera behind you, looking at the place
+		local cam = workspace.CurrentCamera
+		local look = Vector3.new(pos.X - stand.X, 0, pos.Z - stand.Z)
+		look = look.Magnitude > 0.1 and look.Unit or Vector3.new(0, 0, -1)
+		cam.CFrame = CFrame.lookAt(stand - look * 14 + Vector3.new(0, 7, 0), stand + look * 8)
 		c.sound2D(c.S.Chime, 0.35, 1.4)
 		c.emit(stand, "sparks", Color3.fromRGB(255, 230, 140), 18)
 	end)
