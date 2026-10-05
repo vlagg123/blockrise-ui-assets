@@ -147,8 +147,8 @@ def g_hands():
               [r, r * 1.02, r, r * 0.96, r * 0.9], sk, parent=P)
     rtube("thumb", [(-0.62, 0.42, 0.42), (-0.66, 0.02, 0.5), (-0.5, -0.36, 0.56), (-0.18, -0.48, 0.6), (0.06, -0.47, 0.6)],
           [0.2, 0.2, 0.19, 0.175, 0.16], sk, parent=P)
-    nail = sphere(0.1, pbr("nail", "#ffd9c6", rough=0.22, coat=0.6, emit=0.1), outline=False)
-    nail.matrix_world = P @ _xf((0.0, -0.6, 0.66), (-35, 0, 0), (1.1, 0.45, 0.85))
+    nail = sphere(0.1, pbr("nail2", "#ffc8b0", rough=0.25, coat=0.5, emit=0.05), outline=False)
+    nail.matrix_world = P @ _xf((0.02, -0.6, 0.655), (-35, 0, 0), (0.95, 0.4, 0.72))
     obj("wrist", bm_cyl(0.44, 0.6, 64), sk, loc=(0, 0.38, 0.05), scale=(1, 0.86, 1), parent=P, smooth=40, outline=False)
     band = pbr("band_red", "#ff4a3d", rough=0.7, coat=0.05, emit=0.1, tex="leaf", scale=18, bump=0.3, dark="#ef3b30", light="#ff5d50")
     ribbed("band", 0.54, 0.44, band, sy=0.88, loc=(0, 0.38, -0.1), parent=P, ribs=30, amp=0.012, bevel=0.1)
@@ -158,7 +158,7 @@ def g_hands():
 
 def g_gloves():
     """Work Gloves: a yellow leather work glove, palm to the front, with a stitched palm patch and a blue knitted cuff"""
-    lea = pbr("leather_y", "#f6b53c", rough=0.55, coat=0.2, emit=0.1, tex="hammered", scale=10.0, bump=0.12, dark="#eba62e", light="#fbc451")
+    lea = pbr("leather_y2", "#f6b53c", rough=0.5, coat=0.25, emit=0.1, tex="hammered", scale=5.0, bump=0.04, dark="#f0ab33", light="#f9bf4c")
     P = _xf((0, 0, 0), (0, -6, -10))
     pillow("palm", (1.12, 0.46, 1.0), lea, loc=(0, 0, 0.55), parent=P, bevel=0.16, taper=0.88)
     # fingers, pinky to index (the thumb is on the right): x, lean (deg), length, radius
@@ -169,7 +169,7 @@ def g_gloves():
         rtube("finger", [b, b + d * L * 0.5 + Vector((0, -0.03, 0)), b + d * L + Vector((0, -0.08, 0))], [r * 1.05, r, r * 0.97], lea, parent=P)
     rtube("thumb", [(0.34, 0.02, 0.32), (0.62, -0.04, 0.5), (0.82, -0.1, 0.74), (0.92, -0.14, 0.93)], [0.21, 0.2, 0.185, 0.172], lea, parent=P)
     # the darker leather palm patch with white stitching around it
-    patch = pbr("leather_d", "#d4822a", rough=0.6, coat=0.15, emit=0.08, tex="hammered", scale=12.0, bump=0.15, dark="#c97526", light="#dd8f35")
+    patch = pbr("leather_d2", "#d4822a", rough=0.55, coat=0.2, emit=0.08, tex="hammered", scale=6.0, bump=0.06, dark="#cc7a28", light="#da8b33")
     w, z0, z1, cr = 0.36, 0.3, 0.8, 0.12
     pts = []
     for (cx, cz, a0) in ((w - cr, z1 - cr, 0), (-w + cr, z1 - cr, 90), (-w + cr, z0 + cr, 180), (w - cr, z0 + cr, 270)):
@@ -205,7 +205,7 @@ def g_gloves():
         s += step
     knit = pbr("knit_b", "#2f7cf6", rough=0.7, coat=0.05, emit=0.12, tex="leaf", scale=22.0, bump=0.25, dark="#2a70e6", light="#3a88ff")
     ribbed("cuff", 0.6, 0.56, knit, r2=0.56, sy=0.56, loc=(0, 0, -0.14), parent=P, ribs=28, amp=0.016, bevel=0.07)
-    ribbed("cuffline", 0.6, 0.09, candy("#ffffff", rough=0.5), sy=0.56, loc=(0, 0, 0.0), parent=P, ribs=28, amp=0.016, bevel=0.02,
+    ribbed("cuffline", 0.578, 0.09, candy("#ffffff", rough=0.5), r2=0.574, sy=0.56, loc=(0, 0, 0.0), parent=P, ribs=28, amp=0.016, bevel=0.02,
            outline=False)
 
 
