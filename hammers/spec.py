@@ -120,16 +120,56 @@ def cyl_bevel(length, r, c, ends=(1, -1), n=16):
     return out
 
 
+# the classic lightning bolt, as two convex halves that share an edge (u = across, v = up)
+BOLT = [
+    [(-0.05, 0.25), (0.13, 0.25), (0.04, 0.04), (-0.02, -0.06), (-0.11, -0.06)],
+    [(0.04, 0.04), (0.13, 0.04), (-0.08, -0.27), (-0.02, -0.06)],
+]
+
+
 # ------------------------------------------------------------------------------------------------ pieces
 class Hammer:
     def __init__(self, tier, key, name, desc):
         self.d = dict(tier=tier, key=key, name=name, desc=desc, pieces=[], fx=[], light=None, trail=None, head=None)
 
-    def add(self, name, shape, size, pos=(0, 0, 0), R=I3, mat="iron", planes=None, smooth=0, cast=True):
+    def add(self, name, shape, size, pos=(0, 0, 0), R=I3, mat="iron", planes=None, smooth=0, cast=True, union=None):
         R = np.array(R, dtype=float)
-        self.d["pieces"].append(dict(name=name, shape=shape, size=[round(float(s), 4) for s in size],
-                                     pos=[round(float(p), 4) for p in pos], R=[[round(float(v), 6) for v in row] for row in R],
-                                     mat=mat, planes=planes or [], smooth=smooth, cast=cast))
+        d = dict(name=name, shape=shape, size=[round(float(s), 4) for s in size],
+                 pos=[round(float(p), 4) for p in pos], R=[[round(float(v), 6) for v in row] for row in R],
+                 mat=mat, planes=planes or [], smooth=smooth, cast=cast)
+        if union:
+            d["union"] = union  # pieces with the same union name become one part in Roblox (no seams)
+        self.d["pieces"].append(d)
+
+    def poly(self, name, pts, thick, center, R, mat, scale=1.0, union=None):
+        """a flat convex polygon (u = local Z, v = local Y), `thick` deep along local X, as a box cut by its edges"""
+        pts = [(u * scale, v * scale) for u, v in pts]
+        us, vs = [p[0] for p in pts], [p[1] for p in pts]
+        cu, cv = (max(us) + min(us)) / 2, (max(vs) + min(vs)) / 2
+        rel = [(u - cu, v - cv) for u, v in pts]
+        n = len(rel)
+        area = sum(rel[i][0] * rel[(i + 1) % n][1] - rel[(i + 1) % n][0] * rel[i][1] for i in range(n)) / 2
+        planes = []
+        for i in range(n):
+            u0, v0 = rel[i]
+            u1, v1 = rel[(i + 1) % n]
+            du, dv = u1 - u0, v1 - v0
+            nu, nv = (dv, -du) if area > 0 else (-dv, du)
+            planes.append(plane_through((0, nv, nu), (0, v0, u0)))
+        R = np.array(R, dtype=float)
+        off = R @ np.array([0.0, cv, cu])
+        self.add(name, "box", (thick, max(vs) - min(vs), max(us) - min(us)), np.array(center, dtype=float) + off, R=R, mat=mat,
+                 planes=planes, cast=False, union=union)
+
+    def bolt(self, name, center, R, scale, mat, rim_mat=None, out=(1, 0, 0)):
+        """a lightning bolt (two convex halves, one part in Roblox), with an optional metal rim behind it"""
+        center = np.array(center, dtype=float)
+        o = np.array(out, dtype=float)
+        if rim_mat:
+            for j, pts in enumerate(BOLT):
+                self.poly("%sRim%d" % (name, j), pts, 0.02, center + o * 0.002, R, rim_mat, scale=scale * 1.22, union=name + "Rim")
+        for j, pts in enumerate(BOLT):
+            self.poly("%s%d" % (name, j), pts, 0.022, center + o * 0.012, R, mat, scale=scale, union=name)
 
     # common bits -------------------------------------------------------------------------------
     def shaft(self, y0, y1, r, mat, bevel=0.02):
@@ -604,12 +644,11 @@ def build():
     # silver bands around the middle of the block
     for i, z in enumerate((-0.22, 0.22)):
         h.add("Band%d" % i, "box", (hw + 0.03, hh + 0.03, 0.06), hp + [0, 0, z], mat="silver", planes=chamfer(hw + 0.03, hh + 0.03, 0.06, 0.07, edges="z"))
-    # glowing lightning cracks on both sides and on top
+    # a glowing lightning bolt with a silver rim on both sides and on top of the block
     for sx in (-1, 1):
-        for j, (z, y, ln, ang) in enumerate(((-0.1, 0.12, 0.2, 40), (0.02, 0.0, 0.17, -46), (0.13, -0.12, 0.2, 40))):
-            h.add("Bolt%d%d" % (sx + 1, j), "box", (0.02, 0.055, ln), hp + [sx * (hw / 2 + 0.004), y, z], R=Rx(ang), mat="storm_neon", cast=False)
-    for j, (z, x, ln, ang) in enumerate(((-0.08, -0.1, 0.18, 35), (0.04, 0.02, 0.15, -40), (0.14, 0.12, 0.16, 35))):
-        h.add("TopBolt%d" % j, "box", (0.05, 0.02, ln), hp + [x, hh / 2 + 0.004, z], R=Ry(ang), mat="storm_neon", cast=False)
+        R = I3 if sx > 0 else Ry(180)
+        h.bolt("Bolt%d" % (sx + 1), hp + [sx * hw / 2, 0, 0], R, 1.05, "storm_neon", rim_mat="silver", out=(sx, 0, 0))
+    h.bolt("BoltTop", hp + [0, hh / 2, 0], Rz(90), 0.95, "storm_neon", rim_mat="silver", out=(0, 1, 0))
     h.headbox(hp, (0.85, 0.9, 1.4))
     h.fx("sparks", hp, [[220, 240, 255], [80, 170, 255]], 12, [0.04, 0.09], area=(0.7, 0.8, 1.2))
     h.fx("glint", hp, [[170, 220, 255]], 3, [0.14, 0.3], area=(0.75, 0.8, 1.2))

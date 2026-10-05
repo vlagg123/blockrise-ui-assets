@@ -239,10 +239,35 @@ local function buildHammer(h)
 	handle.CastShadow = false
 	handle.Parent = tool
 	tool.Parent = workspace -- CSG needs the parts in the world while it works
-	local made = {}
+	local made, groups, order = {}, {}, {}
 	for _, piece in ipairs(h.pieces) do
 		local part = buildPiece(piece, origin, tool, spec.palette)
 		table.insert(made, part)
+		if piece.union then
+			if not groups[piece.union] then groups[piece.union] = {}; table.insert(order, piece.union) end
+			table.insert(groups[piece.union], { part = part, piece = piece })
+		end
+	end
+	-- pieces that belong together (the halves of a lightning bolt) become one seamless part
+	for _, name in ipairs(order) do
+		local g = groups[name]
+		if #g > 1 then
+			local first = g[1].part
+			local rest = {}
+			for i = 2, #g do table.insert(rest, g[i].part) end
+			for _, e in ipairs(g) do e.part.Anchored = true end
+			local ok, u = pcall(function() return first:UnionAsync(rest) end)
+			if ok then
+				u.Name = name
+				finishPart(u, g[1].piece.mat, spec.palette[g[1].piece.mat])
+				u.CastShadow = false
+				u.Parent = tool
+				first:Destroy()
+				for _, r in ipairs(rest) do r:Destroy() end
+			else
+				warn("union " .. name .. ": " .. tostring(u))
+			end
+		end
 	end
 	-- galaxy: a scrolling space texture on the core (animated on the client)
 	if h.scroll then
