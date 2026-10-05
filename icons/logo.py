@@ -1,5 +1,5 @@
 """BlockRise Empire - title logo, rendered in the live Blender (scene "BlockRise Icons", same lights and candy
-materials as the icons): chunky 3D gold letters, a red EMPIRE banner, a tower crane carrying a steel beam,
+materials as the icons): chunky 3D gold letters, big red EMPIRE letters, a tower crane carrying a steel beam,
 a hard hat on the B, coins and a gem. The 2D finish (thick ink outline + soft shadow) is done with numpy."""
 import bpy, math, os
 from mathutils import Vector
@@ -139,7 +139,7 @@ def build():
     word("BLOCKRISE", 1.75, 0.34, (0, 0, 1.0), gold, side, bevel=0.045, gap=0.03, bounce=0.16, tilt=4)
     # EMPIRE: big 3D letters in a red-orange gradient with deep red sides (no banner)
     red = grad_mat("logo_red", [(0.0, "#e8231f"), (0.5, "#ff5a2e"), (1.0, "#ffb15a")])
-    word("EMPIRE", 1.3, 0.3, (0, 0, -0.55), red, P.mat("#9e1a17", gloss=0.45), bevel=0.04, gap=0.05, bounce=0.06, tilt=3, seed=2)
+    word("EMPIRE", 1.45, 0.32, (0, 0, -0.6), red, P.mat("#9e1a17", gloss=0.45), bevel=0.04, gap=0.05, bounce=0.06, tilt=3, seed=2)
     # hard hat on the B, coins and a gem around
     hh = I.hardhat(rot=(12, 0, -18))
     hh.location = (-3.05, 0.05, 1.9)
