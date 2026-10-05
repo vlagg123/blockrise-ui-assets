@@ -94,7 +94,7 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	corner(gloss, 14)
 	new("UIGradient", { Transparency = NumberSequence.new(0.2, 1), Rotation = 90, Parent = gloss })
 	local ic = Icons.make(key, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromScale(0.84, 0.84), Parent = face })
-	local lbl = text({ Name = "Label", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.new(1, 12, 0, 24),
+	local lbl = text({ Name = "Label", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.new(1, 4, 0, 24),
 		Text = label, TextScaled = true, TextXAlignment = Enum.TextXAlignment.Center, Parent = b })
 	tstroke(lbl, 3)
 	new("UITextSizeConstraint", { MaxTextSize = 21, MinTextSize = 9, Parent = lbl })
@@ -106,8 +106,10 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	local bl = text({ Size = UDim2.fromScale(1, 1), Text = "!", TextSize = 17, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = badge })
 	tstroke(bl, 1.5)
 	local down = false
-	b.MouseEnter:Connect(function() UI.tween(sc, 0.12, { Scale = 1.06 }) end)
+	local hasBadge = false
+	b.MouseEnter:Connect(function() b.ZIndex = 3; UI.tween(sc, 0.12, { Scale = 1.06 }) end)
 	b.MouseLeave:Connect(function()
+		b.ZIndex = hasBadge and 2 or 1
 		UI.tween(sc, 0.12, { Scale = 1 })
 		down = false
 		UI.tween(face, 0.1, { Position = UDim2.new() })
@@ -245,6 +247,8 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	function api.setBadge(v)
 		local on = v ~= nil and v ~= false and v ~= 0
 		badge.Visible = on
+		hasBadge = on
+		if b.ZIndex < 3 then b.ZIndex = on and 2 or 1 end
 		pulsing[bsc] = on or nil
 		if type(v) == "number" then bl.Text = v > 9 and "9+" or tostring(v) else bl.Text = "!" end
 	end
@@ -528,7 +532,7 @@ function M.Init(ctx)
 	refreshStrength()
 
 	local grid = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(176, 400), Parent = left })
-	local gridLayout = new("UIGridLayout", { CellSize = UDim2.fromOffset(80, 88), CellPadding = UDim2.fromOffset(10, 6), SortOrder = Enum.SortOrder.LayoutOrder,
+	local gridLayout = new("UIGridLayout", { CellSize = UDim2.fromOffset(80, 88), CellPadding = UDim2.fromOffset(14, 8), SortOrder = Enum.SortOrder.LayoutOrder,
 		FillDirectionMaxCells = 2, Parent = grid })
 	menu = {}
 	local defs = {
@@ -558,9 +562,9 @@ function M.Init(ctx)
 	local function popup(name, defs2, anchorBtn, cols)
 		cols = cols or 3
 		local rows = math.ceil(#defs2 / cols)
-		local pop = panel({ Name = name, AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(cols * 78 + 20, rows * 86 + 20), Visible = false, ZIndex = 8, Parent = root }, 18)
-		local g = new("Frame", { Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 1, -20), BackgroundTransparency = 1, Parent = pop })
-		new("UIGridLayout", { CellSize = UDim2.fromOffset(72, 80), CellPadding = UDim2.fromOffset(6, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = g })
+		local pop = panel({ Name = name, AnchorPoint = Vector2.new(1, 0), Size = UDim2.fromOffset(cols * 86 - 14 + 28, rows * 90 - 10 + 28), Visible = false, ZIndex = 8, Parent = root }, 18)
+		local g = new("Frame", { Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -28, 1, -28), BackgroundTransparency = 1, Parent = pop })
+		new("UIGridLayout", { CellSize = UDim2.fromOffset(72, 80), CellPadding = UDim2.fromOffset(14, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = g })
 		local sc = new("UIScale", { Parent = pop })
 		local items = {}
 		for i, d in ipairs(defs2) do
@@ -645,7 +649,8 @@ function M.Init(ctx)
 	local fx = new("Frame", { Name = "Effects", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -64), Size = UDim2.fromOffset(460, 160),
 		BackgroundTransparency = 1, Parent = root })
 	local fxScale = new("UIScale", { Parent = fx })
-	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Wraps = true, Padding = UDim.new(0, 6), VerticalAlignment = Enum.VerticalAlignment.Bottom,
+	-- small lines of text, one per effect, stacked upwards from the level bar
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 1), VerticalAlignment = Enum.VerticalAlignment.Bottom,
 		SortOrder = Enum.SortOrder.LayoutOrder, Parent = fx })
 	local PASS_ICON = { vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
 		fasttools = "up_power", teleporter = "locations" }
@@ -662,27 +667,19 @@ function M.Init(ctx)
 	local function fxChip(key, icon, color, order)
 		local ch = fxChips[key]
 		if ch then return ch end
-		local f = new("Frame", { Name = key, Size = UDim2.fromOffset(0, 30), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = WHITE, BorderSizePixel = 0,
-			LayoutOrder = order, Parent = fx })
-		corner(f, 15)
-		grad(f, PANEL1, PANEL2)
-		stroke(f, 2.5)
-		new("UIPadding", { PaddingLeft = UDim.new(0, 3), PaddingRight = UDim.new(0, 11), Parent = f })
-		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6),
+		local f = new("Frame", { Name = key, Size = UDim2.fromOffset(0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, LayoutOrder = order, Parent = fx })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 4),
 			SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
-		local disc = new("Frame", { Name = "Disc", Size = UDim2.fromOffset(24, 24), BackgroundColor3 = WHITE, BorderSizePixel = 0, LayoutOrder = 1, Parent = f })
-		corner(disc, 12)
-		grad(disc, color:Lerp(WHITE, 0.3), color:Lerp(INK, 0.2))
-		stroke(disc, 1.5)
 		if Icons.has(icon) then
-			Icons.make(icon, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(28, 28), ZIndex = 3, Parent = disc })
+			Icons.make(icon, { Size = UDim2.fromOffset(20, 20), LayoutOrder = 1, ZIndex = 3, Parent = f })
 		else
-			new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = icon, TextSize = 15, Font = Enum.Font.SourceSans, ZIndex = 3, Parent = disc })
+			new("TextLabel", { Size = UDim2.fromOffset(18, 20), BackgroundTransparency = 1, Text = icon, TextSize = 14, Font = Enum.Font.SourceSans, LayoutOrder = 1, ZIndex = 3, Parent = f })
 		end
-		local l = text({ Size = UDim2.fromOffset(0, 30), AutomaticSize = Enum.AutomaticSize.X, Font = ROUND, TextSize = 14, LayoutOrder = 2, Text = "", Parent = f })
+		local l = text({ Size = UDim2.fromOffset(0, 20), AutomaticSize = Enum.AutomaticSize.X, Font = ROUND, TextSize = 14, LayoutOrder = 2, Text = "",
+			TextColor3 = color:Lerp(WHITE, 0.45), Parent = f })
 		tstroke(l, 1.5)
 		local sc = new("UIScale", { Scale = 0.3, Parent = f })
-		UI.tween(sc, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
+		UI.tween(sc, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
 		ch = { frame = f, label = l }
 		fxChips[key] = ch
 		return ch
@@ -786,9 +783,9 @@ function M.Init(ctx)
 		leftScale.Scale = ls
 		local avail = (H - 10 - (compact and 150 or 60)) / ls
 		-- 8 buttons: 4 rows of 2, or 3 wide (3 rows) when the screen is short
-		local cols = (146 + 4 * 94 > avail) and 3 or 2
+		local cols = (146 + 4 * 96 > avail) and 3 or 2
 		gridLayout.FillDirectionMaxCells = cols
-		grid.Size = UDim2.fromOffset(cols * 90, 400)
+		grid.Size = UDim2.fromOffset(cols * 94, 400)
 		local rs = compact and 0.8 or 1
 		rightScale.Scale = rs
 		lvlScale.Scale = compact and 0.85 or 1

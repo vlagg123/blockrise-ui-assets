@@ -124,13 +124,6 @@ render = function(tok, data)
 	if not data.founded then renderFound(tok, data) return end
 	c.modalTitle.Text = data.name
 	c.modalSub.Text = money(data.rent) .. "/min"
-	-- your materials, one line
-	local have = {}
-	for _, m in ipairs(Company.Materials) do
-		local n = data.mats[m.id] or 0
-		if n > 0 then table.insert(have, Config.FormatNum(n) .. " " .. m.icon) end
-	end
-	K.note(c.content, 1, "Rent every minute, even offline (up to " .. Company.OfflineHours .. "h).   " .. (#have > 0 and ("You have: " .. table.concat(have, "  ")) or "Materials drop while you build."))
 	renderEstate(tok, data)
 end
 
@@ -170,8 +163,9 @@ function M.Init(ctx)
 			c.toast("🏢 Rent  +" .. money(d.amount), Color3.fromRGB(150, 210, 255), 2.2)
 		elseif kind == "OfflineRent" then
 			local mins = math.floor(d.secs / 60)
-			local h, mm = mins // 60, mins % 60
-			c.banner("👋 WELCOME BACK!", "Your properties earned " .. money(d.amount) .. " in " .. (h > 0 and (h .. "h ") or "") .. mm .. "m", Color3.fromRGB(150, 210, 255))
+			local days, h, mm = mins // 1440, (mins % 1440) // 60, mins % 60
+			local away = days > 0 and (days .. "d " .. h .. "h") or ((h > 0 and (h .. "h ") or "") .. mm .. "m")
+			c.banner("👋 WELCOME BACK!", "Your properties earned " .. money(d.amount) .. " while you were away (" .. away .. ")", Color3.fromRGB(150, 210, 255))
 			c.sound2D(c.S.Coins, 0.6, 1)
 		elseif kind == "Franchised" then
 			c.banner("♻️ REBIRTH #" .. d.n .. "!", "+" .. d.stars .. " Rebirth Stars · +" .. math.floor(Company.FranchiseCashPer * 100) .. "% cash · +" .. math.floor(Company.FranchiseStrengthPer * 100) .. "% Strength gains forever", Color3.fromRGB(255, 205, 60))
