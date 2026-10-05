@@ -231,8 +231,10 @@ local live = {} -- tool -> state
 local function trailOn(p, size, color, life)
 	local a0 = new("Attachment", { Position = Vector3.new(0, size * 0.5, 0), Parent = p })
 	local a1 = new("Attachment", { Position = Vector3.new(0, -size * 0.5, 0), Parent = p })
-	new("Trail", { Attachment0 = a0, Attachment1 = a1, Color = seq(color), Lifetime = life, LightEmission = 1, LightInfluence = 0, FaceCamera = true,
+	-- the trail starts once the part is where it belongs (no streak from where it was made)
+	local tr = new("Trail", { Attachment0 = a0, Attachment1 = a1, Color = seq(color), Lifetime = life, LightEmission = 1, LightInfluence = 0, FaceCamera = true, Enabled = false,
 		MinLength = 0.02, WidthScale = NumberSequence.new(1, 0), Transparency = NumberSequence.new(0.1, 1), Parent = p })
+	task.delay(0.08, function() if tr.Parent then tr:Clear(); tr.Enabled = true end end)
 end
 
 local function makeOrbs(e, aura)
@@ -240,7 +242,7 @@ local function makeOrbs(e, aura)
 	for _, rd in ipairs(aura.rings or {}) do
 		for i = 1, rd.count do
 			local p = fxPart({ Name = "Orb", Shape = rd.shape == "ball" and Enum.PartType.Ball or Enum.PartType.Block, Size = Vector3.one * rd.size,
-				Color = rd.colors[(i - 1) % #rd.colors + 1], Transparency = rd.trans or 0 })
+				Color = rd.colors[(i - 1) % #rd.colors + 1], Transparency = rd.trans or 0, CFrame = CFrame.new(e.head.Position) })
 			if rd.shape == "gem" then new("PointLight", { Color = p.Color, Brightness = 0.6, Range = 3, Shadows = false, Parent = p }) end
 			if rd.trail then trailOn(p, rd.size, rd.trail[1], rd.trail[2]) end
 			table.insert(e.orbs, { part = p, rd = rd, phase = (i - 1) / rd.count * math.pi * 2 })
@@ -256,7 +258,7 @@ local function makeFeet(e, f)
 		if f.kind == "flame" then
 			p = fxPart({ Name = "Feet", Size = Vector3.new(0.22, 0.6, 0.22), Color = f.colors[(i - 1) % #f.colors + 1] })
 		elseif f.kind == "spark" then
-			p = fxPart({ Name = "Feet", Size = Vector3.new(0.12, 0.12, 0.5), Color = f.colors[(i - 1) % #f.colors + 1] })
+			p = fxPart({ Name = "Feet", Size = Vector3.new(0.12, 0.12, 0.5), Color = f.colors[(i - 1) % #f.colors + 1], CFrame = e.head.CFrame })
 			trailOn(p, 0.12, C3(120, 190, 255), 0.2)
 		else
 			p = fxPart({ Name = "Feet", Shape = Enum.PartType.Ball, Size = Vector3.one * (0.22 + (i % 3) * 0.07), Color = f.colors[(i - 1) % #f.colors + 1] })
@@ -522,11 +524,13 @@ RunService.RenderStepped:Connect(function()
 				end
 				-- the galaxy: a shooting star crosses the sky near you
 				if aura.shooting and root and due(e, "shooting", aura.shooting.every, now) then
-					local from = root.Position + Vector3.new((math.random() - 0.5) * 30, 14 + math.random() * 6, (math.random() - 0.5) * 30)
-					local to = from + Vector3.new((math.random() - 0.5) * 30, -6, (math.random() - 0.5) * 30)
-					local s = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 0.3, Color = C3(255, 255, 255) })
-					trailOn(s, 0.3, C3(200, 160, 255), 0.4)
-					throw(s, from, to, 0.7, 0, nil)
+					local a = math.random() * math.pi * 2
+					local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+					local from = root.Position + Vector3.new(0, 30 + math.random() * 10, 0) - dir * 28 + Vector3.new(-dir.Z, 0, dir.X) * (math.random() - 0.5) * 30
+					local to = from + dir * 56 - Vector3.new(0, 5, 0)
+					local s = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 0.4, Color = C3(255, 255, 255), CFrame = CFrame.new(from) })
+					trailOn(s, 0.4, C3(200, 160, 255), 0.5)
+					throw(s, from, to, 1.1, 0, nil)
 				end
 			end
 		end
