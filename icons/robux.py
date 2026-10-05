@@ -986,6 +986,94 @@ def i_gems12000():
     chest_heap(20, 33, spill=6)
 
 
+# ------------------------------------------------------------------------------------------- hammer crates
+def crate(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply"):
+    """a chunky loot crate: a body with framed edges, a glowing seam under the lid and a mark on the front"""
+    P = _xf(loc, rot, s)
+    if kind == "supply":
+        body = pbr("crate_wood", "#c98546", rough=0.5, coat=0.4, tex="grain", dark="#a8672f", light="#dc9a58", emit=0.15)
+        trim = pbr("crate_iron", "#6b7388", metal=0.9, rough=0.3, coat=0.4, emit=0.15)
+        seam, mark_col = None, "#ffd23f"
+    elif kind == "builder":
+        body = candy("#3f8cff")
+        trim = candy("#ffc534", rough=0.3)
+        seam, mark_col = "#9fe0ff", "#ffffff"
+    elif kind == "golden":
+        body = gold()
+        trim = gold_dark()
+        seam, mark_col = "#fff2a0", "#fff7d6"
+    else:
+        body = candy("#ff4fc8", rough=0.22)
+        trim = pbr("crate_violet", "#7a3df0", metal=0.6, rough=0.25, coat=0.6, emit=0.2)
+        seam, mark_col = "#ffb3f0", "#ffffff"
+    W, H = 2.0, 1.7
+    obj("crate_body", bm_box(W, W, H), body, loc=(0, 0, H / 2), parent=P, bevel=0.1)
+    if kind == "supply":
+        # planks: darker grooves across the front and the side
+        groove = pbr("crate_groove", "#7a4a22", rough=0.7, coat=0.0, emit=0.05)
+        for z in (0.55, 1.12):
+            obj("groove", bm_box(W * 0.86, 0.04, 0.05), groove, loc=(0, -W / 2 - 0.005, z), parent=P, bevel=0.0, outline=False)
+            obj("groove", bm_box(0.04, W * 0.86, 0.05), groove, loc=(W / 2 + 0.005, 0, z), parent=P, bevel=0.0, outline=False)
+    # the frame: four posts and the top and bottom rails
+    t = 0.26
+    for x in (-1, 1):
+        for y in (-1, 1):
+            obj("post", bm_box(t, t, H + 0.04), trim, loc=(x * (W / 2 - t / 2 + 0.03), y * (W / 2 - t / 2 + 0.03), H / 2), parent=P, bevel=0.05)
+    for z in (t / 2 - 0.02, H - t / 2 + 0.02):
+        for y in (-1, 1):
+            obj("rail", bm_box(W + 0.06, t, t), trim, loc=(0, y * (W / 2 - t / 2 + 0.03), z), parent=P, bevel=0.05)
+        for x in (-1, 1):
+            obj("rail", bm_box(t, W + 0.06, t), trim, loc=(x * (W / 2 - t / 2 + 0.03), 0, z), parent=P, bevel=0.05)
+    # the lid, a little bigger, lifted by the light inside
+    lift = 0.16 if seam else 0.0
+    obj("lid", bm_box(W + 0.16, W + 0.16, 0.34), body, loc=(0, 0, H + 0.17 + lift), parent=P, bevel=0.1)
+    obj("lid_rim", bm_box(W + 0.22, W + 0.22, 0.12), trim, loc=(0, 0, H + 0.06 + lift), parent=P, bevel=0.04)
+    if seam:
+        obj("seam", bm_box(W - 0.1, W - 0.1, lift + 0.06), glow(seam, 6.0), loc=(0, 0, H + lift / 2 - 0.01), parent=P, bevel=0.0, outline=False)
+    # the mark on the front: a big ? (the gem crate has a gem)
+    if kind == "exclusive":
+        g = gem(PINK_GEM, s=0.6)
+        g.matrix_world = P @ _xf((0, -W / 2 + 0.12, H / 2 + 0.02), (90, 0, 0))
+    else:
+        q = text("?", 1.25, 0.09, candy(mark_col, rough=0.3, emit=0.45), bevel=0.02, outline=True, center=True)
+        q.matrix_world = P @ _xf((0, -W / 2 - 0.02, H / 2 + 0.02), (90, 0, 0))
+    return P
+
+
+def i_crate_supply():
+    track(crate, rot=(0, 0, 22), kind="supply")
+
+
+def i_crate_builder():
+    track(crate, rot=(0, 0, 22), kind="builder")
+
+
+def i_crate_golden():
+    track(crate, rot=(0, 0, 22), kind="golden")
+    track(coin, loc=(1.75, -1.25, 0.45), rot=(75, 0, -25), r=0.42)
+
+
+def i_crate_exclusive():
+    track(crate, rot=(0, 0, 22), kind="exclusive")
+    track(gem, BLUE_GEM, loc=(1.75, -1.2, 0.45), rot=(8, 0, -20), s=0.42)
+    track(gem, PURPLE_GEM, loc=(-1.75, -1.0, 0.42), rot=(8, 0, 20), s=0.38)
+
+
+def _three(kind):
+    # three crates: two on the floor, one on top
+    track(crate, loc=(-1.25, 0.35, 0), rot=(0, 0, 18), s=0.78, kind=kind)
+    track(crate, loc=(1.25, 0.35, 0), rot=(0, 0, 26), s=0.78, kind=kind)
+    track(crate, loc=(0.0, -0.75, 0), rot=(0, 0, 22), s=0.84, kind=kind)
+
+
+def i_crate_golden3():
+    _three("golden")
+
+
+def i_crate_exclusive3():
+    _three("exclusive")
+
+
 ICONS = {
     # game passes
     "skipanim": i_skipanim, "stormhammer": i_stormhammer, "teleporter": i_teleporter, "vip": i_vip, "bigcrew": i_bigcrew,
@@ -995,6 +1083,9 @@ ICONS = {
     "starter": i_starter, "rushcrew": i_rushcrew, "cashpack": i_cashpack, "cashstack": i_cashstack, "cashvault": i_cashvault,
     "cashbank": i_cashbank, "cashboost": i_cashboost, "spin1": i_spin1, "spins3": i_spins3, "gems100": i_gems100, "gems300": i_gems300,
     "gems750": i_gems750, "gems1700": i_gems1700, "gems4500": i_gems4500, "gems12000": i_gems12000,
+    # hammer crates (in-game art + the Robux crate products)
+    "crate_supply": i_crate_supply, "crate_builder": i_crate_builder, "crate_golden": i_crate_golden, "crate_exclusive": i_crate_exclusive,
+    "crate_golden3": i_crate_golden3, "crate_exclusive3": i_crate_exclusive3,
 }
 VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
@@ -1007,11 +1098,15 @@ CARD = {
     "cashstack": ("#a8f0a0", "#14603a"), "cashvault": ("#c0f5b0", "#103f3a"), "cashbank": ("#fff1a6", "#6a3c0c"), "cashboost": ("#b8f5a8", "#145a40"),
     "spin1": ("#ffb0f0", "#5a1a8a"), "spins3": ("#8fe6ff", "#103d8c"), "gems100": ("#a8ecff", "#14408a"), "gems300": ("#b8e8ff", "#1c3a96"),
     "gems750": ("#b8e0ff", "#22348a"), "gems1700": ("#d8c0ff", "#3a1f8a"), "gems4500": ("#ffd8a0", "#5a2a7a"), "gems12000": ("#fff0b0", "#6a1f7a"),
+    "crate_supply": ("#ffd98a", "#8a4a12"), "crate_builder": ("#a8d8ff", "#163a8a"), "crate_golden": ("#fff1a6", "#7a4a0c"), "crate_exclusive": ("#ffb8ee", "#5a1a7a"),
+    "crate_golden3": ("#fff1a6", "#7a4a0c"), "crate_exclusive3": ("#ffb8ee", "#5a1a7a"),
 }
 SPARK = {"vip": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "goldcar": [(0.84, 0.2, 0.07)], "gems100": [(0.82, 0.18, 0.08), (0.18, 0.7, 0.05)],
          "gems300": [(0.84, 0.16, 0.07)], "gems750": [(0.84, 0.16, 0.07), (0.16, 0.28, 0.05)], "gems1700": [(0.84, 0.16, 0.07)],
          "gems4500": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)], "gems12000": [(0.86, 0.12, 0.08), (0.12, 0.26, 0.06), (0.6, 0.06, 0.04)],
          "cashbank": [(0.86, 0.14, 0.07)], "cashvault": [(0.84, 0.16, 0.06)], "starter": [(0.84, 0.16, 0.07)], "stormhammer": [(0.84, 0.16, 0.07)],
+         "crate_golden": [(0.84, 0.16, 0.07)], "crate_exclusive": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "crate_golden3": [(0.86, 0.14, 0.07)],
+         "crate_exclusive3": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)],
          "spin1": [(0.86, 0.14, 0.06)], "spins3": [(0.86, 0.14, 0.06)], "cash2x": [(0.16, 0.2, 0.06)], "gems2x": [(0.16, 0.2, 0.07)]}
 
 
