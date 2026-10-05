@@ -243,11 +243,15 @@ function M.Init(ctx)
 	local function chip(name)
 		local f = panel({ Name = name, Size = UDim2.fromOffset(100, 44), Parent = row }, 14)
 		local b = new("TextButton", { Name = "Hit", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, ZIndex = 6, Parent = f })
-		local sc = new("UIScale", { Parent = f })
-		b.MouseEnter:Connect(function() UI.tween(sc, 0.12, { Scale = 1.03 }) end)
-		b.MouseLeave:Connect(function() UI.tween(sc, 0.12, { Scale = 1 }) end)
-		b.MouseButton1Down:Connect(function() UI.tween(sc, 0.05, { Scale = 0.97 }) end)
-		b.MouseButton1Up:Connect(function() UI.tween(sc, 0.15, { Scale = 1 }, Enum.EasingStyle.Back) end)
+		-- the top chips never move or change size (hover / hold / tap only light them up a little),
+		-- so nothing slides away from the mouse, like the abandon X on the corner
+		local hl = new("Frame", { Name = "Hover", Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 3, Parent = f })
+		corner(hl, 14)
+		local over = false
+		b.MouseEnter:Connect(function() over = true; UI.tween(hl, 0.12, { BackgroundTransparency = 0.9 }) end)
+		b.MouseLeave:Connect(function() over = false; UI.tween(hl, 0.12, { BackgroundTransparency = 1 }) end)
+		b.MouseButton1Down:Connect(function() UI.tween(hl, 0.05, { BackgroundTransparency = 0.82 }) end)
+		b.MouseButton1Up:Connect(function() UI.tween(hl, 0.15, { BackgroundTransparency = over and 0.9 or 1 }) end)
 		return f, b
 	end
 
@@ -275,6 +279,7 @@ function M.Init(ctx)
 	stroke(cX, 2)
 	local cXl = text({ Size = UDim2.fromScale(1, 1), Text = "X", TextSize = 11, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 9, Parent = cX })
 	tstroke(cXl, 1.5)
+	local cXstroke = cX:FindFirstChildOfClass("UIStroke") -- glows after the first tap: tap the same X again
 	local confirmUntil = 0
 	cX.Activated:Connect(function()
 		c.click()
@@ -283,7 +288,7 @@ function M.Init(ctx)
 			pcall(function() c.R.Abandon:InvokeServer() end)
 		else
 			confirmUntil = os.clock() + 2.5
-			c.toast("Tap X again to abandon this contract", T.muted, 2.5)
+			c.toast("Tap the red X again to abandon this contract", T.muted, 2.5)
 		end
 	end)
 	buildHit.Activated:Connect(function()
@@ -487,7 +492,7 @@ function M.Init(ctx)
 			x0, w, h = 160, camera.ViewportSize.X - 160, 44
 		end
 		local ch = math.clamp(h - 12, 32, 44)
-		local gap = 8
+		local gap = 16 -- clear room between the chips
 		-- a clear gap after the Roblox buttons, and a little room on the right
 		local left = math.clamp(math.floor(camera.ViewportSize.X * 0.025), 18, 40)
 		row.Position = UDim2.fromOffset(x0 + left, math.floor((h - ch) / 2))
@@ -583,7 +588,11 @@ function M.Init(ctx)
 				bBonus.Text = ""
 			end
 			cX.Visible = lj.abandon.Visible
-			cXl.Text = os.clock() < confirmUntil and "?" or "X"
+			-- armed (first tap done): the same X in the same place, its border flashing yellow until tapped again
+			if cXstroke then
+				local armed = os.clock() < confirmUntil
+				cXstroke.Color = armed and INK:Lerp(Color3.fromRGB(255, 230, 60), 0.5 + 0.5 * math.sin(os.clock() * 12)) or INK
+			end
 		else
 			if lastKind ~= "none" then lastKind = "none"; Icons.set(bIcon, "jobs") end
 			bFill.Visible = false
