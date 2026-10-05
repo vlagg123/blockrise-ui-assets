@@ -281,10 +281,16 @@ function UI.tabs(parent, list, current, onPick, props)
 			local ic = b:FindFirstChild("Icon")
 			if ic and ic:IsA("ImageLabel") then ic.ImageTransparency = 0.2 end
 		end
-		if t.badge == true or (type(t.badge) == "number" and t.badge > 0) then
+		if t.badge == true then
+			-- just a red dot (something to do on this tab)
+			local d = new("Frame", { Name = "Dot", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -8, 0, 6), Size = UDim2.fromOffset(18, 18),
+				BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 26, Parent = b })
+			new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = d })
+			new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = d })
+		elseif type(t.badge) == "number" and t.badge > 0 then
 			local d = UI.slice("circle", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 4), Size = UDim2.fromOffset(24, 24), SliceScale = 0.2,
 				ImageColor3 = Color3.fromRGB(255, 60, 90), ZIndex = 26, Parent = b })
-			local dl = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = t.badge == true and "!" or tostring(t.badge), Font = Enum.Font.FredokaOne, TextSize = 15,
+			local dl = new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = tostring(t.badge), Font = Enum.Font.FredokaOne, TextSize = 15,
 				TextColor3 = Color3.new(1, 1, 1), ZIndex = 27, Parent = d })
 			new("UIStroke", { Thickness = 1.5, Color = T.ink, Parent = dl })
 		end
