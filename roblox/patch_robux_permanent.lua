@@ -286,7 +286,17 @@ end)]], [[	local pending = 0
 end)]])
 
 -- 6) Studio test hooks for the ledger
-s = replaceOnce(s, [[		elseif cmd == "rejoinSim" then]], [[		elseif cmd == "ledger" then return ledgerStore and ledgerStore._mem and ledgerStore._mem["u_" .. plr.UserId]
+s = replaceOnce(s, [[		elseif cmd == "rejoinSim" then]], [[		elseif cmd == "receiptKey" then
+			-- run a real receipt for a product that has no Roblox id yet (Studio tests only)
+			local prod
+			for _, p in ipairs(Config.Store.products) do if p.key == v.key then prod = p end end
+			if not prod then return "no product" end
+			local oldId = prod.id
+			if (prod.id or 0) == 0 then prod.id = -7 end
+			local r = processReceipt({ PlayerId = plr.UserId, ProductId = prod.id, PurchaseId = v.purchase, CurrencySpent = 0, CurrencyType = Enum.CurrencyType.Robux, PlaceIdWherePurchased = game.PlaceId })
+			prod.id = oldId
+			return r
+		elseif cmd == "ledger" then return ledgerStore and ledgerStore._mem and ledgerStore._mem["u_" .. plr.UserId]
 		elseif cmd == "paid" then return S[plr].data.Paid
 		elseif cmd == "wipeSim" then
 			-- what a brand-new profile (progress reset) gets back from the permanent ledger
@@ -295,7 +305,12 @@ s = replaceOnce(s, [[		elseif cmd == "rejoinSim" then]], [[		elseif cmd == "ledg
 			for k in pairs(st.data) do st.data[k] = nil end
 			for k, v in pairs(fresh) do st.data[k] = v end
 			restorePaid(plr, st)
+			CompanyService.Sanitize(st.data)
+			RebirthService.Sanitize(st.data)
+			VehicleService.Sanitize(st.data)
 			sync(plr)
+			RebirthService.Publish(plr)
+			syncRushCrew(plr)
 			plr:SetAttribute("SpinExtra", st.data.Spin.extra)
 			return { gems = st.data.Gems, spins = st.data.Spin.extra, boosts = st.data.Boosts, starter = st.data.StarterBought,
 				rush = (st.data.RushCrewUntil or 0) - os.time(), receipts = #st.data.Receipts, paid = st.data.Paid }
