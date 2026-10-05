@@ -169,6 +169,8 @@ local function crew()
 end
 
 function M.Show(t, keepScroll)
+	-- opening the window (not a redraw while it is open) always starts on the first tab
+	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Shop") then tab = "tools" end
 	if type(t) == "string" then tab = t end
 	if not THEME[tab] then tab = "tools" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil

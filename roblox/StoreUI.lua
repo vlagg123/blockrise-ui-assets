@@ -232,6 +232,8 @@ local function gemshop(tok)
 end
 
 function M.Show(t, keepScroll)
+	-- opening the window (not a redraw while it is open) always starts on the first tab
+	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Store") then tab = "gems" end
 	if type(t) == "string" then tab = (t == "packs" and "gems") or t end
 	if not THEME[tab] then tab = "gems" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
