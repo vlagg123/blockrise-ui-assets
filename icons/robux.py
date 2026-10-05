@@ -748,12 +748,73 @@ def i_gems300():
     gem(GREEN_GEM, loc=(0.95, -0.25, -0.4), rot=(8, 0, 25), s=0.6)
 
 
+def settle(dynamic, passive, frames=160):
+    """drop the dynamic objects onto the passive ones (Bullet rigid bodies) and keep them where they come to rest"""
+    scn = bpy.context.scene
+    def ov(ob=None):
+        if ob is None:
+            return bpy.context.temp_override(scene=scn)
+        return bpy.context.temp_override(scene=scn, object=ob, active_object=ob, selected_objects=[ob], selected_editable_objects=[ob])
+    if scn.rigidbody_world is None:
+        with ov():
+            bpy.ops.rigidbody.world_add()
+    rw = scn.rigidbody_world
+    rw.enabled = True
+    rw.substeps_per_frame = 20
+    rw.solver_iterations = 30
+    rw.point_cache.frame_start = 1
+    rw.point_cache.frame_end = frames
+    for ob, kind in [(o, "ACTIVE") for o in dynamic] + [(o, "PASSIVE") for o in passive]:
+        with ov(ob):
+            bpy.ops.rigidbody.object_add(type=kind)
+        rb = ob.rigid_body
+        rb.collision_shape = "CONVEX_HULL" if kind == "ACTIVE" else "MESH"
+        if kind == "PASSIVE":
+            rb.mesh_source = "FINAL"
+        rb.friction = 0.9
+        rb.restitution = 0.0
+        rb.linear_damping = 0.3
+        rb.angular_damping = 0.6
+        rb.use_margin = True
+        rb.collision_margin = 0.004
+    for f in range(1, frames + 1):
+        scn.frame_set(f)
+    dg = bpy.context.evaluated_depsgraph_get()
+    final = [o.evaluated_get(dg).matrix_world.copy() for o in dynamic]
+    for ob in dynamic + passive:
+        with ov(ob):
+            bpy.ops.rigidbody.object_remove()
+    with ov():
+        bpy.ops.rigidbody.world_remove()
+    scn.frame_set(1)
+    for o, m in zip(dynamic, final):
+        o.matrix_world = m
+
+
+def drop_gems(P, n, seed, area, z0, sizes=(0.3, 0.42), sets=(BLUE_GEM, PINK_GEM, GREEN_GEM, PURPLE_GEM, RED_GEM), gap=1.0):
+    """n gems at random turns over area (x0, x1, y0, y1) in the frame P, one above the other so none starts inside another"""
+    rnd = random.Random(seed)
+    gs = []
+    for k in range(n):
+        s_ = rnd.uniform(*sizes)
+        g = gem(sets[k % len(sets)], rot=(rnd.uniform(0, 360), rnd.uniform(0, 360), rnd.uniform(0, 360)), s=s_)
+        g.matrix_world = P @ _xf((rnd.uniform(area[0], area[1]), rnd.uniform(area[2], area[3]), z0 + k * gap)) @ g.matrix_world
+        gs.append(g)
+    return gs
+
+
+def ground(z=0.0, size=20.0):
+    """an invisible floor for the physics (removed again afterwards)"""
+    return obj("ground", bm_box(size, size, 0.2), candy("#000000"), loc=(0, 0, z - 0.1), outline=False)
+
+
 def cushion(loc=(0, 0, 0), size=(3.0, 2.2, 0.55), col="#c8203c"):
     """a puffy red velvet jewellery cushion with a gold cord round its middle"""
     vel = pbr("velvet" + col, col, rough=0.75, coat=0.05, tex="leaf", scale=30.0, bump=0.12, dark="#b51c36", light="#d42a46", emit=0.12)
     o = obj("cushion", bm_box(*size), vel, loc=loc, smooth=85, bevel=0.24, segs=3)
     m = o.modifiers.new("soft", "SUBSURF")
     m.levels = m.render_levels = 2
+    cush = o
     # the cord: a rounded rectangle tube just outside the cushion's widest line
     w, d, r = size[0] / 2 - 0.08, size[1] / 2 - 0.08, 0.3
     path = []
@@ -774,18 +835,24 @@ def cushion(loc=(0, 0, 0), size=(3.0, 2.2, 0.55), col="#c8203c"):
         for j in range(10):
             bm.faces.new((a_[j], a_[(j + 1) % 10], b_[(j + 1) % 10], b_[j]))
     obj("cord", bm, gold(), smooth=80, outline=False)
+    return cush
 
 
 def i_gems750():
-    # a little pyramid of gems on a red velvet cushion: 3 in front, 2 behind and higher, a big one on top
-    cushion(loc=(0, 0.2, 0.0))
-    P = Matrix.Identity(4)
-    top = 0.2
-    gs = [gem_at(PINK_GEM, P, (-0.82, -0.5, top + 0.36), 0.4, 18), gem_at(BLUE_GEM, P, (0, -0.5, top + 0.36), 0.4, -8),
-          gem_at(PURPLE_GEM, P, (0.82, -0.5, top + 0.36), 0.4, 22),
-          gem_at(GREEN_GEM, P, (-0.47, 0.3, top + 0.8), 0.44, -14), gem_at(PINK_GEM, P, (0.47, 0.3, top + 0.8), 0.44, 10),
-          gem_at(BLUE_GEM, P, (0, 1.05, top + 1.3), 0.56, 12)]
+    # a heap of gems dropped onto a red velvet cushion
+    c = cushion(loc=(0, 0.2, 0.0))
+    floor_ = ground(-0.32)
+    gs = drop_gems(Matrix.Identity(4), 10, 7, (-0.45, 0.45, -0.05, 0.45), 1.0, sizes=(0.32, 0.44))
+    settle(gs, [c, floor_])
+    bpy.data.objects.remove(floor_, do_unlink=True)
     touching(gs)
+
+
+def velvet_mound(P, z=1.2, sx=1.12, sy=0.66, h=0.42):
+    vel = pbr("chest_velvet", "#7a1f9a", rough=0.75, coat=0.05, tex="leaf", scale=30.0, bump=0.12, dark="#6a1888", light="#8a2aa8", emit=0.12)
+    o = sphere(1.0, vel, outline=False)
+    o.matrix_world = P @ _xf((0, 0, z), (0, 0, 0), (sx, sy, h))
+    return o
 
 
 def chest_gems(P, hero=None):
@@ -854,20 +921,31 @@ def chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, fill=None):
         fill(P)
 
 
-def i_gems4500():
-    gs = []
-    chest(rot=(0, 0, 14), fill=lambda P: gs.extend(chest_gems(P)))
+def chest_heap(n, seed, spill=0):
+    """an open chest heaped with gems that were dropped in and settled (plus some spilled on the floor)"""
+    parts = []
+    P = _xf((0, 0, 0), (0, 0, 14))
+    before = set(bpy.data.objects)
+    chest(rot=(0, 0, 14))
+    walls = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
+    bed = velvet_mound(P)
+    gs = drop_gems(P, n, seed, (-0.72, 0.72, -0.32, 0.3), 2.2)
+    floor_ = ground(0.0)
+    if spill:
+        gs += drop_gems(P, spill, seed + 1, (-1.45, 1.45, -1.55, -1.2), 1.0, sizes=(0.34, 0.42), gap=0.9)
+    settle(gs, walls + [bed, floor_])
+    bpy.data.objects.remove(floor_, do_unlink=True)
     touching(gs)
+    return gs
+
+
+def i_gems4500():
+    chest_heap(14, 21)
 
 
 def i_gems12000():
-    # the biggest pack: the chest overflows (a big diamond on top) and a row of gems spilled in front
-    gs = []
-    chest(rot=(0, 0, 14), fill=lambda P: gs.extend(chest_gems(P, hero=0.56)))
-    P = _xf((0, 0, 0), (0, 0, 14))
-    for x, cols, rz in ((-1.32, PINK_GEM, 14), (-0.45, GREEN_GEM, -12), (0.45, PURPLE_GEM, 18), (1.32, BLUE_GEM, -6)):
-        gs.append(gem_at(cols, P, (x, -1.32, 0.42), 0.4, rz))
-    touching(gs)
+    # the biggest pack: a fuller heap and gems spilled on the floor in front
+    chest_heap(20, 33, spill=6)
 
 
 ICONS = {
