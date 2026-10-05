@@ -71,6 +71,14 @@ local touchOnly = UIS.TouchEnabled and not UIS.KeyboardEnabled
 local openBtn = UI.button("ADMIN", RED, C3(170, 30, 50), { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, touchOnly and -190 or -14),
 	Size = UDim2.fromOffset(100, 44), TextSize = 20, Font = T.chunky, Icon = "vip", ZIndex = 2, Parent = gui })
 openBtn.Name = "AdminButton"
+-- hidden during the "building done" fly-around, like the rest of the HUD (the SKIP button sits in that corner)
+task.spawn(function()
+	local hud = player:WaitForChild("PlayerGui"):WaitForChild("HUD", 60)
+	if not hud then return end
+	local function upd() openBtn.Visible = hud:GetAttribute("Cinematic") ~= true end
+	hud:GetAttributeChangedSignal("Cinematic"):Connect(upd)
+	upd()
+end)
 
 ---------------------------------------------------------------------------
 -- the window (same style as the game's own windows)
