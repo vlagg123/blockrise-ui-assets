@@ -64,7 +64,7 @@ end
 ---------------------------------------------------------------------------
 -- the ADMIN button (right side, under MORE)
 ---------------------------------------------------------------------------
-local openBtn = UI.button("ADMIN", RED, C3(170, 30, 50), { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 300),
+local openBtn = UI.button("ADMIN", RED, C3(170, 30, 50), { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 384),
 	Size = UDim2.fromOffset(100, 44), TextSize = 20, Font = T.chunky, Icon = "vip", ZIndex = 2, Parent = gui })
 openBtn.Name = "AdminButton"
 
