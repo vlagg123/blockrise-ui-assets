@@ -23,10 +23,12 @@ folder.Name = "Hammers"
 folder.Parent = SS
 
 local CUT = 6 -- size of the cutting blocks (bigger than any piece)
+local S = spec.scale or 1 -- the spec is drawn at this scale in Roblox
+local GALAXY = args.galaxy or "" -- tiling space texture for the Galaxy core
 
 local function frameOf(p)
 	local R = p.R
-	return CFrame.new(p.pos[1], p.pos[2], p.pos[3], R[1][1], R[1][2], R[1][3], R[2][1], R[2][2], R[2][3], R[3][1], R[3][2], R[3][3])
+	return CFrame.new(p.pos[1] * S, p.pos[2] * S, p.pos[3] * S, R[1][1], R[1][2], R[1][3], R[2][1], R[2][2], R[2][3], R[3][1], R[3][2], R[3][3])
 end
 
 local function look(center, n)
@@ -41,14 +43,14 @@ local function base(shape, size, cf)
 	p.Anchored = true
 	if shape == "cyl" then
 		p.Shape = Enum.PartType.Cylinder
-		p.Size = Vector3.new(size[1], size[2] * 2, size[2] * 2)
+		p.Size = Vector3.new(size[1] * S, size[2] * 2 * S, size[2] * 2 * S)
 		p.CFrame = cf * CFrame.Angles(0, 0, math.pi / 2) -- the part's X axis becomes the spec's Y axis
 	elseif shape == "ball" then
 		p.Shape = Enum.PartType.Ball
-		p.Size = Vector3.one * size[1]
+		p.Size = Vector3.one * size[1] * S
 		p.CFrame = cf
 	else
-		p.Size = Vector3.new(size[1], size[2], size[3])
+		p.Size = Vector3.new(size[1] * S, size[2] * S, size[3] * S)
 		p.CFrame = cf
 	end
 	return p
@@ -92,7 +94,7 @@ local function buildPiece(piece, origin, parent, palette)
 		local cutters = {}
 		for _, pl in ipairs(piece.planes) do
 			local n = Vector3.new(pl[1], pl[2], pl[3])
-			local center = n * (pl[4] + CUT / 2)
+			local center = n * (pl[4] * S + CUT / 2)
 			local c = Instance.new("Part")
 			c.Anchored = true
 			c.Size = Vector3.one * CUT
@@ -147,7 +149,7 @@ local function addFx(tool, handle, h)
 		local look = FX[f.kind] or FX.sparkle
 		local a = Instance.new("Attachment")
 		a.Name = "FX_" .. f.kind
-		a.Position = Vector3.new(f.pos[1], f.pos[2], f.pos[3])
+		a.Position = Vector3.new(f.pos[1], f.pos[2], f.pos[3]) * S
 		a.Parent = handle
 		local pe = Instance.new("ParticleEmitter")
 		pe.Name = "FX"
@@ -179,7 +181,7 @@ local function addFx(tool, handle, h)
 		-- the emitter shape is the attachment's parent part: use a small invisible box part for the area
 		local box = Instance.new("Part")
 		box.Name = "FXArea_" .. i
-		box.Size = Vector3.new(math.max(0.05, f.area[1]), math.max(0.05, f.area[2]), math.max(0.05, f.area[3]))
+		box.Size = Vector3.new(math.max(0.05, f.area[1]), math.max(0.05, f.area[2]), math.max(0.05, f.area[3])) * S
 		box.CFrame = handle.CFrame * CFrame.new(a.Position)
 		box.Transparency = 1
 		box.CanCollide = false; box.CanQuery = false; box.CanTouch = false; box.Massless = true; box.Anchored = true
@@ -192,18 +194,18 @@ local function addFx(tool, handle, h)
 	if h.light then
 		local a = Instance.new("Attachment")
 		a.Name = "LightAt"
-		a.Position = Vector3.new(h.light.pos[1], h.light.pos[2], h.light.pos[3])
+		a.Position = Vector3.new(h.light.pos[1], h.light.pos[2], h.light.pos[3]) * S
 		a.Parent = handle
 		local l = Instance.new("PointLight")
 		l.Color = color(h.light.color)
-		l.Brightness = h.light.brightness
+		l.Brightness = h.light.brightness * 0.7
 		l.Range = h.light.range
 		l.Shadows = false
 		l.Parent = a
 	end
 	if h.trail then
-		local a0 = Instance.new("Attachment"); a0.Name = "TrailTop"; a0.Position = Vector3.new(h.trail.top[1], h.trail.top[2], h.trail.top[3]); a0.Parent = handle
-		local a1 = Instance.new("Attachment"); a1.Name = "TrailBottom"; a1.Position = Vector3.new(h.trail.bottom[1], h.trail.bottom[2], h.trail.bottom[3]); a1.Parent = handle
+		local a0 = Instance.new("Attachment"); a0.Name = "TrailTop"; a0.Position = Vector3.new(h.trail.top[1], h.trail.top[2], h.trail.top[3]) * S; a0.Parent = handle
+		local a1 = Instance.new("Attachment"); a1.Name = "TrailBottom"; a1.Position = Vector3.new(h.trail.bottom[1], h.trail.bottom[2], h.trail.bottom[3]) * S; a1.Parent = handle
 		local tr = Instance.new("Trail")
 		tr.Attachment0 = a0; tr.Attachment1 = a1
 		tr.Color = colorSeq(h.trail.colors)
@@ -245,7 +247,19 @@ local function buildHammer(h)
 	-- galaxy: a scrolling space texture on the core (animated on the client)
 	if h.scroll then
 		local core = tool:FindFirstChild(h.scroll.piece)
-		if core then core:SetAttribute("Scroll", true) end
+		if core then
+			core:SetAttribute("Scroll", true)
+			-- the galaxy on every face; the client slides the texture (HammerFX)
+			for _, face in ipairs(Enum.NormalId:GetEnumItems()) do
+				local tx = Instance.new("Texture")
+				tx.Name = "Space"
+				tx.Texture = GALAXY
+				tx.Face = face
+				tx.StudsPerTileU = (h.scroll.studs or 1.2) * S
+				tx.StudsPerTileV = (h.scroll.studs or 1.2) * S
+				tx.Parent = core
+			end
+		end
 	end
 	addFx(tool, handle, h)
 	for _, p in ipairs(tool:GetDescendants()) do

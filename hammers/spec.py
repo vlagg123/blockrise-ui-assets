@@ -172,43 +172,43 @@ PALETTE = {
     "rubber_bl": dict(rbx=["Rubber", [36, 104, 220], 0, 0], bl=dict(color=[0.02, 0.15, 0.75], metal=0, rough=0.55)),
     "rubber_dk": dict(rbx=["Rubber", [22, 52, 120], 0, 0], bl=dict(color=[0.01, 0.04, 0.22], metal=0, rough=0.6)),
     "red":       dict(rbx=["SmoothPlastic", [226, 46, 52], 0, 0], bl=dict(color=[0.80, 0.03, 0.04], metal=0, rough=0.3)),
-    "gold":      dict(rbx=["Metal", [255, 194, 56], 0, 0.28], bl=dict(color=[1.0, 0.62, 0.12], metal=1, rough=0.16)),
+    "gold":      dict(rbx=["Metal", [255, 186, 40], 0, 0.18], bl=dict(color=[1.0, 0.62, 0.12], metal=1, rough=0.16)),
     "gold_dk":   dict(rbx=["Metal", [204, 138, 30], 0, 0.15], bl=dict(color=[0.62, 0.30, 0.04], metal=1, rough=0.25)),
-    "gold_lt":   dict(rbx=["Metal", [255, 232, 150], 0, 0.3], bl=dict(color=[1.0, 0.86, 0.45], metal=1, rough=0.12)),
+    "gold_lt":   dict(rbx=["Metal", [255, 220, 120], 0, 0.2], bl=dict(color=[1.0, 0.86, 0.45], metal=1, rough=0.12)),
     "black_lth": dict(rbx=["Fabric", [32, 30, 38], 0, 0], bl=dict(color=[0.018, 0.016, 0.022], metal=0, rough=0.55)),
     "titan":     dict(rbx=["Metal", [168, 180, 198], 0, 0.12], bl=dict(color=[0.45, 0.50, 0.58], metal=1, rough=0.28)),
     "plate":     dict(rbx=["DiamondPlate", [150, 156, 172], 0, 0.05], bl=dict(color=[0.40, 0.42, 0.47], metal=1, rough=0.3, tex="plate")),
     "orange":    dict(rbx=["SmoothPlastic", [255, 124, 26], 0, 0], bl=dict(color=[1.0, 0.25, 0.01], metal=0, rough=0.3)),
     "carbon":    dict(rbx=["SmoothPlastic", [34, 36, 44], 0, 0.05], bl=dict(color=[0.015, 0.016, 0.02], metal=0.3, rough=0.25)),
-    "emerald":   dict(rbx=["Glass", [30, 205, 110], 0.12, 0.3], bl=dict(color=[0.02, 0.75, 0.25], metal=0, rough=0.02, trans=1.0, ior=1.58, emit=0.15)),
+    "emerald":   dict(rbx=["Glass", [16, 186, 96], 0, 0.25], bl=dict(color=[0.02, 0.75, 0.25], metal=0, rough=0.02, trans=1.0, ior=1.58, emit=0.15)),
     "green_lth": dict(rbx=["Fabric", [20, 82, 52], 0, 0], bl=dict(color=[0.01, 0.10, 0.04], metal=0, rough=0.6)),
-    "platinum":  dict(rbx=["Metal", [228, 232, 242], 0, 0.3], bl=dict(color=[0.80, 0.82, 0.86], metal=1, rough=0.12)),
-    "ruby":      dict(rbx=["Glass", [232, 28, 62], 0.1, 0.32], bl=dict(color=[0.85, 0.01, 0.06], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
+    "platinum":  dict(rbx=["Metal", [200, 206, 222], 0, 0.22], bl=dict(color=[0.80, 0.82, 0.86], metal=1, rough=0.12)),
+    "ruby":      dict(rbx=["Glass", [214, 16, 52], 0, 0.25], bl=dict(color=[0.85, 0.01, 0.06], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
     "red_lth":   dict(rbx=["Fabric", [120, 18, 32], 0, 0], bl=dict(color=[0.22, 0.005, 0.02], metal=0, rough=0.6)),
-    "sapphire":  dict(rbx=["Glass", [40, 96, 255], 0.1, 0.32], bl=dict(color=[0.02, 0.10, 0.95], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
+    "sapphire":  dict(rbx=["Glass", [28, 78, 240], 0, 0.25], bl=dict(color=[0.02, 0.10, 0.95], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
     "navy_lth":  dict(rbx=["Fabric", [26, 36, 96], 0, 0], bl=dict(color=[0.01, 0.02, 0.12], metal=0, rough=0.6)),
-    "amethyst":  dict(rbx=["Glass", [172, 92, 255], 0.12, 0.3], bl=dict(color=[0.45, 0.10, 0.95], metal=0, rough=0.03, trans=1.0, ior=1.55, emit=0.22)),
+    "amethyst":  dict(rbx=["Glass", [146, 66, 240], 0, 0.25], bl=dict(color=[0.45, 0.10, 0.95], metal=0, rough=0.03, trans=1.0, ior=1.55, emit=0.22)),
     "obsidian":  dict(rbx=["Slate", [40, 30, 56], 0, 0.05], bl=dict(color=[0.03, 0.02, 0.05], metal=0.2, rough=0.35)),
     "neon_purple": dict(rbx=["Neon", [176, 90, 255], 0, 0], bl=dict(color=[0.45, 0.12, 1.0], metal=0, rough=0.4, emit=6.0)),
     "basalt":    dict(rbx=["Basalt", [42, 36, 36], 0, 0], bl=dict(color=[0.03, 0.025, 0.025], metal=0, rough=0.8, tex="rock")),
     "lava":      dict(rbx=["Neon", [255, 112, 20], 0, 0], bl=dict(color=[1.0, 0.25, 0.02], metal=0, rough=0.5, emit=9.0)),
     "lava_hot":  dict(rbx=["Neon", [255, 196, 70], 0, 0], bl=dict(color=[1.0, 0.62, 0.15], metal=0, rough=0.5, emit=12.0)),
     "ice":       dict(rbx=["Ice", [176, 226, 255], 0.05, 0.1], bl=dict(color=[0.55, 0.82, 1.0], metal=0, rough=0.08, trans=0.85, ior=1.31, emit=0.1)),
-    "icicle":    dict(rbx=["Glass", [205, 240, 255], 0.2, 0.3], bl=dict(color=[0.75, 0.93, 1.0], metal=0, rough=0.02, trans=1.0, ior=1.31)),
+    "icicle":    dict(rbx=["Glass", [176, 226, 255], 0.1, 0.3], bl=dict(color=[0.75, 0.93, 1.0], metal=0, rough=0.02, trans=1.0, ior=1.31)),
     "frost_neon": dict(rbx=["Neon", [120, 230, 255], 0, 0], bl=dict(color=[0.25, 0.85, 1.0], metal=0, rough=0.4, emit=6.0)),
     "silver":    dict(rbx=["Metal", [214, 230, 244], 0, 0.22], bl=dict(color=[0.72, 0.80, 0.88], metal=1, rough=0.15)),
     "ice_lth":   dict(rbx=["Fabric", [120, 186, 250], 0, 0], bl=dict(color=[0.18, 0.48, 0.95], metal=0, rough=0.6)),
-    "diamond":   dict(rbx=["Glass", [214, 246, 255], 0.28, 0.5], bl=dict(color=[0.92, 0.98, 1.0], metal=0, rough=0.0, trans=1.0, ior=2.42, emit=0.05, disp=0.08)),
+    "diamond":   dict(rbx=["Glass", [170, 232, 255], 0.08, 0.45], bl=dict(color=[0.92, 0.98, 1.0], metal=0, rough=0.0, trans=1.0, ior=2.42, emit=0.05, disp=0.08)),
     "white_lth": dict(rbx=["Fabric", [236, 238, 246], 0, 0], bl=dict(color=[0.80, 0.82, 0.88], metal=0, rough=0.6)),
     "gunmetal":  dict(rbx=["Metal", [52, 56, 70], 0, 0.15], bl=dict(color=[0.05, 0.055, 0.07], metal=1, rough=0.25)),
-    "plasma":    dict(rbx=["ForceField", [60, 220, 255], 0, 0], bl=dict(color=[0.1, 0.8, 1.0], metal=0, rough=0.2, trans=0.6, emit=2.5)),
-    "plasma_core": dict(rbx=["Neon", [150, 246, 255], 0, 0], bl=dict(color=[0.55, 0.95, 1.0], metal=0, rough=0.4, emit=14.0)),
+    "plasma":    dict(rbx=["Glass", [40, 190, 255], 0.35, 0.2], bl=dict(color=[0.1, 0.8, 1.0], metal=0, rough=0.2, trans=0.6, emit=2.5)),
+    "plasma_core": dict(rbx=["Neon", [40, 200, 255], 0, 0], bl=dict(color=[0.55, 0.95, 1.0], metal=0, rough=0.4, emit=14.0)),
     "cyan_neon": dict(rbx=["Neon", [60, 220, 255], 0, 0], bl=dict(color=[0.1, 0.8, 1.0], metal=0, rough=0.4, emit=7.0)),
     "black_rub": dict(rbx=["Rubber", [26, 28, 34], 0, 0], bl=dict(color=[0.012, 0.013, 0.016], metal=0, rough=0.6)),
-    "sun":       dict(rbx=["Neon", [255, 168, 34], 0, 0], bl=dict(color=[1.0, 0.45, 0.03], metal=0, rough=0.5, emit=10.0)),
-    "sun_hot":   dict(rbx=["Neon", [255, 236, 140], 0, 0], bl=dict(color=[1.0, 0.85, 0.45], metal=0, rough=0.5, emit=14.0)),
-    "cosmos":    dict(rbx=["SmoothPlastic", [20, 12, 44], 0, 0], bl=dict(color=[0.01, 0.005, 0.03], metal=0, rough=0.4, tex="galaxy", emit=2.0)),
-    "cosmic_glass": dict(rbx=["Glass", [150, 96, 255], 0.55, 0.35], bl=dict(color=[0.55, 0.35, 1.0], metal=0, rough=0.0, trans=1.0, ior=1.45, alpha=0.35)),
+    "sun":       dict(rbx=["Neon", [255, 138, 20], 0, 0], bl=dict(color=[1.0, 0.45, 0.03], metal=0, rough=0.5, emit=10.0)),
+    "sun_hot":   dict(rbx=["Neon", [255, 196, 70], 0, 0], bl=dict(color=[1.0, 0.85, 0.45], metal=0, rough=0.5, emit=14.0)),
+    "cosmos":    dict(rbx=["SmoothPlastic", [255, 255, 255], 0, 0], bl=dict(color=[0.01, 0.005, 0.03], metal=0, rough=0.4, tex="galaxy", emit=2.0)),
+    "cosmic_glass": dict(rbx=["Glass", [150, 110, 255], 0.6, 0.3], bl=dict(color=[0.55, 0.35, 1.0], metal=0, rough=0.0, trans=1.0, ior=1.45, alpha=0.35)),
     "pink_neon": dict(rbx=["Neon", [255, 120, 236], 0, 0], bl=dict(color=[1.0, 0.25, 0.85], metal=0, rough=0.4, emit=7.0)),
     "void":      dict(rbx=["SmoothPlastic", [26, 18, 44], 0, 0.05], bl=dict(color=[0.015, 0.008, 0.035], metal=0.2, rough=0.3)),
     "star":      dict(rbx=["Neon", [255, 250, 230], 0, 0], bl=dict(color=[1.0, 0.98, 0.9], metal=0, rough=0.4, emit=12.0)),
@@ -556,7 +556,7 @@ def build():
     h.add("PommelRing", "ring", (0.035, 0.16, 0.125), (0, -0.62, 0), R=Rx(90) @ Rz(25), mat="pink_neon", smooth=40, cast=False)
     hp = np.array([0.0, hy, 0.0])
     w, L = 0.64, 1.52
-    h.add("Galaxy", "box", (w - 0.12, w - 0.12, L - 0.38), hp, mat="cosmos", cast=False)
+    h.add("Galaxy", "box", (0.42, 0.42, L - 0.6), hp, mat="cosmos", cast=False)
     h.add("Shell", "box", (w, w, L), hp, mat="cosmic_glass", planes=octagon(w, "z") + gem_ends(w / 2, L / 2, 0.3, table=0.3, start=22.5))
     for i, z in enumerate((-0.33, 0.33)):
         h.add("Band%d" % i, "box", (w + 0.04, w + 0.04, 0.06), hp + [0, 0, z], mat="pink_neon", planes=octagon(w + 0.04, "z"), cast=False)
@@ -587,7 +587,8 @@ def _shard_tip(w, ln, sides=8, tip_frac=0.38):
 
 
 def main():
-    data = dict(version=1, palette=PALETTE, hammers=build())
+    # scale: the in-hand hammers are drawn 1.25x the spec (chunky cartoon proportions next to a Roblox avatar)
+    data = dict(version=2, scale=1.25, palette=PALETTE, hammers=build())
     with open(os.path.join(HERE, "spec.json"), "w") as f:
         json.dump(data, f, separators=(",", ":"))
     n = sum(len(h["pieces"]) for h in data["hammers"])
