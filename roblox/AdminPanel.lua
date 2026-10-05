@@ -94,12 +94,21 @@ new("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 2), P
 local summary = new("Frame", { Position = UDim2.fromOffset(24, 172), Size = UDim2.new(1, -48, 0, 30), BackgroundTransparency = 1, ZIndex = 6, Parent = window })
 new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = summary })
 
+-- no scroll bar drawn at all on these lists (thickness 0 still left a 1 px line on some screens)
+local function noBar(sf)
+	sf.ScrollBarThickness = 0
+	sf.ScrollBarImageTransparency = 1
+	sf.TopImage, sf.MidImage, sf.BottomImage = "", "", ""
+end
+noBar(strip)
+
 -- 2) what to give (left) and 3) the buttons (right)
 K.text({ Position = UDim2.fromOffset(28, 210), Size = UDim2.fromOffset(200, 30), Text = "2. CE II DAI?", Font = T.chunky, TextSize = 22,
 	TextColor3 = GOLD, Stroke = 2.5, ZIndex = 6, Parent = window })
 local cats = new("ScrollingFrame", { Position = UDim2.fromOffset(24, 244), Size = UDim2.fromOffset(200, 384), BackgroundTransparency = 1, BorderSizePixel = 0,
 	ScrollBarThickness = 0, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
 new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = cats })
+noBar(cats)
 local page = new("ScrollingFrame", { Position = UDim2.fromOffset(238, 214), Size = UDim2.new(1, -262, 0, 414), BackgroundColor3 = C3(36, 30, 92),
 	BackgroundTransparency = 0.35, BorderSizePixel = 0, ScrollBarThickness = 6, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 6, Parent = window })
 UI.corner(14).Parent = page
