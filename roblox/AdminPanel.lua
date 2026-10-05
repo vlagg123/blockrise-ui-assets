@@ -105,7 +105,8 @@ UI.pad(14, 12).Parent = page
 new("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder, Parent = page })
 
 -- the answer: a big pill at the bottom of the window
-local toast = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, 26), Size = UDim2.fromOffset(560, 46), BackgroundColor3 = GREEN,
+-- (inside the window, where the confirm bar shows: always on screen)
+local toast = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0, 238 + (1000 - 262) / 2, 0, 214 + 414 - 14), Size = UDim2.fromOffset(620, 50), BackgroundColor3 = GREEN,
 	Visible = false, ZIndex = 40, Parent = window })
 UI.corner(23).Parent = toast
 new("UIStroke", { Thickness = 3, Color = T.ink, Parent = toast })
@@ -221,7 +222,7 @@ local function nameOf(list, id)
 end
 local function describe(action, v)
 	if UNIT[action] then
-		local n = action == "money" and money(v.n) or short(v.n)
+		local n = short(v.n)
 		if v.mode == "set" then return UNIT[action] .. " = " .. n end
 		return "+" .. n .. " " .. UNIT[action]
 	elseif action == "tool" then return "CIOCAN: " .. string.upper(Config.Tools[v].name)
@@ -278,6 +279,7 @@ end
 local function ask(label, run, btn, danger)
 	if pending then mark(pending.btn, false) end
 	pending = { label = label, run = run, btn = btn, danger = danger }
+	toast.Visible = false
 	mark(btn, true)
 	local p = target()
 	barAsk.Text = danger and "ATENTIE! CONFIRMI?" or ("CONFIRMI?  PENTRU " .. string.upper(p and p.DisplayName or "?"))
