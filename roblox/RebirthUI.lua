@@ -26,8 +26,10 @@ local function effect(p, f)
 	return ""
 end
 
-function M.Show()
+function M.Show(keepScroll)
+	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	local tok = c.openModal("Rebirth", "Rebirth", "", P1, P2)
+	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
 	local loading = K.loading(c.content)
 	local ok, okr, f = pcall(function() return c.R.FranchiseAction:InvokeServer("get") end)
 	if not c.live(tok) then return end
@@ -76,7 +78,7 @@ function M.Show()
 					c.click()
 					local ok3, res3, msg3 = pcall(function() return c.R.FranchiseAction:InvokeServer("perk", p.id) end)
 					if not (ok3 and res3) then c.toast("⚠️ " .. tostring(msg3 or "Can't buy"), T.red) end
-					if c.live(tok) then M.Show() end
+					if c.live(tok) then M.Show(true) end
 				end, shine = can }
 			end
 			K.tile(grid, o)

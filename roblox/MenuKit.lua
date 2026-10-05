@@ -126,8 +126,17 @@ end
 function K.grid(parent, order, cols, cellH, gap)
 	gap = gap or 12
 	local f = new("Frame", { Name = "Grid", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
-	new("UIGridLayout", { CellSize = UDim2.new(1 / cols, -math.ceil(gap * (cols - 1) / cols), 0, cellH), CellPadding = UDim2.fromOffset(gap, gap),
-		SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
+	local g = new("UIGridLayout", { CellSize = UDim2.new(1 / cols, -math.ceil(gap * (cols - 1) / cols), 0, cellH), CellPadding = UDim2.fromOffset(gap, gap),
+		SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = f })
+	-- a short list (fewer tiles than columns) uses fewer, wider columns (at least 3) and sits in the middle
+	local function fit()
+		local n = 0
+		for _, ch in ipairs(f:GetChildren()) do if ch:IsA("GuiObject") then n += 1 end end
+		local c = math.min(cols, math.max(n, math.min(3, cols)))
+		g.CellSize = UDim2.new(1 / c, -math.ceil(gap * (c - 1) / c), 0, cellH)
+	end
+	f.ChildAdded:Connect(function() task.defer(fit) end)
+	f.ChildRemoved:Connect(function() task.defer(fit) end)
 	return f
 end
 

@@ -96,8 +96,7 @@ local function renderEstate(tok, data)
 			if info.owned > 0 then o.badge = { "x" .. info.owned, K.DARK } end
 			if not info.unlocked then
 				o.dim = true
-				local cname = Config.ContractById[p.contract] and Config.ContractById[p.contract].name or p.contract
-				o.stats = { { "BUILD: " .. string.upper(cname), K.LOCK } }
+				o.stats = { { "BUILD ONE FIRST", K.LOCK } }
 				o.status = { "🔒 LOCKED", K.LOCK }
 			else
 				o.tag = { money(info.rent) .. "/MIN", K.GREEN }
