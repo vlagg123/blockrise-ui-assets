@@ -87,7 +87,11 @@ function UI.slice(name, props)
 		im.SliceCenter = Rect.new(c[3], c[3], 128 - c[3], 128 - c[3])
 		im.SliceScale = 0.5
 	else
+		-- stretched cells (rays, glow) fade out before their edges: sample 3 px inside the cell, so the
+		-- neighbouring atlas cells never bleed in as thin lines (very visible when the rays spin)
 		im.ScaleType = Enum.ScaleType.Stretch
+		im.ImageRectOffset = Vector2.new(c[1] + 3, c[2] + 3)
+		im.ImageRectSize = Vector2.new(122, 122)
 	end
 	for k, v in pairs(props or {}) do if k ~= "Parent" then im[k] = v end end
 	if props and props.Parent then im.Parent = props.Parent end

@@ -72,7 +72,8 @@ end
 function K.artBox(parent, icon, color, props)
 	props = props or {}
 	color = color or T.blue
-	local box = UI.slice("tile", { Name = "Art", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Parent = parent })
+	-- clips its rays and glow: nothing from the art ever reaches the tile around it
+	local box = UI.slice("tile", { Name = "Art", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, ClipsDescendants = true, Parent = parent })
 	for k, v in pairs(props) do if k ~= "Spin" and k ~= "Dim" and k ~= "IconScale" and k ~= "Custom" then box[k] = v end end
 	local top, bot = color:Lerp(Color3.new(1, 1, 1), 0.3), color:Lerp(Color3.new(0, 0, 0), 0.22)
 	if props.Dim then
