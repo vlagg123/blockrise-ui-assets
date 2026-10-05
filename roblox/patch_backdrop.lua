@@ -1,0 +1,5 @@
+-- one-off patch (applied in Studio on 2026-10-05): the dark backdrop only closes the window for clicks outside it
+-- (it sits under the window and was getting clicks made on the window's empty areas), toasts and banners wait
+-- for the title screen, the "Loading your progress" note hides while the title screen shows its own bar,
+-- and the title screen goes straight from the loading bar to PLAY (no "READY!").
+-- See the Client script in Studio for the exact code.
