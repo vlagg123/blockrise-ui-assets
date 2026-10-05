@@ -184,11 +184,28 @@ def piece_mesh(piece, S):
     return me
 
 
-def build(h, pal, S=1.0, pose=(0.0, -45.0, 18.0)):
+def _shorten(h, k):
+    """icons: a shorter handle (k of its length) so the head reads big in a small square; the head is untouched"""
+    hy = h["head"]["center"][1] if h.get("head") else 2.0
+    out = []
+    for piece in h["pieces"]:
+        p = dict(piece)
+        y = p["pos"][1]
+        if y < hy - 0.3:
+            p["pos"] = [p["pos"][0], hy - (hy - y) * k, p["pos"][2]]
+            # the long parts along the handle (shaft, grip) get shorter too; rings and caps keep their size
+            if p["shape"] == "cyl" and p["size"][0] > 0.25 and abs(p["R"][1][1]) > 0.99:
+                p["size"] = [p["size"][0] * k, p["size"][1]]
+        out.append(p)
+    return out
+
+
+def build(h, pal, S=1.0, pose=(0.0, -42.0, 14.0), short=0.62):
     """the hammer as Blender objects; pose = degrees about Blender X, Y (view axis), Z"""
     scn = I3.iscene()
     objs = []
-    for piece in h["pieces"]:
+    pieces = _shorten(h, short) if short and short < 1 else h["pieces"]
+    for piece in pieces:
         me = piece_mesh(piece, S)
         ob = bpy.data.objects.new("hm_" + piece["name"], me)
         R = Matrix([row for row in piece["R"]])
