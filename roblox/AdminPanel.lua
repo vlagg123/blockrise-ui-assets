@@ -1,7 +1,9 @@
 -- BlockRise Empire - Admin panel (owner only), client side: ServerStorage.AdminPanel.AdminClient
 -- The server copies this ScreenGui into the owner's PlayerGui only, with the AdminRF remote inside it.
 -- Nothing here is trusted: every action is checked again on the server.
--- Simple on purpose: 1) pick a player at the top  2) pick what to give on the left  3) tap a big button.
+-- Simple on purpose: 1) pick a player at the top  2) pick what to give on the left  3) tap a big button
+-- 4) CONFIRMA at the bottom: a tap only picks the action, nothing happens until it is confirmed.
+-- Everything on the panel follows the player live (money, level, hammers, passes...).
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
@@ -114,7 +116,7 @@ local function say(ok, msg)
 	toastN += 1
 	local n = toastN
 	toast.BackgroundColor3 = ok and GREEN or RED
-	toastLbl.Text = (ok and "GATA!  " or "NU MERGE:  ") .. tostring(msg or "")
+	toastLbl.Text = (ok and "FACUT!  " or "NU MERGE:  ") .. tostring(msg or "")
 	toast.Visible = true
 	task.delay(3, function() if toastN == n then toast.Visible = false end end)
 end
@@ -124,7 +126,7 @@ end
 ---------------------------------------------------------------------------
 local targetId = player.UserId
 local function target() return Players:GetPlayerByUserId(targetId) end
-local redrawPage, redrawPlayers, redrawSummary
+local redrawPage, redrawPlayers, redrawSummary, clearPending, watchTarget
 
 local thumbs = {}
 local function headshot(userId)
@@ -156,8 +158,12 @@ function redrawPlayers()
 			K.chip(card, "ALES", GREEN, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, -8), ZIndex = 9 })
 		end
 		card.Activated:Connect(function()
+			if targetId == p.UserId then return end
 			targetId = p.UserId
+			clearPending()
+			watchTarget()
 			redrawPlayers()
+			redrawSummary(true)
 			redrawPage()
 		end)
 	end
@@ -174,7 +180,8 @@ function redrawSummary(force)
 	local tool = Config.Tools[a("ToolTier", 1)]
 	local chips = {
 		{ "BANI " .. money(a("Money")), C3(60, 180, 90) }, { "DIAMANTE " .. short(a("Gems")), C3(40, 150, 230) }, { "NIVEL " .. fmt(a("Level", 1)), C3(230, 150, 30) },
-		{ "REP " .. short(a("Rep")), C3(200, 120, 40) }, { (tool and tool.name or "?"):upper(), C3(140, 90, 230) }, { "PASS-URI " .. passes .. "/" .. #Config.Store.passes, C3(230, 70, 120) },
+		{ "REP " .. short(a("Rep")), C3(200, 120, 40) }, { "PUTERE " .. short(a("Strength")), C3(230, 100, 70) }, { (tool and tool.name or "?"):upper(), C3(140, 90, 230) },
+		{ "PASS-URI " .. passes .. "/" .. #Config.Store.passes, C3(230, 70, 120) }, { "SPIN-URI " .. fmt(a("SpinExtra")), C3(120, 90, 230) },
 	}
 	local key = ""
 	for _, c in ipairs(chips) do key ..= c[1] end
@@ -188,7 +195,7 @@ end
 -- talking to the server
 ---------------------------------------------------------------------------
 local busy = false
-local function call(action, v, redraw)
+local function send(action, v, redraw)
 	if busy then return end
 	busy = true
 	task.spawn(function()
@@ -197,8 +204,106 @@ local function call(action, v, redraw)
 		if not ok then say(false, "server error") else say(res == true, msg) end
 		task.wait(0.2)
 		redrawSummary(true)
-		if redraw then redrawPage() end
+		if redraw then redrawPage(true) end
 	end)
+end
+
+-- what an action does, in words (shown on the confirm bar)
+local UNIT = { money = "BANI", gems = "DIAMANTE", level = "NIVEL", rep = "REPUTATIE", strength = "PUTERE", stars = "STELE", rebirths = "REBIRTH" }
+local function dur(sec)
+	if sec >= 86400 then return math.floor(sec / 86400) .. " ZI" end
+	if sec >= 3600 then return math.floor(sec / 3600) .. " ORE" end
+	return math.floor(sec / 60) .. " MIN"
+end
+local function nameOf(list, id)
+	for _, x in ipairs(list or {}) do if x.id == id or x.key == id then return string.upper(tostring(x.name or id)) end end
+	return string.upper(tostring(id))
+end
+local function describe(action, v)
+	if UNIT[action] then
+		local n = action == "money" and money(v.n) or short(v.n)
+		if v.mode == "set" then return UNIT[action] .. " = " .. n end
+		return "+" .. n .. " " .. UNIT[action]
+	elseif action == "tool" then return "CIOCAN: " .. string.upper(Config.Tools[v].name)
+	elseif action == "gear" then return "ECHIPAMENT: " .. string.upper(tostring(Config.TrainingGear[v].name))
+	elseif action == "pass" then return (v.on and "DA GRATIS: " or "SCOATE: ") .. nameOf(Config.Store.passes, v.key)
+	elseif action == "boost" then return string.upper(tostring(Config.Boosts[v.key].name or v.key)) .. "  +" .. dur(v.secs)
+	elseif action == "rush" then return "RUSH CREW  +" .. dur(v)
+	elseif action == "spins" then return "+" .. v .. " SPIN-URI GRATIS"
+	elseif action == "mat" then return "+" .. fmt(v.n) .. " " .. nameOf(Company.Materials, v.id)
+	elseif action == "bp" then return "+" .. fmt(v.n) .. " " .. nameOf(Company.Blueprints, v.id)
+	elseif action == "vehicles" then return "DEBLOCHEAZA TOATE MASINILE"
+	elseif action == "teleport" then return "TE TELEPORTEZI LA EL"
+	elseif action == "bring" then return "IL ADUCI LANGA TINE"
+	elseif action == "finish" then return "TERMINA CONTRACTUL"
+	elseif action == "tutorial" then return "SARE PESTE TUTORIAL"
+	end
+	return string.upper(action)
+end
+
+---------------------------------------------------------------------------
+-- 4) the confirm bar: a tap only picks the action, CONFIRMA does it
+---------------------------------------------------------------------------
+local PAGE_H, BAR_H = 414, 78
+local pending -- { label, run, btn, danger }
+local bar = new("Frame", { Name = "Confirm", AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromOffset(238, 214 + PAGE_H), Size = UDim2.new(1, -262, 0, BAR_H),
+	BackgroundColor3 = C3(22, 18, 60), Visible = false, ZIndex = 30, Parent = window })
+UI.corner(16).Parent = bar
+local barStroke = new("UIStroke", { Thickness = 3, Color = GOLD, Parent = bar })
+local barAsk = K.text({ Position = UDim2.fromOffset(18, 8), Size = UDim2.new(1, -400, 0, 22), Text = "", Font = T.chunky, TextSize = 17, TextColor3 = GOLD, Stroke = 2,
+	Max = 17, ZIndex = 31, Parent = bar })
+local barWhat = K.text({ Position = UDim2.fromOffset(18, 30), Size = UDim2.new(1, -400, 0, 38), Text = "", Font = T.chunky, TextSize = 26, Max = 26,
+	TextColor3 = Color3.new(1, 1, 1), Stroke = 2.5, ZIndex = 31, Parent = bar })
+local okBtn, noBtn
+
+local function mark(btn, on)
+	if not (btn and btn.Parent) then return end
+	-- the picked button gets a thick gold ring (rounded like the button)
+	local s = btn:FindFirstChild("Picked")
+	if on and not s then
+		new("UIStroke", { Name = "Picked", Thickness = 4, Color = GOLD, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = btn })
+		if not btn:FindFirstChildOfClass("UICorner") then new("UICorner", { Name = "PickedCorner", CornerRadius = UDim.new(0, 14), Parent = btn }) end
+	elseif not on and s then
+		s:Destroy()
+		local c = btn:FindFirstChild("PickedCorner")
+		if c then c:Destroy() end
+	end
+end
+function clearPending()
+	if pending then mark(pending.btn, false) end
+	pending = nil
+	bar.Visible = false
+	page.Size = UDim2.new(1, -262, 0, PAGE_H)
+end
+local function ask(label, run, btn, danger)
+	if pending then mark(pending.btn, false) end
+	pending = { label = label, run = run, btn = btn, danger = danger }
+	mark(btn, true)
+	local p = target()
+	barAsk.Text = danger and "ATENTIE! CONFIRMI?" or ("CONFIRMI?  PENTRU " .. string.upper(p and p.DisplayName or "?"))
+	barAsk.TextColor3 = danger and C3(255, 120, 120) or GOLD
+	barWhat.Text = label
+	barStroke.Color = danger and RED or GOLD
+	local lbl = okBtn and okBtn:FindFirstChild("Label")
+	if lbl then lbl.Text = danger and "RESETEAZA" or "CONFIRMA" end
+	if okBtn then UI.recolor(okBtn, danger and RED or GREEN) end
+	page.Size = UDim2.new(1, -262, 0, PAGE_H - BAR_H - 10)
+	bar.Visible = true
+end
+okBtn = K.button(bar, "CONFIRMA", GREEN, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(190, 56), TextSize = 22,
+	ZIndex = 31, Shine = true }, function()
+	local p = pending
+	if not p then return end
+	if busy then say(false, "asteapta o clipa...") return end
+	clearPending()
+	p.run()
+end)
+noBtn = K.button(bar, "ANULEAZA", C3(118, 112, 170), { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -212, 0.5, 0), Size = UDim2.fromOffset(160, 56), TextSize = 20,
+	ZIndex = 31 }, function() clearPending() end)
+
+-- every button of the pages: pick the action (it runs on CONFIRMA)
+local function call(action, v, redraw, btn)
+	ask(describe(action, v), function() send(action, v, redraw) end, btn)
 end
 
 ---------------------------------------------------------------------------
@@ -231,15 +336,15 @@ local function ownNumber(action, hint, canReset)
 	local function go(mode)
 		local n = parse(box.Text)
 		if not n then say(false, "scrie un numar (ex: 1.5M, 200K, 3B)") return end
-		call(action, { mode = mode, n = n })
+		call(action, { mode = mode, n = n }, nil, box.Parent)
 	end
 	K.button(f, "DA +", GREEN, { Position = UDim2.new(0.4, 8, 0, 0), Size = UDim2.new(0.2, -8, 1, 0), TextSize = 20, ZIndex = 8 }, function() go("add") end)
 	K.button(f, "SETEAZA", BLUE, { Position = UDim2.new(0.6, 8, 0, 0), Size = UDim2.new(0.2, -8, 1, 0), TextSize = 20, ZIndex = 8 }, function() go("set") end)
 	if canReset then
-		K.button(f, "PE 0", RED, { Position = UDim2.new(0.8, 8, 0, 0), Size = UDim2.new(0.2, -8, 1, 0), TextSize = 20, ZIndex = 8 }, function() call(action, { mode = "set", n = 0 }) end)
+		K.button(f, "PE 0", RED, { Position = UDim2.new(0.8, 8, 0, 0), Size = UDim2.new(0.2, -8, 1, 0), TextSize = 20, ZIndex = 8 }, function(b) call(action, { mode = "set", n = 0 }, nil, b) end)
 	end
 end
-local function add(action, n) return function() call(action, { mode = "add", n = n }) end end
+local function add(action, n) return function(b) call(action, { mode = "add", n = n }, nil, b) end end
 local function grid(cellH)
 	return K.grid(page, nextOrder(), 3, cellH or 250)
 end
@@ -252,13 +357,13 @@ local PASS_ICON = { vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2
 ---------------------------------------------------------------------------
 local PAGES = {}
 PAGES[1] = { "BANI", "cash", C3(70, 200, 100), function()
-	title("BANI", "apasa un buton: se adauga imediat")
+	title("BANI", "alege suma, apoi CONFIRMA jos")
 	bigButtons({ { "+1K", GREEN, add("money", 1e3) }, { "+1M", GREEN, add("money", 1e6) }, { "+1B", GREEN, add("money", 1e9) } })
 	bigButtons({ { "+1T", GOLD, add("money", 1e12) }, { "+1Qa", GOLD, add("money", 1e15) }, { "+1Qi", GOLD, add("money", 1e18) } })
 	ownNumber("money", nil, true)
 end }
 PAGES[2] = { "DIAMANTE", "gem", C3(70, 170, 255), function()
-	title("DIAMANTE", "apasa un buton: se adauga imediat")
+	title("DIAMANTE", "alege suma, apoi CONFIRMA jos")
 	bigButtons({ { "+100", BLUE, add("gems", 100) }, { "+1K", BLUE, add("gems", 1e3) }, { "+10K", BLUE, add("gems", 1e4) } })
 	bigButtons({ { "+100K", PURPLE, add("gems", 1e5) }, { "+1M", PURPLE, add("gems", 1e6) } })
 	ownNumber("gems", nil, true)
@@ -281,7 +386,7 @@ PAGES[4] = { "PUTERE", "strength", C3(255, 120, 80), function()
 	local g = grid(200)
 	for i, gear in ipairs(Config.TrainingGear) do
 		local o = { order = i, name = gear.name, icon = "strength", color = K.RAR[(K.rarityOf(i, #Config.TrainingGear))], artH = 90 }
-		if i == cur then o.status = { "ARE ACUM", GREEN } else o.button = { "DA", BLUE, function() call("gear", i, true) end } end
+		if i == cur then o.status = { "ARE ACUM", GREEN } else o.button = { "DA", BLUE, function(b) call("gear", i, true, b) end } end
 		K.tile(g, o)
 	end
 end }
@@ -294,7 +399,7 @@ PAGES[5] = { "CIOCANE", "shop", C3(150, 110, 255), function()
 		local rk, rl = K.rarityOf(i, #Config.Tools)
 		local o = { order = i, name = t.name, icon = t.icon or "shop", iconScale = t.icon and 1.08 or nil, color = K.RAR[rk], badge = { rl, K.RAR[rk] } }
 		if i == cur then o.status = { "ARE ACUM", GREEN }; o.spin = true
-		else o.button = { "DA", i > cur and GREEN or BLUE, function() call("tool", i, true) end } end
+		else o.button = { "DA", i > cur and GREEN or BLUE, function(b) call("tool", i, true, b) end } end
 		K.tile(g, o)
 	end
 	local sh = Config.StormHammer
@@ -303,13 +408,13 @@ PAGES[5] = { "CIOCANE", "shop", C3(150, 110, 255), function()
 		local owned = p and p:GetAttribute("Pass_" .. sh.pass) == true
 		K.banner(page, nextOrder(), { name = string.upper(sh.name), line = owned and "Il are deja." or "Il primeste gratis de la tine.", icon = sh.icon or "up_power",
 			color = sh.color, tint = C3(150, 200, 255), buttonW = 180,
-			button = owned and { "SCOATE", RED, function() call("pass", { key = sh.pass, on = false }, true) end }
-				or { "DA GRATIS", GREEN, function() call("pass", { key = sh.pass, on = true }, true) end } })
+			button = owned and { "SCOATE", RED, function(b) call("pass", { key = sh.pass, on = false }, true, b) end }
+				or { "DA GRATIS", GREEN, function(b) call("pass", { key = sh.pass, on = true }, true, b) end } })
 	end
 end }
 PAGES[6] = { "PASS-URI", "vip", C3(230, 80, 140), function()
 	title("PASS-URI (GRATIS DE AICI)", "raman salvate pentru totdeauna, ca si cum le-ar fi cumparat")
-	bigButtons({ { "DA-LE PE TOATE", GOLD, function()
+	bigButtons({ { "DA-LE PE TOATE", GOLD, function(btn) ask("TOATE PASS-URILE GRATIS", function()
 		if busy then return end
 		busy = true
 		task.spawn(function()
@@ -326,9 +431,9 @@ PAGES[6] = { "PASS-URI", "vip", C3(230, 80, 140), function()
 			say(true, given .. " pass-uri date")
 			task.wait(0.2)
 			redrawSummary(true)
-			redrawPage()
+			redrawPage(true)
 		end)
-	end, shine = true } })
+	end, btn) end, shine = true } })
 	local p = target()
 	local g = grid(240)
 	for i, ps in ipairs(Config.Store.passes) do
@@ -336,8 +441,8 @@ PAGES[6] = { "PASS-URI", "vip", C3(230, 80, 140), function()
 		local icon = PASS_ICON[ps.key] or ps.icon
 		if ps.key == (Config.StormHammer and Config.StormHammer.pass) then icon = Config.StormHammer.icon or icon end
 		local o = { order = i, name = ps.name, icon = icon, color = owned and C3(90, 200, 120) or C3(150, 150, 190), tag = owned and { "ARE", GREEN } or nil, artH = 110 }
-		o.button = owned and { "SCOATE", RED, function() call("pass", { key = ps.key, on = false }, true) end }
-			or { "DA GRATIS", GREEN, function() call("pass", { key = ps.key, on = true }, true) end }
+		o.button = owned and { "SCOATE", RED, function(b) call("pass", { key = ps.key, on = false }, true, b) end }
+			or { "DA GRATIS", GREEN, function(b) call("pass", { key = ps.key, on = true }, true, b) end }
 		K.tile(g, o)
 	end
 end }
@@ -349,33 +454,33 @@ PAGES[7] = { "BOOST-URI", "up_power", C3(255, 200, 60), function()
 		i += 1
 		K.tile(g, { order = i, name = tostring(b.name or key), icon = ({ cash = "up_cash", crew = "up_crew", power = "up_power", strength = "up_strength" })[key] or "up_power",
 			color = C3(255, 170, 50), artH = 110, buttons = {
-				{ "15m", BLUE, function() call("boost", { key = key, secs = 900 }) end },
-				{ "1h", PURPLE, function() call("boost", { key = key, secs = 3600 }) end },
-				{ "1zi", GOLD, function() call("boost", { key = key, secs = 86400 }) end } } })
+				{ "15m", BLUE, function(b) call("boost", { key = key, secs = 900 }, nil, b) end },
+				{ "1h", PURPLE, function(b) call("boost", { key = key, secs = 3600 }, nil, b) end },
+				{ "1zi", GOLD, function(b) call("boost", { key = key, secs = 86400 }, nil, b) end } } })
 	end
 	K.tile(g, { order = 10, name = "Rush Crew 2x", icon = "crew", color = C3(255, 150, 40), artH = 110, buttons = {
-		{ "30m", BLUE, function() call("rush", 1800) end }, { "2h", PURPLE, function() call("rush", 7200) end }, { "1zi", GOLD, function() call("rush", 86400) end } } })
+		{ "30m", BLUE, function(b) call("rush", 1800, nil, b) end }, { "2h", PURPLE, function(b) call("rush", 7200, nil, b) end }, { "1zi", GOLD, function(b) call("rush", 86400, nil, b) end } } })
 	K.tile(g, { order = 11, name = "Spin-uri gratis", icon = "spin", color = C3(150, 120, 255), artH = 110, buttons = {
-		{ "+1", BLUE, function() call("spins", 1) end }, { "+5", PURPLE, function() call("spins", 5) end }, { "+25", GOLD, function() call("spins", 25) end } } })
+		{ "+1", BLUE, function(b) call("spins", 1, nil, b) end }, { "+5", PURPLE, function(b) call("spins", 5, nil, b) end }, { "+25", GOLD, function(b) call("spins", 25, nil, b) end } } })
 end }
 PAGES[8] = { "MATERIALE", "backpack", C3(120, 200, 255), function()
 	title("MATERIALE")
 	local g = grid(240)
 	for i, m in ipairs(Company.Materials or {}) do
 		K.tile(g, { order = i, name = tostring(m.name or m.id), icon = m.icon or "backpack", color = C3(120, 170, 230), artH = 110, buttons = {
-			{ "+100", BLUE, function() call("mat", { id = m.id, n = 100 }) end }, { "+1000", GOLD, function() call("mat", { id = m.id, n = 1000 }) end } } })
+			{ "+100", BLUE, function(b) call("mat", { id = m.id, n = 100 }, nil, b) end }, { "+1000", GOLD, function(b) call("mat", { id = m.id, n = 1000 }, nil, b) end } } })
 	end
 	title("BLUEPRINTS")
 	local g2 = grid(240)
 	for i, bp in ipairs(Company.Blueprints or {}) do
 		K.tile(g2, { order = i, name = tostring(bp.name or bp.id), icon = bp.icon or "portfolio", color = C3(90, 140, 230), artH = 110, buttons = {
-			{ "+5", BLUE, function() call("bp", { id = bp.id, n = 5 }) end }, { "+25", GOLD, function() call("bp", { id = bp.id, n = 25 }) end } } })
+			{ "+5", BLUE, function(b) call("bp", { id = bp.id, n = 5 }, nil, b) end }, { "+25", GOLD, function(b) call("bp", { id = bp.id, n = 25 }, nil, b) end } } })
 	end
 end }
 PAGES[9] = { "MASINI", "cars", C3(255, 100, 100), function()
 	title("MASINI")
 	K.banner(page, nextOrder(), { name = "TOATE MASINILE", line = "Deblocheaza toate masinile din dealer.", icon = "cars", color = C3(255, 110, 110), tint = C3(255, 200, 200),
-		buttonW = 180, button = { "DEBLOCHEAZA", GREEN, function() call("vehicles") end } })
+		buttonW = 180, button = { "DEBLOCHEAZA", GREEN, function(b) call("vehicles", nil, nil, b) end } })
 end }
 PAGES[10] = { "TELEPORT", "locations", C3(80, 200, 220), function()
 	title("TELEPORT")
@@ -385,35 +490,23 @@ PAGES[10] = { "TELEPORT", "locations", C3(80, 200, 220), function()
 		return
 	end
 	K.banner(page, nextOrder(), { name = "DU-MA LA " .. string.upper(p and p.DisplayName or "?"), line = "Te muta langa el.", icon = "locations", color = C3(80, 200, 220),
-		tint = C3(190, 240, 250), buttonW = 180, button = { "DU-MA", BLUE, function() call("teleport") end } })
+		tint = C3(190, 240, 250), buttonW = 180, button = { "DU-MA", BLUE, function(b) call("teleport", nil, nil, b) end } })
 	K.banner(page, nextOrder(), { name = "ADU-L LA MINE", line = "Il muta langa tine.", icon = "invite", color = C3(170, 120, 255), tint = C3(220, 200, 255),
-		buttonW = 180, button = { "ADU-L", PURPLE, function() call("bring") end } })
+		buttonW = 180, button = { "ADU-L", PURPLE, function(b) call("bring", nil, nil, b) end } })
 end }
 PAGES[11] = { "ALTELE", "settings", C3(160, 160, 200), function()
 	title("ALTELE")
 	K.banner(page, nextOrder(), { name = "TERMINA CONTRACTUL", line = "Cladirea la care lucreaza acum se termina pe loc.", icon = "contract", color = C3(90, 200, 120),
-		tint = C3(200, 240, 210), buttonW = 180, button = { "TERMINA", GREEN, function() call("finish") end } })
+		tint = C3(200, 240, 210), buttonW = 180, button = { "TERMINA", GREEN, function(b) call("finish", nil, nil, b) end } })
 	K.banner(page, nextOrder(), { name = "SARI PESTE TUTORIAL", line = "Deblocheaza JOBS si SHOP imediat.", icon = "quest", color = C3(255, 190, 60),
-		tint = C3(255, 235, 180), buttonW = 180, button = { "SARI", BLUE, function() call("tutorial") end } })
+		tint = C3(255, 235, 180), buttonW = 180, button = { "SARI", BLUE, function(b) call("tutorial", nil, nil, b) end } })
 	-- start over from zero (yourself only; the server refuses anyone else)
 	if target() == player then
 		title("ZONA PERICULOASA")
-		local armed = false
-		local banner
-		banner = K.banner(page, nextOrder(), { name = "RESETEAZA-MI PROGRESUL", line = "Doar contul tau: incepi de la 0 (tutorial de la pasul 1). Ce ai cumparat cu Robux ramane. Iesi din joc si intri din nou.",
-			icon = "rebirth", color = RED, tint = C3(255, 200, 200), buttonW = 210, height = 120, button = { "RESETEAZA", RED, function()
-				local b = banner and banner:FindFirstChildOfClass("TextButton")
-				local lbl = b and b:FindFirstChild("Label")
-				if not armed then
-					-- the first tap only arms it: a second tap within 5 s does it
-					armed = true
-					if lbl then lbl.Text = "SIGUR? APASA IAR" end
-					task.delay(5, function() armed = false; if lbl and lbl.Parent then lbl.Text = "RESETEAZA" end end)
-					return
-				end
-				armed = false
-				if lbl then lbl.Text = "SE RESETEAZA..." end
-				call("resetme", { confirm = "RESET" })
+		K.banner(page, nextOrder(), { name = "RESETEAZA-MI PROGRESUL", line = "Doar contul tau: incepi de la 0 (tutorial de la pasul 1). Ce ai cumparat cu Robux ramane. Iesi din joc si intri din nou.",
+			icon = "rebirth", color = RED, tint = C3(255, 200, 200), buttonW = 210, height = 120, button = { "RESETEAZA", RED, function(b)
+				-- the red confirm bar asks first; the server also wants the confirmation word
+				ask("TOT PROGRESUL TAU DE LA 0", function() send("resetme", { confirm = "RESET" }) end, b, true)
 			end } })
 	end
 	title("STELE & REBIRTH", "stele pentru Star Shop, si numarul de rebirth-uri")
@@ -422,11 +515,14 @@ end }
 
 local cat = 1
 local catButtons = {}
-function redrawPage()
+-- keep = a live refresh of the same page: stays where it was scrolled
+function redrawPage(keep)
+	local scroll = page.CanvasPosition
+	if pending and pending.btn and pending.btn:IsDescendantOf(page) then clearPending() end
 	for _, c in ipairs(page:GetChildren()) do if c:IsA("GuiObject") then c:Destroy() end end
 	order = 0
 	PAGES[cat][4]()
-	page.CanvasPosition = Vector2.zero
+	page.CanvasPosition = keep and scroll or Vector2.zero
 	for i, b in ipairs(catButtons) do
 		local bg = b:FindFirstChild("Bg")
 		local col = i == cat and PAGES[i][3] or C3(70, 66, 130)
@@ -439,13 +535,35 @@ for i, pg in ipairs(PAGES) do
 	local b = UI.button(pg[1], C3(70, 66, 130), nil, { Size = UDim2.new(1, -8, 0, 50), TextSize = 19, Font = T.chunky, Icon = pg[2], LayoutOrder = i, ZIndex = 7, Parent = cats })
 	new("UIStroke", { Thickness = 3, Color = GOLD, Enabled = false, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = b })
 	catButtons[i] = b
-	b.Activated:Connect(function() cat = i; redrawPage() end)
+	b.Activated:Connect(function() cat = i; clearPending(); redrawPage() end)
+end
+
+-- live: whatever changes on the chosen player (from here, from the game, from a purchase) shows at once
+local PAGE_OF = { ToolTier = { [5] = true }, EquipTool = { [5] = true }, GearTier = { [4] = true } }
+local watchConn, pageQueued, playersQueued = nil, false, false
+function watchTarget()
+	if watchConn then watchConn:Disconnect(); watchConn = nil end
+	local p = target()
+	if not p then return end
+	watchConn = p.AttributeChanged:Connect(function(a)
+		if not window.Visible then return end
+		redrawSummary()
+		local pages = PAGE_OF[a] or (a:sub(1, 5) == "Pass_" and { [5] = true, [6] = true }) or nil
+		if pages and pages[cat] and not pageQueued then
+			pageQueued = true
+			task.delay(0.15, function() pageQueued = false; if window.Visible then redrawPage(true) end end)
+		end
+		if a == "Level" and not playersQueued then
+			playersQueued = true
+			task.delay(0.3, function() playersQueued = false; if window.Visible then redrawPlayers() end end)
+		end
+	end)
 end
 
 Players.PlayerAdded:Connect(function() if window.Visible then redrawPlayers() end end)
 Players.PlayerRemoving:Connect(function(p)
-	if p.UserId == targetId then targetId = player.UserId end
-	task.defer(function() if window.Visible then redrawPlayers(); redrawPage() end end)
+	if p.UserId == targetId then targetId = player.UserId; clearPending(); task.defer(watchTarget) end
+	task.defer(function() if window.Visible then redrawPlayers(); redrawSummary(true); redrawPage() end end)
 end)
 task.spawn(function()
 	while gui.Parent do
@@ -457,8 +575,10 @@ end)
 local function setOpen(on)
 	window.Visible = on
 	back.Visible = on
+	clearPending()
 	if on then
 		if not target() then targetId = player.UserId end
+		watchTarget()
 		redrawPlayers()
 		redrawSummary(true)
 		redrawPage()
