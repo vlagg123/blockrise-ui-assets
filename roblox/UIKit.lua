@@ -77,9 +77,10 @@ function UI.tween(o, t, props, style, dir)
 	return tw
 end
 
--- the number / "!" on a red badge, optically centred: a "1" carries its weight on the stem (right of its box),
--- and digits sit a hair low in their line at small sizes
+-- the number on a red badge (over 9 it says +9), optically centred: a "1" carries its weight on the stem
+-- (right of its box), and digits sit a hair low in their line at small sizes
 function UI.badgeText(l, t)
+	if tonumber(t) and tonumber(t) > 9 then t = "+9" end
 	t = tostring(t)
 	l.Text = t
 	local dx = (t == "1" and -1.5) or (t:sub(1, 1) == "1" and -0.75) or 0

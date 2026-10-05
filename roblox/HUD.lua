@@ -104,7 +104,7 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	stroke(badge, 2.5)
 	local bsc = new("UIScale", { Parent = badge })
 	-- FredokaOne: its glyphs sit in the middle of the line (Luckiest Guy leans and rides high, so "!" looked off-centre)
-	local bl = text({ Size = UDim2.fromScale(1, 1), Text = "!", Font = ROUND, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
+	local bl = text({ Size = UDim2.fromScale(1, 1), Text = "1", Font = ROUND, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
 		TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6, Parent = badge })
 	tstroke(bl, 1.5)
 	local down = false
@@ -246,13 +246,15 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 			g.Rotation = 0
 		end)
 	end
+	-- always a number (true = 1), never a "!"; over 9 it says +9
 	function api.setBadge(v)
-		local on = v ~= nil and v ~= false and v ~= 0
+		local n = v == true and 1 or (tonumber(v) or 0)
+		local on = n > 0
 		badge.Visible = on
 		hasBadge = on
 		if b.ZIndex < 3 then b.ZIndex = on and 2 or 1 end
 		pulsing[bsc] = on or nil
-		UI.badgeText(bl, type(v) == "number" and (v > 9 and "9+" or tostring(v)) or "!")
+		if on then UI.badgeText(bl, n) end
 	end
 	function api.setLabel(t) lbl.Text = t end
 	-- a small dark pill on the top-right corner (a timer: when the next free spin comes...)
@@ -957,9 +959,10 @@ function M.Init(ctx)
 			local nt, ng = Config.Tools[tier + 1], Config.TrainingGear[gt + 1]
 			local open = tutorialDone()
 			-- shop: something to buy on any tab (the Shop shows a red dot on that tab)
+			-- how many things you can buy there right now
 			local av = c.shopAvailable and c.shopAvailable()
-			local any = av and (av.tools or av.gear or av.machines or av.crew) or ((nt and money >= nt.price) or (ng and money >= ng.price))
-			menu.shop.setBadge(open and any or false)
+			local count = av and av.count or (((nt and money >= nt.price) and 1 or 0) + ((ng and money >= ng.price) and 1 or 0))
+			menu.shop.setBadge(open and count or 0)
 			-- jobs: buildings you can take now but never built yet (NEW on the Job Board)
 			local fresh = newBuildings()
 			menu.jobs.setBadge(open and #fresh or 0)

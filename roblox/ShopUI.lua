@@ -37,8 +37,34 @@ local function buy(remote, arg, keep)
 	end
 end
 
+-- the hammer in your hand: the one you picked, the Thunderclap if you own it, or your best
+local function equippedTool()
+	local cur = c.player:GetAttribute("ToolTier") or 1
+	local eq = tonumber(c.player:GetAttribute("EquipTool") or "")
+	if eq and eq >= 1 and eq <= cur then return eq end
+	local sh = Config.StormHammer
+	if sh and c.player:GetAttribute("Pass_" .. sh.pass) == true then return sh.key end
+	return cur
+end
+local function equipTool(which)
+	c.click()
+	local rf = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("EquipTool")
+	if not rf then return end
+	local ok, res, msg = pcall(function() return rf:InvokeServer(which) end)
+	if ok and res then
+		local sh = Config.StormHammer
+		local name = (sh and which == sh.key) and sh.name or (Config.Tools[which] and Config.Tools[which].name) or "Hammer"
+		c.toast("🔨 " .. name .. " equipped", T.green, 2)
+		M.Show(nil, true)
+	else
+		c.toast("⚠️ " .. tostring(msg or "Can't equip that"), T.red)
+	end
+end
+local EQUIP_BLUE = Color3.fromRGB(70, 160, 255)
+
 -- a tier list (tools / gear): every tier, the locked ones show their price; the window opens on your row
-local function tierTiles(list, current, remote, icon, stat, keep)
+-- equip = { which, onEquip }: the hammers you own can be picked (tools only)
+local function tierTiles(list, current, remote, icon, stat, keep, equip)
 	local n = cols()
 	local grid = K.grid(c.content, 2, n, 268)
 	local cash = money()
@@ -47,7 +73,14 @@ local function tierTiles(list, current, remote, icon, stat, keep)
 		local rk, rl = K.rarityOf(i, #list)
 		local o = { order = i, name = it.name, icon = it.icon or (Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon), color = K.RAR[rk], iconScale = it.icon and 1.08 or nil,
 			badge = { rl, K.RAR[rk] }, stats = { stat(it) } }
-		if i == current then
+		if equip and i <= current then
+			if i == equip.which then
+				o.status = { "EQUIPPED", K.GREEN }
+				o.spin = true
+			else
+				o.button = { "EQUIP", EQUIP_BLUE, function() equip.onEquip(i) end }
+			end
+		elseif i == current then
 			o.status = { "EQUIPPED", K.GREEN }
 			o.spin = true
 		elseif i < current then
@@ -83,8 +116,10 @@ local function stormBanner(order)
 	local owned = c.player:GetAttribute("Pass_" .. sh.pass) == true
 	local o = { name = string.upper(sh.name), line = "A storm in a hammer: x" .. sh.mult .. " build power for you and your crew. Forever.",
 		icon = sh.icon or "up_power", color = sh.color, tint = Color3.fromRGB(150, 200, 255), buttonW = 180 }
-	if owned then
-		o.status = { "OWNED", K.GREEN }
+	if owned and equippedTool() == sh.key then
+		o.status = { "EQUIPPED", K.GREEN }
+	elseif owned then
+		o.button = { "EQUIP", EQUIP_BLUE, function() equipTool(sh.key) end }
 	elseif (pass.id or 0) > 0 then
 		o.button = { "R$ " .. tostring(pass.price or ""), Color3.fromRGB(80, 170, 255), function()
 			c.click()
@@ -101,7 +136,7 @@ local function tools()
 	K.section(c.content, 1, "BUILDING TOOLS", Color3.fromRGB(150, 215, 255), "more build power per hit")
 	tierTiles(Config.Tools, c.player:GetAttribute("ToolTier") or 1, "BuyTool", "shop", function(t)
 		return { "x" .. Config.FormatNum(t.power) .. " POWER", GOLD }
-	end, keepNext)
+	end, keepNext, { which = equippedTool(), onEquip = equipTool })
 end
 
 local function gear()
@@ -198,23 +233,26 @@ end
 function M.Available()
 	local p = c.player
 	local cash = money()
-	local out = { tools = false, gear = false, machines = false, crew = false }
+	local out = { tools = false, gear = false, machines = false, crew = false, count = 0 }
 	local tier, gt = p:GetAttribute("ToolTier") or 1, p:GetAttribute("GearTier") or 1
 	local nt, ng = Config.Tools[tier + 1], Config.TrainingGear[gt + 1]
 	out.tools = nt ~= nil and cash >= nt.price
 	out.gear = ng ~= nil and cash >= ng.price
+	if out.tools then out.count += 1 end
+	if out.gear then out.count += 1 end
 	local lvl = p:GetAttribute("Level") or 1
 	for _, m in ipairs(Config.Machines) do
 		if p:GetAttribute("M_" .. m.id) == true then
 			local mlv = math.max(1, p:GetAttribute("ML_" .. m.id) or 1)
-			if mlv < Config.MachineMaxLevel and cash >= Config.MachineUpgradeCost(m, mlv) then out.machines = true end
+			if mlv < Config.MachineMaxLevel and cash >= Config.MachineUpgradeCost(m, mlv) then out.machines = true; out.count += 1 end
 		elseif lvl >= m.reqLevel and cash >= m.price then
 			out.machines = true
+			out.count += 1
 		end
 	end
 	if (p:GetAttribute("WorkerCount") or 0) < (p:GetAttribute("MaxWorkers") or 2) then
 		for _, w in ipairs(Config.WorkerTypes) do
-			if lvl >= (w.reqLevel or 1) and cash >= w.price then out.crew = true end
+			if lvl >= (w.reqLevel or 1) and cash >= w.price then out.crew = true; out.count += 1 end
 		end
 	end
 	return out
@@ -250,12 +288,12 @@ function M.Init(ctx)
 	UI, T, Config = c.UI, c.T, c.Config
 	c.shopAvailable = M.Available
 	-- the cash in the header follows your money while the shop is open
-	-- buying the Thunderclap redraws the TOOLS tab (OWNED)
-	if Config.StormHammer then
-		c.player:GetAttributeChangedSignal("Pass_" .. Config.StormHammer.pass):Connect(function()
-			if c.modalOpen() and c.modalTitle.Text == "Shop" and tab == "tools" then M.Show(nil, true) end
-		end)
+	-- buying the Thunderclap or picking another hammer redraws the TOOLS tab
+	local function redrawTools()
+		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab == "tools" then M.Show(nil, true) end
 	end
+	if Config.StormHammer then c.player:GetAttributeChangedSignal("Pass_" .. Config.StormHammer.pass):Connect(redrawTools) end
+	c.player:GetAttributeChangedSignal("EquipTool"):Connect(redrawTools)
 	c.player:GetAttributeChangedSignal("Money"):Connect(function()
 		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab ~= "crew" then c.modalSub.Text = fmt(money()) end
 	end)
