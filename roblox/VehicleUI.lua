@@ -37,7 +37,7 @@ end
 
 function M.Show()
 	local tok = c.openModal("Garage", "Garage", "", RED1, RED2)
-	c.modalSub.Text = "yours forever"
+	c.modalSub.Text = "" -- (no subtitle pill on the garage)
 	local loading = K.loading(c.content)
 	local ok, okr, data = pcall(function() return c.R.VehicleAction:InvokeServer("get") end)
 	if not c.live(tok) then return end
