@@ -31,7 +31,7 @@ def rounded(size, mat, loc=(0, 0, 0), rot=(0, 0, 0), r=0.12, parent=None, outlin
 
 
 # ------------------------------------------------------------------------------------------- training gear
-def meta(elements, mat, name="meta", P=None, resolution=0.035, threshold=0.6, outline=True):
+def meta(elements, mat, name="meta", P=None, resolution=0.035, threshold=0.6, outline=False):
     """organic shapes from metaballs (hands, gloves): elements = [(type, co, radius, size(x,y,z), rot(deg xyz), stiffness)]"""
     from mathutils import Euler
     scn = I3.iscene()
@@ -80,7 +80,7 @@ def g_hands():
         els.append(("CAPSULE", (x, -0.3, z), 0.235, (0.15, 0, 0), (0, 0, 90), 2.4))
         els.append(("CAPSULE", (x, -0.5, z - 0.3), 0.215, (0.1, 0, 0), (0, 90, 0), 2.4))
     els.append(("CAPSULE", (-0.1, -0.6, 0.38), 0.21, (0.3, 0, 0), (0, 12, 0), 3.0))      # thumb across the front
-    els.append(("CAPSULE", (0.05, 0.12, 0.05), 0.42, (0.22, 0, 0), (0, 90, 0), 2.0))     # wrist
+    els.append(("CAPSULE", (0.05, 0.12, 0.16), 0.42, (0.1, 0, 0), (0, 90, 0), 2.0))     # wrist
     meta(els, sk, "fist", P=P, resolution=0.03)
     band = candy("#ff8a26", rough=0.65, coat=0.1, tex="leaf", scale=16, bump=0.25, dark="#f07d1c", light="#ff9a3c")
     obj("band", bm_cyl(0.5, 0.36, 64), band, loc=(0.05, 0.12, -0.06), parent=P, smooth=40, bevel=0.12, segs=4)
@@ -95,20 +95,13 @@ def glove(P, col="#f0b04a", cuff="#ff7a1a", dark="#d99a3c", light="#f7c264"):
         z = 1.2 + h * 0.75 - abs(k - 1.5) * 0.06
         els.append(("CAPSULE", (x, 0, z), 0.235, (h, 0, 0), (0, 90 + (k - 1.5) * 6, 0), 2.2))
     els.append(("CAPSULE", (0.66, -0.02, 0.78), 0.23, (0.22, 0, 0), (0, 52, 0), 2.2))   # thumb
-    els.append(("CAPSULE", (0, 0, 0.12), 0.52, (0.12, 0, 0), (0, 90, 0), 2.0))         # wrist
+    els.append(("CAPSULE", (0, 0, 0.36), 0.56, (0.08, 0, 0), (0, 90, 0), 2.0))         # wrist
     meta(els, m, "glove", P=P, resolution=0.028)
     c = candy(cuff, rough=0.45)
-    obj("cuff", bm_cyl(0.58, 0.62, 64, r2=0.54), c, loc=(0, 0, -0.05), parent=P, smooth=40, bevel=0.14, segs=5)
-    for z in (-0.18, 0.08):
+    obj("cuff", bm_cyl(0.6, 0.6, 64, r2=0.56), c, loc=(0, 0, 0.2), parent=P, smooth=40, bevel=0.14, segs=5)
+    for z in (0.07, 0.33):
         t = torus(0.585, 0.04, candy("#ffffff", rough=0.4), seg=64, ring=10, outline=False)
         t.matrix_world = P @ _xf((0, 0, z))
-    # knuckle seam on the back of the hand
-    sm = candy(dark, rough=0.6)
-    for k in range(4):
-        x = -0.41 + k * 0.275
-        sp = sphere(0.045, sm, outline=False)
-        sp.matrix_world = P @ _xf((x, -0.33, 1.12))
-
 
 def g_gloves():
     glove(_xf((0, 0, 0), (8, -12, -14)))
