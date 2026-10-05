@@ -85,18 +85,18 @@ def pbr(name, col, metal=0.0, rough=0.35, coat=0.3, trans=0.0, ior=1.5, emit=0.1
         mp = nt.nodes.new("ShaderNodeMapping")
         mp.inputs["Scale"].default_value = (kw.get("scale", 1.0),) * 3
         nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
-        n = _node(nt, "ShaderNodeTexNoise", Scale=1.6, Detail=12.0, Roughness=0.62, Distortion=3.2)
+        n = _node(nt, "ShaderNodeTexNoise", Scale=0.75, Detail=3.0, Roughness=0.5, Distortion=1.6)
         nt.links.new(mp.outputs[0], n.inputs["Vector"])
-        r = _ramp(nt, [(0.0, "#e9e6e1"), (0.455, col), (0.488, "#c9cdd6"), (0.5, "#6e7687"), (0.512, "#c9cdd6"),
-                       (0.545, col), (1.0, "#ffffff")])
+        r = _ramp(nt, [(0.0, "#e4e1dc"), (0.44, col), (0.485, "#d3d7e0"), (0.5, "#7d8698"), (0.515, "#d3d7e0"),
+                       (0.56, col), (1.0, "#ffffff")])
         nt.links.new(n.outputs["Fac"], r.inputs["Fac"])
-        n2 = _node(nt, "ShaderNodeTexNoise", Scale=0.9, Detail=10.0, Roughness=0.6, Distortion=5.0)
+        n2 = _node(nt, "ShaderNodeTexNoise", Scale=0.55, Detail=2.0, Roughness=0.5, Distortion=2.0)
         nt.links.new(mp.outputs[0], n2.inputs["Vector"])
         r2 = nt.nodes.new("ShaderNodeValToRGB")
         e = r2.color_ramp.elements
-        e[0].position, e[0].color = 0.493, (0, 0, 0, 1)
+        e[0].position, e[0].color = 0.494, (0, 0, 0, 1)
         e[1].position, e[1].color = 0.5, (1, 1, 1, 1)
-        e2 = e.new(0.507)
+        e2 = e.new(0.506)
         e2.color = (0, 0, 0, 1)
         nt.links.new(n2.outputs["Fac"], r2.inputs["Fac"])
         mix = nt.nodes.new("ShaderNodeMix")
@@ -106,6 +106,20 @@ def pbr(name, col, metal=0.0, rough=0.35, coat=0.3, trans=0.0, ior=1.5, emit=0.1
         mix.inputs["B"].default_value = (*I.rgb("#e2ad3c"), 1)
         nt.links.new(mix.outputs["Result"], p.inputs["Base Color"])
         nt.links.new(mix.outputs["Result"], p.inputs["Emission Color"])
+    elif tex == "grain":
+        # plywood face: soft straight grain bands (no rings: rings read as a target at icon size)
+        w = nt.nodes.new("ShaderNodeTexWave")
+        w.wave_type = "BANDS"
+        w.bands_direction = "Z"
+        w.inputs["Scale"].default_value = 2.2
+        w.inputs["Distortion"].default_value = 7.0
+        w.inputs["Detail"].default_value = 2.0
+        w.inputs["Detail Scale"].default_value = 1.2
+        nt.links.new(tc.outputs["Object"], w.inputs["Vector"])
+        r = _ramp(nt, [(0.25, kw.get("dark", col)), (0.8, kw.get("light", col))])
+        nt.links.new(w.outputs["Fac"], r.inputs["Fac"])
+        nt.links.new(r.outputs["Color"], p.inputs["Base Color"])
+        nt.links.new(r.outputs["Color"], p.inputs["Emission Color"])
     elif tex == "wood":
         mp = nt.nodes.new("ShaderNodeMapping")
         mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
@@ -364,22 +378,22 @@ def i_beam(m, loc, rot=(0, 0, 0), L=2.4, w=0.84, h=0.9, tf=0.15, tw=0.15, rivets
 # ------------------------------------------------------------------------------------------- icons
 def icon_steel():
     """Steel Beams: a pyramid of three I-beams (ends to the camera) and a big bolt with its nut"""
-    steel = pbr("steel", "#93a3bb", metal=1.0, rough=0.3, coat=0.35, tex="brushed", axis="Y", dark="#7385a3", light="#b9c6d8",
-                aniso=0.4, emit=0.12)
-    chrome = pbr("chrome", "#e3e8f0", metal=1.0, rough=0.14, coat=0.5, tex="brushed", axis="Z", dark="#c4ccd8", light="#f4f6fa", emit=0.1)
+    steel = pbr("steel", "#6f86b4", metal=1.0, rough=0.26, coat=0.45, tex="brushed", axis="Y", dark="#556d9c", light="#a9bde0",
+                aniso=0.4, emit=0.22)
+    chrome = pbr("chrome", "#eef2f8", metal=1.0, rough=0.12, coat=0.6, tex="brushed", axis="Z", dark="#cfd7e3", light="#ffffff", emit=0.2)
     W, H = 0.84, 0.9
     for x in (-0.47, 0.47):
-        i_beam(steel, (x, 0, H / 2), L=2.3, rivets=(-0.6, 0.0, 0.6))
-    i_beam(steel, (0, 0.12, H * 1.5), L=2.3, rivets=(-0.48, 0.12, 0.72))
-    bolt(chrome, (0.95, -1.05, 0.33), (78, 0, 128), s=0.82)
-    nut(chrome, (-0.95, -1.2, 0.12), (90, 0, 20), s=0.85)
+        i_beam(steel, (x, 0, H / 2), L=1.8, rivets=(-0.45, 0.2))
+    i_beam(steel, (0, 0.12, H * 1.5), L=1.8, rivets=(-0.3, 0.35))
+    bolt(chrome, (0.98, -1.0, 0.42), (70, 0, 150), s=1.05)
+    nut(chrome, (-0.98, -1.05, 0.13), (90, 0, 25), s=0.95)
 
 
 def icon_copper():
     """Copper Wire: a wooden cable reel wound with shiny copper wire, the free end curling out"""
     cu = pbr("copper", "#ff8b4e", metal=1.0, rough=0.2, coat=0.45, emit=0.14)
     cu_core = pbr("copper_core", "#c45a2a", metal=1.0, rough=0.35, emit=0.1)
-    wood = pbr("reel_wood", "#d39a5c", rough=0.55, coat=0.15, tex="wood", rings="X", dark="#9a6234", light="#e2ad6c", emit=0.12)
+    wood = pbr("reel_wood", "#e0a868", rough=0.45, coat=0.3, tex="grain", dark="#b47a42", light="#ecbd80", emit=0.18)
     dark = pbr("reel_hub", "#5a3a22", rough=0.5, emit=0.06)
     R0, L, Rf, wr = 0.62, 1.16, 1.05, 0.062
     for x in (-L / 2 - 0.08, L / 2 + 0.08):
@@ -444,7 +458,7 @@ def ingot(m, m_top, loc, rot=(0, 0, 0)):
     obj("stamp", bm_box(0.6, 0.24, 0.02), m_top, loc=(0, 0, h + 0.003), parent=P, bevel=0.008, outline=False)
 
 
-def leaf_sheet(m, loc, rot, s=1.0, wave=0.1, seed=0):
+def leaf_sheet(m, loc, rot, s=1.0, wave=0.1, seed=0, parent=None):
     bm = bmesh.new()
     n = 12
     vs = {}
@@ -459,25 +473,27 @@ def leaf_sheet(m, loc, rot, s=1.0, wave=0.1, seed=0):
     ret = bmesh.ops.extrude_face_region(bm, geom=bm.faces[:])
     nv = [e for e in ret["geom"] if isinstance(e, bmesh.types.BMVert)]
     bmesh.ops.translate(bm, verts=nv, vec=(0, 0, 0.025))
-    obj("leaf", bm, m, loc=loc, rot=rot, smooth=60)
+    obj("leaf", bm, m, loc=loc, rot=rot, smooth=60, parent=parent)
 
 
 def icon_gold():
     """Gold Leaf: a pyramid of shiny gold bars on a few crinkled sheets of gold leaf"""
-    g = pbr("gold", "#ffc534", metal=1.0, rough=0.13, coat=0.45, tex="hammered", scale=3.0, bump=0.05, dark="#f2ae22", light="#ffd86a", emit=0.14)
+    g = pbr("gold", "#ffc534", metal=1.0, rough=0.13, coat=0.45, tex="hammered", scale=3.0, bump=0.05, dark="#f2ae22", light="#ffd86a", emit=0.3)
     gt = pbr("gold_stamp", "#e09a1c", metal=1.0, rough=0.3, emit=0.1)
-    leaf = pbr("gold_leaf", "#ffd24f", metal=1.0, rough=0.22, coat=0.2, tex="leaf", bump=0.5, dark="#f0b028", light="#ffe48a", emit=0.16)
-    leaf_sheet(leaf, (-0.35, 0.35, 0.02), (0, 0, 18), s=2.1, wave=0.09, seed=0.4)
-    leaf_sheet(leaf, (0.55, 0.15, 0.1), (6, -4, -22), s=1.7, wave=0.12, seed=1.7)
-    for x in (-0.62, 0.62):
-        ingot(g, gt, (x, -0.15, 0.12))
-    ingot(g, gt, (0, -0.15, 0.48))
+    leaf = pbr("gold_leaf", "#ffd24f", metal=1.0, rough=0.2, coat=0.2, tex="leaf", bump=0.25, dark="#f0b028", light="#ffe48a", emit=0.32)
+    # a fan of gold leaf sheets standing up behind (like a book of leaf, opened)
+    for k, a in enumerate((-34, -12, 10, 32)):
+        P = _xf((0, 0.45, 0.15), (0, a, 0)) @ _xf((0, 0, 0.85), (90 + 4 * (k % 2), 0, 0))
+        leaf_sheet(leaf, (0, 0.03 * k, 0), (0, 0, 0), s=1.45, wave=0.06 + 0.02 * (k % 2), seed=0.7 * k, parent=P)
+    for x in (-0.6, 0.6):
+        ingot(g, gt, (x, -0.35, 0.0))
+    ingot(g, gt, (0, -0.35, 0.36))
 
 
 def icon_diamond():
     """Diamond Glass: a framed pane of shining crystal glass with a big brilliant-cut diamond in front"""
     import icons2 as P
-    frame = pbr("dg_frame", "#e6ecf5", metal=1.0, rough=0.16, coat=0.5, emit=0.1)
+    frame = pbr("dg_frame", "#c9d6ea", metal=1.0, rough=0.14, coat=0.6, emit=0.28)
     W, H, T = 1.7, 2.1, 0.14
     # glass pane: faceted tiles in shades of ice blue (opaque candy glass reads at any size), with a bright edge
     tiles = [("#bdf4ff", 0.55), ("#7fe3ff", 0.4), ("#4fcbff", 0.45), ("#a6eeff", 0.5)]
@@ -554,12 +570,12 @@ def icon_blueprint(tier):
         sm = pbr("seal_" + tier, c, rough=0.05, coat=1.0, emit=0.45)
         sm2 = pbr("seal2_" + tier, cd, rough=0.1, coat=0.8, emit=0.5)
     else:
-        sm = pbr("seal_" + tier, c, metal=1.0, rough=0.16, coat=0.5, tex="hammered", scale=4.0, bump=0.04, dark=cd, light=cl, emit=0.14)
-        sm2 = pbr("seal2_" + tier, cd, metal=1.0, rough=0.22, coat=0.4, emit=0.12)
+        sm = pbr("seal_" + tier, c, metal=1.0, rough=0.14, coat=0.5, tex="hammered", scale=4.0, bump=0.04, dark=c, light=cl, emit=0.38)
+        sm2 = pbr("seal2_" + tier, cd, metal=1.0, rough=0.2, coat=0.4, emit=0.3)
     rib = pbr("rib_" + tier, {"bronze": "#c0392b", "silver": "#3a6fe0", "gold": "#e0302f", "diamond": "#8a4dff"}[tier], rough=0.35, coat=0.3, emit=0.2)
     sx, sz = 0.62, -0.42
     for side in (-1, 1):
-        pts = [(-0.13, 0), (0.13, 0), (0.13, -0.62), (0, -0.5), (-0.13, -0.62)]
+        pts = [(-0.13, 0), (0.13, 0), (0.13, 0.62), (0, 0.5), (-0.13, 0.62)]  # (axis Y turns +y into -z: they hang down)
         obj("ribbon", bm_prism(pts, 0.04, axis="Y"), rib, loc=(sx + side * 0.17, -0.1, sz - 0.05), rot=(0, side * -18, 0), parent=P0, bevel=0.01)
     bm = bm_prism(circle(0.46, 72), 0.1, axis="Y")
     obj("seal", bm, sm, loc=(sx, -0.16, sz), parent=P0, smooth=40, bevel=0.03)
@@ -575,7 +591,7 @@ ICONS = {"steel": icon_steel, "copper": icon_copper, "marble": icon_marble, "gol
 for _t in BP:
     ICONS["bp_" + _t] = (lambda t: (lambda: icon_blueprint(t)))(_t)
 
-VIEW = {"steel": (-0.42, -1, 0.62), "copper": (-0.5, -1, 0.42), "marble": (-0.32, -1, 0.42), "gold": (-0.28, -1, 0.62),
+VIEW = {"steel": (-0.34, -1, 0.5), "copper": (-0.3, -1, 0.34), "marble": (-0.32, -1, 0.42), "gold": (-0.2, -1, 0.42),
         "diamond": (-0.25, -1, 0.3)}
 SPARKLE = {"steel": [(0.86, 0.14, 0.05)], "copper": [(0.14, 0.2, 0.06)], "marble": [(0.86, 0.12, 0.055)],
            "gold": [(0.84, 0.2, 0.08), (0.16, 0.32, 0.055)], "diamond": [(0.85, 0.15, 0.08), (0.2, 0.2, 0.05)],
