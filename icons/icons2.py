@@ -275,7 +275,7 @@ def icon_locations():
     pin = [I.sphere(0.7, loc=(0, 0, 0.6), color=I.RED, gloss=0.5),
            I.cyl(0.62, 1.0, loc=(0, 0, -0.1), rot=(180, 0, 0), color=I.RED, r2=0.0, bevel=0.0, verts=40),
            I.sphere(0.3, loc=(0, -0.6, 0.66), scale=(1, 0.7, 1), color=I.WHITE, gloss=0.5)]
-    I.group(pin, loc=(0.05, -0.15, 0.66), scale=1.15)
+    I.group(pin, loc=(0.05, -0.2, 0.5), scale=0.82)
 
 def icon_portfolio():
     # gold trophy: your buildings & achievements
@@ -312,7 +312,7 @@ def icon_up_luck():
     I.sphere(0.16, loc=(0, -0.1, 0), scale=(1, 0.6, 1), color="#2fae48", gloss=0.4)
     I.arc_tube(0.9, 0.085, 185, 255, loc=(0.9, 0.06, -0.1), color="#2fa346")
 
-TURN = {"store": (0, 34), "trade": (0, 30), "upgrades": (0, 32), "up_luck": (-10, 26), "rebirth": (0, 26),
+TURN = {"store": (0, 34), "cash": (0, 22), "board": (0, 24), "site": (0, 26), "garage": (0, 28), "gym": (0, 20), "trade": (0, 30), "upgrades": (0, 32), "up_luck": (-10, 26), "rebirth": (0, 26),
         "up_power": (0, 22), "up_strength": (0, 22), "codes": (0, 26), "invite": (0, 26)}
 
 def turn(n):
@@ -328,14 +328,176 @@ def turn(n):
     e.rotation_euler = (math.radians(rx), 0, math.radians(rz))
     bpy.context.view_layer.update()
 
+def up_arrow(loc, s=1.0):
+    pts = [(-0.3, -0.5), (0.3, -0.5), (0.3, 0.05), (0.6, 0.05), (0, 0.65), (-0.6, 0.05), (-0.3, 0.05)]
+    return I.poly([(x * s, z * s) for x, z in pts], 0.3 * s, loc=loc, color=I.GREEN, bevel=0.05, gloss=0.5)
+
+def icon_cars():
+    # chunky cartoon sports car, front three-quarter view
+    RED, GLASS = "#ff4a4a", "#9fe0ff"
+    objs = [I.box((2.5, 1.24, 0.52), loc=(0, 0, 0.55), color=RED, bevel=0.2, gloss=0.55)]
+    cab = [(-0.85, 0.74), (0.55, 0.74), (0.18, 1.22), (-0.62, 1.22)]
+    objs.append(I.poly(cab, 1.0, color=RED, bevel=0.1, gloss=0.55))
+    objs.append(I.poly([(x * 0.94, 0.74 + (z - 0.74) * 0.86) for x, z in cab], 1.06, color=GLASS, bevel=0.05, gloss=0.7))
+    objs.append(I.box((0.72, 1.02, 0.09), loc=(-0.24, 0, 1.2), color=RED, bevel=0.04, gloss=0.55))
+    objs.append(I.box((2.2, 0.26, 0.04), loc=(0.05, 0, 0.82), color="#ffffff", bevel=0.01))
+    for sy in (-0.38, 0.38):
+        objs.append(I.sphere(0.14, loc=(1.24, sy, 0.62), scale=(0.5, 1, 0.8), color="#fff6a8", gloss=0.6))
+    objs.append(I.box((0.06, 0.62, 0.16), loc=(1.26, 0, 0.42), color=I.DARK, bevel=0.03))
+    objs.append(I.box((0.34, 1.22, 0.09), loc=(-1.2, 0, 1.02), color=I.DARK, bevel=0.04))
+    for sy in (-0.4, 0.4):
+        objs.append(I.box((0.08, 0.08, 0.2), loc=(-1.18, sy, 0.86), color=I.DARK, bevel=0.0))
+    for sx in (-0.78, 0.8):
+        for sy in (-0.62, 0.62):
+            objs.append(I.cyl(0.38, 0.32, loc=(sx, sy, 0.34), rot=(90, 0, 0), color="#2c2f3d", bevel=0.08))
+            objs.append(I.cyl(0.22, 0.34, loc=(sx, sy, 0.34), rot=(90, 0, 0), color="#ffd23a", bevel=0.04, gloss=0.55))
+            objs.append(I.cyl(0.08, 0.36, loc=(sx, sy, 0.34), rot=(90, 0, 0), color=I.DARK, bevel=0.02))
+    I.group(objs, rot=(0, 0, -32))
+
+def icon_garage():
+    # BlockRise Motors: a garage with the door half up and a car peeking out
+    WALL, ROOF = "#8fa4cf", I.RED
+    I.box((2.2, 1.5, 1.5), loc=(0, 0.2, 0.75), color=WALL, bevel=0.08)
+    I.poly([(-1.3, 1.45), (1.3, 1.45), (0, 2.15)], 1.7, loc=(0, 0.2, 0), color=ROOF, bevel=0.08)
+    I.box((1.6, 0.1, 1.25), loc=(0, -0.56, 0.62), color="#2b2f45", bevel=0.02)
+    for k in range(4):
+        I.box((1.62, 0.12, 0.13), loc=(0, -0.6, 1.16 - k * 0.15), color="#eef1f8", bevel=0.03)
+    # car front
+    I.box((1.3, 0.7, 0.42), loc=(0, -0.55, 0.36), color="#ff4a4a", bevel=0.16, gloss=0.55)
+    for sx in (-0.4, 0.4):
+        I.sphere(0.12, loc=(sx, -0.9, 0.42), scale=(1, 0.5, 0.8), color="#fff6a8", gloss=0.6)
+        I.cyl(0.2, 0.2, loc=(sx * 1.45, -0.62, 0.14), rot=(0, 90, 0), color="#2c2f3d", bevel=0.05)
+
+def icon_board():
+    # the Job Board: a wooden notice board with pinned job papers
+    WOODC, CORK = "#a86434", "#e0aa6a"
+    I.box((0.18, 0.18, 2.4), loc=(-1.0, 0.1, 0.2), color=WOODC, bevel=0.05)
+    I.box((0.18, 0.18, 2.4), loc=(1.0, 0.1, 0.2), color=WOODC, bevel=0.05)
+    I.box((2.3, 0.2, 1.45), loc=(0, 0, 0.72), color=WOODC, bevel=0.06)
+    I.box((2.0, 0.22, 1.18), loc=(0, -0.02, 0.72), color=CORK, bevel=0.03)
+    I.poly([(-1.35, 1.45), (1.35, 1.45), (0, 1.95)], 0.5, loc=(0, 0.05, 0), color=I.RED, bevel=0.06)
+    papers = [((-0.55, 0.92), 4, I.PAPER), ((0.05, 0.98), -5, "#fff2a8"), ((0.62, 0.84), 6, "#cfe8ff"), ((-0.3, 0.42), -3, "#ffd6e8"), ((0.4, 0.4), 4, I.PAPER)]
+    for (x, z), r, col in papers:
+        I.box((0.5, 0.05, 0.42), loc=(x, -0.15, z), rot=(0, r, 0), color=col, bevel=0.02)
+        I.box((0.32, 0.04, 0.04), loc=(x, -0.18, z - 0.04), rot=(0, r, 0), color="#9aa3b8", bevel=0.0)
+        I.sphere(0.06, loc=(x, -0.2, z + 0.15), color=I.RED, gloss=0.6)
+
+def icon_site():
+    # a brick wall going up, with a traffic cone
+    BR, BR2 = "#e8794a", "#d4643a"
+    for row in range(3):
+        n = 4 if row < 2 else 2
+        off = 0.0 if row % 2 == 0 else 0.3
+        for k in range(n):
+            I.box((0.56, 0.5, 0.3), loc=(-0.9 + off + k * 0.6, 0.15, 0.15 + row * 0.33), color=BR if (k + row) % 2 == 0 else BR2, bevel=0.04)
+    I.box((2.4, 0.9, 0.12), loc=(0, 0.1, -0.06), color="#b9a58a", bevel=0.04)
+    c = I.cone_icon(loc=(0.75, -0.45, 0.0), s=0.55)
+
+def icon_gym():
+    # kettlebell
+    KB = "#ff6a3d"
+    I.sphere(0.85, loc=(0, 0, 0), scale=(1, 1, 0.9), color=KB, gloss=0.5)
+    I.cyl(0.55, 0.18, loc=(0, 0, -0.76), color=KB, bevel=0.06)
+    I.arc_tube(0.58, 0.18, -8, 188, loc=(0, 0, 0.62), color="#3c4256")
+    I.cyl(0.42, 0.06, loc=(0, -0.83, 0.05), rot=(90, 0, 0), color="#ffd23a", bevel=0.02, gloss=0.5)
+    I.text("10", 0.42, 0.03, loc=(0, -0.87, 0.04), rot=(90, 0, 0), color="#8a3b12")
+
+def plus_badge(loc, s=1.0):
+    I.box((0.62 * s, 0.26 * s, 0.22 * s), loc=loc, color=I.GREEN, bevel=0.05)
+    I.box((0.22 * s, 0.26 * s, 0.62 * s), loc=loc, color=I.GREEN, bevel=0.05)
+
+def icon_hire():
+    I.hardhat(loc=(-0.2, 0.2, 0.15), rot=(16, 0, 22))
+    plus_badge((0.95, -1.3, -0.45), 1.6)
+
+def icon_up_crew():
+    I.hardhat(loc=(-0.2, 0.2, 0.15), rot=(16, 0, 22))
+    up_arrow((1.0, -1.3, -0.5), 1.25)
+
+def coin_stack(n, loc=(0, 0, 0), r=0.9):
+    for i in range(n):
+        I.cyl(r, 0.24, loc=(loc[0] + (0.03 if i % 2 else -0.03), loc[1], loc[2] + i * 0.25), color=GOLD if i % 2 == 0 else "#ffd94a", gloss=0.5, bevel=0.06, metal=True)
+    I.cyl(r * 0.78, 0.26, loc=(loc[0], loc[1], loc[2] + (n - 1) * 0.25 + 0.01), color="#ffe27a", gloss=0.55, bevel=0.03, metal=True)
+
+def icon_coins():
+    coin_stack(4, loc=(-0.25, 0.25, -0.35))
+    I.coin(loc=(0.8, -0.75, 0.0), rot=(78, 0, -22), r=0.68)
+
+def icon_up_cash():
+    coin_stack(4, loc=(-0.25, 0.25, -0.35))
+    up_arrow((1.0, -0.8, -0.35))
+
+def icon_cash():
+    # a fat bundle of banknotes with a paper band, and a coin in front
+    G1, G2 = "#5bcf6a", "#9ff0a2"
+    for i in range(5):
+        I.box((2.0, 1.1, 0.12), loc=(0.02 * (i % 2), 0.02 * ((i + 1) % 2), -0.3 + i * 0.13), color=G1 if i % 2 == 0 else "#4fbf5e", bevel=0.03)
+    I.box((1.5, 0.75, 0.02), loc=(0, 0, 0.29), color=G2, bevel=0.0)
+    t = I.text("$", 0.55, 0.03, loc=(0, 0, 0.31), rot=(0, 0, 0), color="#2f9a45")
+    I.box((0.42, 1.16, 0.7), loc=(-0.45, 0, -0.03), color="#ffd23a", bevel=0.03, gloss=0.45)
+    I.coin(loc=(0.75, -0.75, -0.1), rot=(78, 0, -20), r=0.55)
+
+def icon_gem():
+    brilliant()
+
+def brilliant(loc=(0, 0, 0), rot=(6, 0, 11), s=1.0):
+    """Brilliant-cut gem: table, crown facets, girdle and pavilion, each with its own tint."""
+    bm = bmesh.new()
+    TOP, GT, GB, CUL = 0.5, 0.14, 0.04, -1.05
+    table = [bm.verts.new((math.cos(2 * math.pi * i / 8 + math.pi / 8) * 0.56 * s, math.sin(2 * math.pi * i / 8 + math.pi / 8) * 0.56 * s, TOP * s)) for i in range(8)]
+    gt = [bm.verts.new((math.cos(2 * math.pi * k / 16 + math.pi / 8) * 1.0 * s, math.sin(2 * math.pi * k / 16 + math.pi / 8) * 1.0 * s, GT * s)) for k in range(16)]
+    gb = [bm.verts.new((v.co.x, v.co.y, GB * s)) for v in gt]
+    mid = [bm.verts.new((math.cos(2 * math.pi * k / 8 + math.pi / 8 + math.pi / 8) * 0.52 * s, math.sin(2 * math.pi * k / 8 + math.pi / 8 + math.pi / 8) * 0.52 * s, -0.5 * s)) for k in range(8)]
+    culet = bm.verts.new((0, 0, CUL * s))
+    faces = []
+    f = bm.faces.new(table); faces.append((f, 0))
+    for i in range(8):
+        t0, t1 = table[i], table[(i + 1) % 8]
+        g0, g1, g2 = gt[2 * i], gt[2 * i + 1], gt[(2 * i + 2) % 16]
+        faces.append((bm.faces.new((t0, g0, g1)), 1))
+        faces.append((bm.faces.new((t0, g1, t1)), 2))
+        faces.append((bm.faces.new((t1, g1, g2)), 1))
+    for k in range(16):
+        faces.append((bm.faces.new((gt[k], gb[k], gb[(k + 1) % 16], gt[(k + 1) % 16])), 3))
+    for i in range(8):
+        a, b, c3 = gb[2 * i], gb[2 * i + 1], gb[(2 * i + 2) % 16]
+        m = mid[i]
+        faces.append((bm.faces.new((a, m, b)), 4))
+        faces.append((bm.faces.new((b, m, c3)), 5))
+        faces.append((bm.faces.new((a, culet, m)), 5 if i % 2 else 4))
+        faces.append((bm.faces.new((m, culet, c3)), 4 if i % 2 else 5))
+    for fc, mi in faces:
+        fc.material_index = mi
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new("gem")
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new("gem", me)
+    bpy.context.collection.objects.link(ob)
+    for col in ("#a8f2ff", "#47d3ff", "#22b2ff", "#1595f0", "#1667ff", "#2a8cff"):
+        m = mat(col, gloss=0.75)
+        m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.42 if col not in ("#1667ff", "#2a8cff") else 0.7
+        ob.data.materials.append(m)
+    ob.location = loc
+    ob.rotation_euler = [math.radians(a) for a in rot]
+    ob["keep_flat"] = True
+    return ob
+
+def icon_invite():
+    # envelope with a wax heart seal
+    I.box((1.9, 0.24, 1.3), color=I.WHITE, bevel=0.08)
+    I.poly([(-0.92, 0.62), (0.92, 0.62), (0, -0.12)], 0.12, loc=(0, -0.15, 0), color="#dfe3ef", bevel=0.04)
+    I.poly([(-0.92, -0.62), (-0.1, 0.02), (-0.92, 0.5)], 0.06, loc=(0, -0.13, 0), color="#eef0f7", bevel=0.02)
+    I.poly([(0.92, -0.62), (0.1, 0.02), (0.92, 0.5)], 0.06, loc=(0, -0.13, 0), color="#eef0f7", bevel=0.02)
+    heart = []
+    for k in range(40):
+        t = 2 * math.pi * k / 40
+        heart.append((16 * math.sin(t) ** 3 * 0.017, (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) * 0.017))
+    I.poly(heart, 0.16, loc=(0, -0.26, -0.06), color=I.RED, bevel=0.05, gloss=0.55)
+
 def icon_crew():
     I.hardhat(rot=(16, 0, 22))
 
-def icon_hire():
-    icon_crew()
-
-def icon_up_crew():
-    icon_crew()
 
 for name, fn in list(globals().items()):
     if name.startswith("icon_") and callable(fn):
@@ -347,7 +509,7 @@ def frame_and_render(path, view=(0, -1, 0.42), margin=1.12):
     scn.render.resolution_x = scn.render.resolution_y = RES
     I.frame_and_render(path, view=view, margin=margin)
 
-VIEWS = {"gift": (0, -1, 0.8), "settings": (0, -1, 0.55), "locations": (0, -1, 0.42), "quest": (0, -1, 0.3), "portfolio": (0, -1, 0.38)}
+VIEWS = {"gift": (0, -1, 0.8), "cash": (0, -1, 0.85), "gem": (0, -1, 0.42), "coins": (0, -1, 0.45), "up_cash": (0, -1, 0.45), "board": (0, -1, 0.3), "settings": (0, -1, 0.55), "locations": (0, -1, 0.42), "quest": (0, -1, 0.3), "portfolio": (0, -1, 0.38)}
 
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
