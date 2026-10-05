@@ -606,13 +606,18 @@ def i_starter():
 
 
 def i_rushcrew():
-    hh = hardhat((0, 0.2, 0), rot=(-8, 0, 28), col="#ffa91a", s=1.2)
-    # a round blue badge with a lightning bolt: 2x speed
-    # in front of the hat, up at its top right, turned to the camera (never hidden behind the brim)
-    P = _xf((1.5, -1.35, 0.55), (-23, 0, 0), 0.8)
-    obj("bb", bm_prism(circle(0.82, 64), 0.28, axis="Y"), candy("#2f8cff", rough=0.25), parent=P, bevel=0.06)
-    b = poly(BOLT, 0.3, candy("#ffe14a", rough=0.25, emit=0.6), rot=(0, 0, 0), bevel=0.03)
-    b.matrix_world = P @ _xf((0, -0.2, 0)) @ Matrix.Diagonal((0.62, 1, 0.62, 1))
+    hh = track(hardhat, (0, 0.2, 0), rot=(-8, 0, 28), col="#ffa91a", s=1.2)
+    # a round blue badge with a lightning bolt (2x speed): bottom right, in front of the whole hat so the brim never
+    # goes through it (placed from the hat's measured size)
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(c) for o in GROUPS[-1] for c in o.bound_box]
+    xmax, ymin = max(p.x for p in pts), min(p.y for p in pts)
+    P = _xf((xmax - 0.2, ymin - 0.35, 0.4), (-23, 0, 0), 0.8)
+    def badge_():
+        obj("bb", bm_prism(circle(0.82, 64), 0.28, axis="Y"), candy("#2f8cff", rough=0.25), parent=P, bevel=0.06)
+        b = poly(BOLT, 0.3, candy("#ffe14a", rough=0.25, emit=0.6), rot=(0, 0, 0), bevel=0.03)
+        b.matrix_world = P @ _xf((0, -0.2, 0)) @ Matrix.Diagonal((0.62, 1, 0.62, 1))
+    track(badge_)
     for k, (z, l) in enumerate(((1.1, 1.2), (0.65, 1.7), (0.2, 1.0))):
         box((l, 0.1, 0.13), candy("#ff8a26", emit=0.5), loc=(-1.6 - l * 0.2, 0.5, z), bevel=0.05)
 
