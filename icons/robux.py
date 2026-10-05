@@ -351,14 +351,14 @@ def i_bigcrew():
     hardhat((-0.85, 0.9, 0.75), rot=(-25, 0, 25), col="#ff8a26", s=0.75)
     hardhat((0.85, 0.9, 0.75), rot=(-25, 0, -25), col="#3d8cff", s=0.75)
     hardhat((0, -0.4, 0.0), rot=(-22, 0, 0), col="#ffc534", s=1.0)
-    badge("+3", (1.25, -1.2, 1.15), s=0.8, col="#3fd36a")
+    badge("+3", (1.25, -1.2, 1.15), s=0.8, col="#3fd36a", rot=(-24, 0, 0))
 
 
 def i_cash2x():
     bills((-0.2, 0.25, 0), rot=(0, 0, 12), n=8)
     bills((0.25, -0.35, 0.0), rot=(0, 0, -8), n=5, s=0.95)
     coin(loc=(-1.25, -0.55, 0.35), rot=(72, 0, 25), r=0.55)
-    badge("2X", (1.15, -1.0, 1.05), s=0.8)
+    badge("2X", (1.15, -1.0, 1.05), s=0.8, rot=(-36, 0, 0))
 
 
 def dumbbell(loc, rot=(0, 0, 0), plate="#ff3b4a", s=1.0):
@@ -372,7 +372,7 @@ def dumbbell(loc, rot=(0, 0, 0), plate="#ff3b4a", s=1.0):
 
 def i_strength2x():
     dumbbell((0, 0, 0.3), rot=(0, -25, -15), plate="#ff6a2b")
-    badge("2X", (1.1, -0.9, 1.25), s=0.8)
+    badge("2X", (1.1, -0.9, 1.25), s=0.8, rot=(-16, 0, 0))
 
 
 def robot(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
@@ -403,7 +403,7 @@ def robot(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
 
 def i_autobuild():
     robot(rot=(0, 0, -12))
-    badge("AUTO", (-1.15, -0.8, 0.45), s=0.62, col="#3fd36a")
+    badge("AUTO", (-1.15, -0.8, 0.45), s=0.62, col="#3fd36a", rot=(-16, 0, 0))
 
 
 def i_autotrain():
@@ -414,7 +414,7 @@ def i_autotrain():
 def i_gems2x():
     gem(BLUE_GEM, loc=(-0.35, 0.3, 0.2), rot=(10, 0, 12), s=1.0)
     gem(PINK_GEM, loc=(0.75, -0.2, -0.2), rot=(10, 0, -18), s=0.72)
-    badge("2X", (1.1, -0.9, 0.95), s=0.75)
+    badge("2X", (1.1, -0.9, 0.95), s=0.75, rot=(-16, 0, 0))
 
 
 def i_fasttools():
@@ -571,7 +571,7 @@ def stopwatch(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
 def i_cashboost():
     bills((-0.55, 0.5, -0.1), rot=(0, 0, 14), n=8)
     stopwatch((0.55, -0.55, 0.75), rot=(0, 0, -10), s=0.85)
-    badge("2X", (-1.15, -1.1, -0.35), s=0.68)
+    badge("2X", (-1.15, -1.1, -0.35), s=0.68, rot=(-30, 0, 0))
 
 
 def spin_wheel(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0):
