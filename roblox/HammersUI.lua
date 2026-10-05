@@ -494,7 +494,7 @@ function M.Crates(tok)
 	if not c.live(tok) then return end
 	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
-	K.section(c.content, 1, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "one hammer in every crate  ·  ? shows what's inside  ·  a Supply Crate drops every 6 contracts")
+	K.section(c.content, 1, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
 	crateTiles(data, 2, true)
 	stormBanner(3)
 	K.row(c.content, 4, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
@@ -686,12 +686,13 @@ function M.MyCrates(tok)
 	if not data then K.empty(c.content, 1, "Couldn't load your crates. Open the Inventory again.", "gift") return end
 	local total = 0
 	for _, n in pairs(data.crates) do total += n end
+	local left = 6 - (tonumber(data.progress) or 0)
 	if total > 0 then
-		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  every one holds a hammer  ·  ? shows what's inside")
+		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  ? = what's inside  ·  next free Supply Crate in " .. left .. (left == 1 and " contract" or " contracts"))
 		crateTiles(data, 2, false)
 	else
-		K.banner(c.content, 1, { name = "NO CRATES YET", line = "A Supply Crate drops every 6 contracts you finish. Buy more in the Shop (CRATES) with cash, Gems or Robux.", icon = "gift", color = K.LOCK,
-			tint = Color3.fromRGB(220, 222, 240), height = 118 })
+		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts") .. ". More in the Shop (CRATES): cash, Gems or Robux.", icon = "gift", color = K.LOCK,
+			tint = Color3.fromRGB(220, 222, 240), height = 118, bar = { (6 - left) / 6, GOLD, (6 - left) .. " / 6 contracts" } })
 	end
 	K.row(c.content, 3, { name = "Need more crates?", line = "Supply Crates for cash, Builder's and Golden Crates for Gems or Robux", icon = "shop", color = Color3.fromRGB(110, 200, 255), height = 92, buttonW = 190,
 		button = { "SHOP", K.GREEN, function() c.click(); if _G.__CE_ShopUI then _G.__CE_ShopUI.Show("hammers") end end, size = 22 } })
