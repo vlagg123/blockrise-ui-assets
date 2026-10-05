@@ -143,11 +143,11 @@ def g_hands():
     # fingers index -> pinky: x, width, top
     for x, w, top in ((-0.44, 0.3, 1.14), (-0.147, 0.3, 1.18), (0.147, 0.3, 1.14), (0.43, 0.27, 1.06)):
         h = top - 0.56
-        pillow("finger", (w, 0.74, h), sk, loc=(x, 0.06, 0.56 + h / 2), parent=P, bevel=0.1)
+        pillow("finger", (w, 0.74, h), sk, loc=(x, 0.06, 0.56 + h / 2), parent=P, bevel=0.125)
     rtube("thumb", [(-0.5, 0.25, 0.32), (-0.64, -0.08, 0.44), (-0.46, -0.4, 0.5), (-0.12, -0.5, 0.5), (0.16, -0.48, 0.47)],
           [0.22, 0.21, 0.195, 0.18, 0.165], sk, parent=P)
-    nail = sphere(0.1, pbr("nail3", "#ffcab4", rough=0.25, coat=0.5, emit=0.05), outline=False)
-    nail.matrix_world = P @ _xf((0.12, -0.6, 0.53), (-40, 0, -4), (0.9, 0.38, 0.7))
+    nail = sphere(0.1, pbr("nail4", "#ffd3c0", rough=0.22, coat=0.6, emit=0.06), outline=False)
+    nail.matrix_world = P @ _xf((0.17, -0.6, 0.575), (-40, 0, -4), (1.15, 0.35, 0.85))
     obj("wrist", bm_cyl(0.42, 0.6, 64), sk, loc=(0, 0.3, 0.0), scale=(1, 0.85, 1), parent=P, smooth=40, outline=False)
     band = pbr("band_red", "#ff4a3d", rough=0.7, coat=0.05, emit=0.1, tex="leaf", scale=18, bump=0.3, dark="#ef3b30", light="#ff5d50")
     ribbed("band", 0.52, 0.42, band, sy=0.86, loc=(0, 0.3, -0.12), parent=P, ribs=30, amp=0.012, bevel=0.1)
@@ -495,7 +495,7 @@ ICONS = {
     "gear7": g_ibeam, "gear8": g_block, "gear9": g_anvil, "gear10": g_wreck, "gear11": g_girder, "gear12": g_hook,
     "excavator": m_excavator, "mixer": m_mixer, "crane": m_crane, "st_tires": s_tires, "st_hoist": s_hoist,
 }
-VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.3, -1, 0.35), "gear2": (-0.22, -1, 0.18),
+VIEW = {"gear3": (-0.1, -1, 0.75), "gear4": (-0.2, -1, 0.45), "gear8": (-0.2, -1, 0.45), "gear11": (-0.2, -1, 0.3), "gear12": (-0.1, -1, 0.12), "gear1": (-0.28, -1, 0.42), "gear2": (-0.22, -1, 0.18),
         "excavator": (-0.3, -1, 0.35), "mixer": (-0.3, -1, 0.3), "crane": (-0.3, -1, 0.3), "st_tires": (-0.2, -1, 0.25), "st_hoist": (-0.2, -1, 0.25)}
 SPARK = {"gear9": [(0.82, 0.2, 0.07), (0.66, 0.1, 0.045)], "gear5": [(0.82, 0.2, 0.06)], "gear12": [(0.84, 0.18, 0.06)], "gear10": [(0.84, 0.16, 0.06)]}
 
