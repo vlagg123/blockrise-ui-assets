@@ -87,7 +87,7 @@ def pbr(name, col, metal=0.0, rough=0.35, coat=0.3, trans=0.0, ior=1.5, emit=0.1
         nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
         cloud = _node(nt, "ShaderNodeTexNoise", Scale=1.1, Detail=3.0, Roughness=0.5)
         nt.links.new(mp.outputs[0], cloud.inputs["Vector"])
-        base = _ramp(nt, [(0.3, "#ffffff"), (0.75, "#dcdfe6")])
+        base = _ramp(nt, [(0.3, "#ffffff"), (0.72, "#d3d7e0")])
         nt.links.new(cloud.outputs["Fac"], base.inputs["Fac"])
 
         def veins(scale, dist, w, seed_off):
@@ -116,8 +116,8 @@ def pbr(name, col, metal=0.0, rough=0.35, coat=0.3, trans=0.0, ior=1.5, emit=0.1
             nt.links.new(a_out, mx.inputs["A"])
             mx.inputs["B"].default_value = (*I.rgb(col_b), 1)
             return mx.outputs["Result"]
-        grey = mixc(veins(0.9, 10.0, 0.03, 0.0), base.outputs["Color"], "#8e97ab")
-        gold = mixc(veins(0.6, 14.0, 0.012, 2.0), grey, "#e0a93c")
+        grey = mixc(veins(2.0, 9.0, 0.045, 0.0), base.outputs["Color"], "#7a8399")
+        gold = mixc(veins(1.3, 12.0, 0.02, 2.0), grey, "#d99a2b")
         nt.links.new(gold, p.inputs["Base Color"])
         nt.links.new(gold, p.inputs["Emission Color"])
     elif tex == "grain":
@@ -125,8 +125,8 @@ def pbr(name, col, metal=0.0, rough=0.35, coat=0.3, trans=0.0, ior=1.5, emit=0.1
         w = nt.nodes.new("ShaderNodeTexWave")
         w.wave_type = "BANDS"
         w.bands_direction = "Z"
-        w.inputs["Scale"].default_value = 1.3
-        w.inputs["Distortion"].default_value = 3.0
+        w.inputs["Scale"].default_value = 0.9
+        w.inputs["Distortion"].default_value = 2.0
         w.inputs["Detail"].default_value = 2.0
         w.inputs["Detail Scale"].default_value = 1.2
         nt.links.new(tc.outputs["Object"], w.inputs["Vector"])
@@ -407,7 +407,7 @@ def icon_copper():
     """Copper Wire: a wooden cable reel wound with shiny copper wire, the free end curling out"""
     cu = pbr("copper", "#ff8b4e", metal=1.0, rough=0.2, coat=0.45, emit=0.14)
     cu_core = pbr("copper_core", "#c45a2a", metal=1.0, rough=0.35, emit=0.1)
-    wood = pbr("reel_wood", "#e0a868", rough=0.45, coat=0.3, tex="grain", dark="#cf9454", light="#eab778", emit=0.18)
+    wood = pbr("reel_wood", "#e0a868", rough=0.45, coat=0.3, tex="grain", dark="#d89b5a", light="#e7b273", emit=0.18)
     dark = pbr("reel_hub", "#5a3a22", rough=0.5, emit=0.06)
     R0, L, Rf, wr = 0.62, 1.16, 1.05, 0.062
     for x in (-L / 2 - 0.08, L / 2 + 0.08):
