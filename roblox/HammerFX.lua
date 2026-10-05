@@ -190,7 +190,8 @@ end
 ---------------------------------------------------------------------------
 local C3 = Color3.fromRGB
 local AURA = {
-	diamond = { rings = { { count = 3, shape = "gem", size = 0.24, colors = { C3(235, 250, 255), C3(170, 235, 255), C3(255, 210, 250) }, speed = 1.4, tilt = 0.35, r = 1.05, spin = 2.5, trans = 0.05 } } },
+	diamond = { rings = { { count = 4, shape = "gem", size = 0.3, colors = { C3(235, 250, 255), C3(170, 235, 255), C3(255, 210, 250) }, speed = 1.4, tilt = 0.35, r = 1.1, spin = 2.5,
+		trans = 0.12, trail = { C3(200, 240, 255), 0.18 } } }, twinkle = { every = { 0.3, 0.6 } } },
 	plasma = { rings = { { count = 2, shape = "ball", size = 0.22, colors = { C3(150, 245, 255) }, speed = 3.4, tilt = 0.5, r = 1.0, trail = { C3(80, 220, 255), 0.22 } },
 		{ count = 2, shape = "ball", size = 0.16, colors = { C3(200, 255, 255) }, speed = -2.6, tilt = -0.7, r = 1.25, trail = { C3(120, 200, 255), 0.18 } } },
 		arcs = { every = { 0.25, 0.55 }, color = C3(90, 220, 255), toOrbs = true } },
@@ -209,7 +210,10 @@ local function makeOrbs(e, aura)
 		for i = 1, rd.count do
 			local p = fxPart({ Name = "Orb", Shape = rd.shape == "ball" and Enum.PartType.Ball or Enum.PartType.Block, Size = Vector3.one * rd.size,
 				Color = rd.colors[(i - 1) % #rd.colors + 1], Transparency = rd.trans or 0 })
-			if rd.shape == "gem" then p.Material = Enum.Material.Glass; p.Reflectance = 0.3 end
+			if rd.shape == "gem" then
+				-- a cut gem: a cube on its point, with a white sparkle core
+				new("PointLight", { Color = p.Color, Brightness = 0.6, Range = 3, Shadows = false, Parent = p })
+			end
 			if rd.trail then
 				local a0 = new("Attachment", { Position = Vector3.new(0, rd.size * 0.5, 0), Parent = p })
 				local a1 = new("Attachment", { Position = Vector3.new(0, -rd.size * 0.5, 0), Parent = p })
@@ -351,6 +355,11 @@ RunService.RenderStepped:Connect(function()
 						local p1 = p0 + (out + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5)).Unit * (0.7 + math.random() * 0.9)
 						zap(p0, p1, { n = 4, amp = 0.28, w = 0.1, color = arcs.color, life = 0.09, glow = 0.15, forks = 0.3 })
 					end
+				end
+				-- the diamond's gems twinkle
+				if e.aura and e.aura.twinkle and e.orbs and #e.orbs > 0 and d < 90 and now >= (e.nextTwinkle or 0) then
+					e.nextTwinkle = now + e.aura.twinkle.every[1] + math.random() * (e.aura.twinkle.every[2] - e.aura.twinkle.every[1])
+					emitAt(e.orbs[math.random(#e.orbs)].part.Position, "glint", Color3.new(1, 1, 1), 2)
 				end
 				-- the solar hammer throws a little flare now and then
 				if e.aura and e.aura.flare and d < 90 and now >= e.nextFlare then

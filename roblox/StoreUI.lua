@@ -26,7 +26,7 @@ local CASH_COLS = { Color3.fromRGB(120, 210, 90), Color3.fromRGB(60, 190, 120), 
 local ICON = {
 	-- passes
 	vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
-	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations", stormhammer = "up_power",
+	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations", stormhammer = "up_power", skipanim = "⏭️",
 	-- products
 	starter = "gift", rushcrew = "up_crew", cashpack = "cash", cashstack = "cash", cashvault = "coins", cashbank = "store", cashboost = "up_cash",
 	spins3 = "spin",
@@ -37,7 +37,7 @@ local PASS_COL = {
 	vip = Color3.fromRGB(255, 190, 40), bigcrew = Color3.fromRGB(90, 200, 120), cash2x = Color3.fromRGB(80, 210, 110), strength2x = Color3.fromRGB(255, 120, 80),
 	autobuild = Color3.fromRGB(90, 170, 255), autotrain = Color3.fromRGB(255, 150, 90), gems2x = Color3.fromRGB(70, 190, 255), fasttools = Color3.fromRGB(255, 200, 60),
 	monster = Color3.fromRGB(255, 110, 110), goldcar = Color3.fromRGB(255, 196, 46), teleporter = Color3.fromRGB(235, 70, 130),
-	stormhammer = Color3.fromRGB(80, 170, 255),
+	stormhammer = Color3.fromRGB(80, 170, 255), skipanim = Color3.fromRGB(90, 200, 255),
 }
 
 -- Robux prices load in the background so the Store opens instantly
@@ -177,7 +177,19 @@ local function passes(tok)
 	for _, p in ipairs(Config.Store.passes) do if visible(p) then table.insert(list, p) end end
 	itemTiles(tok, list, 3, { pass = true, make = function(p)
 		local owned = c.player:GetAttribute("Pass_" .. p.key) == true
-		return { name = p.name, icon = ICON[p.key] or p.icon, color = PASS_COL[p.key] or T.purple, status = owned and { "OWNED", K.GREEN } or nil, spin = p.key == "vip" }
+		local o = { name = p.name, icon = ICON[p.key] or p.icon, color = PASS_COL[p.key] or T.purple, status = owned and { "OWNED", K.GREEN } or nil, spin = p.key == "vip" }
+		if owned and p.key == "skipanim" then
+			-- yours: switch the building fly-around off / on
+			local on = c.player:GetAttribute("SkipAnim") == true
+			o.status = nil
+			o.stats = { { on and "NO ANIMATION" or "ANIMATION ON", on and K.GREEN or T.blue } }
+			o.button = { on and "SKIP: ON" or "SKIP: OFF", on and K.GREEN or K.LOCK, function()
+				c.click()
+				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
+				if r then r:FireServer("skipanim", not on) end
+			end }
+		end
+		return o
 	end })
 end
 
@@ -265,7 +277,7 @@ function M.Init(ctx)
 	end)
 	-- a pass bought while the Store is open shows OWNED right away
 	c.player.AttributeChanged:Connect(function(a)
-		if a:sub(1, 5) == "Pass_" and c.modalOpen() and c.modalTitle.Text == "Store" then M.Show(nil, true) end
+		if (a:sub(1, 5) == "Pass_" or a == "SkipAnim") and c.modalOpen() and c.modalTitle.Text == "Store" then M.Show(nil, true) end
 	end)
 end
 
