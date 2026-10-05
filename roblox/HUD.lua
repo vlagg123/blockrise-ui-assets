@@ -249,6 +249,26 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 		if type(v) == "number" then bl.Text = v > 9 and "9+" or tostring(v) else bl.Text = "!" end
 	end
 	function api.setLabel(t) lbl.Text = t end
+	-- a small dark pill on the top-right corner (a timer: when the next free spin comes...)
+	local cornerPill, cornerLbl
+	function api.setCorner(t)
+		if not t or t == "" then
+			if cornerPill then cornerPill.Visible = false end
+			return
+		end
+		if not cornerPill then
+			cornerPill = new("Frame", { Name = "Corner", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 8, 0, -7), Size = UDim2.fromOffset(0, 22),
+				AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 6, Parent = b })
+			corner(cornerPill, 11)
+			grad(cornerPill, PANEL1, PANEL2)
+			stroke(cornerPill, 2)
+			new("UIPadding", { PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7), Parent = cornerPill })
+			cornerLbl = text({ Size = UDim2.fromOffset(0, 22), AutomaticSize = Enum.AutomaticSize.X, Font = ROUND, TextSize = 13, Text = "", ZIndex = 7, Parent = cornerPill })
+			tstroke(cornerLbl, 1.5)
+		end
+		cornerPill.Visible = true
+		cornerLbl.Text = t
+	end
 	return api
 end
 
@@ -617,6 +637,107 @@ function M.Init(ctx)
 	refreshLevel()
 
 	---------------------------------------------------------------------------
+	-- BOTTOM-LEFT, above the level: everything working for you right now
+	-- (bad-weather bonus, boosts and Rush Crew with their timers, VIP and every pass you own, friends, Premium)
+	---------------------------------------------------------------------------
+	local fx = new("Frame", { Name = "Effects", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -64), Size = UDim2.fromOffset(460, 160),
+		BackgroundTransparency = 1, Parent = root })
+	local fxScale = new("UIScale", { Parent = fx })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Wraps = true, Padding = UDim.new(0, 6), VerticalAlignment = Enum.VerticalAlignment.Bottom,
+		SortOrder = Enum.SortOrder.LayoutOrder, Parent = fx })
+	local PASS_ICON = { vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
+		fasttools = "up_power", teleporter = "locations" }
+	local PASS_COL = { vip = Color3.fromRGB(255, 190, 40), bigcrew = Color3.fromRGB(90, 200, 120), cash2x = Color3.fromRGB(80, 210, 110),
+		strength2x = Color3.fromRGB(255, 120, 80), autobuild = Color3.fromRGB(90, 170, 255), autotrain = Color3.fromRGB(255, 150, 90),
+		gems2x = Color3.fromRGB(70, 190, 255), fasttools = Color3.fromRGB(255, 200, 60), teleporter = Color3.fromRGB(235, 70, 130) }
+	local BOOST_ICON = { cash = "up_cash", strength = "up_strength", power = "up_power", crew = "up_crew" }
+	local BOOST_COL = { cash = Color3.fromRGB(80, 210, 110), strength = Color3.fromRGB(255, 120, 80), power = Color3.fromRGB(255, 196, 46), crew = Color3.fromRGB(90, 170, 255) }
+	-- passes that are cars (they live in CARS, not here)
+	local carPass = {}
+	for _, v in ipairs(Config.Vehicles or {}) do if v.pass then carPass[v.pass] = true end end
+	local function pct(x) return math.floor((x or 0) * 100 + 0.5) .. "%" end
+	local fxChips = {}
+	local function fxChip(key, icon, color, order)
+		local ch = fxChips[key]
+		if ch then return ch end
+		local f = new("Frame", { Name = key, Size = UDim2.fromOffset(0, 30), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = WHITE, BorderSizePixel = 0,
+			LayoutOrder = order, Parent = fx })
+		corner(f, 15)
+		grad(f, PANEL1, PANEL2)
+		stroke(f, 2.5)
+		new("UIPadding", { PaddingLeft = UDim.new(0, 3), PaddingRight = UDim.new(0, 11), Parent = f })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
+		local disc = new("Frame", { Name = "Disc", Size = UDim2.fromOffset(24, 24), BackgroundColor3 = WHITE, BorderSizePixel = 0, LayoutOrder = 1, Parent = f })
+		corner(disc, 12)
+		grad(disc, color:Lerp(WHITE, 0.3), color:Lerp(INK, 0.2))
+		stroke(disc, 1.5)
+		if Icons.has(icon) then
+			Icons.make(icon, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(28, 28), ZIndex = 3, Parent = disc })
+		else
+			new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = icon, TextSize = 15, Font = Enum.Font.SourceSans, ZIndex = 3, Parent = disc })
+		end
+		local l = text({ Size = UDim2.fromOffset(0, 30), AutomaticSize = Enum.AutomaticSize.X, Font = ROUND, TextSize = 14, LayoutOrder = 2, Text = "", Parent = f })
+		tstroke(l, 1.5)
+		local sc = new("UIScale", { Scale = 0.3, Parent = f })
+		UI.tween(sc, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
+		ch = { frame = f, label = l }
+		fxChips[key] = ch
+		return ch
+	end
+	local function updateEffects()
+		local now = workspace:GetServerTimeNow()
+		local want = {}
+		local function add(key, icon, color, order, label) want[key] = { icon, color, order, label } end
+		-- timed: bad weather, boosts, Rush Crew
+		if RS:GetAttribute("Weather") == "rain" then
+			local left = (RS:GetAttribute("WeatherEnds") or 0) - now
+			add("rain", "🌧️", Color3.fromRGB(110, 170, 255), 1, "RAIN +" .. pct(Config.Weather and Config.Weather.rainBonus) .. " CASH" .. (left > 0 and ("  " .. fmtTime(left)) or ""))
+		end
+		local bi = 0
+		for key, b in pairs(Config.Boosts or {}) do
+			bi += 1
+			local left = player:GetAttribute("Boost_" .. key) or 0
+			if left > 0 then add("boost_" .. key, BOOST_ICON[key] or b.icon, BOOST_COL[key] or T.accent, 10 + bi, string.upper(b.name or key) .. "  " .. fmtTime(left)) end
+		end
+		local rush = (player:GetAttribute("RushCrewEnds") or 0) - now
+		if rush > 0 then add("rush", "up_crew", Color3.fromRGB(255, 150, 40), 20, "RUSH CREW 2X  " .. fmtTime(rush)) end
+		-- forever: VIP and every pass you own
+		for i, p in ipairs(Config.Store.passes or {}) do
+			if player:GetAttribute("Pass_" .. p.key) == true and not carPass[p.key] then
+				local label = (p.key == "vip" and ("VIP +" .. pct(Config.VipBonus) .. " CASH"))
+					or (p.key == "bigcrew" and ("BIG CREW +" .. tostring(Config.BigCrewSlots or 3)))
+					or string.upper(p.name or p.key)
+				add("pass_" .. p.key, PASS_ICON[p.key] or p.icon or "star", PASS_COL[p.key] or T.purple, 30 + i, label)
+			end
+		end
+		local fb = player:GetAttribute("FriendBonus") or 0
+		if fb > 0 then add("friends", "invite", Color3.fromRGB(120, 220, 140), 60, "FRIENDS +" .. pct(fb) .. " CASH") end
+		if player.MembershipType == Enum.MembershipType.Premium then
+			add("premium", "⭐", Color3.fromRGB(255, 205, 70), 61, "PREMIUM +" .. pct(Config.PremiumBonus) .. " CASH")
+		end
+		for key, ch in pairs(fxChips) do
+			if not want[key] then
+				fxChips[key] = nil
+				local f = ch.frame
+				local sc = f:FindFirstChildOfClass("UIScale")
+				if sc then UI.tween(sc, 0.18, { Scale = 0 }) end
+				task.delay(0.2, function() f:Destroy() end)
+			end
+		end
+		for key, w in pairs(want) do
+			local ch = fxChip(key, w[1], w[2], w[3])
+			ch.label.Text = w[4]
+		end
+	end
+	task.spawn(function()
+		while root.Parent do
+			pcall(updateEffects)
+			task.wait(0.5)
+		end
+	end)
+
+	---------------------------------------------------------------------------
 	-- layout (computer / phone, tall / short screens)
 	---------------------------------------------------------------------------
 	local megaOn = false
@@ -668,6 +789,9 @@ function M.Init(ctx)
 		local rs = compact and 0.8 or 1
 		rightScale.Scale = rs
 		lvlScale.Scale = compact and 0.85 or 1
+		fxScale.Scale = compact and 0.85 or 1
+		-- the effects never reach the hotbar in the middle of the bottom edge
+		fx.Size = UDim2.fromOffset(math.clamp(math.floor(camera.ViewportSize.X / s * 0.36 / fxScale.Scale), 220, 460), 160)
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
 			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 200 * rs) -- level with CARS / MORE
@@ -770,7 +894,9 @@ function M.Init(ctx)
 			giftB.setBadge(false)
 		end
 		local ready, sleft = c.spinReady()
-		more.items.spin.setLabel(ready and "SPIN!" or (sleft and sleft > 0 and fmtTime(sleft) or "SPIN"))
+		-- the button always says SPIN; the time to the next free spin sits small on its corner
+		more.items.spin.setLabel(ready and "SPIN!" or "SPIN")
+		more.items.spin.setCorner((not ready and sleft and sleft > 0) and fmtTime(sleft) or nil)
 		more.items.spin.setBadge(ready)
 		local missions = player:GetAttribute("MissionsReady") or 0
 		more.items.daily.setBadge(missions)

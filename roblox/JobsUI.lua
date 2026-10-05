@@ -56,6 +56,19 @@ function M.Show()
 	K.section(c.content, 3, "CONTRACTS", Color3.fromRGB(255, 220, 110), "finish fast for a bonus")
 	local p = c.player
 	local lvl, rep, str, reb = p:GetAttribute("Level") or 1, p:GetAttribute("Rep") or 0, p:GetAttribute("Strength") or 0, p:GetAttribute("Rebirths") or 0
+	-- a locked building says exactly what it needs: a green tick for what you have, a red cross for what's missing
+	local function needs(ct)
+		local parts = {}
+		local function add(ok, label, have)
+			table.insert(parts, string.format('<font color="%s">%s %s%s</font>', ok and "#239a45" or "#e0344f", ok and "✓" or "✗", label,
+				(not ok and have) and (" (you: " .. have .. ")") or ""))
+		end
+		if (ct.reqRebirth or 0) > 0 then add(reb >= ct.reqRebirth, "Rebirth " .. ct.reqRebirth, tostring(reb)) end
+		if (ct.reqLevel or 1) > 1 then add(lvl >= ct.reqLevel, "Level " .. ct.reqLevel, tostring(lvl)) end
+		if (ct.reqRep or 0) > 0 then add(rep >= ct.reqRep, Config.FormatNum(ct.reqRep) .. " Rep ⭐", Config.FormatNum(rep)) end
+		if (ct.reqStrength or 0) > 0 then add(str >= ct.reqStrength, Config.Short(ct.reqStrength) .. " Strength 💪", Config.Short(math.floor(str))) end
+		return "<b>To unlock:</b>  " .. table.concat(parts, "   ")
+	end
 	for i, ct in ipairs(data.contracts) do
 		local ord = contractOrder(ct.id)
 		local rk = K.rarityOf(ord, #Config.Contracts)
@@ -65,13 +78,14 @@ function M.Show()
 			{ "+" .. ct.rep .. " REP", Color3.fromRGB(240, 140, 20) },
 			{ "⚡ " .. c.fmtTime(ct.targetTime), T.purple },
 		}
-		if (ct.reqStrength or 0) > 0 then table.insert(chips, { "💪 " .. Config.Short(ct.reqStrength), Color3.fromRGB(255, 120, 80) }) end
+		-- (a locked building lists its Strength need in the "To unlock" line instead)
+		if ct.unlocked and (ct.reqStrength or 0) > 0 then table.insert(chips, { "💪 " .. Config.Short(ct.reqStrength), Color3.fromRGB(255, 120, 80) }) end
 		if (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) < 700 then
 			-- narrow window (phones): only the reward, the stars and the strength you need
 			table.remove(chips, 4)
 			table.remove(chips, 2)
 		end
-		local o = { name = ct.name, line = ct.client .. " · " .. ct.stages .. " stages" .. (ct.done > 0 and ("  ·  done x" .. ct.done) or ""),
+		local o = { name = ct.name, line = ct.unlocked and (ct.client .. " · " .. ct.stages .. " stages" .. (ct.done > 0 and ("  ·  done x" .. ct.done) or "")) or needs(ct),
 			icon = K.BUILDING[ct.id] or ART[ord] or "site", color = K.RAR[rk], chips = chips, height = 120, buttonW = 168,
 			new = ct.unlocked and (ct.done or 0) == 0 }
 		if ct.unlocked and data.active == ct.id then
