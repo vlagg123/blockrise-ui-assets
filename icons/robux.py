@@ -232,8 +232,9 @@ def money_bag(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, cloth="#d6a35a", sign="#2e9e4
             v.co.z = -0.55 + (z + 0.55) * 0.4  # flat-ish bottom
     obj("bag", bm, c, loc=(0, 0, 0.9), parent=P, smooth=80)
     obj("neck", bm_cyl(0.32, 0.4, 32, r2=0.42), c, loc=(0, 0, 1.95), parent=P, smooth=40)
-    sphere(0.5, c, scale=(1.0, 1.0, 0.55)).matrix_world = P @ _xf((0, 0, 2.3))
-    torus(0.38, 0.09, candy("#9c5a2a", rough=0.6, coat=0.1)).matrix_world = P @ _xf((0, 0, 1.92))
+    # the gathered top flares out above the tie
+    obj("ruffle", bm_cyl(0.34, 0.5, 40, r2=0.62), c, loc=(0, 0, 2.3), parent=P, smooth=40, bevel=0.06)
+    torus(0.4, 0.11, candy("#8a4a20", rough=0.6, coat=0.1)).matrix_world = P @ _xf((0, 0, 1.98))
     t = text("$", 1.05, 0.1, candy(sign, rough=0.3), rot=(90, 0, 0))
     t.matrix_world = P @ _xf((0, -1.0, 0.95), (90, 0, 0))
 
@@ -482,7 +483,7 @@ def i_starter():
 
 
 def i_rushcrew():
-    hardhat((0, 0.2, 0), rot=(-25, 0, 20), col="#ffc534", s=1.3)
+    hardhat((0, 0.2, 0), rot=(-8, 0, 28), col="#ffc534", s=1.25)
     poly(BOLT, 0.3, glow("#ffe14a", 1.2), loc=(0.95, -0.9, 0.6), rot=(0, 12, 0)).scale = (0.75, 0.75, 0.75)
     for k, (z, l) in enumerate(((1.1, 1.2), (0.65, 1.7), (0.2, 1.0))):
         box((l, 0.1, 0.13), candy("#ff8a26", emit=0.5), loc=(-1.6 - l * 0.2, 0.5, z), bevel=0.05)
@@ -726,7 +727,7 @@ ICONS = {
     "cashbank": i_cashbank, "cashboost": i_cashboost, "spin1": i_spin1, "spins3": i_spins3, "gems100": i_gems100, "gems300": i_gems300,
     "gems750": i_gems750, "gems1700": i_gems1700, "gems4500": i_gems4500, "gems12000": i_gems12000,
 }
-VIEW = {"cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.15, -1, 0.5), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
+VIEW = {"cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (-0.1, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
