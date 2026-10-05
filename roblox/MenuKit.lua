@@ -73,7 +73,7 @@ function K.artBox(parent, icon, color, props)
 	props = props or {}
 	color = color or T.blue
 	local box = UI.slice("tile", { Name = "Art", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 2, Parent = parent })
-	for k, v in pairs(props) do if k ~= "Spin" and k ~= "Dim" and k ~= "IconScale" then box[k] = v end end
+	for k, v in pairs(props) do if k ~= "Spin" and k ~= "Dim" and k ~= "IconScale" and k ~= "Custom" then box[k] = v end end
 	local top, bot = color:Lerp(Color3.new(1, 1, 1), 0.3), color:Lerp(Color3.new(0, 0, 0), 0.22)
 	if props.Dim then
 		local g = Color3.fromRGB(150, 152, 172)
@@ -89,6 +89,10 @@ function K.artBox(parent, icon, color, props)
 		ImageTransparency = props.Dim and 0.85 or 0.5, ZIndex = 3, Parent = box })
 	new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height, Parent = glow })
 	UI.slice("gloss", { Name = "Gloss", ImageTransparency = 0.45, ZIndex = 4, Parent = box })
+	if props.Custom then
+		-- the caller draws its own art (a 3D preview...) on top of the rays
+		return box, props.Custom(box)
+	end
 	local s = props.IconScale or 1
 	local pic = K.art(box, icon, UDim2.fromScale(s, s), 6)
 	new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height, Parent = pic })
@@ -192,7 +196,7 @@ function K.tile(grid, o)
 	local t = new("Frame", { Name = "Tile", BackgroundTransparency = 1, LayoutOrder = o.order or 0, ZIndex = 2, Parent = grid })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
 	local artH = o.artH or 128
-	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = o.iconScale })
+	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = o.iconScale, Custom = o.custom })
 	if o.badge then K.chip(t, o.badge[1], o.badge[2] or T.red, { Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
 	if o.tag then K.chip(t, o.tag[1], o.tag[2] or K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), ZIndex = 8 }) end
 	if o.corner then cornerButton(t, o.corner) end
