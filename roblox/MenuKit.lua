@@ -557,8 +557,9 @@ function K.window(parent, size, title, c1, c2, icon, noClose)
 	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(128, 128),
 		ImageTransparency = 0.6, Parent = stripes })
 	local hdr = new("Frame", { Name = "Header", Position = UDim2.fromOffset(70, -26), Size = UDim2.new(1, -140, 0, 70), BackgroundTransparency = 1, ZIndex = 20, Parent = w })
-	UI.slice("button", { Name = "Ribbon", ImageColor3 = c2 and c1:Lerp(c2, 0.45) or c1, ZIndex = 1, Parent = hdr })
-	local hs = new("CanvasGroup", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -16), BackgroundTransparency = 1, ZIndex = 2, Parent = hdr })
+	-- a flat ribbon (not a button: no 3D lip under it), the title in the middle of it
+	UI.slice("pill", { Name = "Ribbon", ImageColor3 = c2 and c1:Lerp(c2, 0.45) or c1, ZIndex = 1, Parent = hdr })
+	local hs = new("CanvasGroup", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -8), BackgroundTransparency = 1, ZIndex = 2, Parent = hdr })
 	UI.corner(12).Parent = hs
 	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(96, 96),
 		ImageTransparency = 0.3, Parent = hs })
