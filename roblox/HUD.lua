@@ -419,10 +419,8 @@ function M.Init(ctx)
 	function A.store(tab) if tab then _G.__CE_ShowStore(tab) else toggle("Store", _G.__CE_ShowStore) end end
 	function A.daily() toggle("Missions", _G.__CE_ShowMissions) end
 	function A.spin() toggle("Spin", _G.__CE_ShowSpin) end
-	function A.gift()
-		local i, _, left = c.playtime.Next()
-		if i and left <= 0 then c.playtime.Claim(i) else toggle("Gifts", c.playtime.Show) end
-	end
+	-- GIFT always opens the gifts page: a ready gift is opened there, with its OPEN! button
+	function A.gift() toggle("Gifts", c.playtime.Show) end
 	function A.go(place) if c.go then c.go(place) end end
 	c.actions = A
 
@@ -615,9 +613,10 @@ function M.Init(ctx)
 	---------------------------------------------------------------------------
 	-- RIGHT: Store, Gift (playtime timer), Spin, More (daily, codes, invite, trade, trophies, music)
 	---------------------------------------------------------------------------
-	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 500), Parent = root })
+	-- (12 px between the buttons: a timer pill on a button's corner never touches the button above)
+	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 540), Parent = root })
 	local rightScale = new("UIScale", { Parent = right })
-	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
+	new("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
 
 	local popups = {}
 	local function popup(name, defs2, anchorBtn, cols)
@@ -899,7 +898,7 @@ function M.Init(ctx)
 		fx.Size = UDim2.fromOffset(math.clamp(math.floor(camera.ViewportSize.X / s * 0.36 / fxScale.Scale), 220, 460), fx.Size.Y.Offset)
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
-			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 400 * rs) -- level with MORE (5th button)
+			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 424 * rs) -- level with MORE (5th button: 4 x (94 + 12))
 		end
 	end
 	gui:GetAttributeChangedSignal("Compact"):Connect(function() task.defer(layout) end)
