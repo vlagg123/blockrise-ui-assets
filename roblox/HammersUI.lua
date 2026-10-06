@@ -27,10 +27,12 @@ local GREEN_TXT = Color3.fromRGB(35, 154, 69)
 local studio = RunService:IsStudio()
 local rng = Random.new()
 
-local function money() return c.player:GetAttribute("Money") or 0 end
+-- what taps the server hasn't answered yet have spent (instant menus, see predict); shared with the Shop (c.spent)
+local spend = { cash = 0, gems = 0 }
+local function money() return math.max(0, (c.player:GetAttribute("Money") or 0) - spend.cash) end
 -- the tutorial: the Hammers Shop sells its one Supply Crate (no gems / Robux crates, no passes, no Inventory yet)
 local function inTut() return (c.player:GetAttribute("RoadStep") or 1) <= (Config.TutorialSteps or 7) end
-local function gems() return c.player:GetAttribute("Gems") or 0 end
+local function gems() return math.max(0, (c.player:GetAttribute("Gems") or 0) - spend.gems) end
 local function fmt(n) return Config.FormatMoney(n) end
 local function wide() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 end
 local function cols() return wide() and 4 or 3 end
@@ -59,8 +61,15 @@ local function isNew(it)
 	return os.time() - it.t < 1800
 end
 
+local lastAction = 0
 local function call(action, a, b)
 	if not HammerAction then return false, "Loading..." end
+	if action ~= "get" and action ~= "odds" then
+		-- (the server takes one hammer action every 0.15 s: a quicker one comes back "Slow down!")
+		local w = lastAction + 0.17 - os.clock()
+		if w > 0 then task.wait(w) end
+		lastAction = os.clock()
+	end
 	local ok, res, msg = pcall(function() return HammerAction:InvokeServer(action, a, b) end)
 	if not ok then return false, "No answer from the server" end
 	return res, msg
@@ -79,6 +88,54 @@ local function dataNow()
 	local data = fetch()
 	if loading.Parent then loading:Destroy() end
 	return data
+end
+
+-- Instant menus: a tap shows its result at once (the last state with the change made: a crate more, a level up, the
+-- hammer in your hand), the server gets it right after (one call at a time, in tap order) and when every tap has its
+-- answer the window takes the server's state, redrawn only where it differs (a refused tap goes back, with the reason).
+local HttpService = game:GetService("HttpService")
+local inFlight = 0
+local jobs, working = {}, false
+local function later(fn)
+	table.insert(jobs, fn)
+	if working then return end
+	working = true
+	task.spawn(function()
+		while #jobs > 0 do
+			local ok, e = pcall(table.remove(jobs, 1))
+			if not ok then warn("[hammers] " .. tostring(e)) end
+		end
+		working = false
+	end)
+end
+local function redrawNow()
+	freshUntil = os.clock() + 1
+	if c.modalOpen() and c.modalTitle.Text == "Inventory" then
+		if c.redrawInventory then c.redrawInventory() end
+	elseif c.redrawShop then
+		c.redrawShop()
+	end
+end
+local function stateOf(d)
+	local ok, js = pcall(HttpService.JSONEncode, HttpService, d)
+	return ok and js or tostring(os.clock())
+end
+local function refresh()
+	local before = cache and stateOf(cache)
+	fetch()
+	if cache and stateOf(cache) == before then return end
+	redrawNow()
+end
+local function predict(change, cost)
+	if cache and change then change(cache) end
+	if cost then spend[cost[1]] += cost[2] end
+	inFlight += 1
+	redrawNow()
+end
+local function settle(cost)
+	if cost then spend[cost[1]] -= cost[2] end
+	inFlight -= 1
+	if inFlight == 0 then refresh() end
 end
 
 local function sortHammers(list, equipId)
@@ -296,9 +353,11 @@ local function buyPass(p)
 end
 
 local function spinThenReveal(cr, res)
+	-- (res nil: the crate opens at once and the hammer comes with the server's answer, ctl.land(res), long before the
+	-- strip gets to it)
 	stopOpening()
-	local h = Hammers.ById[res.key]
-	if not h then M.Redraw() return end
+	local h = res and Hammers.ById[res.key]
+	if res and not h then M.Redraw() return end
 	local data = cache or {}
 	local gui = new("ScreenGui", { Name = "CrateShake", IgnoreGuiInset = true, DisplayOrder = 110, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = c.player:WaitForChild("PlayerGui") })
 	opening = gui
@@ -333,7 +392,7 @@ local function spinThenReveal(cr, res)
 	local strip = new("Frame", { Size = UDim2.fromOffset(N * STRIDE, TILE), Position = UDim2.fromOffset(0, 7), BackgroundTransparency = 1, ZIndex = 3, Parent = clip })
 	local tiles = {}
 	for i = 1, N do
-		local hh = i == WIN and h or rollFake(cr, data.zone or "town", data.luck or 1)
+		local hh = (i == WIN and h) or rollFake(cr, data.zone or "town", data.luck or 1)
 		local rr = rar(hh)
 		local tl = new("Frame", { Position = UDim2.fromOffset((i - 1) * STRIDE, 0), Size = UDim2.fromOffset(TILE, TILE), BackgroundTransparency = 1, ZIndex = 3, Parent = strip })
 		K.rarityFX(K.artBox(tl, art(hh), rr.color, { Size = UDim2.fromScale(1, 1), IconScale = 1.02 }), rr.id)
@@ -361,8 +420,10 @@ local function spinThenReveal(cr, res)
 	local finished = false
 	local lastIdx = 0
 	local conn
+	local waiting = false -- the strip got there before the server's answer
 	local function finish()
 		if finished then return end
+		if not res then waiting = true return end
 		finished = true
 		if conn then conn:Disconnect() end
 		tw:Cancel()
@@ -399,6 +460,24 @@ local function spinThenReveal(cr, res)
 	end)
 	tw.Completed:Connect(function(state) if state == Enum.PlaybackState.Completed then finish() end end)
 	tw:Play()
+	local ctl = {}
+	function ctl.land(r)
+		if opening ~= gui then return end
+		local hr = Hammers.ById[r.key]
+		if not hr then stopOpening(); M.Redraw() return end
+		res, h = r, hr
+		-- your hammer goes into its slot (still far off to the right)
+		local tl = tiles[WIN]
+		for _, ch in ipairs(tl:GetChildren()) do ch:Destroy() end
+		local rr = rar(h)
+		K.rarityFX(K.artBox(tl, art(h), rr.color, { Size = UDim2.fromScale(1, 1), IconScale = 1.02 }), rr.id)
+		local band = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -16, 0, 8), BackgroundColor3 = rr.color, BorderSizePixel = 0, ZIndex = 8, Parent = tl })
+		UI.corner(4).Parent = band
+		if waiting then finish() end
+	end
+	function ctl.cancel()
+		if opening == gui then stopOpening() end
+	end
 	-- the strip plays to the end (no tap to skip): the hammer at once is the Quick Open pass, offered right here
 	hint.Text = ""
 	local qp = passOf("quickopen")
@@ -412,39 +491,82 @@ local function spinThenReveal(cr, res)
 		offer.Activated:Connect(function() buyPass(qp) end)
 	end
 	c.sound2D(c.S.Click, 0.5, 0.8)
+	return ctl
 end
 
-function openCrate(crateId)
-	if busy then return end
-	busy = true
-	local ok, res = call("open", crateId)
-	busy = false
-	if not ok then c.toast("⚠️ " .. tostring(res), T.red) return end
-	local cr = Hammers.CrateById[crateId]
-	local h = Hammers.ById[res.key]
-	if c.player:GetAttribute("QuickOpen") == true and h then
-		c.sound2D(c.S.Chime, 0.6, h.r >= 5 and 0.85 or 1.15)
-		revealOpened(cr, h, res)
+-- Quick Open: the crate pops on the screen at once and the hammer comes out of it with the server's answer
+local function crateBurst(cr)
+	stopOpening()
+	local gui = new("ScreenGui", { Name = "CrateShake", IgnoreGuiInset = true, DisplayOrder = 110, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = c.player:WaitForChild("PlayerGui") })
+	opening = gui
+	new("UIScale", { Scale = c.uiScale and c.uiScale.Scale or 1, Parent = gui })
+	local back = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 8, 22), BackgroundTransparency = 1, ZIndex = 1, Parent = gui })
+	UI.tween(back, 0.15, { BackgroundTransparency = 0.45 })
+	local box = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(190, 190), BackgroundTransparency = 1, ZIndex = 3, Parent = gui })
+	local pic = crateArt(cr)
+	if type(pic) == "string" and pic:find("^rbxassetid://") then
+		new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = pic, ScaleType = Enum.ScaleType.Fit, ZIndex = 3, Parent = box })
 	else
-		spinThenReveal(cr, res)
+		Icons.make(pic, { Size = UDim2.fromScale(1, 1), ZIndex = 3, Parent = box })
 	end
+	local sc = new("UIScale", { Scale = 0.4, Parent = box })
+	UI.tween(sc, 0.22, { Scale = 1 }, Enum.EasingStyle.Back)
+	local t0 = os.clock()
+	local conn = RunService.RenderStepped:Connect(function()
+		box.Rotation = math.sin((os.clock() - t0) * 32) * 7
+	end)
+	gui.Destroying:Connect(function() conn:Disconnect() end)
+	return gui
 end
 
-local function buyCrate(crateId, n, thenOpen)
+-- open one crate (buyFirst: buy it in the same go, the tutorial's Supply Crate): the opening starts at once
+function openCrate(crateId, buyFirst)
 	if busy then return end
 	busy = true
-	local t0 = os.clock()
-	local ok, res = call("buy", crateId, n)
-	-- BUY & OPEN: the server takes one hammer action every 0.15 s, so the open waits that long after the buy
-	-- (on a fast connection it came back "Slow down!" and the crate stayed shut)
-	if ok and thenOpen then
-		local w = 0.2 - (os.clock() - t0)
-		if w > 0 then task.wait(w) end
-	end
-	busy = false
-	if not ok then c.toast("⚠️ " .. tostring(res), T.red) return end
+	local cr = Hammers.CrateById[crateId]
+	local quick = c.player:GetAttribute("QuickOpen") == true
+	local ctl = (not quick) and spinThenReveal(cr) or nil
+	local burst = quick and crateBurst(cr) or nil
+	if cache and cache.crates and not buyFirst then cache.crates[crateId] = math.max(0, (cache.crates[crateId] or 0) - 1) end
+	later(function()
+		local ok, res = true, nil
+		if buyFirst then ok, res = call("buy", crateId, 1) end
+		if ok then ok, res = call("open", crateId) end
+		busy = false
+		if not ok then
+			if ctl then ctl.cancel() end
+			if burst and opening == burst then stopOpening() end
+			c.toast("⚠️ " .. tostring(res), T.red)
+			refresh()
+			return
+		end
+		local h = Hammers.ById[res.key]
+		if quick then
+			if opening == burst then stopOpening() end
+			if h then
+				c.sound2D(c.S.Chime, 0.6, h.r >= 5 and 0.85 or 1.15)
+				revealOpened(cr, h, res)
+			else
+				M.Redraw()
+			end
+		elseif ctl then
+			ctl.land(res)
+		end
+	end)
+end
+
+-- buy crates: in your bag at once (the server is told right after); the tutorial's crate is bought and opened in one go
+local function buyCrate(crateId, n, thenOpen)
+	local cr = Hammers.CrateById[crateId]
 	c.sound2D(c.S.Coins, 0.4, 1)
-	if thenOpen then openCrate(crateId) else M.Redraw() end
+	if thenOpen then openCrate(crateId, true) return end
+	local cost = (cr.cash and { "cash", ((cache and cache.supplyPrice) or Hammers.SupplyPrice(60)) * n }) or (cr.gems and { "gems", cr.gems * n }) or nil
+	predict(function(d) d.crates[crateId] = (d.crates[crateId] or 0) + n end, cost)
+	later(function()
+		local ok, res = call("buy", crateId, n)
+		if not ok then c.toast("⚠️ " .. tostring(res), T.red) end
+		settle(cost)
+	end)
 end
 
 -- the crate passes, side by side: what each does and its price
@@ -573,14 +695,28 @@ function levelUpItem(it, h)
 	if not cost then return end
 	if money() < cost then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
 	c.click()
-	local ok, res = call("levelup", it.id)
-	if ok then M.Redraw() else c.toast("⚠️ " .. tostring(res), T.red) end
+	c.sound2D(c.S.Coins, 0.4, 1.1)
+	local id, lv, price = it.id, it.lv, { "cash", cost }
+	predict(function(d)
+		for _, x in ipairs(d.hammers or {}) do if x.id == id then x.lv = lv + 1 end end
+	end, price)
+	later(function()
+		local ok, res = call("levelup", id)
+		if not ok then c.toast("⚠️ " .. tostring(res), T.red) end
+		settle(price)
+	end)
 end
 
 function equipItem(it, h)
 	c.click()
-	local ok, res = call("equip", it.id)
-	if ok then c.toast("🔨 " .. h.name .. " is in your hand", T.green, 2); M.Redraw() else c.toast("⚠️ " .. tostring(res), T.red) end
+	c.toast("🔨 " .. h.name .. " is in your hand", T.green, 2)
+	local id = it.id
+	predict(function(d) d.equip = id end)
+	later(function()
+		local ok, res = call("equip", id)
+		if not ok then c.toast("⚠️ " .. tostring(res), T.red) end
+		settle()
+	end)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
@@ -633,17 +769,17 @@ local function crateTiles(data, order, shop)
 		local have = data.crates[cr.id] or 0
 		if not shop and have == 0 then continue end
 		local prod = cr.product and product(cr.product)
-		local robuxOk = prod and (prod.id or 0) > 0 and not c.paidRandomRestricted
+		local robuxOk = prod and ((prod.id or 0) > 0 or studio) and not c.paidRandomRestricted
 		local exists = next(Hammers.Odds(cr.id, zone, 1)) ~= nil
 		local o = { order = i, name = cr.name, icon = crateArt(cr), iconScale = cr.image and 1.06 or 0.9, color = cr.color, stats = {}, spin = have > 0, artH = ART,
 			corner = { label = "?", color = EQUIP_BLUE, w = 26, plain = true, onClick = function() c.click(); cratePopup(cr, data) end } }
-		if have > 0 then o.badge = { "x" .. have, T.red } end
+		if have > 0 and not shop then o.badge = { "x" .. have, T.red } end
 		if cr.pity then table.insert(o.stats, { "PITY " .. tostring(data.pity[cr.id] or cr.pity.every), GOLD }) end
 		if cr.cash then table.insert(o.stats, { string.upper(zone), K.SUB }) end
 		if cr.exclusiveOnly then table.insert(o.stats, { "EXCLUSIVES", T.red }) end
 		if (data.luck or 1) > 1 and not cr.exclusiveOnly then table.insert(o.stats, { "🍀 2x", K.GREEN }) end
 		local buttons = {}
-		if have > 0 then table.insert(buttons, { "OPEN", K.GREEN, function() c.click(); openCrate(cr.id) end, shine = true }) end
+		if have > 0 and not shop then table.insert(buttons, { "OPEN", K.GREEN, function() c.click(); openCrate(cr.id) end, shine = true }) end
 		if not shop then
 			-- the inventory opens them: one at a time, or all of them by themselves (the Auto Opener pass)
 			if have >= 2 then
@@ -671,19 +807,23 @@ local function crateTiles(data, order, shop)
 			local can = money() >= price
 			table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function()
 				if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-				c.click(); buyCrate(cr.id, 1, have == 0)
-			end, icon = have == 0 and "cash" or nil, shine = can and have == 0 })
+				c.click(); buyCrate(cr.id, 1)
+			end, icon = "cash", shine = can })
 		elseif cr.gems then
 			local can = gems() >= cr.gems
 			table.insert(buttons, { Config.FormatNum(cr.gems), can and GEM or K.LOCK, function()
 				if not can then c.click(); M.GemStore("Not enough Gems") return end
-				c.click(); buyCrate(cr.id, 1, have == 0)
-			end, shine = can and have == 0, icon = "gem" })
+				c.click(); buyCrate(cr.id, 1)
+			end, shine = can, icon = "gem" })
 		end
-		-- Robux next to the Gem price (at most two buttons: with crates in the bag, OPEN + the price)
-		if shop and prod and not tut and (have == 0 or not cr.gems) then
+		-- Robux next to the Gem price: half Gems, half Robux, like the Hammers of the Day
+		if shop and prod and not tut then
 			if robuxOk then
-				table.insert(buttons, { K.robux(prod.price), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, prod.id) end, shine = have == 0 })
+				table.insert(buttons, { K.robux(prod.price), K.GREEN, function()
+					c.click()
+					if (prod.id or 0) > 0 then MarketplaceService:PromptProductPurchase(c.player, prod.id)
+					else c.toast(cr.name .. ": Robux coming soon (" .. K.robux(prod.price) .. ")", T.accent, 2.5) end
+				end, shine = true })
 			elseif #buttons == 0 then
 				o.status = { studio and ("SOON · " .. K.robux(prod.price)) or "COMING SOON", K.LOCK }
 			end
@@ -694,6 +834,11 @@ local function crateTiles(data, order, shop)
 		end
 		if #buttons > 0 then o.buttons = buttons end
 		local t = K.tile(grid, o)
+		if shop and have > 0 and not tut then
+			-- the ones in your bag open right here: OPEN on the picture, the prices stay under it
+			K.button(t, "OPEN  x" .. have, K.GREEN, { Name = "Open", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 8 + ART - 8), Size = UDim2.new(1, -44, 0, 46),
+				TextSize = 22, Shine = true, ZIndex = 12 }, function() c.click(); openCrate(cr.id) end)
+		end
 		-- (shrinks to fit two lines: it never runs into the buttons)
 		K.text({ Position = UDim2.fromOffset(12, ART + 12 + 32 + (#o.stats > 0 and 32 or 0)), Size = UDim2.new(1, -24, 0, 32), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
 			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
@@ -1422,7 +1567,7 @@ end
 local redrawing = false
 function M.Redraw()
 	closePopup()
-	if redrawing then return end
+	if redrawing or inFlight > 0 then return end
 	redrawing = true
 	task.spawn(function()
 		-- the new state first (the window stays as it is meanwhile), then one redraw with it
@@ -1446,6 +1591,8 @@ end
 function M.Init(ctx)
 	c = ctx
 	UI, T, Config, new = c.UI, c.T, c.Config, c.new
+	spend = K.spent -- (one for every menu: the Shop and the Upgrades spend from it too)
+	c.spent = K.spent
 	task.spawn(function() HammerAction = c.Remotes:WaitForChild("HammerAction", 60) end)
 	-- Roblox policy: where paid random items are restricted, the Robux crates are not sold
 	c.paidRandomRestricted = false

@@ -156,9 +156,20 @@ local LABEL_KEYS = { Text = true, TextSize = true, Font = true, TextColor3 = tru
 local BTN_DROP, BTN_PRESS, BTN_RADIUS = 6, 5, 14 -- the base shows 6 px under the face; a press sinks the face 5 px
 local UIS = game:GetService("UserInputService")
 local WHITE, BLACK = Color3.new(1, 1, 1), Color3.new(0, 0, 0)
--- [the button's place in the game (full name)] = when it was last pressed: a button made again in the same place right
--- after (a tab bar redraws as soon as you tap a tab) comes up pressed and springs back, so the press is always seen
-local recentPress = {}
+-- a menu redraws right after a tap (a tab, a purchase): the button is made again in the same place. The new one takes
+-- over the old one's press from where it was when the old one went away (still down: it springs up from there; already
+-- back up: nothing happens), so a tap is always one press, never cut short and never played twice.
+-- [old button] = { id = its place, press = its NumberValue, gone = when it was destroyed, v = its press then }
+local pressed = setmetatable({}, { __mode = "k" })
+local function placeOf(b)
+	local parts = { "@" .. tostring(b.Position) }
+	local o = b
+	while o and not o:IsA("LayerCollector") do
+		table.insert(parts, 1, o:IsA("GuiObject") and (o.Name .. "#" .. o.LayoutOrder) or o.Name)
+		o = o.Parent
+	end
+	return table.concat(parts, "/")
+end
 function UI.button(text, c1, c2, props)
 	props = props or {}
 	local z = props.ZIndex or 1
@@ -248,7 +259,11 @@ function UI.button(text, c1, c2, props)
 	end
 	press.Changed:Connect(apply)
 	hov.Changed:Connect(apply)
-	b.Destroying:Connect(function() press:Destroy(); hov:Destroy() end)
+	b.Destroying:Connect(function()
+		local st = pressed[b]
+		if st then st.v = press.Value; st.gone = os.clock() end
+		press:Destroy(); hov:Destroy()
+	end)
 	-- remember where the label sits while the button is at rest (an icon button's layout keeps its own)
 	local function capture()
 		if math.abs(press.Value) < 0.01 and math.abs(hov.Value) < 0.01 and not props.Icon then
@@ -336,22 +351,27 @@ function UI.button(text, c1, c2, props)
 		pressTo(0, 0.1)
 	end)
 	b.MouseButton1Down:Connect(function()
-		recentPress[b:GetFullName()] = os.clock()
+		pressed[b] = { id = placeOf(b), press = press, t = os.clock() }
 		pressTo(BTN_PRESS, 0.05)
 	end)
 	b.MouseButton1Up:Connect(function() pressTo(0, 0.18, Enum.EasingStyle.Back) end)
-	b.Activated:Connect(function() recentPress[b:GetFullName()] = os.clock() end)
 	task.defer(function()
 		-- (deferred: the caller names and places the button first)
-		if not b.Parent or bg:GetAttribute("Skin") == "plain" then return end
-		local key = b:GetFullName()
-		local t = recentPress[key]
-		if not t or os.clock() - t > 0.6 then return end
-		recentPress[key] = nil
-		capture()
-		press.Value = BTN_PRESS
-		task.wait(0.06)
-		if b.Parent then pressTo(0, 0.24, Enum.EasingStyle.Back) end
+		if not b.Parent or bg:GetAttribute("Skin") == "plain" or not next(pressed) then return end
+		local id, now = placeOf(b), os.clock()
+		for old, st in pairs(pressed) do
+			if old ~= b and st.id == id and not old:IsDescendantOf(game) then
+				pressed[old] = nil
+				local v = st.v or st.press.Value
+				if now - (st.gone or st.t) < 0.3 and v > 0.25 then
+					-- the old one was still down (or on its way up): carry on from there
+					capture()
+					press.Value = v
+					pressTo(0, 0.08 + 0.12 * v / BTN_PRESS, Enum.EasingStyle.Back)
+				end
+				break
+			end
+		end
 	end)
 	b.InputEnded:Connect(function(io)
 		if io.UserInputType == Enum.UserInputType.Touch or io.UserInputType == Enum.UserInputType.MouseButton1 then pressTo(0, 0.18, Enum.EasingStyle.Back) end

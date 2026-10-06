@@ -41,24 +41,45 @@ end
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 
 local render
-local lastData -- the last CompanyAction "get" answer (see open)
-local function act(tok, ...)
-	local args = table.pack(...)
-	local ok, res, msg = pcall(function() return c.R.CompanyAction:InvokeServer(table.unpack(args, 1, args.n)) end)
-	if not ok or not res then c.toast("⚠️ " .. tostring(msg or "Can't do that"), T.red) end
-	for _ = 1, 3 do
-		if not c.live(tok) then break end
-		local ok2, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
-		if ok2 and okr and type(data) == "table" then
-			lastData = data
-			if c.live(tok) then
-				local scroll = c.content.CanvasPosition
-				render(tok, data)
-				task.defer(function() if c.live(tok) then c.content.CanvasPosition = scroll end end)
-			end
-			break
-		end
-		task.wait(0.2)
+local lastData -- the last CompanyAction "get" answer (see open), or the state a tap made (K.instant)
+local inst -- instant taps (made in M.Init: the remote is there then)
+local function redraw(tok, data)
+	if not c.live(tok) then return end
+	local scroll = c.content.CanvasPosition
+	render(tok, data)
+	task.defer(function() if c.live(tok) then c.content.CanvasPosition = scroll end end)
+end
+-- what the window shows: levels, prices, materials, and which upgrades you can pay for (not the cash itself: it ticks)
+local function sig(d)
+	local can = {}
+	for _, x in ipairs(d.depts or {}) do
+		local ok = (d.money or 0) >= (x.cash or 0)
+		for id, q in pairs(x.mats or {}) do if ((d.mats or {})[id] or 0) < q then ok = false end end
+		table.insert(can, ok and "1" or "0")
+	end
+	return K.stateText(d, { "money", "rent", "value" }, table.concat(can))
+end
+local function act(tok, change, cost, ...)
+	inst.tap(tok, change, cost, ...)
+end
+-- an upgrade, drawn at once: the level up, its cash and materials gone, the next level's price
+local function sellChange(m, qty)
+	return function(d)
+		if ((d.mats or {})[m.id] or 0) < qty then return false end
+		d.mats[m.id] -= qty
+		d.money = (d.money or 0) + m.sell * qty
+	end
+end
+local function upgradeChange(dp)
+	return function(d)
+		local x
+		for _, y in ipairs(d.depts or {}) do if y.id == dp.id then x = y end end
+		if not x or x.level >= Company.DeptMax or (x.cap and x.level >= x.cap) or (d.money or 0) < x.cash then return false end
+		for id, q in pairs(x.mats or {}) do if ((d.mats or {})[id] or 0) < q then return false end end
+		d.money -= x.cash
+		for id, q in pairs(x.mats or {}) do d.mats[id] -= q end
+		x.level += 1
+		x.cash, x.mats = Company.DeptCost(dp, x.level)
 	end
 end
 
@@ -112,7 +133,7 @@ render = function(tok, data)
 					end
 					o.button = { money(d.cash), can and K.GREEN or K.LOCK, function()
 						c.click()
-						act(tok, "upgrade", dp.id)
+						act(tok, upgradeChange(dp), can and d.cash or nil, "upgrade", dp.id)
 					end, icon = "cash", shine = can }
 				end
 				K.row(c.content, order, o)
@@ -133,8 +154,8 @@ render = function(tok, data)
 				stats = { { money(m.sell) .. " EACH", K.GREEN } }, dim = n == 0 }
 			if n > 0 then
 				o.buttons = {
-					{ "SELL 1", Color3.fromRGB(110, 120, 200), function() c.click(); act(tok, "sell", m.id, 1) end },
-					{ "ALL", T.red, function() c.click(); act(tok, "sell", m.id, n) end },
+					{ "SELL 1", Color3.fromRGB(110, 120, 200), function() c.click(); act(tok, sellChange(m, 1), -m.sell, "sell", m.id, 1) end },
+					{ "ALL", T.red, function() c.click(); act(tok, sellChange(m, n), -m.sell * n, "sell", m.id, n) end },
 				}
 			else
 				o.status = { "NONE YET", K.LOCK }
@@ -165,6 +186,7 @@ local function open(name, c1, c2)
 		task.spawn(function()
 			local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
 			if not (ok and okr and type(data) == "table") then return end
+			if inst and inst.inFlight > 0 then return end -- a tap is on its way: its answer redraws
 			lastData = data
 			-- the hammer tabs don't use it (only the BLUEPRINTS badge); materials, blueprints and upgrades do
 			local tabNow = mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index")
@@ -205,6 +227,10 @@ function M.Init(ctx)
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
 	c.redrawInventory = function() M.Inventory(invTab) end
 	c.inventoryHammerTab = function() return mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index") end
+	inst = K.instant({ remote = function() return c.R.CompanyAction end, gap = 0.1, sig = sig,
+		state = function() return lastData end, setState = function(d) lastData = d end, draw = redraw,
+		cash = function() return (c.player:GetAttribute("Money") or 0) - K.spent.cash end,
+		toast = function(msg) c.toast("⚠️ " .. msg, T.red) end })
 end
 
 return M

@@ -473,22 +473,24 @@ end
 	line, with some space above it, so you always see where a new category starts while you scroll.
 	o = { title, line, icon, c1, c2, first = true (no space above), right = a frame to put on the right side } ]]
 function K.category(parent, order, o)
+	-- (the same size as the HAMMERS OF THE DAY header: 78 tall, the picture with room above and under it)
 	local gap = o.first and 0 or 16
-	local f = new("Frame", { Name = "Category", Size = UDim2.new(1, 0, 0, 66 + gap), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
-	local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), Position = UDim2.fromOffset(0, gap), Size = UDim2.new(1, 0, 0, 66), ZIndex = 1, Parent = f })
+	local H = 78
+	local f = new("Frame", { Name = "Category", Size = UDim2.new(1, 0, 0, H + gap), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
+	local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), Position = UDim2.fromOffset(0, gap), Size = UDim2.new(1, 0, 0, H), ZIndex = 1, Parent = f })
 	new("UIGradient", { Rotation = 0, Color = ColorSequence.new(o.c1 or T.accent, o.c2 or T.accent2), Parent = bg })
-	local stripes = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(4, gap + 4), Size = UDim2.new(1, -8, 0, 58), BackgroundTransparency = 1, GroupTransparency = 0.55,
+	local stripes = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(4, gap + 4), Size = UDim2.new(1, -8, 0, H - 8), BackgroundTransparency = 1, GroupTransparency = 0.55,
 		ZIndex = 2, Parent = f })
 	new("UICorner", { CornerRadius = UDim.new(0, 14), Parent = stripes })
 	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(96, 96), Parent = stripes })
-	local pic = new("Frame", { Name = "Pic", Position = UDim2.fromOffset(8, gap + 2), Size = UDim2.fromOffset(62, 62), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+	local pic = new("Frame", { Name = "Pic", Position = UDim2.fromOffset(10, gap + 6), Size = UDim2.fromOffset(66, 66), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
 	K.art(pic, o.icon, UDim2.fromScale(1, 1), 4)
 	local rw = o.rightW or 0
-	local title = text({ Name = "Title", Position = UDim2.fromOffset(78, gap + 6), Size = UDim2.new(1, -92 - rw, 0, 32), Text = o.title, Font = T.chunky, TextSize = 29, Max = 29,
+	local title = text({ Name = "Title", Position = UDim2.fromOffset(84, gap + 9), Size = UDim2.new(1, -98 - rw, 0, 34), Text = o.title, Font = T.chunky, TextSize = 30, Max = 30,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 4, Parent = f })
 	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 232, 140)), Parent = title })
 	if o.line then
-		text({ Name = "Line", Position = UDim2.fromOffset(79, gap + 40), Size = UDim2.new(1, -92 - rw, 0, 20), Text = o.line, TextSize = 16, Max = 16,
+		text({ Name = "Line", Position = UDim2.fromOffset(85, gap + 44), Size = UDim2.new(1, -98 - rw, 0, 22), Text = o.line, TextSize = 17, Max = 17,
 			TextColor3 = Color3.fromRGB(255, 246, 236), Stroke = 1.6, ZIndex = 4, Parent = f })
 	end
 	return f, gap
@@ -578,6 +580,87 @@ function K.window(parent, size, title, c1, c2, icon, noClose)
 		UI.closeStyle(close)
 	end
 	return w, close, tl
+end
+
+-- Instant menus: a tap draws its result at once (the last state with the change made), the server gets it right after
+-- (one call at a time, in tap order, never quicker than it takes them) and when every tap has its answer the window
+-- takes the server's state, drawn again only if it shows something else (a refused tap goes back, with the reason).
+--   local inst = K.instant({ remote = RF, gap = 0.1, state = fn() -> data, setState = fn(data), draw = fn(tok, data),
+--                            sig = fn(data) -> string (what the window shows), toast = fn(msg), cash = fn() -> cash now })
+--   inst.tap(tok, change, cost, action, ...)  change(copy of the state) makes the tap's result (false: can't, the
+--   server says why); cost = cash it spends (negative: cash it brings); the shared c.spent keeps it until the answer
+K.spent = { cash = 0, gems = 0 }
+function K.copy(t)
+	if type(t) ~= "table" then return t end
+	local o = {}
+	for k, v in pairs(t) do o[k] = K.copy(v) end
+	return o
+end
+function K.instant(o)
+	local self = { inFlight = 0 }
+	local jobs, working, last = {}, false, 0
+	local function later(fn)
+		table.insert(jobs, fn)
+		if working then return end
+		working = true
+		task.spawn(function()
+			while #jobs > 0 do
+				local ok, e = pcall(table.remove(jobs, 1))
+				if not ok then warn("[menu] " .. tostring(e)) end
+			end
+			working = false
+		end)
+	end
+	function self.tap(tok, change, cost, ...)
+		local args = table.pack(...)
+		local cur = o.state()
+		if change and cur then
+			local d = K.copy(cur)
+			if o.cash then d.money = o.cash() end
+			local r = change(d)
+			if r ~= false then
+				if type(r) == "number" then cost = r end -- (the change worked out what it spends: "x10" buys what you can pay for)
+				K.spent.cash += cost or 0
+				o.setState(d)
+				o.draw(tok, d)
+			else
+				cost = nil
+			end
+		else
+			cost = nil
+		end
+		self.inFlight += 1
+		later(function()
+			local w = last + (o.gap or 0.1) - os.clock()
+			if w > 0 then task.wait(w) end
+			last = os.clock()
+			local rf = type(o.remote) == "function" and o.remote() or o.remote
+			local ok, res, msg = pcall(function() return rf:InvokeServer(table.unpack(args, 1, args.n)) end)
+			if cost then K.spent.cash -= cost end
+			if not ok or not res then o.toast(tostring(msg or (not ok and res) or "Can't do that")) end
+			self.inFlight -= 1
+			if self.inFlight > 0 then return end
+			for _ = 1, 3 do
+				local ok2, okr, data = pcall(function() return rf:InvokeServer("get") end)
+				if ok2 and okr and type(data) == "table" then
+					local before = o.state()
+					o.setState(data)
+					if not (before and o.sig(before) == o.sig(data)) then o.draw(tok, data) end
+					break
+				end
+				task.wait(0.2)
+			end
+		end)
+	end
+	return self
+end
+-- a state as text, without the keys that keep changing on their own (cash, rent): for K.instant's sig
+local HttpService = game:GetService("HttpService")
+function K.stateText(d, skip, extra)
+	local x = K.copy(d)
+	for _, k in ipairs(skip or {}) do x[k] = nil end
+	local ok, js = pcall(HttpService.JSONEncode, HttpService, x)
+	return (ok and js or tostring(os.clock())) .. (extra or "")
 end
 
 -- scroll a list so that a child (a tile, a row) sits near the top

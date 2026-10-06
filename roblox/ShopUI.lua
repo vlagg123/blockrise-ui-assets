@@ -29,7 +29,16 @@ local MACHINE_COL = { excavator = Color3.fromRGB(255, 186, 60), mixer = Color3.f
 local WORKER_ICON = { laborer = "crew", builder = "hire", foreman = "up_crew" }
 local WORKER_COL = { laborer = Color3.fromRGB(255, 196, 70), builder = Color3.fromRGB(90, 200, 120), foreman = Color3.fromRGB(165, 110, 255) }
 
-local function money() return c.player:GetAttribute("Money") or 0 end
+-- Instant purchases: what you buy shows at once (your attributes as they will be: over), the server gets it right after
+-- (one at a time, in tap order) and the window follows the server's attributes when they differ from the guess
+local over = {}
+local pending = 0
+local function attr(k)
+	local v = over[k]
+	if v ~= nil then return v end
+	return c.player:GetAttribute(k)
+end
+local function money() return math.max(0, (c.player:GetAttribute("Money") or 0) - K.spent.cash) end
 -- what the crew and the machines build with: your hammer and bonuses, without your own Strength (like on the server)
 local function crewPower()
 	local sm = Config.StrengthMult and Config.StrengthMult(c.player:GetAttribute("Strength") or 0) or 1
@@ -38,15 +47,50 @@ end
 local function fmt(n) return Config.FormatMoney(n) end
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 
--- buy on the server, then redraw where you were
-local function buy(remote, arg, keep)
+local jobs, working = {}, false
+local function later(fn)
+	table.insert(jobs, fn)
+	if working then return end
+	working = true
+	task.spawn(function()
+		while #jobs > 0 do
+			local ok, e = pcall(table.remove(jobs, 1))
+			if not ok then warn("[shop] " .. tostring(e)) end
+		end
+		working = false
+	end)
+end
+-- what the window shows from your attributes (the cash aside: it ticks), to redraw only when it changed
+local shownSig = ""
+local function sigNow()
+	local t = { tostring(attr("GearTier")), tostring(attr("WorkerCount")), tostring(attr("MaxWorkers")), tostring(attr("Level")) }
+	for _, m in ipairs(Config.Machines) do table.insert(t, tostring(attr("M_" .. m.id)) .. ":" .. tostring(attr("ML_" .. m.id))) end
+	for _, w in ipairs(Config.WorkerTypes) do table.insert(t, tostring(attr("W_" .. w.id))) end
+	return table.concat(t, "|")
+end
+local function followServer(keep)
+	if pending > 0 or not (c.modalOpen() and c.modalTitle.Text == "Shop") then return end
+	if sigNow() ~= shownSig then M.Show(nil, keep ~= false) end
+end
+-- buy: change(over) = the attributes after the purchase, cost = its cash; drawn at once, then the server
+local function buy(remote, arg, keep, change, cost)
 	c.click()
-	local ok, res, msg = pcall(function() return c.R[remote]:InvokeServer(arg) end)
-	if ok and res then
+	if change then
+		change(over)
+		K.spent.cash += cost or 0
+		pending += 1
 		M.Show(nil, keep)
-	else
-		c.toast("⚠️ " .. tostring(msg or "Can't buy that"), T.red)
 	end
+	later(function()
+		local ok, res, msg = pcall(function() return c.R[remote]:InvokeServer(arg) end)
+		if change then
+			K.spent.cash -= cost or 0
+			pending -= 1
+			if pending == 0 then table.clear(over) end
+		end
+		if not (ok and res) then c.toast("⚠️ " .. tostring(msg or "Can't buy that"), T.red) end
+		if change then followServer(keep) elseif ok and res then M.Show(nil, keep) end
+	end)
 end
 
 local EQUIP_BLUE = Color3.fromRGB(70, 160, 255)
@@ -84,7 +128,7 @@ local function tierTiles(list, current, remote, icon, stat, keep, equip)
 			o.tag = { "NEXT", T.red }
 			o.button = { fmt(it.price), can and K.GREEN or K.LOCK, function()
 				if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-				buy(remote, i, true)
+				buy(remote, i, true, function(o) o[remote == "BuyGear" and "GearTier" or "ToolTier"] = i end, it.price)
 			end, icon = "cash", shine = can }
 		else
 			o.dim = true
@@ -102,7 +146,7 @@ local keepNext = false
 local function gear()
 	K.category(c.content, 1, { title = "TRAINING GEAR", line = "More Strength from every hit: each one doubles the last", icon = "strength",
 		c1 = Color3.fromRGB(255, 150, 70), c2 = Color3.fromRGB(226, 70, 40), first = true })
-	tierTiles(Config.TrainingGear, c.player:GetAttribute("GearTier") or 1, "BuyGear", "strength", function(g)
+	tierTiles(Config.TrainingGear, attr("GearTier") or 1, "BuyGear", "strength", function(g)
 		return { "x" .. Config.FormatNum(g.mult) .. " STRENGTH", Color3.fromRGB(255, 120, 80) }
 	end, keepNext)
 end
@@ -111,11 +155,11 @@ local function machines()
 	K.category(c.content, 1, { title = "HEAVY MACHINES", line = "They build your job on their own  ·  upgrade them for more work", icon = Config.Machines[1].image or "mega",
 		c1 = Color3.fromRGB(255, 200, 50), c2 = Color3.fromRGB(240, 120, 20), first = true })
 	local grid = K.grid(c.content, 2, cols(), CELL_H)
-	local lvl = c.player:GetAttribute("Level") or 1
+	local lvl = attr("Level") or 1
 	local cash = money()
 	for i, m in ipairs(Config.Machines) do
-		local owned = c.player:GetAttribute("M_" .. m.id) == true
-		local mlv = owned and math.max(1, c.player:GetAttribute("ML_" .. m.id) or 1) or 1
+		local owned = attr("M_" .. m.id) == true
+		local mlv = owned and math.max(1, attr("ML_" .. m.id) or 1) or 1
 		local rate = m.rate * Config.MachineMult(mlv) * crewPower()
 		local o = { order = i, name = m.name, icon = m.image or MACHINE_ICON[m.id] or m.icon, iconScale = m.image and 1.06 or nil, color = MACHINE_COL[m.id] or GOLD,
 			stats = { { Config.FormatNum(math.floor(rate)) .. " WORK/S", GOLD } }, artH = ART_H }
@@ -131,7 +175,7 @@ local function machines()
 				local can = cash >= cost
 				o.button = { "⬆ " .. fmt(cost), can and Color3.fromRGB(255, 176, 40) or K.LOCK, function()
 					if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-					buy("BuyMachine", m.id, true)
+					buy("BuyMachine", m.id, true, function(o) o["ML_" .. m.id] = mlv + 1 end, cost)
 				end, shine = can }
 			end
 		elseif lvl < m.reqLevel then
@@ -144,7 +188,7 @@ local function machines()
 			local can = cash >= m.price
 			o.button = { fmt(m.price), can and K.GREEN or K.LOCK, function()
 				if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-				buy("BuyMachine", m.id)
+				buy("BuyMachine", m.id, true, function(o) o["M_" .. m.id] = true end, m.price)
 			end, icon = "cash", shine = can }
 		end
 		K.tile(grid, o)
@@ -152,15 +196,15 @@ local function machines()
 end
 
 local function crew()
-	local count, max = c.player:GetAttribute("WorkerCount") or 0, c.player:GetAttribute("MaxWorkers") or 2
+	local count, max = attr("WorkerCount") or 0, attr("MaxWorkers") or 2
 	K.category(c.content, 1, { title = "YOUR CREW  " .. count .. " / " .. max, line = "Workers build your job on their own  ·  firing one gives 50% back", icon = "crew",
 		c1 = Color3.fromRGB(90, 210, 110), c2 = Color3.fromRGB(30, 140, 90), first = true })
 	c.modalSub.Text = "👷 " .. count .. " / " .. max
 	local grid = K.grid(c.content, 2, cols(), CELL_H)
-	local lvl = c.player:GetAttribute("Level") or 1
+	local lvl = attr("Level") or 1
 	local cash = money()
 	for i, w in ipairs(Config.WorkerTypes) do
-		local have = c.player:GetAttribute("W_" .. w.id) or 0
+		local have = attr("W_" .. w.id) or 0
 		local wps = w.rate * crewPower()
 		local stat = w.boost and { "CREW +" .. math.floor(w.boost * 100) .. "%", T.purple }
 			or { (wps < 10 and string.format("%.1f", wps) or Config.FormatNum(math.floor(wps))) .. " WORK/S", GOLD }
@@ -194,7 +238,7 @@ local function crew()
 			local can = cash >= w.price
 			o.button = { "HIRE " .. fmt(w.price), can and K.GREEN or K.LOCK, function()
 				if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-				buy("Hire", w.id, true)
+				buy("Hire", w.id, true, function(o) o["W_" .. w.id] = have + 1; o.WorkerCount = count + 1 end, w.price)
 			end, shine = can }
 		end
 		K.tile(grid, o)
@@ -206,22 +250,22 @@ function M.Available()
 	local p = c.player
 	local cash = money()
 	local out = { hammers = false, gear = false, machines = false, crew = false, count = 0 }
-	local gt = p:GetAttribute("GearTier") or 1
+	local gt = attr("GearTier") or 1
 	local ng = Config.TrainingGear[gt + 1]
 	out.hammers = false -- (crates are opened in the Inventory: its button carries the count)
 	out.gear = ng ~= nil and cash >= ng.price
 	if out.gear then out.count += 1 end
-	local lvl = p:GetAttribute("Level") or 1
+	local lvl = attr("Level") or 1
 	for _, m in ipairs(Config.Machines) do
-		if p:GetAttribute("M_" .. m.id) == true then
-			local mlv = math.max(1, p:GetAttribute("ML_" .. m.id) or 1)
+		if attr("M_" .. m.id) == true then
+			local mlv = math.max(1, attr("ML_" .. m.id) or 1)
 			if mlv < Config.MachineMaxLevel and cash >= Config.MachineUpgradeCost(m, mlv) then out.machines = true; out.count += 1 end
 		elseif lvl >= m.reqLevel and cash >= m.price then
 			out.machines = true
 			out.count += 1
 		end
 	end
-	if (p:GetAttribute("WorkerCount") or 0) < (p:GetAttribute("MaxWorkers") or 2) then
+	if (attr("WorkerCount") or 0) < (attr("MaxWorkers") or 2) then
 		for _, w in ipairs(Config.WorkerTypes) do
 			if lvl >= (w.reqLevel or 1) and cash >= w.price then out.crew = true; out.count += 1 end
 		end
@@ -267,6 +311,7 @@ function M.Show(t, keepScroll, at)
 	end)
 	if tab == "hammers" then HammersUI.Crates(tok)
 	elseif tab == "gear" then gear() elseif tab == "machines" then machines() else crew() end
+	shownSig = sigNow()
 end
 
 function M.Init(ctx)
@@ -293,6 +338,12 @@ function M.Init(ctx)
 	end
 	if Config.StormHammer then c.player:GetAttributeChangedSignal("Pass_" .. Config.StormHammer.pass):Connect(redrawHammers) end
 	for _, a in ipairs({ "EquipId", "EquipLevel", "CrateTotal", "HammerCount" }) do c.player:GetAttributeChangedSignal(a):Connect(redrawHammers) end
+	local follow = false
+	c.player.AttributeChanged:Connect(function(name)
+		if follow or not (name == "GearTier" or name == "WorkerCount" or name == "MaxWorkers" or name == "Level" or name:match("^M_") or name:match("^ML_") or name:match("^W_")) then return end
+		follow = true
+		task.delay(0.05, function() follow = false; if tab ~= "hammers" then followServer() end end)
+	end)
 	c.player:GetAttributeChangedSignal("Money"):Connect(function()
 		if c.modalOpen() and c.modalTitle.Text == "Shop" and tab ~= "crew" then c.modalSub.Text = fmt(money()) end
 	end)

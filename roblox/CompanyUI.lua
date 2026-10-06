@@ -50,6 +50,57 @@ local function act(tok, ...)
 	return ok and res, msg
 end
 
+-- buying properties: drawn at once (owned, the next price, the rent, the cash and materials gone), the server right after
+local lastData, inst
+local function redraw(tok, data)
+	if not c.live(tok) then return end
+	local scroll = c.content.CanvasPosition
+	render(tok, data)
+	task.defer(function() if c.live(tok) then c.content.CanvasPosition = scroll end end)
+end
+local function sig(d)
+	local can = {}
+	for _, x in ipairs(d.props or {}) do
+		local p = Company.PropertyById[x.id]
+		local ok = (d.money or 0) >= (x.cost or 0)
+		for id, q in pairs(p and p.mats or {}) do if ((d.mats or {})[id] or 0) < q then ok = false end end
+		table.insert(can, ok and "1" or "0")
+	end
+	return K.stateText(d, { "money", "value" }, table.concat(can))
+end
+-- like the server: as many as you can pay for, up to count; returns the cash it spends
+local function buyChange(p, count)
+	return function(d)
+		local info
+		for _, x in ipairs(d.props or {}) do if x.id == p.id then info = x end end
+		if not info or not info.unlocked then return false end
+		local owned = info.owned
+		-- the rent bonuses (passes, perks) as the server counted them
+		local base = owned > 0 and Company.Rent(p, owned) or (Company.Rent(p, 1) - Company.Rent(p, 0))
+		local mult = base > 0 and ((owned > 0 and info.rent or info.nextRent) / base) or 1
+		local bought, spent = 0, 0
+		for _ = 1, count do
+			local cost = Company.PropertyCost(p, owned + bought)
+			if (d.money or 0) - spent < cost then break end
+			local okM = true
+			for id, q in pairs(p.mats or {}) do if ((d.mats or {})[id] or 0) < q * (bought + 1) then okM = false end end
+			if not okM then break end
+			spent += cost
+			bought += 1
+		end
+		if bought == 0 then return false end
+		for id, q in pairs(p.mats or {}) do d.mats[id] -= q * bought end
+		d.money -= spent
+		local n, before = owned + bought, info.rent
+		info.owned = n
+		info.cost = Company.PropertyCost(p, n)
+		info.rent = Company.Rent(p, n) * mult
+		info.nextRent = (Company.Rent(p, n + 1) - Company.Rent(p, n)) * mult
+		d.rent = (d.rent or 0) + (info.rent - before)
+		return spent
+	end
+end
+
 local function clear()
 	for _, ch in ipairs(c.content:GetChildren()) do if not ch:IsA("UIListLayout") then ch:Destroy() end end
 end
@@ -118,8 +169,8 @@ local function renderEstate(tok, data)
 					if ((data.mats or {})[id] or 0) < q then can = false end
 				end
 				o.buttons = {
-					{ money(info.cost), can and K.GREEN or K.LOCK, function() c.click(); act(tok, "buyProp", p.id, 1) end, shine = can },
-					{ "x10", GOLD, function() c.click(); act(tok, "buyProp", p.id, 10) end },
+					{ money(info.cost), can and K.GREEN or K.LOCK, function() c.click(); inst.tap(tok, buyChange(p, 1), nil, "buyProp", p.id, 1) end, shine = can },
+					{ "x10", GOLD, function() c.click(); inst.tap(tok, buyChange(p, 10), nil, "buyProp", p.id, 10) end },
 				}
 			end
 			K.tile(grid, o)
@@ -128,6 +179,7 @@ local function renderEstate(tok, data)
 end
 
 render = function(tok, data)
+	lastData = data
 	clear()
 	if not data.founded then renderFound(tok, data) return end
 	c.modalTitle.Text = data.name
@@ -174,6 +226,10 @@ end
 function M.Init(ctx)
 	c = ctx
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
+	inst = K.instant({ remote = function() return c.R.CompanyAction end, gap = 0.1, sig = sig,
+		state = function() return lastData end, setState = function(d) lastData = d end, draw = redraw,
+		cash = function() return (c.player:GetAttribute("Money") or 0) - K.spent.cash end,
+		toast = function(msg) c.toast("⚠️ " .. msg, T.red) end })
 	c.R.Feedback.OnClientEvent:Connect(function(kind, d)
 		if kind == "Loot" then
 			local m = Company.MaterialById[d.id]

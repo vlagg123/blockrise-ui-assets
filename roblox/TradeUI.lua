@@ -166,10 +166,10 @@ local function offerLines(o)
 	return lines
 end
 
--- the item's picture, square, h tall, at x
+-- the item's picture, square, inside a row h tall, at x: it stays in its square (the text starts at x + h)
 local function iconAt(parent, icon, x, h)
-	local holder = new("Frame", { Name = "Pic", Position = UDim2.fromOffset(x, 4), Size = UDim2.fromOffset(h - 8, h - 8), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
-	K.art(holder, icon, UDim2.fromScale(1.15, 1.15), 4)
+	local holder = new("Frame", { Name = "Pic", Position = UDim2.fromOffset(x, 6), Size = UDim2.fromOffset(h - 12, h - 12), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
+	K.art(holder, icon, UDim2.fromScale(1, 1), 4)
 	return holder
 end
 
@@ -217,10 +217,10 @@ local function render(v)
 		local f = lineRow(win.theirList, i, 50)
 		iconAt(f, l[1], 8, 50)
 		if l.sub then
-			K.text({ Position = UDim2.fromOffset(50, 4), Size = UDim2.new(1, -150, 0, 24), Text = l[2], TextSize = 18, Max = 18, Parent = f })
-			K.text({ Position = UDim2.fromOffset(50, 27), Size = UDim2.new(1, -150, 0, 18), Text = l.sub, TextSize = 14, Max = 14, TextColor3 = l.color, Font = T.chunky, Parent = f })
+			K.text({ Position = UDim2.fromOffset(56, 4), Size = UDim2.new(1, -156, 0, 24), Text = l[2], TextSize = 18, Max = 18, Parent = f })
+			K.text({ Position = UDim2.fromOffset(56, 27), Size = UDim2.new(1, -156, 0, 18), Text = l.sub, TextSize = 14, Max = 14, TextColor3 = l.color, Font = T.chunky, Parent = f })
 		else
-			K.text({ Position = UDim2.fromOffset(50, 0), Size = UDim2.new(1, -150, 1, 0), Text = l[2], TextSize = 18, Max = 18, Parent = f })
+			K.text({ Position = UDim2.fromOffset(56, 0), Size = UDim2.new(1, -156, 1, 0), Text = l[2], TextSize = 18, Max = 18, Parent = f })
 		end
 		K.text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.fromOffset(90, 50), Text = tostring(l[3]), Font = T.chunky, TextSize = 20,
 			TextXAlignment = Enum.TextXAlignment.Right, Parent = f })
@@ -264,9 +264,9 @@ local function openWindow(v)
 	local rows = {}
 	for i, it in ipairs(itemList()) do
 		local f = lineRow(myList, i, 52)
-		iconAt(f, it.icon, 6, 52)
-		K.text({ Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -206, 0, 24), Text = it.name, TextSize = 17, Max = 17, Parent = f })
-		local have = K.text({ Position = UDim2.fromOffset(46, 27), Size = UDim2.new(1, -206, 0, 18), Text = "", TextSize = 13, TextColor3 = K.SUB, Parent = f })
+		iconAt(f, it.icon, 8, 52)
+		K.text({ Position = UDim2.fromOffset(58, 5), Size = UDim2.new(1, -218, 0, 24), Text = it.name, TextSize = 17, Max = 17, Parent = f })
+		local have = K.text({ Position = UDim2.fromOffset(58, 27), Size = UDim2.new(1, -218, 0, 18), Text = "", TextSize = 13, TextColor3 = K.SUB, Parent = f })
 		local minus = UI.button("-", K.LOCK, nil, { Position = UDim2.new(1, -156, 0, 7), Size = UDim2.fromOffset(38, 38), TextSize = 22, ZIndex = 4, Parent = f })
 		local count = K.text({ Position = UDim2.new(1, -116, 0, 0), Size = UDim2.fromOffset(36, 52), Text = "0", Font = T.chunky, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Center, Parent = f })
 		local plus = UI.button("+", K.GREEN, nil, { Position = UDim2.new(1, -80, 0, 7), Size = UDim2.fromOffset(34, 38), TextSize = 22, ZIndex = 4, Parent = f })
@@ -315,9 +315,9 @@ local function openWindow(v)
 		for i, e in ipairs(list) do
 			local r = Hammers.Rarities[e.h.dr or e.h.r]
 			local f = lineRow(myList, 200 + i, 52)
-			iconAt(f, M.hammerArt(e.h), 6, 52)
-			K.rarityText(K.text({ Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -160, 0, 24), Text = e.h.name, TextSize = 17, Max = 17, Parent = f }), r.id)
-			K.text({ Position = UDim2.fromOffset(46, 27), Size = UDim2.new(1, -160, 0, 18), Text = r.name .. "  ·  LV " .. (e.it.lv or 1), TextSize = 13, Font = T.chunky,
+			iconAt(f, M.hammerArt(e.h), 8, 52)
+			K.rarityText(K.text({ Position = UDim2.fromOffset(58, 5), Size = UDim2.new(1, -172, 0, 24), Text = e.h.name, TextSize = 17, Max = 17, Parent = f }), r.id)
+			K.text({ Position = UDim2.fromOffset(58, 27), Size = UDim2.new(1, -172, 0, 18), Text = r.name .. "  ·  LV " .. (e.it.lv or 1) .. "  ·  " .. Hammers.PowerLabel(e.h.key, e.it.lv or 1) .. " power", TextSize = 13, Max = 13, Font = T.chunky,
 				TextColor3 = r.text and Color3.fromRGB(70, 70, 110) or r.color, Parent = f })
 			local btn = UI.button("ADD", K.GREEN, nil, { Position = UDim2.new(1, -112, 0, 7), Size = UDim2.fromOffset(104, 38), TextSize = 17, ZIndex = 4, Parent = f })
 			local id = e.it.id
