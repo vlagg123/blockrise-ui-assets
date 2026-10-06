@@ -47,7 +47,7 @@ function M.ShowPlayers()
 			color = K.LOCK, tint = Color3.fromRGB(215, 220, 240), height = 104 })
 		return
 	end
-	K.banner(c.content, 1, { name = "SAFE TRADING", line = "Both press READY, then a 5 second countdown. Any change cancels it. Cash fee 5%.", icon = "trade",
+	K.banner(c.content, 1, { name = "SAFE TRADING", line = "Swap hammers, materials, blueprints and cash. Both press READY, then a 5 second countdown. Any change cancels it.", icon = "trade",
 		color = GREEN2, tint = Color3.fromRGB(190, 240, 200), height = 110 })
 	if data.myLevel < data.minLevel then
 		K.row(c.content, 2, { name = "Reach Level " .. data.minLevel .. " to trade", line = "You are Level " .. data.myLevel, icon = "level", color = Color3.fromRGB(255, 196, 60),
