@@ -499,7 +499,9 @@ local function loopFrames(cols, n)
 	return frames
 end
 local RAINBOW = loopFrames({ C3(255, 70, 70), C3(255, 160, 30), C3(255, 236, 50), C3(70, 225, 90), C3(50, 175, 255), C3(165, 85, 255) }, 24)
-local HOLO_TXT = loopFrames({ C3(255, 120, 220), C3(170, 120, 255), C3(80, 190, 255), C3(80, 235, 190), C3(255, 215, 90) }, 24)
+-- divine names: letters of light (white into gold) inside a glowing outline that breathes and turns violet → blue → magenta
+local DIVINE_FILL = seqOf({ { 0, C3(255, 255, 255) }, { 0.5, C3(255, 242, 190) }, { 1, C3(255, 206, 110) } })
+local DIVINE_HALO = { C3(150, 70, 235), C3(60, 110, 240), C3(215, 60, 175) }
 local HOLO_BG = seqOf({ { 0, C3(255, 200, 238) }, { 0.2, C3(220, 196, 255) }, { 0.4, C3(186, 228, 255) }, { 0.6, C3(196, 255, 226) },
 	{ 0.8, C3(255, 246, 196) }, { 1, C3(255, 200, 238) } })
 local SHEEN = { -- a bright band that sweeps across the text
@@ -514,7 +516,7 @@ K.RARITY_LOOK = {
 		sweep = C3(255, 235, 245), text = "mythic" },
 	secret = { bg = { { 0, C3(96, 96, 124) }, { 0.42, C3(30, 30, 42) }, { 1, C3(6, 6, 12) } }, rays = C3(170, 160, 240), raysT = 0.5,
 		glow = C3(140, 100, 255), sweep = C3(225, 225, 255), stars = C3(255, 255, 255), text = "metal", stroke = C3(176, 172, 214) },
-	divine = { bg = "holo", rays = C3(255, 255, 255), raysT = 0.05, glow = C3(255, 255, 255), sweep = C3(255, 255, 255), stars = C3(255, 236, 170), text = "holo" },
+	divine = { bg = "holo", rays = C3(255, 255, 255), raysT = 0.05, glow = C3(255, 255, 255), sweep = C3(255, 255, 255), stars = C3(255, 236, 170), text = "divine" },
 	exclusive = { bg = { { 0, C3(170, 255, 244) }, { 0.45, C3(24, 214, 200) }, { 1, C3(0, 104, 132) } }, rays = C3(215, 255, 250), raysT = 0.18,
 		glow = C3(130, 255, 242), sweep = C3(240, 255, 255), stars = C3(205, 255, 250), text = "electric" },
 }
@@ -563,7 +565,8 @@ function K.rarityFX(box, id, o)
 	return box
 end
 
--- a hammer name in its rarity's colours: rainbow (legendary), black metal (secret), holo (divine), electric (exclusive)
+-- a hammer name in its rarity's colours: rainbow (legendary), black metal (secret), light with a breathing halo (divine),
+-- electric (exclusive)
 function K.rarityText(label, id, fallback)
 	if not label then return label end
 	local L = K.RARITY_LOOK[id]
@@ -576,10 +579,13 @@ function K.rarityText(label, id, fallback)
 	local g = label:FindFirstChildOfClass("UIGradient") or new("UIGradient", { Parent = label })
 	g.Rotation = 0
 	g.Offset = Vector2.zero
-	if style == "rainbow" or style == "holo" then
-		local frames = style == "rainbow" and RAINBOW or HOLO_TXT
-		g.Color = frames[1]
-		anims[g] = function(now) g.Color = frames[math.floor(now * 14) % #frames + 1] end
+	if style == "rainbow" then
+		g.Color = RAINBOW[1]
+		anims[g] = function(now) g.Color = RAINBOW[math.floor(now * 14) % #RAINBOW + 1] end
+	elseif style == "divine" then
+		g.Color = DIVINE_FILL
+		g.Rotation = 90
+		anims[g] = nil
 	else
 		g.Color = SHEEN[style]
 		local off = math.random() * 3
@@ -592,6 +598,16 @@ function K.rarityText(label, id, fallback)
 	local st = label:FindFirstChildOfClass("UIStroke")
 	if not st then st = new("UIStroke", { Thickness = 1.6, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, Parent = label }) end
 	if L.stroke then st.Color = L.stroke end
+	if style == "divine" then
+		-- the halo: the outline breathes (thicker / thinner) and slowly turns through the sky's colours
+		local base, ph = st.Thickness, math.random() * 6
+		anims[st] = function(now)
+			local u = ((now * 0.35 + ph) % #DIVINE_HALO)
+			local a = math.floor(u)
+			st.Color = DIVINE_HALO[a + 1]:Lerp(DIVINE_HALO[(a + 1) % #DIVINE_HALO + 1], u - a)
+			st.Thickness = base * (1 + 0.45 * (0.5 + 0.5 * math.sin(now * 3 + ph)))
+		end
+	end
 	return label
 end
 
