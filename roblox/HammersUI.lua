@@ -731,7 +731,7 @@ local function dailyHammers(order, data)
 	new("UIGradient", { Rotation = 0, Parent = bg, Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(108, 62, 236)),
 		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(214, 62, 176)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 148, 52)) }) })
 	local icon = new("Frame", { Position = UDim2.fromOffset(10, 6), Size = UDim2.fromOffset(66, 66), BackgroundTransparency = 1, ZIndex = 3, Parent = head })
-	K.art(icon, art(Hammers.ById[offers[#offers].key]), UDim2.fromScale(1, 1), 4)
+	K.art(icon, art(Hammers.ById[(offers[3] or offers[1]).key]), UDim2.fromScale(1, 1), 4)
 	local title = K.text({ Position = UDim2.fromOffset(84, 9), Size = UDim2.new(1, -330, 0, 34), Text = "HAMMERS OF THE DAY", Font = T.chunky, TextSize = 30, Max = 30,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 4, Parent = head })
 	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 232, 140)), Parent = title })
@@ -754,9 +754,17 @@ local function dailyHammers(order, data)
 			task.wait(1)
 		end
 	end)
-	-- the three hammers: big art in their rarity's look, power, the price in Gems and in Robux
-	local grid = K.grid(c.content, order + 1, 3, 352)
-	for i, o in ipairs(offers) do
+	-- the hammers of the day on the left (two rows of two: Rare, Epic / Legendary, Mythic), on the right the
+	-- Thunderclap: a hammer only Robux buys (never in a crate)
+	local list = {}
+	for _, o in pairs(offers) do table.insert(list, o) end
+	table.sort(list, function(x, y) return x.r < y.r end)
+	local CELL, GAP = 292, 12
+	local rows = math.ceil(#list / 2)
+	local wrap = new("Frame", { Name = "DailyHammers", Size = UDim2.new(1, 0, 0, rows * CELL + (rows - 1) * GAP), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
+	local grid = new("Frame", { Name = "Grid", Size = UDim2.new(0.66, -GAP / 2, 1, 0), BackgroundTransparency = 1, ZIndex = 2, Parent = wrap })
+	new("UIGridLayout", { CellSize = UDim2.new(0.5, -GAP / 2, 0, CELL), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
+	for i, o in ipairs(list) do
 		local h = Hammers.ById[o.key]
 		local r = rar(h)
 		local owned = data.index and data.index[o.key]
@@ -793,16 +801,16 @@ local function dailyHammers(order, data)
 				else c.toast(h.name .. ": Robux coming soon (" .. K.robux(prod.price) .. ")", T.accent, 2.5) end
 			end, shine = true })
 		end
-		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = 186, spin = true,
-			badge = { string.upper(r.name), r.color }, tag = { o.tag, i == 2 and T.red or K.DARK },
+		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = 132, spin = true,
+			badge = { string.upper(r.name), r.color }, tag = { o.tag, o.r == 5 and T.red or K.DARK },
 			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } }, buttons = buttons })
 		K.rarityFX(t:FindFirstChild("Art"), r.id)
 		local tl = t:FindFirstChild("Title")
 		if tl then K.rarityText(tl, r.id, rarText(r)) end
 		local chip = t:FindFirstChild("Chip")
 		if chip then K.rarityChip(chip, r.id) end
-		-- the middle one (Legendary) is the one most players want: a soft gold glow around it
-		if i == 2 then
+		-- the Legendary is the one most players want: a soft gold glow around it
+		if o.r == 5 then
 			local glow = new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(255, 200, 60), Transparency = 0.2, Parent = t:FindFirstChild("Bg") or t })
 			task.spawn(function()
 				local t0 = os.clock()
@@ -812,6 +820,45 @@ local function dailyHammers(order, data)
 				end
 			end)
 		end
+	end
+	-- the right column: the Thunderclap Hammer, Robux only (the game pass), tall and electric
+	local sh = Config.StormHammer
+	local pass
+	if sh then for _, pp in ipairs(Config.Store.passes) do if pp.key == sh.pass then pass = pp end end end
+	if sh and pass then
+		local side = new("Frame", { Name = "Exclusive", Position = UDim2.new(0.66, GAP / 2, 0, 0), Size = UDim2.new(0.34, -GAP / 2, 1, 0), BackgroundTransparency = 1, ZIndex = 2, Parent = wrap })
+		new("UIGridLayout", { CellSize = UDim2.fromScale(1, 1), Parent = side })
+		local ex = Hammers.RarityById.exclusive
+		local owns = c.player:GetAttribute("Pass_" .. sh.pass) == true
+		local o = { order = 1, name = sh.name, icon = sh.icon or art(Hammers.ById[sh.key or "thunder"]), iconScale = 1.04, color = ex.color, spin = true,
+			artH = rows * CELL + (rows - 1) * GAP - 190, badge = { "EXCLUSIVE", ex.color }, tag = { "ROBUX ONLY", T.red },
+			stats = { { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
+		if owns then
+			o.status = { "OWNED", K.GREEN }
+		elseif (pass.id or 0) > 0 or studio then
+			o.buttons = { { K.robux(pass.price), K.GREEN, function()
+				c.click()
+				if (pass.id or 0) > 0 then MarketplaceService:PromptGamePassPurchase(c.player, pass.id)
+				else c.toast(sh.name .. ": coming soon (" .. K.robux(pass.price) .. ")", T.accent, 2.5) end
+			end, shine = true } }
+		end
+		local t = K.tile(side, o)
+		K.rarityFX(t:FindFirstChild("Art"), "exclusive")
+		local tl = t:FindFirstChild("Title")
+		if tl then K.rarityText(tl, "exclusive", ex.color) end
+		local chip = t:FindFirstChild("Chip")
+		if chip then K.rarityChip(chip, "exclusive") end
+		K.text({ Position = UDim2.new(0, 13, 1, -96), Size = UDim2.new(1, -26, 0, 30), Text = "Never in a crate · x" .. sh.mult .. " build power for you and your crew",
+			TextSize = 14, Max = 14, TextWrapped = true, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
+		-- an electric glow around the card
+		local glow = new("UIStroke", { Thickness = 4, Color = ex.color, Transparency = 0.2, Parent = t:FindFirstChild("Bg") or t })
+		task.spawn(function()
+			local t0 = os.clock()
+			while glow.Parent do
+				glow.Transparency = 0.1 + 0.5 * (0.5 + 0.5 * math.sin((os.clock() - t0) * 4))
+				task.wait(0.05)
+			end
+		end)
 	end
 end
 
@@ -824,7 +871,6 @@ function M.Crates(tok)
 	K.section(c.content, 3, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
 	crateTiles(data, 4, true)
 	if tut then return end -- (the Inventory and the passes open after the tutorial)
-	stormBanner(5)
 	K.row(c.content, 6, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
 		color = Color3.fromRGB(255, 176, 40), height = 92, buttonW = 190, button = { "INVENTORY", Color3.fromRGB(255, 176, 40), function()
 			c.click()
