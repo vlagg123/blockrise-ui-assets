@@ -576,7 +576,7 @@ function M.Init(ctx)
 	---------------------------------------------------------------------------
 	-- RIGHT: Store, Gift (playtime timer), Spin, More (daily, codes, invite, trade, trophies, music)
 	---------------------------------------------------------------------------
-	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 400), Parent = root })
+	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 500), Parent = root })
 	local rightScale = new("UIScale", { Parent = right })
 	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
 
@@ -620,15 +620,17 @@ function M.Init(ctx)
 	-- the Lucky Spin has its own button, between GIFT and MORE
 	local spinB = bigButton(right, "spin", "SPIN", Color3.fromRGB(190, 150, 255), Color3.fromRGB(110, 60, 220), 84, 94, A.spin)
 	spinB.button.LayoutOrder = 3
+	-- TRADE has its own button too (between SPIN and MORE): trading hammers is one tap away
+	local tradeB = bigButton(right, "trade", "TRADE", Color3.fromRGB(130, 240, 140), Color3.fromRGB(30, 160, 80), 84, 94, function() toggle("Trade", _G.__CE_ShowTrade) end)
+	tradeB.button.LayoutOrder = 4
 	local more
 	local moreB = bigButton(right, "more", "MORE", Color3.fromRGB(170, 185, 225), Color3.fromRGB(85, 95, 150), 84, 94, function() openPopup(more) end)
-	moreB.button.LayoutOrder = 4
+	moreB.button.LayoutOrder = 5
 
 	more = popup("MorePopup", {
 		{ "daily", "DAILY", Color3.fromRGB(255, 150, 175), Color3.fromRGB(225, 60, 105), A.daily },
 		{ "codes", "CODES", Color3.fromRGB(185, 155, 255), Color3.fromRGB(105, 70, 225), function() toggle("Codes", _G.__CE_ShowCodes) end },
 		{ "invite", "INVITE", Color3.fromRGB(255, 160, 200), Color3.fromRGB(225, 70, 140), function() if _G.__CE_Invite then _G.__CE_Invite() end end },
-		{ "trade", "TRADE", Color3.fromRGB(130, 240, 140), Color3.fromRGB(30, 160, 80), function() toggle("Trade", _G.__CE_ShowTrade) end },
 		{ "portfolio", "TROPHIES", Color3.fromRGB(255, 220, 110), Color3.fromRGB(230, 145, 25), function() toggle("Portfolio", _G.__CE_ShowPortfolio) end },
 		{ "music", "MUSIC", Color3.fromRGB(150, 205, 255), Color3.fromRGB(70, 110, 230), function() if _G.__CE_ToggleMusic then _G.__CE_ToggleMusic() end end, keepOpen = true },
 	}, moreB, 3)
@@ -847,7 +849,7 @@ function M.Init(ctx)
 		fx.Size = UDim2.fromOffset(math.clamp(math.floor(camera.ViewportSize.X / s * 0.36 / fxScale.Scale), 220, 460), fx.Size.Y.Offset)
 		-- popups open to the left of their button
 		for i, p in ipairs(popups) do
-			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 300 * rs) -- level with MORE (4th button)
+			p.frame.Position = UDim2.new(1, -12 - 92 * rs, 0, 10 + 400 * rs) -- level with MORE (5th button)
 		end
 	end
 	gui:GetAttributeChangedSignal("Compact"):Connect(function() task.defer(layout) end)
