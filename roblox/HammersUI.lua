@@ -698,6 +698,7 @@ local function spinThenReveal(cr, res)
 	local crateImg
 	if type(pic) == "string" and pic:find("^rbxassetid://") then
 		crateImg = new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = pic, ScaleType = Enum.ScaleType.Fit, ZIndex = 4, Parent = crateBox })
+		K.guardImage(crateImg)
 	else
 		crateImg = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 4, Parent = crateBox })
 		Icons.make(pic, { Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = crateImg })
@@ -847,7 +848,7 @@ local function crateBurst(cr)
 	local box = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(190, 190), BackgroundTransparency = 1, ZIndex = 3, Parent = gui })
 	local pic = crateArt(cr)
 	if type(pic) == "string" and pic:find("^rbxassetid://") then
-		new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = pic, ScaleType = Enum.ScaleType.Fit, ZIndex = 3, Parent = box })
+		K.guardImage(new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = pic, ScaleType = Enum.ScaleType.Fit, ZIndex = 3, Parent = box }))
 	else
 		Icons.make(pic, { Size = UDim2.fromScale(1, 1), ZIndex = 3, Parent = box })
 	end

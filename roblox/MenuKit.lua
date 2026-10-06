@@ -59,12 +59,45 @@ local function text(props)
 end
 K.text = text
 
+-- a new picture shows nothing in the game until Roblox has reviewed it: meanwhile its older version stands in (it
+-- switches by itself once the new one passes). [new picture] = older picture
+K.FALLBACK = {
+	-- the materials and blueprints without sparkles (2026-10-07)
+	["rbxassetid://122360343832470"] = "rbxassetid://106021046585318", ["rbxassetid://110081082708537"] = "rbxassetid://121445839778900",
+	["rbxassetid://78454191560706"] = "rbxassetid://109991355122402", ["rbxassetid://76050270159803"] = "rbxassetid://80452030386747",
+	["rbxassetid://138579171777134"] = "rbxassetid://90451387449619", ["rbxassetid://116068134549253"] = "rbxassetid://98054109382956",
+	["rbxassetid://77419840394146"] = "rbxassetid://133224112942902", ["rbxassetid://125092282489198"] = "rbxassetid://82078762588832",
+	-- the crates without sparkles
+	["rbxassetid://81484084637371"] = "rbxassetid://75330431497360", ["rbxassetid://72301801875933"] = "rbxassetid://104449117497713",
+	["rbxassetid://111757044275990"] = "rbxassetid://108198116543312", ["rbxassetid://140362380150130"] = "rbxassetid://117610832518353",
+	["rbxassetid://129859208894290"] = "rbxassetid://99231744226623", ["rbxassetid://90526418216758"] = "rbxassetid://89642781937720",
+}
+local loaded = {} -- [picture] = true (shows) / false (still waiting: use the older one)
+local function guard(img)
+	local id = img.Image
+	local old = K.FALLBACK[id]
+	if not old then return end
+	if loaded[id] == false then img.Image = old return end
+	if loaded[id] then return end
+	task.spawn(function()
+		local ok = true
+		pcall(function()
+			game:GetService("ContentProvider"):PreloadAsync({ id }, function(_, st) if st ~= Enum.AssetFetchStatus.Success then ok = false end end)
+		end)
+		loaded[id] = ok
+		if not ok and img.Parent and img.Image == id then img.Image = old end
+	end)
+end
+K.guardImage = guard
+
 -- art: an atlas icon, or an emoji when the item has no icon yet
 function K.art(parent, icon, size, z)
 	if type(icon) == "string" and icon:find("^rbxassetid://") then
 		-- an image of its own (the hammers rendered in Blender)
-		return new("ImageLabel", { Name = "Icon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = size or UDim2.fromScale(0.95, 0.95),
+		local img = new("ImageLabel", { Name = "Icon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = size or UDim2.fromScale(0.95, 0.95),
 			BackgroundTransparency = 1, Image = icon, ScaleType = Enum.ScaleType.Fit, ZIndex = z or 6, Parent = parent })
+		guard(img)
+		return img
 	end
 	if Icons.has(icon) then
 		return Icons.make(icon, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = size or UDim2.fromScale(0.95, 0.95), ZIndex = z or 6, Parent = parent })
