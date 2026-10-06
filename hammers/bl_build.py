@@ -310,6 +310,41 @@ def build(h, pal, S=1.0, pose=(0.0, -42.0, 14.0), short=0.62):
             ob["no_outline"] = True  # an inverted hull behind glass shows through it
         scn.collection.objects.link(ob)
         objs.append(ob)
+    # pieces with the same "union" name are one part in Roblox: here too, welded by a boolean union (no seams, no dark
+    # outline lines between the slices of a curved shape like the Tsunami's wave or the Dragon's fang)
+    groups = {}
+    for piece, ob in zip(pieces, objs):
+        if piece.get("union"):
+            groups.setdefault(piece["union"], []).append(ob)
+    for name, obs in groups.items():
+        if len(obs) < 2:
+            continue
+        base = obs[0]
+        for o in obs:
+            for md in list(o.modifiers):
+                o.modifiers.remove(md)
+        for o in obs[1:]:
+            md = base.modifiers.new("u_" + o.name, "BOOLEAN")
+            md.operation = "UNION"
+            md.solver = "EXACT"
+            md.object = o
+        bpy.context.view_layer.update()
+        dg = bpy.context.evaluated_depsgraph_get()
+        me = bpy.data.meshes.new_from_object(base.evaluated_get(dg), depsgraph=dg)
+        for md in list(base.modifiers):
+            base.modifiers.remove(md)
+        old = base.data
+        base.data = me
+        bpy.data.meshes.remove(old)
+        for o in obs[1:]:
+            objs.remove(o)
+            bpy.data.objects.remove(o, do_unlink=True)
+        if not me.materials[0].get("trans"):
+            bv = base.modifiers.new("bevel", "BEVEL")
+            bv.width = 0.012 * S
+            bv.segments = 2
+            bv.limit_method = "ANGLE"
+            bv.angle_limit = math.radians(35)
     # pose the whole hammer for the icon (diagonal, a little turned to show depth)
     rot = (Matrix.Rotation(math.radians(pose[2]), 4, "Z") @ Matrix.Rotation(math.radians(pose[1]), 4, "Y")
            @ Matrix.Rotation(math.radians(pose[0]), 4, "X"))

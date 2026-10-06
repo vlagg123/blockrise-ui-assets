@@ -1054,13 +1054,7 @@ def build_new(H):
             tip = c1
         thick = 0.44 - 0.3 * (k / (N - 1))
         h.poly("Fang%d" % k, pts, thick, hp, I3, "bone", union="Fang")
-    # a darker groove along the tooth (both sides) and the root collar of red scales
-    for i, sx in enumerate((-1, 1)):
-        for k in range(1, 6):
-            (c0, n0, w0), (c1, n1, w1) = fang[k], fang[k + 1]
-            g = [tuple(c0 + n0 * w0 * 0.05), tuple(c1 + n1 * w1 * 0.05), tuple(c1 - n1 * w1 * 0.05), tuple(c0 - n0 * w0 * 0.05)]
-            thick = 0.44 - 0.3 * (k / (N - 1))
-            h.poly("Groove%d%d" % (i, k), g, 0.01, hp + [sx * (thick / 2 + 0.002), 0, 0], I3, "bone_dk", union="Groove%d" % i)
+    # the root: a bone face and a collar of red scales
     h.add("Face", "cyl", (0.08, 0.24), hp + [0, 0.07, -0.6], R=ALONG_Z, mat="bone_dk", planes=cyl_bevel(0.08, 0.24, 0.03), smooth=40)
     h.add("Collar", "box", (0.5, 0.56, 0.12), hp + [0, 0.06, -0.38], mat="scale_red", planes=chamfer(0.5, 0.56, 0.12, 0.1, edges="z"), cast=False)
     for i, z in enumerate((-0.43, -0.33)):
@@ -1174,8 +1168,13 @@ def build_new(H):
     hp = np.array([0.0, hy, 0.0])
     # a breaking wave seen from the side (u = Z, v = Y): a swell low at the front (the striking face) rising to the back,
     # and the crest that rises from the back, rolls over the top and falls forward, leaving the tube open under it.
-    W = 0.48
-    h.poly("Swell", [(-0.62, -0.3), (0.56, -0.3), (0.56, 0.1), (0.1, 0.03), (-0.62, -0.1)], W, hp, I3, "water_deep", union="Swell")
+    W = 0.46
+    NS = 6
+    for k in range(NS):
+        u0, u1 = -0.62 + 1.18 * k / NS, -0.62 + 1.18 * (k + 1) / NS
+        t0, t1 = (u0 + 0.62) / 1.18, (u1 + 0.62) / 1.18
+        v0, v1 = -0.14 + 0.26 * t0 ** 1.7, -0.14 + 0.26 * t1 ** 1.7
+        h.poly("Swell%d" % k, [(u0, -0.3), (u1, -0.3), (u1, v1), (u0, v0)], W, hp, I3, "water", union="Wave")
     C = np.array([0.02, 0.2])
     arc = []
     N = 11
@@ -1188,8 +1187,7 @@ def build_new(H):
         arc.append((C + d * (rm - tk / 2), C + d * (rm + tk / 2)))
     for k in range(N):
         (i0, o0), (i1, o1) = arc[k], arc[k + 1]
-        thick = W - 0.12 * (k / (N - 1))
-        h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], thick, hp, I3, "water", union="Crest")
+        h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], W * 0.9, hp, I3, "water", union="Wave")
     # white foam: on the top of the crest, along the falling lip, and spray in front of it
     for i, k in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
         i0, o0 = arc[k]
@@ -1201,7 +1199,6 @@ def build_new(H):
     h.add("LipFoam", "ball", (0.12,), hp + [0, lip[1] - 0.02, lip[0]], mat="foam", cast=False)
     for i, (z, y, d) in enumerate(((-0.48, 0.2, 0.08), (-0.56, 0.08, 0.06), (-0.4, 0.32, 0.05))):
         h.add("Spray%d" % i, "ball", (d,), hp + [0.05 * (i - 1), y, z], mat="foam", cast=False)
-    h.add("SwellFoam", "box", (W + 0.01, 0.04, 0.5), hp + [0, -0.07, -0.36], R=Rx(-10.5), mat="foam", planes=chamfer(W + 0.01, 0.04, 0.5, 0.015), cast=False)
     h.headbox(hp + [0, 0.05, 0], (0.56, 0.85, 1.25))
     h.fx("snow", hp + [0, 0.2, 0], [[255, 255, 255], [150, 210, 255]], 4, [0.05, 0.1], area=(0.5, 0.3, 1.0))
     h.fx("mist", hp, [[170, 220, 255]], 1.5, [0.3, 0.5], area=(0.5, 0.4, 1.0))
