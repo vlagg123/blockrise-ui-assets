@@ -119,7 +119,7 @@ local function sources(h)
 	if h.key == Hammers.DefaultKey then return { "Everyone's first hammer. Yours forever." } end
 	if h.pass then return { "The Thunderclap Hammer game pass (Store → PASSES)" } end
 	if h.event then return { "The launch event only" } end
-	if h.soon then table.insert(out, "Coming soon") end
+	if h.soon then return { "Coming soon: it isn't in any crate yet" } end
 	for _, cr in ipairs(Hammers.Crates) do
 		-- the crate must be able to drop this rarity (its odds), and the hammer must be in its pool
 		local fits = (cr.exclusiveOnly and h.exclusive) or (not cr.exclusiveOnly and not h.exclusive)
