@@ -992,13 +992,13 @@ def i_gems12000():
 # glow softly behind the chest without a sticker outline. One look per crate.
 CRATE_LOOK = {
     "supply": dict(body=("#c98546", "grain", "#a8672f", "#dc9a58"), lid="#b0703a", trim=("#6b7388", 0.9), inner="#4a2c18",
-                   glow="#ffc93a", ray="#ff9f1c", gem=None, hammer="steel", pose=(0.0, -24.0, 24.0)),
+                   glow="#ffc93a", ray="#ff9f1c", gem=None, hammer="steel", pose=(0.0, -26.0, -45.0)),
     "builder": dict(body=("#3f8cff", None, None, None), lid="#2a62d8", trim=("#ffc534", 1.0), inner="#163a8a",
-                    glow="#8fd8ff", ray="#3fb8ff", gem=None, hammer="gold", pose=(0.0, -24.0, 24.0)),
+                    glow="#8fd8ff", ray="#3fb8ff", gem=None, hammer="gold", pose=(0.0, -26.0, -45.0)),
     "golden": dict(body=("#ffc534", "hammered", "#f2ae22", "#ffd86a"), lid="#e39a1a", trim=("#fff1c0", 1.0), inner="#8a4a10",
-                   glow="#ffe680", ray="#ff8a1c", gem=None, hammer="ruby", pose=(0.0, -24.0, 24.0)),
+                   glow="#ffe680", ray="#ff8a1c", gem=None, hammer="ruby", pose=(0.0, -26.0, -45.0)),
     "exclusive": dict(body=("#ff4fc8", None, None, None), lid="#d42c9e", trim=("#8a4df8", 0.6), inner="#4a1070",
-                      glow="#ff9cf0", ray="#b65cff", gem="pink", hammer="plasma", pose=(0.0, -24.0, 24.0)),
+                      glow="#ff9cf0", ray="#b65cff", gem="pink", hammer="plasma", pose=(0.0, -26.0, -45.0)),
 }
 CRATE_O = []      # world points of the glowing openings (for the 2D rays)
 _SPEC = None
@@ -1084,7 +1084,7 @@ def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, m
     obj("lidrim", bm_box(W + 0.06, 0.22, 0.16), trim, loc=(0, -D + 0.05, 0.02), parent=Lf, bevel=0.04)
     if open_:
         # the opening glows in the crate's colour (bright, not blown out); the rays come in 2D (crate_post)
-        obj("light", bm_box(W - 0.34, D - 0.34, 0.26), glow(L["glow"], 4.0), loc=(0, 0, H - 0.02), parent=P, bevel=0.06, outline=False)
+        obj("light", bm_box(W - 0.34, D - 0.34, 0.26), glow(L["glow"], 2.6), loc=(0, 0, H - 0.02), parent=P, bevel=0.06, outline=False)
         CRATE_O.append(P @ Vector((0, 0, H + 0.15)))
         if mark and L.get("hammer"):
             burst_hammer(P, L["hammer"], H, L["pose"])
@@ -1220,7 +1220,7 @@ def crate_post(canvas, o_px, ray_hex, glow_hex):
         fall = np.clip(1 - d / L, 0, 1) ** 1.4
         m = np.maximum(m, band * fall)
     halo = np.exp(-(d / 0.2) ** 2)
-    alpha = np.clip(m * 0.62 + halo * 0.55, 0, 1)
+    alpha = np.clip(m * 0.8 + halo * 0.6, 0, 1)
     c = _hex(ray_hex)
     tint = np.clip(d / length, 0, 1)[..., None] ** 0.6
     rgb = (1 - tint) * (0.55 * c + 0.45) + tint * c        # pale near the chest, full colour further out
