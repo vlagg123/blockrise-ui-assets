@@ -14,7 +14,9 @@ local INK = Color3.fromRGB(20, 17, 32)
 local PLACES = {
 	{ id = "board", name = "Job Board", icon = "board", desc = "Take new contracts", tint = Color3.fromRGB(255, 190, 70) },
 	{ id = "site", name = "My Construction Site", icon = "site", desc = "Back to the contract you're building", tint = Color3.fromRGB(255, 150, 70), needs = "contract" },
-	{ id = "shop", name = "Equipment Store", icon = "shop", desc = "Tools, training gear and heavy machines", tint = Color3.fromRGB(90, 170, 255) },
+	{ id = "shop", name = "Hammers Shop", icon = "shop", desc = "Hammer crates: a hammer in every one", tint = Color3.fromRGB(90, 170, 255) },
+	{ id = "gearshop", name = "Training Shop", icon = "strength", desc = "Training gear: more Strength from every rep", tint = Color3.fromRGB(255, 150, 90) },
+	{ id = "machines", name = "Machines Depot", icon = "mega", desc = "Heavy machines that build on their own", tint = Color3.fromRGB(255, 196, 60) },
 	{ id = "hire", name = "Hiring Office", icon = "hire", desc = "Hire workers for your crew", tint = Color3.fromRGB(110, 210, 120) },
 	{ id = "gym", name = "Training Yard", icon = "gym", desc = "Train your Strength", tint = Color3.fromRGB(255, 120, 90) },
 	{ id = "home", name = "My Property", icon = "home", desc = "Upgrade your house and build extensions", tint = Color3.fromRGB(190, 140, 255) },
@@ -106,7 +108,7 @@ function M.Show()
 		local pass = teleporterPass()
 		K.banner(c.content, 0, { name = "TELEPORTER", line = "Unlock GO and travel anywhere in one tap. Pins stay free.", icon = "locations",
 			color = Color3.fromRGB(235, 70, 130), tint = Color3.fromRGB(255, 214, 120), buttonW = 170,
-			button = { "R$ " .. tostring(pass and pass.price or 39), K.GREEN, function() c.click(); offerTeleporter() end } })
+			button = { "\u{E002} " .. tostring(pass and pass.price or 39), K.GREEN, function() c.click(); offerTeleporter() end } })
 	end
 	local grid = K.grid(c.content, 2, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 250)
 	for i, p in ipairs(PLACES) do
@@ -115,7 +117,7 @@ function M.Show()
 			local z = Config.Zones[p.zone]
 			if player:GetAttribute(z.attr) ~= true then
 				locked = true
-				badge = { "🔒 " .. Config.FormatNum(z.rep or 0) .. " ⭐", K.DARK }
+				badge = { "🔒 REBIRTH " .. (z.rebirth or 1), K.DARK }
 			end
 		end
 		if p.needs == "contract" and (player:GetAttribute("ContractJob") or "") == "" then

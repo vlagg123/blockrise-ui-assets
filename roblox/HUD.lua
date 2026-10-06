@@ -349,8 +349,8 @@ function M.Init(ctx)
 	local topGui = new("ScreenGui", { Name = "TopStrip", IgnoreGuiInset = true, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		DisplayOrder = gui.DisplayOrder - 1, Parent = gui.Parent })
 
-	-- tutorial: JOBS, SHOP and the contract bar stay locked until the first Empire Road steps are done
-	-- (walk to the Job Board, build the first building, Equipment Store, Hiring Office, your property)
+	-- tutorial: every menu on the left and the contract bar stay locked until the tutorial's Empire Road steps are done
+	-- (Hammers Shop, the first fence, Training Shop, Training Yard, Machines Depot, Hiring Office, your property)
 	local menu
 	local function tutorialDone()
 		local rs = player:GetAttribute("RoadStep")
@@ -377,12 +377,30 @@ function M.Init(ctx)
 		if not tutorialDone() then lockedToast("shop") return end
 		toggle("Shop", c.showShop)
 	end
-	function A.upgrades() toggle("Upgrades", c.showUpgrades) end
-	function A.inventory() toggle("Inventory", c.showInventory) end
-	function A.cars() toggle("Garage", _G.__CE_ShowGarage) end
-	function A.company() toggle("Company", _G.__CE_ShowCompany) end
-	function A.rebirth() toggle("Rebirth", c.showRebirth) end
-	function A.locations() toggle("Locations", c.showLocations) end
+	function A.upgrades()
+		if not tutorialDone() then lockedToast("upgrades") return end
+		toggle("Upgrades", c.showUpgrades)
+	end
+	function A.inventory()
+		if not tutorialDone() then lockedToast("inventory") return end
+		toggle("Inventory", c.showInventory)
+	end
+	function A.cars()
+		if not tutorialDone() then lockedToast("cars") return end
+		toggle("Garage", _G.__CE_ShowGarage)
+	end
+	function A.company()
+		if not tutorialDone() then lockedToast("company") return end
+		toggle("Company", _G.__CE_ShowCompany)
+	end
+	function A.rebirth()
+		if not tutorialDone() then lockedToast("rebirth") return end
+		toggle("Rebirth", c.showRebirth)
+	end
+	function A.locations()
+		if not tutorialDone() then lockedToast("locations") return end
+		toggle("Locations", c.showLocations)
+	end
 	function A.store(tab) if tab then _G.__CE_ShowStore(tab) else toggle("Store", _G.__CE_ShowStore) end end
 	function A.daily() toggle("Missions", _G.__CE_ShowMissions) end
 	function A.spin() toggle("Spin", _G.__CE_ShowSpin) end
@@ -405,6 +423,10 @@ function M.Init(ctx)
 		elseif tutorial then
 			c.setWaypoint(place)
 		elseif place == "shop" then A.shop()
+		elseif place == "gearshop" or place == "machines" then
+			-- the Training Shop and the Machines Depot are tabs of the Shop
+			local Shop = _G.__CE_ShopUI
+			if Shop then toggle("Shop", function() Shop.Show(place == "gearshop" and "gear" or "machines") end) end
 		elseif place == "hire" then c.showHire()
 		elseif place == "company" then A.company()
 		elseif place == "rebirth" then A.rebirth()
@@ -621,7 +643,17 @@ function M.Init(ctx)
 	local spinB = bigButton(right, "spin", "SPIN", Color3.fromRGB(190, 150, 255), Color3.fromRGB(110, 60, 220), 84, 94, A.spin)
 	spinB.button.LayoutOrder = 3
 	-- TRADE has its own button too (between SPIN and MORE): trading hammers is one tap away
-	local tradeB = bigButton(right, "trade", "TRADE", Color3.fromRGB(130, 240, 140), Color3.fromRGB(30, 160, 80), 84, 94, function() toggle("Trade", _G.__CE_ShowTrade) end)
+	-- (locked with a padlock until Level 5: the server only trades from Level 5)
+	local tradeB
+	tradeB = bigButton(right, "trade", "TRADE", Color3.fromRGB(130, 240, 140), Color3.fromRGB(30, 160, 80), 84, 94, function()
+		local lvl = player:GetAttribute("Level") or 1
+		if lvl < (Config.TradeMinLevel or 5) then
+			c.toast("🔒 Trading opens at Level " .. (Config.TradeMinLevel or 5) .. " (you're Level " .. lvl .. ")", T.muted, 2.5)
+			tradeB.nudge()
+			return
+		end
+		toggle("Trade", _G.__CE_ShowTrade)
+	end)
 	tradeB.button.LayoutOrder = 4
 	local more
 	local moreB = bigButton(right, "more", "MORE", Color3.fromRGB(170, 185, 225), Color3.fromRGB(85, 95, 150), 84, 94, function() openPopup(more) end)
@@ -910,8 +942,9 @@ function M.Init(ctx)
 		else
 			if lastKind ~= "none" then lastKind = "none"; Icons.set(bIcon, "jobs") end
 			bFill.Visible = false
+			local rs = player:GetAttribute("RoadStep") or 1
 			local hint = tutorialDone() and "tap here to find a job"
-				or ((player:GetAttribute("Completed") or 0) == 0 and "follow the arrow to the Job Board" or "🔒 finish the tutorial first")
+				or (rs == 1 and "get your hammer first: follow the arrow") or (rs == 2 and "follow the arrow to the Job Board") or "🔒 finish the tutorial first"
 			bText.Text = "NO CONTRACT  <font color='#ffd45a' size='15' face='FredokaOne'>" .. hint .. "</font>"
 			bText.TextColor3 = Color3.fromRGB(255, 255, 255)
 			bPct.Text = ""
@@ -979,7 +1012,8 @@ function M.Init(ctx)
 	end
 	c.newBuildings = newBuildings
 
-	-- the lock on JOBS and SHOP: animated when it opens during this session, silent for players past the tutorial
+	-- the lock on every menu on the left: they open one after the other with the padlock animation when the tutorial
+	-- ends during this session, silently for players past the tutorial
 	local wasLocked, sawLocked = nil, false
 	local function applyLock()
 		local locked = not tutorialDone()
@@ -988,16 +1022,26 @@ function M.Init(ctx)
 		if locked == wasLocked then return end
 		local animate = (not locked) and sawLocked
 		wasLocked = locked
-		menu.jobs.setLocked(locked, animate)
-		if animate then
-			task.delay(0.35, function() menu.shop.setLocked(locked, true) end)
-		else
-			menu.shop.setLocked(locked, false)
+		for i, d in ipairs(defs) do
+			local api = menu[d[1]]
+			if animate then task.delay((i - 1) * 0.22, function() api.setLocked(false, true) end) else api.setLocked(locked, false) end
 		end
 	end
 	applyLock()
 	player:GetAttributeChangedSignal("RoadStep"):Connect(applyLock)
 	player:GetAttributeChangedSignal("Loaded"):Connect(applyLock)
+	-- TRADE: the padlock until Level 5 (opens with the animation when you reach it)
+	local tradeWas, tradeSaw = nil, false
+	local function applyTradeLock()
+		local locked = (player:GetAttribute("Level") or 1) < (Config.TradeMinLevel or 5)
+		if locked and player:GetAttribute("Loaded") == true then tradeSaw = true end
+		if locked == tradeWas then return end
+		tradeWas = locked
+		tradeB.setLocked(locked, (not locked) and tradeSaw)
+	end
+	applyTradeLock()
+	player:GetAttributeChangedSignal("Level"):Connect(applyTradeLock)
+	player:GetAttributeChangedSignal("Loaded"):Connect(applyTradeLock)
 
 	-- "something to do here" badges on the menu buttons (checked twice a second)
 	task.spawn(function()
@@ -1048,12 +1092,13 @@ function M.Init(ctx)
 					if ok then n += 1 end
 				end
 			end
-			menu.upgrades.setBadge(n)
+			-- (no badges on a locked menu)
+			menu.upgrades.setBadge(open and n or 0)
 			-- inventory: crates waiting to be opened
-			if menu.inventory then menu.inventory.setBadge(player:GetAttribute("CrateTotal") or 0) end
+			if menu.inventory then menu.inventory.setBadge(open and (player:GetAttribute("CrateTotal") or 0) or 0) end
 			-- rebirth: ready
 			local run, cost = player:GetAttribute("RunEarned") or 0, player:GetAttribute("FranchiseCost") or math.huge
-			menu.rebirth.setBadge(run >= cost)
+			menu.rebirth.setBadge(open and run >= cost)
 			task.wait(0.5)
 		end
 	end)

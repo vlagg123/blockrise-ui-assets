@@ -28,6 +28,8 @@ local studio = RunService:IsStudio()
 local rng = Random.new()
 
 local function money() return c.player:GetAttribute("Money") or 0 end
+-- the tutorial: the Hammers Shop sells its one Supply Crate (no gems / Robux crates, no passes, no Inventory yet)
+local function inTut() return (c.player:GetAttribute("RoadStep") or 1) <= (Config.TutorialSteps or 7) end
 local function gems() return c.player:GetAttribute("Gems") or 0 end
 local function fmt(n) return Config.FormatMoney(n) end
 local function wide() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 end
@@ -272,9 +274,14 @@ local autoOpen, cratePassPopup
 -- the card after a crate: KEEP, or OPEN ANOTHER while you have more of that crate
 local function revealOpened(cr, h, res)
 	local left = c.player:GetAttribute("Crate_" .. cr.id) or 0
-	revealHammer(h, { isNew = res.new, pity = res.pity, button = "KEEP",
+	-- in the tutorial the new hammer is already in your hand (the server equips it)
+	local tut = inTut() and c.player:GetAttribute("EquipId") == res.id
+	revealHammer(h, { isNew = res.new, pity = res.pity, button = tut and "BUILD WITH IT!" or "KEEP",
 		again = left > 0 and { label = "OPEN ANOTHER (" .. left .. ")", fn = function() openCrate(cr.id) end } or nil,
-		onClose = function() M.Redraw() end })
+		onClose = function()
+			M.Redraw()
+			if tut then c.toast("🔨 " .. h.name .. " is in your hand now!", rar(h).color, 3.5) end
+		end })
 end
 
 -- the crate passes (Config.Store.passes): Quick Open (the hammer at once) and Auto Opener (opens them all by itself)
@@ -394,7 +401,7 @@ local function spinThenReveal(cr, res)
 	-- the strip plays to the end (no tap to skip): the hammer at once is the Quick Open pass, offered right here
 	hint.Text = ""
 	local qp = passOf("quickopen")
-	if qp and not c.player:GetAttribute("Pass_quickopen") and ((qp.id or 0) > 0 or studio) then
+	if qp and not c.player:GetAttribute("Pass_quickopen") and ((qp.id or 0) > 0 or studio) and not inTut() then
 		local offer = UI.button("QUICK OPEN  " .. K.robux(qp.price), Color3.fromRGB(255, 200, 60), Color3.fromRGB(240, 130, 20),
 			{ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.5, 116), Size = UDim2.fromOffset(300, 54), TextSize = 22, Font = T.chunky, Shine = true, ZIndex = 6, Parent = gui })
 		local note = UI.label({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.5, 174), Size = UDim2.fromOffset(600, 22),
@@ -611,6 +618,7 @@ end
 -- the crates as tiles: shop = every crate with its price; mine = only the ones you have, one OPEN each
 local function crateTiles(data, order, shop)
 	local zone = data.zone or "town"
+	local tut = shop and inTut()
 	local grid = K.grid(c.content, order, cols(), 304)
 	for i, cr in ipairs(Hammers.Crates) do
 		local have = data.crates[cr.id] or 0
@@ -636,6 +644,19 @@ local function crateTiles(data, order, shop)
 					if owns then autoOpen(cr.id) else cratePassPopup() end
 				end, shine = owns })
 			end
+		elseif tut then
+			-- the tutorial: one Supply Crate, bought and opened at once; the rest waits
+			if cr.cash and have == 0 and (c.player:GetAttribute("IndexCount") or 1) < 2 then
+				local price = data.supplyPrice or Hammers.SupplyPrice(60)
+				local can = money() >= price
+				table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function()
+					if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
+					c.click(); buyCrate(cr.id, 1, true)
+				end, icon = "cash", shine = can })
+			elseif have == 0 then
+				o.dim = true
+				o.status = { "AFTER TUTORIAL", K.LOCK }
+			end
 		elseif cr.cash then
 			local price = data.supplyPrice or Hammers.SupplyPrice(60)
 			local can = money() >= price
@@ -650,7 +671,7 @@ local function crateTiles(data, order, shop)
 				c.click(); buyCrate(cr.id, 1, have == 0)
 			end, shine = can and have == 0 })
 		end
-		if shop and prod and not cr.gems then
+		if shop and prod and not cr.gems and not tut then
 			if robuxOk then
 				table.insert(buttons, { K.robux(prod.price), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, prod.id) end, shine = have == 0 })
 			elseif #buttons == 0 then
@@ -679,6 +700,7 @@ function M.Crates(tok)
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
 	K.section(c.content, 1, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
 	crateTiles(data, 2, true)
+	if inTut() then return end -- (the Inventory and the passes open after the tutorial)
 	stormBanner(3)
 	K.row(c.content, 4, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
 		color = Color3.fromRGB(255, 176, 40), height = 92, buttonW = 190, button = { "INVENTORY", Color3.fromRGB(255, 176, 40), function()

@@ -1,4 +1,6 @@
--- BlockRise Empire - Shop window: hammers (collection, crates, index), training gear, heavy machines and the crew, as item tiles
+-- BlockRise Empire - Shop window: hammer crates, training gear, heavy machines and the crew, as item tiles.
+-- Every tab is a shop on the map (Hammers Shop, Training Shop, Machines Depot, Hiring Office); in the tutorial the
+-- window opens at the shop you walked into, and only that shop's one tutorial buy can be made.
 local RS = game:GetService("ReplicatedStorage")
 local Icons = require(RS.Shared:WaitForChild("Icons"))
 local K = require(RS.Shared:WaitForChild("MenuKit"))
@@ -7,9 +9,13 @@ local HammersUI = require(script.Parent:WaitForChild("HammersUI"))
 local M = {}
 local c, UI, T, Config
 local tab = "hammers"
+local atShop -- the tab of the shop on the map the window was opened at (in the tutorial only that tab works)
+local tutLock = false -- this draw is in the tutorial: one buy per shop, the rest waits for after the tutorial
+local function inTutorial() return (c.player:GetAttribute("RoadStep") or 1) <= (Config.TutorialSteps or 7) end
+local AFTER = "AFTER TUTORIAL"
 
 local TABS = {
-	{ id = "hammers", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230) },
+	{ id = "hammers", label = "HAMMERS", icon = "gift", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230) },
 	{ id = "gear", label = "TRAINING", icon = "strength", c1 = Color3.fromRGB(255, 170, 110), c2 = Color3.fromRGB(225, 85, 40) },
 	{ id = "machines", label = "MACHINES", icon = "mega", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
 	{ id = "crew", label = "CREW", icon = "crew", c1 = Color3.fromRGB(130, 240, 140), c2 = Color3.fromRGB(30, 160, 80) },
@@ -68,6 +74,9 @@ local function tierTiles(list, current, remote, icon, stat, keep, equip)
 			o.spin = true
 		elseif i < current then
 			o.status = { "OWNED", K.LOCK }
+		elseif i == current + 1 and tutLock and i ~= 2 then
+			o.dim = true
+			o.status = { AFTER, K.LOCK }
 		elseif i == current + 1 then
 			local can = cash >= it.price
 			o.tag = { "NEXT", T.red }
@@ -111,6 +120,8 @@ local function machines()
 			if mlv >= Config.MachineMaxLevel then
 				o.status = { "MAX", GOLD }
 				o.spin = true
+			elseif tutLock then
+				o.status = { AFTER, K.LOCK }
 			else
 				local cost = Config.MachineUpgradeCost(m, mlv)
 				local can = cash >= cost
@@ -122,6 +133,9 @@ local function machines()
 		elseif lvl < m.reqLevel then
 			o.dim = true
 			o.status = { "🔒 LEVEL " .. m.reqLevel, K.LOCK }
+		elseif tutLock and m.id ~= "excavator" then
+			o.dim = true
+			o.status = { AFTER, K.LOCK }
 		else
 			local can = cash >= m.price
 			o.button = { fmt(m.price), can and K.GREEN or K.LOCK, function()
@@ -148,6 +162,8 @@ local function crew()
 		local o = { order = i, name = w.name, icon = WORKER_ICON[w.id] or "crew", color = WORKER_COL[w.id] or K.GREEN, stats = { stat } }
 		if have > 0 then
 			o.badge = { "x" .. have, K.DARK }
+		end
+		if have > 0 and not tutLock then
 			-- let one go (50% back) to make room for a better one: two taps
 			o.corner = { label = "FIRE", color = T.red, onClick = function(b)
 				c.click()
@@ -166,6 +182,9 @@ local function crew()
 			o.status = { "🔒 LEVEL " .. w.reqLevel, K.LOCK }
 		elseif count >= max then
 			o.status = { "CREW FULL", K.LOCK }
+		elseif tutLock and (w.id ~= "laborer" or count >= 1) then
+			o.dim = true
+			o.status = { AFTER, K.LOCK }
 		else
 			local can = cash >= w.price
 			o.button = { "HIRE " .. fmt(w.price), can and K.GREEN or K.LOCK, function()
@@ -206,11 +225,17 @@ function M.Available()
 	return out
 end
 
-function M.Show(t, keepScroll)
+-- at = the shop on the map the window opens at ("hammers", "gear", "machines", "crew"); a redraw keeps it
+function M.Show(t, keepScroll, at)
 	-- opening the window (not a redraw while it is open) always starts on the first tab
-	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Shop") then tab = "hammers" end
+	local reopen = c.modalOpen() and c.modalTitle.Text == "Shop"
+	if t == nil and not reopen then tab = "hammers" end
 	if type(t) == "string" then tab = (t == "tools" or t == "index") and "hammers" or t end
 	if not THEME[tab] then tab = "hammers" end
+	if at then atShop = at elseif not reopen then atShop = nil end
+	tutLock = inTutorial()
+	local only = tutLock and THEME[atShop or ""] and atShop or nil -- the tutorial: this shop's tab only
+	if only then tab = only end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	keepNext = scroll ~= nil
 	local th = THEME[tab]
@@ -221,10 +246,14 @@ function M.Show(t, keepScroll)
 	local tabs = {}
 	for i, t2 in ipairs(TABS) do
 		tabs[i] = table.clone(t2)
-		tabs[i].badge = avail[t2.id] == true -- a red "!" dot where something can be bought
+		tabs[i].badge = avail[t2.id] == true and not (only and t2.id ~= only) -- a red "!" dot where something can be bought
 	end
 	UI.tabs(c.content, tabs, tab, function(id)
 		c.click()
+		if only and id ~= only then
+			c.toast("🔒 In the tutorial every shop sells its own things: follow the arrow!", T.muted, 2.5)
+			return
+		end
 		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
 		M.Show(id)
 	end)
