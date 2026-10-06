@@ -174,8 +174,10 @@ end
 -- the page before a Rebirth: everything it resets, everything it keeps, BACK or CONFIRM
 local function drawConfirm(tok, f)
 	c.modalSub.Text = "⭐ " .. f.stars
-	K.banner(c.content, 1, { name = "ARE YOU SURE?", line = "A Rebirth sends you back to the start. Here is exactly what you lose and what stays yours.",
-		icon = "rebirth", color = Color3.fromRGB(226, 64, 72), tint = Color3.fromRGB(255, 205, 210), height = 112 })
+	local gateOk = not f.gate or f.gate.done
+	local ready = f.run >= f.cost and gateOk
+	-- (compact: the cards and the buttons fit without scrolling)
+	K.section(c.content, 1, ready and "ARE YOU SURE?" or "WHAT A REBIRTH DOES", Color3.fromRGB(255, 140, 150), "exactly what you lose and what stays yours")
 	resetCards(2, f)
 	K.note(c.content, 3, "You get +" .. f.starsNow .. (f.starsNow == 1 and " Star" or " Stars") .. ", +" .. math.floor(Company.FranchiseCashPer * 100) .. "% cash and +"
 		.. math.floor(Company.FranchiseStrengthPer * 100) .. "% Strength, forever.")
@@ -185,10 +187,13 @@ local function drawConfirm(tok, f)
 	K.button(row, "BACK", K.LOCK, { Size = UDim2.fromOffset(200, 56), TextSize = 23, LayoutOrder = 1 }, function()
 		c.click(); armed = false; page = "main"; redraw(true)
 	end)
-	K.button(row, "CONFIRM", Color3.fromRGB(226, 64, 72), { Size = UDim2.fromOffset(240, 56), TextSize = 23, LayoutOrder = 2, Shine = true }, function()
-		c.click(); armed = true; page = "main"; redraw(true)
-		c.toast("Now tap I'M SURE! to Rebirth", Color3.fromRGB(226, 64, 72), 2.5)
-	end)
+	-- (CONFIRM only when you can Rebirth now; before that the page is just the information)
+	if ready then
+		K.button(row, "CONFIRM", Color3.fromRGB(226, 64, 72), { Size = UDim2.fromOffset(240, 56), TextSize = 23, LayoutOrder = 2, Shine = true }, function()
+			c.click(); armed = true; page = "main"; redraw(true)
+			c.toast("Now tap I'M SURE! to Rebirth", Color3.fromRGB(226, 64, 72), 2.5)
+		end)
+	end
 end
 
 draw = function(tok, f)
