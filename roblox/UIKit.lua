@@ -323,11 +323,11 @@ function UI.button(text, c1, c2, props)
 			return
 		end
 		if on then
-			-- how much: about 6% of the width (4..14 px) and 3 px up; which way: by its place among its neighbours
+			-- how much: a touch, about 3.5% of the width (3..8 px) and 2 px up; which way: by its place among its neighbours
 			local hD = b.Size.Y.Offset
 			local k = (hD > 0 and b.AbsoluteSize.Y > 0) and b.AbsoluteSize.Y / hD or 1
 			local wD = b.AbsoluteSize.X / math.max(k, 0.01)
-			grow.x, grow.y = math.clamp(wD * 0.06, 4, 14), 3
+			grow.x, grow.y = math.clamp(wD * 0.035, 3, 8), 2
 			local minX, maxX, n = math.huge, -math.huge, 0
 			for _, o in ipairs(b.Parent and b.Parent:GetChildren() or {}) do
 				if o:IsA("GuiButton") and o.Visible then

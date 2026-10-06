@@ -223,7 +223,8 @@ end
 local function buildHammer(h)
 	local origin = CFrame.new(0, 600, 0) -- far above the map while building
 	local tool = Instance.new("Tool")
-	tool.Name = h.special and ("Hammer_" .. h.key) or ("Hammer_" .. h.tier)
+	-- (the first 15 are Hammer_<tier>; the Thunderclap and every hammer made after them are Hammer_<key>)
+	tool.Name = (h.special or h.bykey) and ("Hammer_" .. h.key) or ("Hammer_" .. h.tier)
 	tool:SetAttribute("Key", h.key)
 	tool:SetAttribute("Tier", h.tier)
 	tool.CanBeDropped = false
@@ -302,7 +303,7 @@ local out = {}
 for _, tier in ipairs(args.tiers or {}) do
 	local h = spec.hammers[tier]
 	local t0 = os.clock()
-	local old = folder:FindFirstChild(h.special and ("Hammer_" .. h.key) or ("Hammer_" .. tier))
+	local old = folder:FindFirstChild((h.special or h.bykey) and ("Hammer_" .. h.key) or ("Hammer_" .. tier))
 	local ok, tool = pcall(buildHammer, h)
 	if ok then
 		if old and not args.preview then old:Destroy() end
@@ -315,7 +316,9 @@ for _, tier in ipairs(args.tiers or {}) do
 		end
 		table.insert(out, string.format("%d %s ok (%.1fs, %d parts)", tier, h.key, os.clock() - t0, #tool:GetChildren()))
 	else
-		for _, ch in ipairs(workspace:GetChildren()) do if ch.Name == "Hammer_" .. tier and ch:IsA("Tool") then ch:Destroy() end end
+		for _, ch in ipairs(workspace:GetChildren()) do
+			if (ch.Name == "Hammer_" .. tier or ch.Name == "Hammer_" .. h.key) and ch:IsA("Tool") then ch:Destroy() end
+		end
 		table.insert(out, tier .. " " .. h.key .. " FAILED: " .. tostring(tool))
 	end
 end
