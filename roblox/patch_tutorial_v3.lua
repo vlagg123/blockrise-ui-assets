@@ -87,15 +87,19 @@ s = replaceOnce(s, [[	if name == "home" then
 s = replaceOnce(s, [[UI.textStroke(0.2, 2.5).Parent = markerLbl
 ]], [[UI.textStroke(0.2, 2.5).Parent = markerLbl
 -- off-screen guidance: a place behind you or off the screen gets an arrow on the edge of the screen pointing at it
-local edgeGui = new("ScreenGui", { Name = "NavEdge", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 1, Parent = player:WaitForChild("PlayerGui") })
-local edge = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, Visible = false, Parent = edgeGui })
-local edgeScale = new("UIScale", { Parent = edge })
-local edgeArrow = UI.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(60, 60), Text = "▲", Font = T.title, TextSize = 52,
-	TextColor3 = T.accent, TextXAlignment = Enum.TextXAlignment.Center, Parent = edge })
-UI.textStroke(0.15, 3).Parent = edgeArrow
-local edgeLbl = UI.label({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.fromOffset(240, 26), Text = "", Font = T.title, TextSize = 18,
-	TextXAlignment = Enum.TextXAlignment.Center, Parent = edge })
-UI.textStroke(0.2, 2.5).Parent = edgeLbl
+-- (one table: the main chunk is at Luau's 200-locals limit)
+local navEdge = {}
+do
+	navEdge.gui = new("ScreenGui", { Name = "NavEdge", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 1, Parent = player:WaitForChild("PlayerGui") })
+	navEdge.frame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(64, 64), BackgroundTransparency = 1, Visible = false, Parent = navEdge.gui })
+	navEdge.scale = new("UIScale", { Parent = navEdge.frame })
+	navEdge.arrow = UI.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(60, 60), Text = "▲", Font = T.title, TextSize = 52,
+		TextColor3 = T.accent, TextXAlignment = Enum.TextXAlignment.Center, Parent = navEdge.frame })
+	UI.textStroke(0.15, 3).Parent = navEdge.arrow
+	navEdge.lbl = UI.label({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.fromOffset(240, 26), Text = "", Font = T.title, TextSize = 18,
+		TextXAlignment = Enum.TextXAlignment.Center, Parent = navEdge.frame })
+	UI.textStroke(0.2, 2.5).Parent = navEdge.lbl
+end
 ]])
 s = replaceOnce(s, [[	local lot = Map.Lots:FindFirstChild("Lot" .. tostring(player:GetAttribute("Lot") or 0))
 	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -123,18 +127,18 @@ s = replaceOnce(s, [[		marker.Enabled = true
 			if math.abs(dx) < 1 and math.abs(dy) < 1 then dy = 1 end
 			local hx, hy = vs.X / 2 - 140, vs.Y / 2 - mg
 			local k = math.min(hx / math.max(math.abs(dx), 1e-3), hy / math.max(math.abs(dy), 1e-3))
-			edge.Position = UDim2.fromOffset(vs.X / 2 + dx * k, vs.Y / 2 + dy * k)
-			edgeArrow.Rotation = math.deg(math.atan2(dy, dx)) + 90
-			edgeLbl.Text = tlabel .. "  " .. math.floor(dist) .. "m"
-			edgeScale.Scale = uiScale.Scale
-			edge.Visible = true
+			navEdge.frame.Position = UDim2.fromOffset(vs.X / 2 + dx * k, vs.Y / 2 + dy * k)
+			navEdge.arrow.Rotation = math.deg(math.atan2(dy, dx)) + 90
+			navEdge.lbl.Text = tlabel .. "  " .. math.floor(dist) .. "m"
+			navEdge.scale.Scale = uiScale.Scale
+			navEdge.frame.Visible = true
 		else
-			edge.Visible = false
+			navEdge.frame.Visible = false
 		end
 	else
 		beam.Enabled = false
 		marker.Enabled = false
-		edge.Visible = false
+		navEdge.frame.Visible = false
 	end]])
 s = replaceOnce(s, [[			or tp == "home" and "🏠 Walk to YOUR PROPERTY in Maple Grove — follow the arrow"
 ]], [[			or tp == "home" and "🏠 Walk to YOUR PROPERTY in Maple Grove — follow the arrow"
