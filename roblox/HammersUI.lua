@@ -327,10 +327,12 @@ local function rollFake(cr, zone, luck)
 	return Hammers.ById.iron
 end
 
-local openCrate
+local openCrate, showPending
 local autoOpen, cratePassPopup
 -- the card after a crate: KEEP, or OPEN ANOTHER while you have more of that crate
 local function revealOpened(cr, h, res)
+	-- you saw it: the server stops keeping it to show again (see showPending)
+	if res.id then later(function() call("seen", res.id) end) end
 	local left = c.player:GetAttribute("Crate_" .. cr.id) or 0
 	-- in the tutorial the new hammer is already in your hand (the server equips it)
 	local tut = inTut() and c.player:GetAttribute("EquipId") == res.id
@@ -340,6 +342,19 @@ local function revealOpened(cr, h, res)
 			M.Redraw()
 			if tut then c.toast("🔨 " .. h.name .. " is in your hand now!", rar(h).color, 3.5) end
 		end })
+end
+
+-- a crate that opened on the server but whose hammer you never saw (the connection dropped, the game closed): its
+-- reveal comes up now, so a crate never seems to vanish
+function showPending()
+	local p = cache and cache.pending
+	if type(p) ~= "table" then return end
+	cache.pending = nil
+	local h = Hammers.ById[p.key]
+	local cr = Hammers.CrateById[p.crate]
+	if not h then later(function() call("seen", p.id) end) return end
+	c.toast("📦 Your " .. (cr and cr.name or "crate") .. " opened: here is what was inside!", cr and cr.color or T.green, 4)
+	revealOpened(cr or { id = p.crate }, h, { id = p.id, key = p.key, new = p.new })
 end
 
 -- the crate passes (Config.Store.passes): Quick Open (the hammer at once) and Auto Opener (opens them all by itself)
@@ -527,7 +542,11 @@ function openCrate(crateId, buyFirst)
 	local quick = c.player:GetAttribute("QuickOpen") == true
 	local ctl = (not quick) and spinThenReveal(cr) or nil
 	local burst = quick and crateBurst(cr) or nil
-	if cache and cache.crates and not buyFirst then cache.crates[crateId] = math.max(0, (cache.crates[crateId] or 0) - 1) end
+	if cache and cache.crates and not buyFirst then
+		-- the count behind goes down at once (x3 -> x2 while this one opens)
+		cache.crates[crateId] = math.max(0, (cache.crates[crateId] or 0) - 1)
+		redrawNow()
+	end
 	later(function()
 		local ok, res = true, nil
 		if buyFirst then ok, res = call("buy", crateId, 1) end
@@ -538,6 +557,8 @@ function openCrate(crateId, buyFirst)
 			if burst and opening == burst then stopOpening() end
 			c.toast("⚠️ " .. tostring(res), T.red)
 			refresh()
+			-- (no answer, but the crate did open on the server: its hammer comes up now)
+			if cache and type(cache.pending) == "table" and cache.pending.crate == crateId then showPending() end
 			return
 		end
 		local h = Hammers.ById[res.key]
@@ -680,6 +701,7 @@ function autoOpen(crateId)
 		end
 		if not gui.Parent then return end
 		done = true
+		later(function() call("seen") end) -- (every hammer is on the screen: none to show again)
 		crateImg.Rotation = 0
 		head.Text = got .. " HAMMERS OPENED!"
 		local lb = stopBtn:FindFirstChild("Label")
@@ -1594,7 +1616,18 @@ function M.Init(ctx)
 	UI, T, Config, new = c.UI, c.T, c.Config, c.new
 	spend = K.spent -- (one for every menu: the Shop and the Upgrades spend from it too)
 	c.spent = K.spent
-	task.spawn(function() HammerAction = c.Remotes:WaitForChild("HammerAction", 60) end)
+	task.spawn(function()
+		HammerAction = c.Remotes:WaitForChild("HammerAction", 60)
+		-- a crate that opened while you were leaving: its hammer comes up once you are in the game
+		local pg = c.player:WaitForChild("PlayerGui")
+		local t0 = os.clock()
+		while pg:FindFirstChild("Intro") and os.clock() - t0 < 300 do task.wait(1) end
+		task.wait(2.5)
+		if not HammerAction then return end
+		fetch()
+		if cache and type(cache.pending) == "table" and not opening then showPending() end
+	end)
+	if studio then _G.__HammersPending = function() fetch(); showPending() end end -- (Studio test: a rejoin after a dropped crate)
 	-- Roblox policy: where paid random items are restricted, the Robux crates are not sold
 	c.paidRandomRestricted = false
 	task.spawn(function()
