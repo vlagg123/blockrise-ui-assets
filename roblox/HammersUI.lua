@@ -1914,6 +1914,13 @@ function M.Init(ctx)
 	end)
 	-- (Studio test of a rejoin after a dropped crate: set the player's TestPending attribute)
 	if studio then c.player:GetAttributeChangedSignal("TestPending"):Connect(function() task.spawn(function() fetch(); showPending() end) end) end
+	-- (Studio test of the strip and its celebration: set TestCrateFX to a hammer key; nothing is given)
+	if studio then
+		c.player:GetAttributeChangedSignal("TestCrateFX"):Connect(function()
+			local key = c.player:GetAttribute("TestCrateFX")
+			if Hammers.ById[key] then spinThenReveal(Hammers.CrateById.golden, { key = key, new = false }) end
+		end)
+	end
 	-- Roblox policy: where paid random items are restricted, the Robux crates are not sold
 	c.paidRandomRestricted = false
 	task.spawn(function()
