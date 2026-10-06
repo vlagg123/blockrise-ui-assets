@@ -181,18 +181,36 @@ function K.grid(parent, order, cols, cellH, gap)
 	return f
 end
 
+-- each picture's subject sits a little differently in its square (the Diamond Glass window is up in the top-left, the
+-- gem below it): { scale, dx, dy } puts the subject in the middle of a chip's picture spot. [picture] = fit (old + new ids)
+local PIC_FIT = {}
+for ids, fit in pairs({
+	["122360343832470 106021046585318"] = { 1.04, 0.02, 0 },        -- steel
+	["110081082708537 121445839778900"] = { 1.14, 0, -0.01 },       -- copper (a narrow spool)
+	["78454191560706 109991355122402"] = { 1.04, -0.01, -0.02 },    -- marble
+	["76050270159803 80452030386747"] = { 1, 0, -0.04 },            -- gold (sits low)
+	["138579171777134 90451387449619"] = { 1.06, 0.03, 0.04 },      -- diamond glass (window up-left, gem down-right)
+	["116068134549253 98054109382956 77419840394146 133224112942902 125092282489198 82078762588832 81717966414458"] = { 1, 0, -0.02 }, -- blueprints
+}) do
+	for id in ids:gmatch("%d+") do PIC_FIT["rbxassetid://" .. id] = fit end
+end
+
 -- small coloured tag (stats, rarity, OWNED...)
--- props.Pic = a picture in front of the text (rbxassetid or atlas icon name: materials, blueprints...)
+-- props.Pic = a picture in front of the text (rbxassetid or atlas icon name: materials, blueprints...): a little bigger than
+-- the pill (it stands out of it like a sticker), its subject centred, and the text starts right after it (never over it)
 function K.chip(parent, label, color, props)
 	local c = UI.slice("pill", { Name = "Chip", Size = UDim2.fromOffset(0, 26), AutomaticSize = Enum.AutomaticSize.X, SliceScale = 0.36, ImageColor3 = color or T.blue, ZIndex = 5, Parent = parent })
 	local pic = props and props.Pic
 	for k, v in pairs(props or {}) do if k ~= "Pic" then c[k] = v end end
 	new("UIPadding", { PaddingLeft = UDim.new(0, pic and 4 or 9), PaddingRight = UDim.new(0, 9), Parent = c })
 	if pic then
-		local h = new("Frame", { Name = "Pic", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(25, 25), BackgroundTransparency = 1, ZIndex = 6, Parent = c })
-		K.art(h, pic, UDim2.fromScale(1.12, 1.12), 6)
+		local h = new("Frame", { Name = "Pic", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -2, 0.5, 0), Size = UDim2.fromOffset(30, 30), BackgroundTransparency = 1,
+			ZIndex = math.max(6, c.ZIndex + 1), Parent = c })
+		local fit = PIC_FIT[pic] or { 1.04, 0, 0 }
+		local a = K.art(h, pic, UDim2.fromScale(fit[1], fit[1]), h.ZIndex)
+		a.Position = UDim2.fromScale(0.5 + fit[2], 0.5 + fit[3])
 	end
-	text({ Position = UDim2.fromOffset(pic and 26 or 0, 2), Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = label, Font = T.chunky, TextSize = 15,
+	text({ Position = UDim2.fromOffset(pic and 31 or 0, 2), Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Text = label, Font = T.chunky, TextSize = 15,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 2, TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 6, Parent = c })
 	return c
 end
