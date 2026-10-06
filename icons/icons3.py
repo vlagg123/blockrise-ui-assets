@@ -245,14 +245,22 @@ def icon_vip():
 
 
 # the Quaternius chest was tried for "store" but the procedural one reads better at 124 px
-LIB_ICONS = {"up_rent": icon_up_rent, "home": icon_home, "suburbs": icon_suburbs, "company": icon_company,
-             "downtown": icon_downtown, "vip": icon_vip}
+# (the registry tolerates icons that live in other modules or were retired: robux.py only needs the scene helpers)
+_g = globals().get
+
+
+def _have(d):
+    return {k: v for k, v in d.items() if v is not None}
+
+
+LIB_ICONS = _have({"up_rent": _g("icon_up_rent"), "home": icon_home, "suburbs": icon_suburbs, "company": icon_company,
+                   "downtown": icon_downtown, "vip": icon_vip})
 ICONS = dict(I.ICONS)
 ICONS.update(LIB_ICONS)
-ICONS.update({"invite": icon_invite, "locations": icon_locations, "up_power": icon_up_power, "up_strength": icon_up_strength, "up_cash": icon_up_cash, "up_crew": icon_up_crew,
-              "hire": icon_hire, "up_luck": icon_up_luck})
+ICONS.update(_have({"invite": icon_invite, "locations": icon_locations, "up_power": _g("icon_up_power"), "up_strength": _g("icon_up_strength"),
+                    "up_cash": _g("icon_up_cash"), "up_crew": _g("icon_up_crew"), "hire": _g("icon_hire"), "up_luck": _g("icon_up_luck")}))
 ALL = dict(ICONS)
-ALL.update(BADGES)
+ALL.update(_g("BADGES") or {})
 VIEWS = dict(P.VIEWS)
 VIEWS.update({"home": (0, -1, 0.5), "suburbs": (0, -1, 0.5), "company": (0, -1, 0.35), "downtown": (0, -1, 0.3),
               "up_rent": (0, -1, 0.5), "vip": (0, -1, 0.35), "badge_up": (0, -1, 0.22), "badge_plus": (0, -1, 0.22),
