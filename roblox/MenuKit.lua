@@ -817,13 +817,22 @@ function K.rarityText(label, id, fallback)
 	if not st then st = new("UIStroke", { Thickness = 1.6, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, Parent = label }) end
 	if L.stroke then st.Color = L.stroke end
 	if style == "divine" then
-		-- the halo: the outline breathes (thicker / thinner) and slowly turns through the sky's colours
+		-- the halo: the outline breathes like a bubble (a soft, eased swell) and slowly turns through the sky's colours.
+		-- A text outline drawn too thick breaks up in the tight corners of the letters (the R's notch): the swell stays
+		-- under a share of the letters' height, so it is smooth on every size
+		st.LineJoinMode = Enum.LineJoinMode.Round
 		local base, ph = st.Thickness, math.random() * 6
 		anims[st] = function(now)
 			local u = ((now * 0.35 + ph) % #DIVINE_HALO)
 			local a = math.floor(u)
-			st.Color = DIVINE_HALO[a + 1]:Lerp(DIVINE_HALO[(a + 1) % #DIVINE_HALO + 1], u - a)
-			st.Thickness = base * (1 + 0.45 * (0.5 + 0.5 * math.sin(now * 3 + ph)))
+			local f = u - a
+			f = f * f * (3 - 2 * f) -- (smoothstep: no visible step from one colour to the next)
+			st.Color = DIVINE_HALO[a + 1]:Lerp(DIVINE_HALO[(a + 1) % #DIVINE_HALO + 1], f)
+			local h = label.TextBounds.Y
+			local b0 = h > 0 and math.min(base, h * 0.065) or base
+			local top = b0 * 1.3
+			local w = 0.5 - 0.5 * math.cos(now * 2.4 + ph) -- 0..1..0, eased at both ends
+			st.Thickness = b0 + (top - b0) * w
 		end
 	end
 	return label
