@@ -15,6 +15,7 @@ local GOLD1, GOLD2 = Color3.fromRGB(255, 210, 70), Color3.fromRGB(235, 130, 20)
 local C3 = Color3.fromRGB
 local SpinRF, CodeRF
 local spinning = false
+local rng = Random.new()
 local codeTok, codeMsg
 
 -- rarities: label + colour (the game's own rarity colours)
@@ -323,10 +324,12 @@ function M.Show()
 		shoutScale.Scale = 0
 		-- rebuild the tile the reel will land on (tile 50)
 		local target = 50
+		items[target] = idx
 		tiles[target]:Destroy()
 		tiles[target] = tile(strip, p, (target - 1) * (TILE + GAP))
-		-- lands a little to one side (suspense), then glides exactly onto the frame
-		local jitter = (math.random() < 0.5 and -1 or 1) * TILE * (0.18 + math.random() * 0.22)
+		-- lands anywhere on the prize (near its left edge, its right edge, or the middle: a new spot every spin),
+		-- then glides exactly onto the frame
+		local jitter = (rng:NextNumber() * 2 - 1) * TILE * 0.44
 		strip.Position = UDim2.fromOffset(centerOn(4), 9)
 		local tw = TweenService:Create(strip, TweenInfo.new(4.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(centerOn(target, jitter), 9) })
 		local lastTick = -1
@@ -351,11 +354,24 @@ function M.Show()
 		spinning = false
 		if c.live(tok) then
 			celebrate(p, tiles[target])
-			-- the next spin starts from tile 4: show the same prize there so the reset isn't visible
+			-- the next spin starts from tile 4: the prize AND its neighbours (all you can see) are copied there, so the
+			-- reset can't be seen (before, the tiles left and right of the prize turned into other prizes)
 			task.delay(1.4, function()
 				if not c.live(tok) or spinning then return end
-				tiles[4]:Destroy()
-				tiles[4] = tile(strip, p, 3 * (TILE + GAP))
+				for k = -3, 3 do
+					local from, to = target + k, 4 + k
+					items[to] = items[from]
+					local oldBg = tiles[from]:FindFirstChild("Bg")
+					tiles[to]:Destroy()
+					tiles[to] = tile(strip, Config.Spin.prizes[items[to]], (to - 1) * (TILE + GAP))
+					-- the winner keeps its glow and fades back like it would have
+					local bg = tiles[to]:FindFirstChild("Bg")
+					if k == 0 and bg and oldBg then
+						local normal = bg.ImageColor3
+						bg.ImageColor3 = oldBg.ImageColor3
+						UI.tween(bg, 0.8, { ImageColor3 = normal })
+					end
+				end
 				strip.Position = UDim2.fromOffset(centerOn(4), 9)
 			end)
 		end
@@ -395,16 +411,16 @@ function M.Show()
 			iconScale = type(art) == "string" and art:find("^rbxassetid://") and 1.1 or nil, stats = { { pctText(p) .. " CHANCE", r[2] } } })
 	end
 
-	-- every prize and its chance, rarest last
+	-- every prize and its chance, rarest first
 	K.section(c.content, 7, "ALL PRIZES & ODDS", C3(255, 220, 110), "every spin, the same odds")
 	local n = #Config.Spin.prizes
 	local box = controlRow(8, 24 + math.ceil(n / 2) * 36)
 	local list = new("Frame", { Position = UDim2.fromOffset(16, 12), Size = UDim2.new(1, -32, 1, -24), BackgroundTransparency = 1, ZIndex = 3, Parent = box })
 	new("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 32), CellPadding = UDim2.fromOffset(16, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
-	-- biggest chance first, left to right, row by row
+	-- the chances go up: the smallest first, left to right, row by row
 	local sorted = {}
 	for i, p in ipairs(Config.Spin.prizes) do sorted[i] = { p = p, i = i } end
-	table.sort(sorted, function(a, b) if a.p.weight ~= b.p.weight then return a.p.weight > b.p.weight end return a.i < b.i end)
+	table.sort(sorted, function(a, b) if a.p.weight ~= b.p.weight then return a.p.weight < b.p.weight end return a.i < b.i end)
 	for i, e in ipairs(sorted) do
 		local p = e.p
 		local r = rarOf(p)

@@ -418,6 +418,15 @@ function M.Init(ctx)
 	end
 	function A.store(tab) if tab then _G.__CE_ShowStore(tab) else toggle("Store", _G.__CE_ShowStore) end end
 	function A.daily() toggle("Missions", _G.__CE_ShowMissions) end
+	-- the Trade-Up contract and the Hammer Index (MORE menu; they used to be Inventory tabs)
+	function A.tradeup()
+		if not tutorialDone() then lockedToast() return end
+		toggle("TradeUp", _G.__CE_ShowTradeUp)
+	end
+	function A.index()
+		if not tutorialDone() then lockedToast() return end
+		toggle("Index", _G.__CE_ShowIndex)
+	end
 	function A.spin() toggle("Spin", _G.__CE_ShowSpin) end
 	-- GIFT always opens the gifts page: a ready gift is opened there, with its OPEN! button
 	function A.gift() toggle("Gifts", c.playtime.Show) end
@@ -701,11 +710,13 @@ function M.Init(ctx)
 
 	more = popup("MorePopup", {
 		{ "daily", "DAILY", Color3.fromRGB(255, 150, 175), Color3.fromRGB(225, 60, 105), A.daily },
+		{ "upgrades", "TRADE-UP", Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70), A.tradeup },
+		{ "star", "INDEX", Color3.fromRGB(255, 220, 110), Color3.fromRGB(220, 140, 30), A.index },
 		{ "codes", "CODES", Color3.fromRGB(185, 155, 255), Color3.fromRGB(105, 70, 225), function() toggle("Codes", _G.__CE_ShowCodes) end },
 		{ "invite", "INVITE", Color3.fromRGB(255, 160, 200), Color3.fromRGB(225, 70, 140), function() if _G.__CE_Invite then _G.__CE_Invite() end end },
 		{ "portfolio", "TROPHIES", Color3.fromRGB(255, 220, 110), Color3.fromRGB(230, 145, 25), function() toggle("Portfolio", _G.__CE_ShowPortfolio) end },
 		{ "music", "MUSIC", Color3.fromRGB(150, 205, 255), Color3.fromRGB(70, 110, 230), function() if _G.__CE_ToggleMusic then _G.__CE_ToggleMusic() end end, keepOpen = true },
-	}, moreB, 3)
+	}, moreB, 4)
 	local musicB = more.items.music
 	local function refreshMusic() musicB.setLabel(gui:GetAttribute("MusicOn") == false and "MUSIC OFF" or "MUSIC") end
 	gui:GetAttributeChangedSignal("MusicOn"):Connect(refreshMusic)

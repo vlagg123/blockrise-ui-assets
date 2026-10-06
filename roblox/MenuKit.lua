@@ -306,16 +306,18 @@ function K.tile(grid, o)
 	end
 	local bp = { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -20, 0, 50) }
 	if o.buttons then
-		-- side by side, 6 px apart; a "square" one (icon only) is 50 x 50, the others share the rest
-		local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10), Size = UDim2.new(1, -20, 0, 50),
+		-- side by side, 10 px apart (they never touch); 47 tall, a "square" one (icon only) is 47 x 47, the others share the rest
+		local BH, GAPB = 47, 10
+		local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -11), Size = UDim2.new(1, -20, 0, BH),
 			BackgroundTransparency = 1, ZIndex = 7, Parent = t })
-		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, GAPB), SortOrder = Enum.SortOrder.LayoutOrder,
+			VerticalAlignment = Enum.VerticalAlignment.Center, Parent = holder })
 		local squares, wide = 0, 0
 		for _, bd in ipairs(o.buttons) do if bd.square then squares += 1 else wide += 1 end end
-		local fixed = squares * 50 + 6 * (#o.buttons - 1)
+		local fixed = squares * BH + GAPB * (#o.buttons - 1)
 		for i, bd in ipairs(o.buttons) do
-			local size = bd.square and UDim2.fromOffset(50, 50) or UDim2.new(1 / math.max(1, wide), -math.ceil(fixed / math.max(1, wide)), 0, 50)
-			local b = K.button(holder, bd[1], bd[2], { Size = size, TextSize = 21, Icon = bd.icon, Shine = bd.shine, LayoutOrder = i }, bd[3])
+			local size = bd.square and UDim2.fromOffset(BH, BH) or UDim2.new(1 / math.max(1, wide), -math.ceil(fixed / math.max(1, wide)), 0, BH)
+			local b = K.button(holder, bd[1], bd[2], { Size = size, TextSize = 20, Icon = bd.icon, Shine = bd.shine, LayoutOrder = i }, bd[3])
 			if bd.square then b.Name = "Square" end
 		end
 	elseif o.button then

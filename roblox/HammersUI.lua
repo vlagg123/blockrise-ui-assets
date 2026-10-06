@@ -2,8 +2,8 @@
 --   Shop → CRATES:        every crate with its price, odds and a "what's inside" popup; buy and open
 --   Inventory → HAMMERS:  every hammer you own as a small item tile (6 a row), rarity filters, the one you tap on top (EQUIP / LEVEL UP)
 --   Inventory → CRATES:   the crates you have, one OPEN each
---   Inventory → TRADE-UP: a contract like CS:GO: 10 hammers of one rarity in the slots -> 1 random hammer of the next
---   Inventory → INDEX:    the collection book (all 40), tap one to see where it comes from
+--   MORE → TRADE-UP: a contract like CS:GO: 10 hammers of one rarity in the slots -> 1 random hammer of the next
+--   MORE → INDEX:    the collection book (all 40), tap one to see where it comes from
 -- Opening a crate: the strip of hammers spins like a case opening and lands on yours, then HammerFX's reveal card.
 local RS = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -109,9 +109,11 @@ local function later(fn)
 		working = false
 	end)
 end
+-- the windows the Inventory module draws: the Inventory, the Trade-Up and the Hammer Index (MORE menu)
+local INV_WINDOW = { Inventory = true, ["Trade-Up"] = true, ["Hammer Index"] = true }
 local function redrawNow()
 	freshUntil = os.clock() + 1
-	if c.modalOpen() and c.modalTitle.Text == "Inventory" then
+	if c.modalOpen() and INV_WINDOW[c.modalTitle.Text] then
 		if c.redrawInventory then c.redrawInventory() end
 	elseif c.redrawShop then
 		c.redrawShop()
@@ -374,6 +376,271 @@ local function buyPass(p)
 	else c.toast(p.name .. ": coming soon (" .. K.robux(p.price) .. ")", T.accent, 2.5) end
 end
 
+-- the celebration when the strip stops on your hammer: louder, and different, for every rarity ----------------------
+-- (everything is drawn in the opening's own ScreenGui: `under` sits behind the strip, `fx` over it; positions are design
+-- pixels from the middle of the screen, where the winner is). Returns how long it plays before the card comes up.
+local RAINBOW = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 90)), ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 180, 50)),
+	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 240, 80)), ColorSequenceKeypoint.new(0.6, Color3.fromRGB(80, 225, 120)),
+	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(70, 170, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 100, 255)) })
+local RAINBOW_LIST = { Color3.fromRGB(255, 80, 90), Color3.fromRGB(255, 180, 50), Color3.fromRGB(255, 240, 80), Color3.fromRGB(80, 225, 120),
+	Color3.fromRGB(70, 170, 255), Color3.fromRGB(200, 100, 255), Color3.new(1, 1, 1) }
+local function celebrateCrate(gui, holder, win, h, vp)
+	local rr = rar(h)
+	local id, col = rr.id, rr.color
+	local W = Color3.new(1, 1, 1)
+	local under = new("Frame", { Name = "FXUnder", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 1, Parent = gui })
+	local fx = new("Frame", { Name = "FX", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 20, Parent = gui })
+	local parts, spinners, tickers = {}, {}, {}
+	local function spawn(o)
+		local sz = o.size or 10
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, o.x, 0.5, o.y), Size = UDim2.fromOffset(sz, o.h or math.max(4, sz * 0.6)),
+			BackgroundColor3 = o.color, BorderSizePixel = 0, Rotation = rng:NextNumber(0, 360), ZIndex = 21, Parent = fx })
+		if o.round then new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = f }) end
+		if o.stroke then new("UIStroke", { Thickness = 2, Color = o.stroke, Parent = f }) end
+		table.insert(parts, { f = f, x = o.x, y = o.y, vx = o.vx, vy = o.vy, g = o.g or 900, vr = o.vr or rng:NextNumber(-540, 540), life = o.life or 1.6, t = 0, drag = o.drag or 0.6 })
+	end
+	local function burst(n, colors, speed, o)
+		o = o or {}
+		for _ = 1, n do
+			local a = rng:NextNumber() * math.pi * 2
+			local v = speed * (0.45 + rng:NextNumber() * 0.75)
+			spawn({ x = o.x or 0, y = o.y or 0, vx = math.cos(a) * v, vy = math.sin(a) * v - (o.up or 250), color = colors[rng:NextInteger(1, #colors)],
+				size = rng:NextInteger(o.min or 8, o.max or 14), round = o.round, g = o.g, life = o.life, drag = o.drag })
+		end
+	end
+	local function ring(color, from, to, dur, thick, delay, x, y)
+		task.delay(delay or 0, function()
+			if not fx.Parent then return end
+			local r = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, x or 0, 0.5, y or 0), Size = UDim2.fromOffset(from, from), BackgroundTransparency = 1,
+				ZIndex = 19, Parent = fx })
+			new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = r })
+			local st = new("UIStroke", { Thickness = thick or 8, Color = color, Parent = r })
+			UI.tween(r, dur, { Size = UDim2.fromOffset(to, to) }, Enum.EasingStyle.Quart)
+			UI.tween(st, dur, { Transparency = 1, Thickness = 1 })
+			task.delay(dur + 0.05, function() r:Destroy() end)
+		end)
+	end
+	local function flash(color, alpha, dur)
+		local f = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = color, BackgroundTransparency = alpha, BorderSizePixel = 0, ZIndex = 18, Parent = fx })
+		UI.tween(f, dur, { BackgroundTransparency = 1 })
+		task.delay(dur + 0.05, function() f:Destroy() end)
+	end
+	local function rays(color, size, speed, grad)
+		local r = UI.slice("rays", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(size, size), ImageColor3 = color,
+			ImageTransparency = 1, ZIndex = 2, Parent = under })
+		if grad then new("UIGradient", { Color = grad, Parent = r }) end
+		UI.tween(r, 0.35, { ImageTransparency = 0.12 })
+		table.insert(spinners, { o = r, s = speed })
+		return r
+	end
+	local function shake(amount, dur)
+		local t0 = os.clock()
+		task.spawn(function()
+			while os.clock() - t0 < dur and holder.Parent do
+				local k = 1 - (os.clock() - t0) / dur
+				holder.Position = UDim2.new(0.5, rng:NextNumber(-amount, amount) * k, 0.5, rng:NextNumber(-amount, amount) * 0.6 * k)
+				task.wait(0.03)
+			end
+			if holder.Parent then holder.Position = UDim2.fromScale(0.5, 0.5) end
+		end)
+	end
+	local function shout(text, grad, size)
+		local l = UI.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, -150), Size = UDim2.fromOffset(760, 84), Text = text, Font = T.chunky,
+			TextSize = size or 64, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = W, ZIndex = 22, Parent = fx })
+		new("UIStroke", { Thickness = 5, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, Parent = l })
+		local g = new("UIGradient", { Color = grad, Rotation = 90, Parent = l })
+		local sc = new("UIScale", { Scale = 0, Parent = l })
+		UI.tween(sc, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
+		return l, g, sc
+	end
+	local function seq(a, b) return ColorSequence.new(a, b) end
+	local t0 = os.clock()
+	local conn = RunService.RenderStepped:Connect(function(dt)
+		local t = os.clock() - t0
+		for _, sp in ipairs(spinners) do sp.o.Rotation = (t * sp.s) % 360 end
+		for _, fn in ipairs(tickers) do fn(t) end
+		for i = #parts, 1, -1 do
+			local p = parts[i]
+			p.t += dt
+			if p.t >= p.life or not p.f.Parent then
+				p.f:Destroy()
+				table.remove(parts, i)
+			else
+				p.vx -= p.vx * p.drag * dt
+				p.vy += p.g * dt
+				p.x += p.vx * dt
+				p.y += p.vy * dt
+				p.f.Position = UDim2.new(0.5, p.x, 0.5, p.y)
+				p.f.Rotation += p.vr * dt
+				local k = p.t / p.life
+				p.f.BackgroundTransparency = k > 0.7 and (k - 0.7) / 0.3 or 0
+			end
+		end
+	end)
+	gui.Destroying:Connect(function() conn:Disconnect() end)
+
+	if id == "common" then
+		-- a light pop
+		ring(Color3.fromRGB(230, 232, 245), 120, 270, 0.45, 6)
+		burst(14, { W, col }, 420, { up = 150, min = 6, max = 10 })
+		c.sound2D(c.S.Chime, 0.5, 1.25)
+		return 0.8
+	elseif id == "uncommon" then
+		-- a green ring and a spray of round drops
+		ring(col, 120, 320, 0.5, 8)
+		burst(28, { col, W, Color3.fromRGB(180, 255, 160) }, 540, { up = 200, round = true, min = 6, max = 11 })
+		shout("UNCOMMON!", seq(W, col), 46)
+		c.sound2D(c.S.Chime, 0.55, 1.2)
+		return 1
+	elseif id == "rare" then
+		-- a double blue shockwave and confetti
+		ring(col, 120, 360, 0.5, 10)
+		ring(W, 120, 280, 0.45, 6, 0.12)
+		burst(42, { col, W, Color3.fromRGB(150, 210, 255) }, 660, { up = 260 })
+		shout("RARE!", seq(W, col), 56)
+		c.sound2D(c.S.Chime, 0.6, 1.1)
+		c.sound2D(c.S.Coins, 0.45, 1.2)
+		return 1.15
+	elseif id == "epic" then
+		-- a purple flash, turning rays, a big burst and a little shake
+		flash(col, 0.55, 0.35)
+		rays(col, 780, 40)
+		ring(col, 140, 440, 0.6, 12)
+		ring(W, 140, 330, 0.5, 6, 0.15)
+		burst(60, { col, Color3.fromRGB(255, 120, 220), W }, 780, { up = 300 })
+		shake(6, 0.35)
+		shout("EPIC!", seq(Color3.fromRGB(255, 225, 255), col), 64)
+		c.sound2D(c.S.Metal, 0.5, 1.3)
+		c.sound2D(c.S.Chime, 0.6, 0.95)
+		return 1.4
+	elseif id == "legendary" then
+		-- golden sunburst and a rain of gold coins
+		flash(Color3.fromRGB(255, 230, 150), 0.4, 0.45)
+		rays(col, 920, 30)
+		rays(W, 640, -45)
+		ring(col, 140, 500, 0.7, 14)
+		burst(70, { col, Color3.fromRGB(255, 230, 120), W, Color3.fromRGB(255, 140, 40) }, 840, { up = 320 })
+		for i = 1, 36 do
+			task.delay(i * 0.03, function()
+				if not fx.Parent then return end
+				spawn({ x = rng:NextNumber(-vp.X / 2, vp.X / 2), y = -vp.Y / 2 - 20, vx = rng:NextNumber(-40, 40), vy = rng:NextNumber(80, 260), g = 700, drag = 0,
+					color = Color3.fromRGB(255, 205, 60), stroke = Color3.fromRGB(150, 90, 10), size = 20, h = 20, round = true, life = 2.2, vr = 0 })
+			end)
+		end
+		shake(9, 0.45)
+		shout("LEGENDARY!", seq(Color3.fromRGB(255, 250, 200), col), 68)
+		c.sound2D(c.S.Fanfare, 0.5, 1.05)
+		c.sound2D(c.S.Coins, 0.6, 1)
+		return 1.8
+	elseif id == "mythic" then
+		-- fireworks all around, the screen strobes, the word throbs
+		rays(col, 920, 55)
+		for k = 0, 3 do
+			task.delay(k * 0.22, function()
+				if not fx.Parent then return end
+				local x, y = rng:NextNumber(-340, 340), rng:NextNumber(-210, 130)
+				flash(col, 0.75, 0.2)
+				ring(col, 30, 280, 0.5, 8, 0, x, y)
+				burst(34, { col, Color3.fromRGB(255, 160, 200), W, Color3.fromRGB(255, 220, 90) }, 620, { x = x, y = y, up = 120, round = true, min = 6, max = 10 })
+				c.sound2D(c.S.Metal, 0.35, 0.9 + k * 0.1)
+			end)
+		end
+		shake(12, 0.6)
+		local _, _, sc = shout("MYTHIC!!", seq(Color3.fromRGB(255, 220, 230), col), 72)
+		table.insert(tickers, function(t) if t > 0.45 then sc.Scale = 1 + math.sin(t * 10) * 0.06 end end)
+		c.sound2D(c.S.Fanfare, 0.55, 0.95)
+		return 2.1
+	elseif id == "secret" then
+		-- the lights go out and the hammer glitches... then a white flash
+		local dark = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 1, Parent = under })
+		UI.tween(dark, 0.15, { BackgroundTransparency = 0.05 })
+		c.sound2D(c.S.Hammer, 0.6, 0.6)
+		local p0 = win.Position
+		local g0 = os.clock()
+		task.spawn(function()
+			while os.clock() - g0 < 0.7 and win.Parent do
+				win.Position = p0 + UDim2.fromOffset(rng:NextInteger(-8, 8), rng:NextInteger(-4, 4))
+				win.Visible = rng:NextNumber() > 0.18
+				task.wait(0.04)
+			end
+			if not win.Parent or not fx.Parent then return end
+			win.Position, win.Visible = p0, true
+			UI.tween(dark, 0.7, { BackgroundTransparency = 0.45 })
+			flash(W, 0.05, 0.5)
+			ring(Color3.fromRGB(200, 180, 255), 120, 540, 0.7, 14)
+			burst(70, { Color3.fromRGB(20, 18, 30), W, Color3.fromRGB(150, 110, 255), Color3.fromRGB(70, 70, 100) }, 880, { up = 320 })
+			shake(10, 0.5)
+			local l = shout("SECRET!", seq(Color3.fromRGB(240, 240, 255), Color3.fromRGB(130, 120, 180)), 70)
+			-- red / cyan copies jump around the word for a moment
+			local ghosts = {}
+			for _, gc in ipairs({ Color3.fromRGB(255, 60, 90), Color3.fromRGB(60, 230, 255) }) do
+				table.insert(ghosts, UI.label({ AnchorPoint = l.AnchorPoint, Position = l.Position, Size = l.Size, Text = l.Text, Font = l.Font, TextSize = l.TextSize,
+					TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = gc, TextTransparency = 0.35, ZIndex = 21, Parent = fx }))
+			end
+			local s0 = os.clock()
+			table.insert(tickers, function()
+				local k = os.clock() - s0
+				for i, gl in ipairs(ghosts) do
+					if k > 0.9 then gl.Visible = false
+					else gl.Position = UDim2.new(0.5, (i == 1 and -1 or 1) * rng:NextInteger(2, 9), 0.5, -150 + rng:NextInteger(-3, 3)) end
+				end
+			end)
+			c.sound2D(c.S.Fanfare, 0.5, 0.85)
+		end)
+		return 2.4
+	elseif id == "divine" then
+		-- light from above: a beam onto the hammer, a halo over it, feathers floating up
+		local beam = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.5, 40), Size = UDim2.new(0, 30, 0.5, 40), BackgroundColor3 = Color3.fromRGB(255, 250, 230),
+			BorderSizePixel = 0, ZIndex = 18, Parent = fx })
+		new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.75), NumberSequenceKeypoint.new(0.7, 0.45), NumberSequenceKeypoint.new(1, 1) }), Parent = beam })
+		UI.tween(beam, 0.5, { Size = UDim2.new(0, 230, 0.5, 40) }, Enum.EasingStyle.Quart)
+		local halo = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, -88), Size = UDim2.fromOffset(20, 6), BackgroundTransparency = 1, ZIndex = 23, Parent = fx })
+		new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = halo })
+		new("UIStroke", { Thickness = 5, Color = Color3.fromRGB(255, 225, 120), Parent = halo })
+		UI.tween(halo, 0.6, { Size = UDim2.fromOffset(110, 26) }, Enum.EasingStyle.Back)
+		table.insert(tickers, function(t) halo.Position = UDim2.new(0.5, 0, 0.5, -88 + math.sin(t * 3) * 4) end)
+		flash(Color3.fromRGB(255, 248, 230), 0.15, 0.7)
+		rays(Color3.fromRGB(255, 236, 200), 920, 18)
+		local soft = { W, Color3.fromRGB(255, 225, 150), Color3.fromRGB(255, 200, 235) }
+		for i = 1, 40 do
+			task.delay(i * 0.04, function()
+				if not fx.Parent then return end
+				spawn({ x = rng:NextNumber(-vp.X * 0.45, vp.X * 0.45), y = vp.Y / 2 + 10, vx = rng:NextNumber(-30, 30), vy = -rng:NextNumber(120, 260), g = -10, drag = 0,
+					color = soft[rng:NextInteger(1, #soft)], size = rng:NextInteger(8, 13), h = rng:NextInteger(14, 22), round = true, life = 3, vr = rng:NextNumber(-60, 60) })
+			end)
+		end
+		burst(50, { W, Color3.fromRGB(255, 225, 150), Color3.fromRGB(255, 200, 235), Color3.fromRGB(200, 170, 255) }, 720, { up = 280 })
+		shout("DIVINE!", seq(W, Color3.fromRGB(255, 200, 120)), 74)
+		c.sound2D(c.S.Chime, 0.7, 1.5)
+		c.sound2D(c.S.Fanfare, 0.55, 1.15)
+		return 2.5
+	end
+	-- Exclusive: a rainbow party, confetti cannons from both corners
+	rays(W, 940, 50, RAINBOW)
+	flash(W, 0.4, 0.4)
+	for _, side in ipairs({ -1, 1 }) do
+		for wave = 0, 1 do
+			task.delay(wave * 0.35, function()
+				if not fx.Parent then return end
+				for _ = 1, 34 do
+					local a = math.rad(rng:NextNumber(55, 80))
+					local v = rng:NextNumber(700, 1150)
+					spawn({ x = side * (vp.X / 2 - 20), y = vp.Y / 2 - 10, vx = -side * math.cos(a) * v, vy = -math.sin(a) * v, g = 900, drag = 0.4,
+						color = RAINBOW_LIST[rng:NextInteger(1, #RAINBOW_LIST)], size = rng:NextInteger(9, 15), life = 2.4 })
+				end
+				c.sound2D(c.S.Coins, 0.45, 1.3)
+			end)
+		end
+	end
+	ring(W, 140, 540, 0.7, 14)
+	shake(10, 0.5)
+	local _, g = shout("EXCLUSIVE!!", RAINBOW, 72)
+	g.Rotation = 0
+	table.insert(tickers, function(t) g.Offset = Vector2.new(math.sin(t * 2.5) * 0.5, 0) end)
+	c.sound2D(c.S.Fanfare, 0.55, 1)
+	return 2.5
+end
+
 local function spinThenReveal(cr, res)
 	-- (res nil: the crate opens at once and the hammer comes with the server's answer, ctl.land(res), long before the
 	-- strip gets to it)
@@ -385,7 +652,7 @@ local function spinThenReveal(cr, res)
 	opening = gui
 	local scale = c.uiScale and c.uiScale.Scale or 1
 	new("UIScale", { Scale = scale, Parent = gui })
-	local back = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 8, 22), BackgroundTransparency = 1, ZIndex = 1, Parent = gui })
+	local back = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 8, 22), BackgroundTransparency = 1, ZIndex = 0, Parent = gui })
 	UI.tween(back, 0.2, { BackgroundTransparency = 0.35 })
 	-- the crate on top, the strip in the middle
 	local vp = c.camera.ViewportSize / scale
@@ -396,6 +663,7 @@ local function spinThenReveal(cr, res)
 	UI.slice("inset", { ImageColor3 = Color3.fromRGB(28, 26, 60), ZIndex = 2, Parent = holder })
 	local clip = new("Frame", { Position = UDim2.fromOffset(6, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 3, Parent = holder })
 	local crateBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.5, -95), Size = UDim2.fromOffset(150, 150), BackgroundTransparency = 1, ZIndex = 4, Parent = gui })
+	local crateScale = new("UIScale", { Parent = crateBox })
 	local pic = crateArt(cr)
 	local crateImg
 	if type(pic) == "string" and pic:find("^rbxassetid://") then
@@ -431,11 +699,13 @@ local function spinThenReveal(cr, res)
 		UI.corner(4).Parent = d
 		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = d })
 	end
-	-- from the start to your hammer under the marker (a little off centre, like a real spin)
+	-- from the start to your hammer under the marker: it stops anywhere on it (near its left edge, its right edge or the
+	-- middle, a new spot every time), then glides exactly onto the marker
 	local centre = innerW / 2
 	local x0 = centre - (TILE / 2) - STRIDE * 1
-	local jitter = rng:NextInteger(-TILE * 0.38, TILE * 0.38)
-	local xEnd = centre - ((WIN - 1) * STRIDE + TILE / 2) + jitter
+	local jitter = (rng:NextNumber() * 2 - 1) * TILE * 0.44
+	local xCentre = centre - ((WIN - 1) * STRIDE + TILE / 2)
+	local xEnd = xCentre + jitter
 	strip.Position = UDim2.fromOffset(x0, 7)
 	local DUR = 3.6
 	local tw = TweenService:Create(strip, TweenInfo.new(DUR, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(xEnd, 7) })
@@ -450,26 +720,39 @@ local function spinThenReveal(cr, res)
 		if conn then conn:Disconnect() end
 		tw:Cancel()
 		strip.Position = UDim2.fromOffset(xEnd, 7)
-		-- the winner lights up: it grows only into the gap (never over its neighbours) and the others go dark
-		local win = tiles[WIN]
-		local ws = new("UIScale", { Parent = win })
-		UI.tween(ws, 0.25, { Scale = 1.05 }, Enum.EasingStyle.Back)
-		for i, tl in ipairs(tiles) do
-			if i ~= WIN and math.abs(i - WIN) <= 5 then
-				local shade = new("Frame", { Name = "Shade", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 8, 26), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 9, Parent = tl })
-				UI.corner(14).Parent = shade
-				UI.tween(shade, 0.3, { BackgroundTransparency = 0.45 })
-			end
-		end
-		local glow = UI.slice("glow", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(10, 10), ImageColor3 = rar(h).color, ImageTransparency = 0.2, ZIndex = 2, Parent = win })
-		UI.tween(glow, 0.4, { Size = UDim2.fromOffset(300, 300), ImageTransparency = 0.6 })
-		c.sound2D(c.S.Chime, 0.6, h.r >= 5 and 0.85 or 1.15)
-		title.Text = string.upper(h.name) .. "!"
-		hint.Visible = false
-		task.delay(0.75, function()
+		task.spawn(function()
+			-- a breath, then it glides exactly onto the marker (like the Lucky Spin)
+			task.wait(0.12)
 			if opening ~= gui then return end
-			stopOpening()
-			revealOpened(cr, h, res)
+			local settle = TweenService:Create(strip, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(xCentre, 7) })
+			settle:Play()
+			c.sound2D(c.S.Click, 0.3, 1.1)
+			settle.Completed:Wait()
+			if opening ~= gui then return end
+			strip.Position = UDim2.fromOffset(xCentre, 7)
+			-- the winner lights up: it grows only into the gap (never over its neighbours) and the others go dark
+			local win = tiles[WIN]
+			local ws = new("UIScale", { Parent = win })
+			UI.tween(ws, 0.25, { Scale = 1.05 }, Enum.EasingStyle.Back)
+			for i, tl in ipairs(tiles) do
+				if i ~= WIN and math.abs(i - WIN) <= 5 then
+					local shade = new("Frame", { Name = "Shade", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 8, 26), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 9, Parent = tl })
+					UI.corner(14).Parent = shade
+					UI.tween(shade, 0.3, { BackgroundTransparency = 0.45 })
+				end
+			end
+			local glow = UI.slice("glow", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(10, 10), ImageColor3 = rar(h).color, ImageTransparency = 0.2, ZIndex = 2, Parent = win })
+			UI.tween(glow, 0.4, { Size = UDim2.fromOffset(300, 300), ImageTransparency = 0.6 })
+			title.Text = string.upper(h.name) .. "!"
+			hint.Visible = false
+			-- the crate pops away and the party starts: its own for every rarity
+			UI.tween(crateScale, 0.25, { Scale = 0 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+			local dur = celebrateCrate(gui, holder, win, h, vp)
+			task.delay(dur, function()
+				if opening ~= gui then return end
+				stopOpening()
+				revealOpened(cr, h, res)
+			end)
 		end)
 	end
 	-- the crate shakes while the strip spins; the ticks follow the hammers passing the marker
@@ -1347,15 +1630,15 @@ function M.MyCrates(tok)
 		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  ? = what's inside  ·  next free Supply Crate in " .. left .. (left == 1 and " contract" or " contracts"))
 		crateTiles(data, 2, false)
 	else
-		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts") .. ". More in the Shop (CRATES): cash, Gems or Robux.", icon = "gift", color = K.LOCK,
+		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts") .. ". More in the Shop (CRATES): cash, Gems or Robux.", icon = "rbxassetid://109896821556277", color = K.LOCK,
 			tint = Color3.fromRGB(220, 222, 240), height = 118, bar = { (6 - left) / 6, GOLD, (6 - left) .. " / 6 contracts" } })
 	end
-	-- (the Shop opens once the tutorial is done: no shortcut around its lock)
-	if (c.player:GetAttribute("RoadStep") or 1) > (Config.TutorialSteps or 6) then
+	-- only when you have none left (the Shop opens once the tutorial is done: no shortcut around its lock)
+	if total == 0 and (c.player:GetAttribute("RoadStep") or 1) > (Config.TutorialSteps or 6) then
 		K.row(c.content, 3, { name = "Need more crates?", line = "Supply Crates for cash, Builder's and Golden Crates for Gems or Robux", icon = "shop", color = Color3.fromRGB(110, 200, 255), height = 92, buttonW = 190,
 			button = { "SHOP", K.GREEN, function() c.click(); if _G.__CE_ShopUI then _G.__CE_ShopUI.Show("hammers") end end, size = 22 } })
 	end
-	K.note(c.content, 4, "The hammers you find go to the HAMMERS tab. 10 hammers of one rarity make 1 of the next in TRADE-UP.")
+	K.note(c.content, 4, "The hammers you find go to the HAMMERS tab. 10 hammers of one rarity make 1 of the next in TRADE-UP (MORE menu).")
 end
 
 -- Inventory → TRADE-UP: a contract like CS:GO. Put 10 hammers of one rarity in the slots, get 1 random of the next ----
@@ -1595,7 +1878,7 @@ function M.Redraw()
 		fetch()
 		freshUntil = os.clock() + 1
 		redrawing = false
-		if c.modalOpen() and c.modalTitle.Text == "Inventory" then
+		if c.modalOpen() and INV_WINDOW[c.modalTitle.Text] then
 			if c.redrawInventory then c.redrawInventory() end
 		elseif c.redrawShop then
 			c.redrawShop()
@@ -1605,7 +1888,7 @@ end
 -- is a hammer view on screen? (the Shop's CRATES tab or the Inventory's hammer tabs): it follows your hammers live
 function M.Showing()
 	if not c.modalOpen() then return false end
-	if c.modalTitle.Text == "Inventory" then return c.inventoryHammerTab and c.inventoryHammerTab() or false end
+	if INV_WINDOW[c.modalTitle.Text] then return c.inventoryHammerTab and c.inventoryHammerTab() or false end
 	return c.modalTitle.Text == "Shop" and c.shopHammerTab and c.shopHammerTab() or false
 end
 

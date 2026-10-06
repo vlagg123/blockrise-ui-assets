@@ -2,12 +2,18 @@
 local RS = game:GetService("ReplicatedStorage")
 local Company = require(RS.Shared:WaitForChild("Company"))
 local K = require(RS.Shared:WaitForChild("MenuKit"))
-local HammersUI -- (Client.HammersUI: your hammers, the trade-up contract and the Index live in the Inventory)
+local HammersUI -- (Client.HammersUI: your hammers and crates in the Inventory; the Trade-Up and the Index have their own windows)
 
 local M = {}
 local c, UI, T, new, Config
-local mode = "upgrades"    -- which window is drawing: "upgrades" or "inventory"
+local mode = "upgrades"    -- which window is drawing: "upgrades", "inventory", "tradeup" or "index"
 local invTab = "hammers" -- the Inventory tab
+-- the CRATES tab shows a crate (the Golden Crate, drawn without sparkles: icons/plain/crate_golden.png), not a gift box
+local CRATE_PIC = "rbxassetid://109896821556277"
+-- a hammer view is on screen (it follows your hammers live): Inventory HAMMERS / CRATES, the Trade-Up, the Index
+local function HAMMER_VIEW()
+	return mode == "tradeup" or mode == "index" or (mode == "inventory" and (invTab == "hammers" or invTab == "crates"))
+end
 local G1, G2 = Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70)
 local INK = Color3.fromRGB(20, 17, 32)
 local TINT = { up_power = Color3.fromRGB(255, 170, 60), up_strength = Color3.fromRGB(255, 120, 80), up_cash = Color3.fromRGB(80, 200, 110),
@@ -86,6 +92,12 @@ end
 render = function(tok, data)
 	c.modalSub.Text = money(data.money or 0)
 	for _, ch in ipairs(c.content:GetChildren()) do if not ch:IsA("UIListLayout") then ch:Destroy() end end
+	-- the Trade-Up and the Index (MORE menu): their own windows, no tabs
+	if mode == "tradeup" or mode == "index" then
+		HammersUI = HammersUI or require(script.Parent:WaitForChild("HammersUI"))
+		if mode == "tradeup" then HammersUI.TradeUp(tok) else HammersUI.Index(tok) end
+		return
+	end
 	if mode == "inventory" then
 		local nBps = 0
 		for _, b in ipairs(Company.Blueprints) do nBps += data.bps[b.id] or 0 end
@@ -93,9 +105,7 @@ render = function(tok, data)
 		local hv = HammersUI.Available()
 		UI.tabs(c.content, {
 			{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = hv.hammers == true },
-			{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20), badge = hv.crates },
-			{ id = "tradeup", label = "TRADE-UP", icon = "upgrades", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
-			{ id = "index", label = "INDEX", icon = "star", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(220, 140, 30) },
+			{ id = "crates", label = "CRATES", icon = CRATE_PIC, c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20), badge = hv.crates },
 			{ id = "materials", label = "MATERIALS", icon = "site", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
 			{ id = "blueprints", label = "BLUEPRINTS", icon = "codes", c1 = Color3.fromRGB(120, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = nBps },
 		}, invTab, function(id)
@@ -139,10 +149,9 @@ render = function(tok, data)
 				K.row(c.content, order, o)
 			end
 		end
-	elseif invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index" then
+	elseif invTab == "hammers" or invTab == "crates" then
 		HammersUI = HammersUI or require(script.Parent:WaitForChild("HammersUI"))
-		if invTab == "hammers" then HammersUI.Hammers(tok) elseif invTab == "crates" then HammersUI.MyCrates(tok)
-		elseif invTab == "tradeup" then HammersUI.TradeUp(tok) else HammersUI.Index(tok) end
+		if invTab == "hammers" then HammersUI.Hammers(tok) else HammersUI.MyCrates(tok) end
 	elseif invTab == "materials" then
 		K.section(c.content, 1, "MATERIALS", Color3.fromRGB(255, 220, 110), "they drop while you build · the Job Board shows what each building drops")
 		local grid = K.grid(c.content, 2, cols(), 268)
@@ -176,10 +185,10 @@ end
 
 -- the last answer of the server: a redraw (a level-up, a crate, a trade-up...) draws with it at once, in the same frame,
 -- so the window never empties into a loading spinner and back; the fresh answer then redraws only what it changes
-local function open(name, c1, c2)
-	local refresh = c.modalOpen() and c.modalTitle.Text == name
-	local tok = c.openModal(name, name, "", c1, c2)
-	local hammerTab = mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index")
+local function open(name, c1, c2, title)
+	local refresh = c.modalOpen() and c.modalTitle.Text == (title or name)
+	local tok = c.openModal(name, title or name, "", c1, c2)
+	local hammerTab = HAMMER_VIEW()
 	if lastData and (refresh or hammerTab) then
 		render(tok, lastData)
 		c.modalSub.Text = money(c.player:GetAttribute("Money") or lastData.money or 0)
@@ -189,7 +198,7 @@ local function open(name, c1, c2)
 			if inst and inst.inFlight > 0 then return end -- a tap is on its way: its answer redraws
 			lastData = data
 			-- the hammer tabs don't use it (only the BLUEPRINTS badge); materials, blueprints and upgrades do
-			local tabNow = mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index")
+			local tabNow = HAMMER_VIEW()
 			if c.live(tok) and not tabNow then
 				local scroll = c.content.CanvasPosition
 				render(tok, data)
@@ -214,19 +223,41 @@ function M.Show()
 end
 
 -- Inventory: opens on HAMMERS (or the tab asked for); a redraw keeps the tab
-local INV_TABS = { hammers = true, crates = true, tradeup = true, index = true, materials = true, blueprints = true }
+local INV_TABS = { hammers = true, crates = true, materials = true, blueprints = true }
 function M.Inventory(t)
 	local reopen = c.modalOpen() and c.modalTitle.Text == "Inventory"
+	-- (the old tab names open their own windows now)
+	if t == "tradeup" then return M.TradeUp() elseif t == "index" then return M.Index() end
 	mode = "inventory"
 	if INV_TABS[t] then invTab = t elseif not reopen then invTab = "hammers" end
+	-- you have seen your crates: the "You have a hammer crate!" hint goes away (it comes back for a new one)
+	c.player:SetAttribute("CrateSeen", c.player:GetAttribute("CrateTotal") or 0)
 	open("Inventory", Color3.fromRGB(255, 214, 70), Color3.fromRGB(240, 135, 20))
+end
+
+-- the Trade-Up contract and the Hammer Index (MORE menu)
+function M.TradeUp()
+	mode = "tradeup"
+	open("TradeUp", Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70), "Trade-Up")
+end
+function M.Index()
+	mode = "index"
+	open("Index", Color3.fromRGB(255, 220, 110), Color3.fromRGB(220, 140, 30), "Hammer Index")
 end
 
 function M.Init(ctx)
 	c = ctx
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
-	c.redrawInventory = function() M.Inventory(invTab) end
-	c.inventoryHammerTab = function() return mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index") end
+	c.redrawInventory = function()
+		if mode == "tradeup" then M.TradeUp() elseif mode == "index" then M.Index() else M.Inventory(invTab) end
+	end
+	c.inventoryHammerTab = HAMMER_VIEW
+	_G.__CE_ShowTradeUp, _G.__CE_ShowIndex = M.TradeUp, M.Index
+	-- a crate opened (or traded away) lowers what you have "seen", so the next new crate shows the hint again
+	c.player:GetAttributeChangedSignal("CrateTotal"):Connect(function()
+		local n = c.player:GetAttribute("CrateTotal") or 0
+		if n < (c.player:GetAttribute("CrateSeen") or 0) then c.player:SetAttribute("CrateSeen", n) end
+	end)
 	inst = K.instant({ remote = function() return c.R.CompanyAction end, gap = 0.1, sig = sig,
 		state = function() return lastData end, setState = function(d) lastData = d end, draw = redraw,
 		cash = function() return (c.player:GetAttribute("Money") or 0) - K.spent.cash end,

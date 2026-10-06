@@ -346,9 +346,8 @@ function M.Init(ctx)
 	c = ctx
 	if c.Config.StormHammer and c.Config.StormHammer.icon then ICON.stormhammer = c.Config.StormHammer.icon end
 	UI, T, Config = c.UI, c.T, c.Config
-	local Hammers = require(RS.Shared:WaitForChild("Hammers"))
-	local crate = Hammers.CrateById and (Hammers.CrateById.golden or Hammers.CrateById.builder)
-	if crate and crate.image then THEME.crates.icon = crate.image end
+	-- the CRATES tab: the Golden Crate without sparkles (icons/plain/crate_golden.png)
+	THEME.crates.icon = "rbxassetid://109896821556277"
 	task.spawn(function()
 		for _, p in ipairs(Config.Store.passes) do robuxPrice(p.id, Enum.InfoType.GamePass) end
 		for _, p in ipairs(Config.Store.products) do robuxPrice(p.id, Enum.InfoType.Product) end

@@ -80,15 +80,7 @@ function M.ShowPlayers()
 			headshot(p.id)(art)
 		end
 	end
-	if data.log and #data.log > 0 then
-		K.section(c.content, 50, "YOUR LAST TRADES", Color3.fromRGB(170, 245, 180))
-		local n = 0
-		for i = #data.log, math.max(1, #data.log - 4), -1 do
-			local e = data.log[i]
-			n += 1
-			K.row(c.content, 50 + n, { name = "Got: " .. e.got, line = "Gave: " .. e.gave, icon = "trade", color = GREEN2, height = 84 })
-		end
-	end
+	-- (the "YOUR LAST TRADES" history is hidden for now; the server still keeps data.log)
 end
 
 ---------------------------------------------------------------------------
