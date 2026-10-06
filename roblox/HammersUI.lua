@@ -764,7 +764,7 @@ local function crateTiles(data, order, shop)
 	local zone = data.zone or "town"
 	local tut = shop and inTut()
 	local ART = 106
-	local grid = K.grid(c.content, order, cols(), 280)
+	local grid = K.grid(c.content, order, cols(), 290)
 	for i, cr in ipairs(Hammers.Crates) do
 		local have = data.crates[cr.id] or 0
 		if not shop and have == 0 then continue end
@@ -834,14 +834,15 @@ local function crateTiles(data, order, shop)
 		end
 		if #buttons > 0 then o.buttons = buttons end
 		local t = K.tile(grid, o)
-		if shop and have > 0 and not tut then
-			-- the ones in your bag open right here: OPEN on the picture, the prices stay under it
-			K.button(t, "OPEN  x" .. have, K.GREEN, { Name = "Open", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 8 + ART - 8), Size = UDim2.new(1, -44, 0, 46),
-				TextSize = 22, Shine = true, ZIndex = 12 }, function() c.click(); openCrate(cr.id) end)
+		local owned = shop and have > 0 and not tut
+		if owned then
+			-- the ones in your bag open right here: OPEN over the prices (the odds are behind the "?")
+			K.button(t, "OPEN  x" .. have, K.GREEN, { Name = "Open", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -68), Size = UDim2.new(1, -20, 0, 42),
+				TextSize = 20, Shine = true, ZIndex = 7 }, function() c.click(); openCrate(cr.id) end)
 		end
 		-- (shrinks to fit two lines: it never runs into the buttons)
-		K.text({ Position = UDim2.fromOffset(12, ART + 12 + 32 + (#o.stats > 0 and 32 or 0)), Size = UDim2.new(1, -24, 0, 32), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
-			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
+		if not owned then K.text({ Position = UDim2.fromOffset(12, ART + 12 + 32 + (#o.stats > 0 and 32 or 0)), Size = UDim2.new(1, -24, 0, 32), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
+			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t }) end
 	end
 	return grid
 end
