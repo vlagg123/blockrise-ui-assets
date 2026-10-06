@@ -1068,9 +1068,10 @@ function M.Init(ctx)
 		if want and not placesArrow then
 			-- (on its own layer over the menu: inside the button, CARS next to it would cover it)
 			local b = menu.locations.button
-			placesArrow = new("Frame", { Name = "PlacesArrow", AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.fromOffset(52, 52), BackgroundTransparency = 1, ZIndex = 40, Parent = root })
+			-- under PLACES, its tip pointing up at the button, bouncing
+			placesArrow = new("Frame", { Name = "PlacesArrow", AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.fromOffset(52, 46), BackgroundTransparency = 1, ZIndex = 40, Parent = root })
 			local asc = new("UIScale", { Parent = placesArrow })
-			local ar = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(52, 52), Text = "▼", TextSize = 50, Rotation = 90,
+			local ar = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(52, 52), Text = "▼", TextSize = 50, Rotation = 180,
 				TextColor3 = Color3.fromRGB(255, 214, 60), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 40, Parent = placesArrow })
 			tstroke(ar, 3.5)
 			task.spawn(function()
@@ -1079,7 +1080,7 @@ function M.Init(ctx)
 					local ap, as, rp = b.AbsolutePosition, b.AbsoluteSize, root.AbsolutePosition
 					local sc = leftScale.Scale * MENU_SCALE
 					asc.Scale = sc
-					placesArrow.Position = UDim2.fromOffset(ap.X - rp.X + as.X - 6 + math.abs(math.sin((os.clock() - t0) * 5)) * 12 * sc, ap.Y - rp.Y + as.Y / 2)
+					placesArrow.Position = UDim2.fromOffset(ap.X - rp.X + as.X / 2, ap.Y - rp.Y + as.Y + (2 + math.abs(math.sin((os.clock() - t0) * 5)) * 10) * sc)
 					task.wait()
 				end
 			end)
