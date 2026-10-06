@@ -627,14 +627,15 @@ end
 local function crateTiles(data, order, shop)
 	local zone = data.zone or "town"
 	local tut = shop and inTut()
-	local grid = K.grid(c.content, order, cols(), 304)
+	local ART = 106
+	local grid = K.grid(c.content, order, cols(), 280)
 	for i, cr in ipairs(Hammers.Crates) do
 		local have = data.crates[cr.id] or 0
 		if not shop and have == 0 then continue end
 		local prod = cr.product and product(cr.product)
 		local robuxOk = prod and (prod.id or 0) > 0 and not c.paidRandomRestricted
 		local exists = next(Hammers.Odds(cr.id, zone, 1)) ~= nil
-		local o = { order = i, name = cr.name, icon = crateArt(cr), iconScale = cr.image and 1.06 or 0.9, color = cr.color, stats = {}, spin = have > 0,
+		local o = { order = i, name = cr.name, icon = crateArt(cr), iconScale = cr.image and 1.06 or 0.9, color = cr.color, stats = {}, spin = have > 0, artH = ART,
 			corner = { label = "?", color = EQUIP_BLUE, w = 26, plain = true, onClick = function() c.click(); cratePopup(cr, data) end } }
 		if have > 0 then o.badge = { "x" .. have, T.red } end
 		if cr.pity then table.insert(o.stats, { "PITY " .. tostring(data.pity[cr.id] or cr.pity.every), GOLD }) end
@@ -694,7 +695,7 @@ local function crateTiles(data, order, shop)
 		if #buttons > 0 then o.buttons = buttons end
 		local t = K.tile(grid, o)
 		-- (shrinks to fit two lines: it never runs into the buttons)
-		K.text({ Position = UDim2.fromOffset(12, 198), Size = UDim2.new(1, -24, 0, 34), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
+		K.text({ Position = UDim2.fromOffset(12, ART + 12 + 32 + (#o.stats > 0 and 32 or 0)), Size = UDim2.new(1, -24, 0, 32), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
 			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 	end
 	return grid
@@ -766,19 +767,11 @@ local function dailyHammers(order, data)
 	local list = {}
 	for _, o in pairs(offers) do table.insert(list, o) end
 	table.sort(list, function(x, y) return x.r < y.r end)
-	local CELL, GAP, ART, BH = 350, 12, 156, 44
+	-- compact cards (like the shops of the top games): picture, name, power, and the prices right under them
+	local CELL, GAP, ART = 250, 12, 112
 	local grid = new("Frame", { Name = "DailyHammers", Size = UDim2.new(1, 0, 0, CELL), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
 	new("UIGridLayout", { CellSize = UDim2.new(0.25, -math.ceil(GAP * 3 / 4), 0, CELL), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = grid })
-	-- the buttons one above the other (a card is narrow: Gems and Robux side by side didn't fit)
-	local function stack(t, defs)
-		local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10), Size = UDim2.new(1, -20, 0, #defs * BH + (#defs - 1) * 6),
-			BackgroundTransparency = 1, ZIndex = 7, Parent = t })
-		new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
-		for i, bd in ipairs(defs) do
-			K.button(holder, bd[1], bd[2], { Size = UDim2.new(1, 0, 0, BH), TextSize = 21, Shine = bd.shine, LayoutOrder = i }, bd[3])
-		end
-	end
 	-- the card's tag (GREAT DEAL, POPULAR...) sits at the bottom of the picture, in the middle (clear of the name)
 	local function tagChip(t, label, color)
 		K.chip(t, label, color, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 8 + ART - 5), ZIndex = 8 })
@@ -822,9 +815,8 @@ local function dailyHammers(order, data)
 		end
 		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = ART, spin = true,
 			badge = { string.upper(r.name), r.color },
-			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } } })
+			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } }, buttons = buttons })
 		tagChip(t, o.tag, o.r == 5 and T.red or K.DARK)
-		stack(t, buttons)
 		K.rarityFX(t:FindFirstChild("Art"), r.id)
 		local tl = t:FindFirstChild("Title")
 		if tl then K.rarityText(tl, r.id, rarText(r)) end
@@ -853,24 +845,20 @@ local function dailyHammers(order, data)
 			artH = ART, badge = { "EXCLUSIVE", ex.color }, stats = { { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
 		if owns then
 			o.status = { "OWNED", K.GREEN }
-		end
-		local t = K.tile(grid, o)
-		tagChip(t, "ROBUX ONLY", T.red)
-		if not owns and ((pass.id or 0) > 0 or studio) then
-			stack(t, { { K.robux(pass.price), K.GREEN, function()
+		elseif (pass.id or 0) > 0 or studio then
+			o.buttons = { { K.robux(pass.price), K.GREEN, function()
 				c.click()
 				if (pass.id or 0) > 0 then MarketplaceService:PromptGamePassPurchase(c.player, pass.id)
 				else c.toast(sh.name .. ": coming soon (" .. K.robux(pass.price) .. ")", T.accent, 2.5) end
-			end, shine = true } })
+			end, shine = true } }
 		end
+		local t = K.tile(grid, o)
+		tagChip(t, "ROBUX ONLY", T.red)
 		K.rarityFX(t:FindFirstChild("Art"), "exclusive")
 		local tl = t:FindFirstChild("Title")
 		if tl then K.rarityText(tl, "exclusive", ex.color) end
 		local chip = t:FindFirstChild("Chip")
 		if chip then K.rarityChip(chip, "exclusive") end
-		-- (in the place of a second button: what makes it special)
-		K.text({ Position = UDim2.new(0, 13, 1, -10 - BH - 6 - BH), Size = UDim2.new(1, -26, 0, BH), Text = "Never in a crate · x" .. sh.mult .. " build power for you and your crew",
-			TextSize = 15, Max = 15, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 		-- an electric glow around the card
 		local glow = new("UIStroke", { Thickness = 4, Color = ex.color, Transparency = 0.2, Parent = glowFrame(t) })
 		task.spawn(function()
@@ -889,7 +877,8 @@ function M.Crates(tok)
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
 	local tut = inTut()
 	if not tut then dailyHammers(1, data) end
-	K.section(c.content, 3, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
+	K.category(c.content, 3, { title = "HAMMER CRATES", line = "A hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts",
+		icon = Hammers.CrateById.golden.image, c1 = Color3.fromRGB(255, 184, 40), c2 = Color3.fromRGB(236, 96, 30), first = tut })
 	crateTiles(data, 4, true)
 	if tut then return end -- (the Inventory and the passes open after the tutorial)
 	K.row(c.content, 6, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",

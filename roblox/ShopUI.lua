@@ -50,18 +50,20 @@ local function buy(remote, arg, keep)
 end
 
 local EQUIP_BLUE = Color3.fromRGB(70, 160, 255)
+-- compact item cards (like the shops of the top games): smaller pictures, the price right under the name
+local ART_H, CELL_H = 104, 244
 
 -- a tier list (tools / gear): every tier, the locked ones show their price; the window opens on your row
 -- equip = { which, onEquip }: the hammers you own can be picked (tools only)
 local function tierTiles(list, current, remote, icon, stat, keep, equip)
 	local n = cols()
-	local grid = K.grid(c.content, 2, n, 268)
+	local grid = K.grid(c.content, 2, n, CELL_H)
 	local cash = money()
 	local mine
 	for i, it in ipairs(list) do
 		local rk, rl = K.rarityOf(i, #list)
 		local o = { order = i, name = it.name, icon = it.image or it.icon or (Icons.has((icon .. "_" .. i)) and (icon .. "_" .. i) or icon), color = K.RAR[rk], iconScale = (it.image or it.icon) and 1.08 or nil,
-			badge = { rl, K.RAR[rk] }, stats = { stat(it) } }
+			badge = { rl, K.RAR[rk] }, stats = { stat(it) }, artH = ART_H }
 		if equip and i <= current then
 			if i == equip.which then
 				o.status = { "EQUIPPED", K.GREEN }
@@ -98,15 +100,17 @@ end
 local keepNext = false
 
 local function gear()
-	K.section(c.content, 1, "TRAINING GEAR", Color3.fromRGB(255, 190, 140), "more Strength per hit")
+	K.category(c.content, 1, { title = "TRAINING GEAR", line = "More Strength from every hit: each one doubles the last", icon = "strength",
+		c1 = Color3.fromRGB(255, 150, 70), c2 = Color3.fromRGB(226, 70, 40), first = true })
 	tierTiles(Config.TrainingGear, c.player:GetAttribute("GearTier") or 1, "BuyGear", "strength", function(g)
 		return { "x" .. Config.FormatNum(g.mult) .. " STRENGTH", Color3.fromRGB(255, 120, 80) }
 	end, keepNext)
 end
 
 local function machines()
-	K.section(c.content, 1, "HEAVY MACHINES", Color3.fromRGB(255, 220, 110), "they build on their own")
-	local grid = K.grid(c.content, 2, cols(), 268)
+	K.category(c.content, 1, { title = "HEAVY MACHINES", line = "They build your job on their own  ·  upgrade them for more work", icon = Config.Machines[1].image or "mega",
+		c1 = Color3.fromRGB(255, 200, 50), c2 = Color3.fromRGB(240, 120, 20), first = true })
+	local grid = K.grid(c.content, 2, cols(), CELL_H)
 	local lvl = c.player:GetAttribute("Level") or 1
 	local cash = money()
 	for i, m in ipairs(Config.Machines) do
@@ -114,7 +118,7 @@ local function machines()
 		local mlv = owned and math.max(1, c.player:GetAttribute("ML_" .. m.id) or 1) or 1
 		local rate = m.rate * Config.MachineMult(mlv) * crewPower()
 		local o = { order = i, name = m.name, icon = m.image or MACHINE_ICON[m.id] or m.icon, iconScale = m.image and 1.06 or nil, color = MACHINE_COL[m.id] or GOLD,
-			stats = { { Config.FormatNum(math.floor(rate)) .. " WORK/S", GOLD } } }
+			stats = { { Config.FormatNum(math.floor(rate)) .. " WORK/S", GOLD } }, artH = ART_H }
 		if owned then
 			o.tag = { "MK " .. mlv, K.DARK }
 			if mlv >= Config.MachineMaxLevel then
@@ -149,9 +153,10 @@ end
 
 local function crew()
 	local count, max = c.player:GetAttribute("WorkerCount") or 0, c.player:GetAttribute("MaxWorkers") or 2
-	K.section(c.content, 1, "YOUR CREW", Color3.fromRGB(150, 245, 160), count .. " / " .. max .. " workers")
+	K.category(c.content, 1, { title = "YOUR CREW  " .. count .. " / " .. max, line = "Workers build your job on their own  ·  firing one gives 50% back", icon = "crew",
+		c1 = Color3.fromRGB(90, 210, 110), c2 = Color3.fromRGB(30, 140, 90), first = true })
 	c.modalSub.Text = "👷 " .. count .. " / " .. max
-	local grid = K.grid(c.content, 2, cols(), 268)
+	local grid = K.grid(c.content, 2, cols(), CELL_H)
 	local lvl = c.player:GetAttribute("Level") or 1
 	local cash = money()
 	for i, w in ipairs(Config.WorkerTypes) do
@@ -159,7 +164,7 @@ local function crew()
 		local wps = w.rate * crewPower()
 		local stat = w.boost and { "CREW +" .. math.floor(w.boost * 100) .. "%", T.purple }
 			or { (wps < 10 and string.format("%.1f", wps) or Config.FormatNum(math.floor(wps))) .. " WORK/S", GOLD }
-		local o = { order = i, name = w.name, icon = WORKER_ICON[w.id] or "crew", color = WORKER_COL[w.id] or K.GREEN, stats = { stat } }
+		local o = { order = i, name = w.name, icon = WORKER_ICON[w.id] or "crew", color = WORKER_COL[w.id] or K.GREEN, stats = { stat }, artH = ART_H }
 		if have > 0 then
 			o.badge = { "x" .. have, K.DARK }
 		end
@@ -194,7 +199,6 @@ local function crew()
 		end
 		K.tile(grid, o)
 	end
-	K.note(c.content, 3, "Workers build your job on their own. Firing one gives 50% back.")
 end
 
 -- which tabs have something you can buy right now (the red dots on the tabs and the "!" on the SHOP button)

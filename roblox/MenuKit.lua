@@ -453,10 +453,42 @@ function K.row(parent, order, o)
 	return f
 end
 
+--[[ a shop category banner, like the shops of the top games: a wide gradient ribbon with a picture, a big title and one
+	line, with some space above it, so you always see where a new category starts while you scroll.
+	o = { title, line, icon, c1, c2, first = true (no space above), right = a frame to put on the right side } ]]
+function K.category(parent, order, o)
+	local gap = o.first and 0 or 16
+	local f = new("Frame", { Name = "Category", Size = UDim2.new(1, 0, 0, 66 + gap), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
+	local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), Position = UDim2.fromOffset(0, gap), Size = UDim2.new(1, 0, 0, 66), ZIndex = 1, Parent = f })
+	new("UIGradient", { Rotation = 0, Color = ColorSequence.new(o.c1 or T.accent, o.c2 or T.accent2), Parent = bg })
+	local stripes = new("CanvasGroup", { Name = "Stripes", Position = UDim2.fromOffset(4, gap + 4), Size = UDim2.new(1, -8, 0, 58), BackgroundTransparency = 1, GroupTransparency = 0.55,
+		ZIndex = 2, Parent = f })
+	new("UICorner", { CornerRadius = UDim.new(0, 14), Parent = stripes })
+	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(96, 96), Parent = stripes })
+	local pic = new("Frame", { Name = "Pic", Position = UDim2.fromOffset(8, gap + 2), Size = UDim2.fromOffset(62, 62), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+	K.art(pic, o.icon, UDim2.fromScale(1, 1), 4)
+	local rw = o.rightW or 0
+	local title = text({ Name = "Title", Position = UDim2.fromOffset(78, gap + 6), Size = UDim2.new(1, -92 - rw, 0, 32), Text = o.title, Font = T.chunky, TextSize = 29, Max = 29,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 4, Parent = f })
+	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 232, 140)), Parent = title })
+	if o.line then
+		text({ Name = "Line", Position = UDim2.fromOffset(79, gap + 40), Size = UDim2.new(1, -92 - rw, 0, 20), Text = o.line, TextSize = 16, Max = 16,
+			TextColor3 = Color3.fromRGB(255, 246, 236), Stroke = 1.6, ZIndex = 4, Parent = f })
+	end
+	return f, gap
+end
+
 -- "YOU HAVE:" strip (where materials are spent): one picture chip per thing with how many you own
--- chips = { { label, color, pic = picture }, ... }
+-- chips = { { label, color, pic = picture }, ... }. In a window it is pinned under the tabs (it stays in view while
+-- the list scrolls); anywhere else it is a row of the list.
 function K.haveRow(parent, order, chips, title)
-	local f = new("Frame", { Name = "YouHave", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
+	local host = UI.tabHosts and UI.tabHosts[parent]
+	local pinned = host and host.sticky
+	if pinned then
+		for _, o in ipairs(pinned:GetChildren()) do o:Destroy() end
+	end
+	local f = new("Frame", { Name = "YouHave", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 21, Parent = pinned or parent })
+	if pinned and host.changed then task.defer(host.changed) end
 	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = f })
 	local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
 	local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
