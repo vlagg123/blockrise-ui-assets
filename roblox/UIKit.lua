@@ -221,17 +221,47 @@ function UI.button(text, c1, c2, props)
 	lbl.TextScaled = true
 	new("UIStroke", { Thickness = 2.2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = lbl })
 	-- pressing: one value (0 = up, BTN_PRESS = down) moves the face and what is drawn on it
-	local press = Instance.new("NumberValue")
-	local rest = {} -- [label / icon] = where it sits when the button is up
+	local press = Instance.new("NumberValue") -- 0 = up, BTN_PRESS = pushed down onto the base
+	local hov = Instance.new("NumberValue")   -- 0 = normal, 1 = grown under the mouse
+	local grow = { x = 0, y = 0, left = 0.5 } -- how much the face grows on hover (px) and which share of it goes left
+	local rest = {}     -- [label / icon] = where it sits when the button is up and not grown
+	local restSize = {} -- [label] = its size then
+	-- the face (and the base under it) grow in place: upwards, and sideways on the side away from the neighbours (the
+	-- first of a row grows to the left, the last to the right, the ones between both ways); the layout never moves
 	local function apply()
-		local y = press.Value
-		bg.Position = UDim2.fromOffset(0, y)
-		for g, p in pairs(rest) do
-			if g.Parent == b then g.Position = p + UDim2.fromOffset(0, y) end
+		local y, k = press.Value, hov.Value
+		local gx, gy = grow.x * k, grow.y * k
+		local lx = gx * grow.left
+		if bg:GetAttribute("Skin") == "plain" then return end
+		bg.Position = UDim2.fromOffset(-lx, y - gy)
+		bg.Size = UDim2.new(1, gx, 1, -BTN_DROP + gy)
+		if base.Parent then
+			base.Position = UDim2.fromOffset(-lx, BTN_DROP - gy)
+			base.Size = UDim2.new(1, gx, 1, -BTN_DROP + gy)
 		end
+		local dx = gx / 2 - lx
+		for g, p in pairs(rest) do
+			if g.Parent == b then g.Position = p + UDim2.fromOffset(dx, y - gy / 2) end
+		end
+		if restSize[lbl] then lbl.Size = restSize[lbl] + UDim2.fromOffset(gx, gy) end
 	end
 	press.Changed:Connect(apply)
-	b.Destroying:Connect(function() press:Destroy() end)
+	hov.Changed:Connect(apply)
+	b.Destroying:Connect(function() press:Destroy(); hov:Destroy() end)
+	-- remember where the label sits while the button is at rest (an icon button's layout keeps its own)
+	local function capture()
+		if math.abs(press.Value) < 0.01 and math.abs(hov.Value) < 0.01 and not props.Icon then
+			rest[lbl] = lbl.Position
+			restSize[lbl] = lbl.Size
+		end
+	end
+	-- back at rest: forget it (whoever moves the label later is not undone by the next press)
+	local function release()
+		if math.abs(press.Value) < 0.001 and math.abs(hov.Value) < 0.001 and not props.Icon then
+			if restSize[lbl] then lbl.Size = restSize[lbl] end
+			rest[lbl], restSize[lbl] = nil, nil
+		end
+	end
 	if props.Icon then
 		-- icon + text centred together as one group on the face
 		local Icons = require(script.Parent:WaitForChild("Icons"))
@@ -265,7 +295,8 @@ function UI.button(text, c1, c2, props)
 			ic.Size = UDim2.fromOffset(iw, iw)
 			rest[ic] = UDim2.new(0, x0, 0.5, -BTN_DROP / 2)
 			rest[lbl] = UDim2.new(0, x0 + iw + gap, 0, 2)
-			lbl.Size = UDim2.new(0, tw + 6, 1, -BTN_DROP - 4)
+			restSize[lbl] = UDim2.new(0, tw + 6, 1, -BTN_DROP - 4)
+			lbl.Size = restSize[lbl]
 			apply()
 		end
 		b:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
@@ -275,32 +306,55 @@ function UI.button(text, c1, c2, props)
 	if props.Shine then UI.shine(b, z) end
 	local sc = new("UIScale", { Parent = b })
 	local hover = false
+	local zRest
 	local function pressTo(y, t, style)
 		if bg:GetAttribute("Skin") == "plain" then
 			-- (a flat button, the close X: no base to sink onto, it shrinks a little instead)
 			UI.tween(sc, t, { Scale = y > 0 and 0.92 or (hover and 1.05 or 1) }, style)
 			return
 		end
-		if y > 0 and math.abs(press.Value) < 0.01 then
-			-- remember where the label (and an icon without a layout of its own) sit while the button is up
-			if not props.Icon then
-				rest[lbl] = lbl.Position
-			end
-		end
+		if y > 0 then capture() end
 		local tw = UI.tween(press, t, { Value = y }, style)
-		if y == 0 and not props.Icon then
-			-- back up: forget the label's place (whoever moves it later is not undone by the next press)
-			tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed and press.Value == 0 then rest[lbl] = nil end end)
+		if y == 0 then tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed then release() end end) end
+	end
+	local function hoverTo(on)
+		if bg:GetAttribute("Skin") == "plain" then
+			UI.tween(sc, 0.12, { Scale = on and 1.05 or 1 })
+			return
+		end
+		if on then
+			-- how much: about 6% of the width (4..14 px) and 3 px up; which way: by its place among its neighbours
+			local hD = b.Size.Y.Offset
+			local k = (hD > 0 and b.AbsoluteSize.Y > 0) and b.AbsoluteSize.Y / hD or 1
+			local wD = b.AbsoluteSize.X / math.max(k, 0.01)
+			grow.x, grow.y = math.clamp(wD * 0.06, 4, 14), 3
+			local minX, maxX, n = math.huge, -math.huge, 0
+			for _, o in ipairs(b.Parent and b.Parent:GetChildren() or {}) do
+				if o:IsA("GuiButton") and o.Visible then
+					n += 1
+					minX, maxX = math.min(minX, o.AbsolutePosition.X), math.max(maxX, o.AbsolutePosition.X)
+				end
+			end
+			local x = b.AbsolutePosition.X
+			grow.left = (n < 2 and 0.5) or (x <= minX + 1 and 1) or (x >= maxX - 1 and 0) or 0.5
+			capture()
+			zRest = zRest or b.ZIndex
+			b.ZIndex = zRest + 1 -- (over its neighbours while it is bigger)
+			UI.tween(hov, 0.16, { Value = 1 }, Enum.EasingStyle.Back)
+		else
+			if zRest then b.ZIndex = zRest; zRest = nil end
+			local tw = UI.tween(hov, 0.12, { Value = 0 })
+			tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed then release() end end)
 		end
 	end
 	b.MouseEnter:Connect(function()
 		if not UIS.MouseEnabled then return end -- (a finger has no hover: it would stay big)
 		hover = true
-		UI.tween(sc, 0.12, { Scale = 1.05 })
+		hoverTo(true)
 	end)
 	b.MouseLeave:Connect(function()
 		hover = false
-		UI.tween(sc, 0.12, { Scale = 1 })
+		hoverTo(false)
 		pressTo(0, 0.1)
 	end)
 	b.MouseButton1Down:Connect(function()
@@ -316,7 +370,7 @@ function UI.button(text, c1, c2, props)
 		local t = recentPress[key]
 		if not t or os.clock() - t > 0.6 then return end
 		recentPress[key] = nil
-		if not props.Icon then rest[lbl] = lbl.Position end
+		capture()
 		press.Value = BTN_PRESS
 		task.wait(0.06)
 		if b.Parent then pressTo(0, 0.24, Enum.EasingStyle.Back) end
