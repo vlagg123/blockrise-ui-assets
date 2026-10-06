@@ -1627,7 +1627,8 @@ function M.Init(ctx)
 		fetch()
 		if cache and type(cache.pending) == "table" and not opening then showPending() end
 	end)
-	if studio then _G.__HammersPending = function() fetch(); showPending() end end -- (Studio test: a rejoin after a dropped crate)
+	-- (Studio test of a rejoin after a dropped crate: set the player's TestPending attribute)
+	if studio then c.player:GetAttributeChangedSignal("TestPending"):Connect(function() task.spawn(function() fetch(); showPending() end) end) end
 	-- Roblox policy: where paid random items are restricted, the Robux crates are not sold
 	c.paidRandomRestricted = false
 	task.spawn(function()
