@@ -463,4 +463,151 @@ end
 -- money text helpers used by the windows
 function K.robux(n) return n and ("\u{E002} " .. tostring(n)) or "\u{E002} ..." end
 
+---------------------------------------------------------------------------------------------------------------------
+-- Rarity looks: the rare hammers get backgrounds and names you spot from across the room
+--   legendary: molten gold + a rainbow name   mythic: hot pink   secret: black metal with a silver sheen
+--   divine: a holographic sky that keeps turning   exclusive: electric turquoise
+---------------------------------------------------------------------------------------------------------------------
+local C3 = Color3.fromRGB
+local anims = setmetatable({}, { __mode = "k" }) -- object -> function(now), one loop for all of them
+RunService.Heartbeat:Connect(function()
+	local now = os.clock()
+	for obj, fn in pairs(anims) do
+		if obj.Parent then fn(now) else anims[obj] = nil end
+	end
+end)
+local function seqOf(stops)
+	local k = {}
+	for _, s in ipairs(stops) do table.insert(k, ColorSequenceKeypoint.new(s[1], s[2])) end
+	return ColorSequence.new(k)
+end
+-- a looping colour band (rainbow / holo) as 24 frames, so a moving rainbow never "runs out" at the ends
+local function loopFrames(cols, n)
+	local frames = {}
+	for f = 0, n - 1 do
+		local stops, m = {}, #cols
+		local shift = f / n
+		for i = 0, 8 do
+			local t = i / 8
+			local u = ((t + shift) % 1) * m
+			local a = math.floor(u) % m
+			local b = (a + 1) % m
+			table.insert(stops, { t, cols[a + 1]:Lerp(cols[b + 1], u - math.floor(u)) })
+		end
+		frames[f + 1] = seqOf(stops)
+	end
+	return frames
+end
+local RAINBOW = loopFrames({ C3(255, 70, 70), C3(255, 160, 30), C3(255, 236, 50), C3(70, 225, 90), C3(50, 175, 255), C3(165, 85, 255) }, 24)
+local HOLO_TXT = loopFrames({ C3(255, 120, 220), C3(170, 120, 255), C3(80, 190, 255), C3(80, 235, 190), C3(255, 215, 90) }, 24)
+local HOLO_BG = seqOf({ { 0, C3(255, 200, 238) }, { 0.2, C3(220, 196, 255) }, { 0.4, C3(186, 228, 255) }, { 0.6, C3(196, 255, 226) },
+	{ 0.8, C3(255, 246, 196) }, { 1, C3(255, 200, 238) } })
+local SHEEN = { -- a bright band that sweeps across the text
+	metal = seqOf({ { 0, C3(38, 38, 50) }, { 0.38, C3(64, 64, 82) }, { 0.5, C3(236, 236, 255) }, { 0.62, C3(64, 64, 82) }, { 1, C3(38, 38, 50) } }),
+	electric = seqOf({ { 0, C3(0, 188, 178) }, { 0.38, C3(30, 228, 214) }, { 0.5, C3(255, 255, 255) }, { 0.62, C3(30, 228, 214) }, { 1, C3(0, 188, 178) } }),
+	mythic = seqOf({ { 0, C3(255, 70, 130) }, { 0.38, C3(255, 110, 160) }, { 0.5, C3(255, 235, 245) }, { 0.62, C3(255, 110, 160) }, { 1, C3(235, 40, 105) } }),
+}
+K.RARITY_LOOK = {
+	legendary = { bg = { { 0, C3(255, 242, 150) }, { 0.45, C3(255, 182, 36) }, { 1, C3(210, 92, 6) } }, rays = C3(255, 250, 210), raysT = 0.18,
+		glow = C3(255, 236, 140), sweep = C3(255, 255, 235), stars = C3(255, 252, 215), text = "rainbow" },
+	mythic = { bg = { { 0, C3(255, 160, 196) }, { 0.5, C3(255, 70, 128) }, { 1, C3(178, 16, 74) } }, rays = C3(255, 225, 238), raysT = 0.3,
+		sweep = C3(255, 235, 245), text = "mythic" },
+	secret = { bg = { { 0, C3(96, 96, 124) }, { 0.42, C3(30, 30, 42) }, { 1, C3(6, 6, 12) } }, rays = C3(170, 160, 240), raysT = 0.5,
+		glow = C3(140, 100, 255), sweep = C3(225, 225, 255), stars = C3(255, 255, 255), text = "metal", stroke = C3(206, 206, 232) },
+	divine = { bg = "holo", rays = C3(255, 255, 255), raysT = 0.05, glow = C3(255, 255, 255), sweep = C3(255, 255, 255), stars = C3(255, 236, 170), text = "holo" },
+	exclusive = { bg = { { 0, C3(170, 255, 244) }, { 0.45, C3(24, 214, 200) }, { 1, C3(0, 104, 132) } }, rays = C3(215, 255, 250), raysT = 0.18,
+		glow = C3(130, 255, 242), sweep = C3(240, 255, 255), stars = C3(205, 255, 250), text = "electric" },
+}
+local function bgSeq(L) return L.bg == "holo" and HOLO_BG or seqOf(L.bg) end
+
+-- restyle an art box (K.artBox) for its rarity: background, rays, glow, a light band sweeping across, twinkling stars
+function K.rarityFX(box, id, o)
+	local L = K.RARITY_LOOK[id]
+	if not L or not box or (o and o.dim) then return box end
+	local g = box:FindFirstChildOfClass("UIGradient")
+	if g then
+		g.Color = bgSeq(L)
+		if L.bg == "holo" then
+			g.Rotation = 45
+			anims[g] = function(now) g.Rotation = (now * 45) % 360 end
+		end
+	end
+	local rays = box:FindFirstChild("Rays")
+	if rays then rays.ImageColor3 = L.rays; rays.ImageTransparency = L.raysT; spinners[rays] = true end
+	local glow = box:FindFirstChild("Glow")
+	if glow and L.glow then glow.ImageColor3 = L.glow; glow.ImageTransparency = 0.3 end
+	if L.sweep then
+		-- (not rotated: rotated frames ignore ClipsDescendants; the slant is in the gradient)
+		local band = new("Frame", { Name = "Sweep", AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromScale(0.7, 1.2), BackgroundColor3 = L.sweep, BorderSizePixel = 0,
+			Visible = false, ZIndex = 5, Parent = box })
+		new("UIGradient", { Rotation = 20, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.42, 1),
+			NumberSequenceKeypoint.new(0.5, 0.35), NumberSequenceKeypoint.new(0.58, 1), NumberSequenceKeypoint.new(1, 1) }), Parent = band })
+		local period, off = (o and o.small) and 3.2 or 2.6, math.random() * 3
+		anims[band] = function(now)
+			local t = ((now + off) % period) / period
+			if t < 0.5 then band.Visible = true; band.Position = UDim2.fromScale(-0.4 + t / 0.5 * 1.8, 0.5) else band.Visible = false end
+		end
+	end
+	if L.stars then
+		for i = 1, 3 do
+			local s = new("TextLabel", { Name = "Star", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.16 + math.random() * 0.68, 0.14 + math.random() * 0.62),
+				Size = UDim2.fromScale(0.2, 0.2), BackgroundTransparency = 1, Text = "✦", TextScaled = true, Font = Enum.Font.GothamBold, TextColor3 = L.stars, ZIndex = 7, Parent = box })
+			local ph, sp = math.random() * 6, 2.2 + math.random() * 1.6
+			anims[s] = function(now)
+				local k = math.sin(now * sp + ph)
+				s.TextTransparency = 1 - math.max(0, k) ^ 1.5
+				s.Rotation = k * 25
+			end
+		end
+	end
+	return box
+end
+
+-- a hammer name in its rarity's colours: rainbow (legendary), black metal (secret), holo (divine), electric (exclusive)
+function K.rarityText(label, id, fallback)
+	if not label then return label end
+	local L = K.RARITY_LOOK[id]
+	local style = L and L.text
+	if not style then
+		if fallback then label.TextColor3 = fallback end
+		return label
+	end
+	label.TextColor3 = Color3.new(1, 1, 1)
+	local g = label:FindFirstChildOfClass("UIGradient") or new("UIGradient", { Parent = label })
+	g.Rotation = 0
+	g.Offset = Vector2.zero
+	if style == "rainbow" or style == "holo" then
+		local frames = style == "rainbow" and RAINBOW or HOLO_TXT
+		g.Color = frames[1]
+		anims[g] = function(now) g.Color = frames[math.floor(now * 14) % #frames + 1] end
+	else
+		g.Color = SHEEN[style]
+		local off = math.random() * 3
+		anims[g] = function(now)
+			local t = ((now + off) % 2.4) / 2.4
+			g.Offset = Vector2.new(t < 0.6 and (-1 + t / 0.6 * 2) or 1, 0)
+		end
+	end
+	-- an outline keeps the bright colours readable on light tiles
+	local st = label:FindFirstChildOfClass("UIStroke")
+	if not st then st = new("UIStroke", { Thickness = 1.6, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, Parent = label }) end
+	if L.stroke then st.Color = L.stroke end
+	return label
+end
+
+-- a chip / button background in the rarity's colours (the label keeps its white text)
+function K.rarityChip(img, id)
+	local L = K.RARITY_LOOK[id]
+	if not L or not img then return img end
+	img.ImageColor3 = Color3.new(1, 1, 1)
+	local g = img:FindFirstChildOfClass("UIGradient") or new("UIGradient", { Parent = img })
+	g.Color = bgSeq(L)
+	g.Rotation = 90
+	if L.bg == "holo" then
+		g.Rotation = 0
+		anims[g] = function(now) g.Offset = Vector2.new(math.sin(now * 1.3) * 0.35, 0) end
+	end
+	return img
+end
+
 return K

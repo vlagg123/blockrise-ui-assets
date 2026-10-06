@@ -33,7 +33,7 @@ local function fmt(n) return Config.FormatMoney(n) end
 local function wide() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 end
 local function cols() return wide() and 4 or 3 end
 local function invCols() return wide() and 6 or 4 end
-local function rar(h) return Hammers.Rarities[h.r] end
+local function rar(h) return Hammers.Rarities[h.dr or h.r] end -- the rarity a hammer is SHOWN as (Exclusive for the pass hammer)
 local function rarText(r) return r.text and Color3.fromRGB(90, 80, 130) or r.color:Lerp(Color3.new(0, 0, 0), 0.15) end
 -- the picture of a hammer: the Thunderclap's pass art, its own render, or the Shop atlas icon
 local function art(h)
@@ -75,7 +75,7 @@ local function sortHammers(list, equipId)
 		if equipId then
 			if a.id == equipId then return true elseif b.id == equipId then return false end
 		end
-		if ha.r ~= hb.r then return ha.r > hb.r end
+		if (ha.dr or ha.r) ~= (hb.dr or hb.r) then return (ha.dr or ha.r) > (hb.dr or hb.r) end
 		if a.lv ~= b.lv then return a.lv > b.lv end
 		return ha.order < hb.order
 	end)
@@ -131,16 +131,19 @@ local equipItem, levelUpItem
 -- one hammer: the big picture, what it is, where it comes from (and EQUIP when it's one of yours)
 local function hammerPopup(h, it, data)
 	local r = rar(h)
-	local body = openPopup(UDim2.fromOffset(620, 400), h.name, r.color:Lerp(Color3.new(1, 1, 1), 0.2), r.color, nil)
+	local body, pw = openPopup(UDim2.fromOffset(620, 400), h.name, r.color:Lerp(Color3.new(1, 1, 1), 0.2), r.color, nil)
 	local box = K.artBox(body, art(h), r.color, { Position = UDim2.fromOffset(0, 8), Size = UDim2.fromOffset(220, 220), Spin = true, IconScale = 1.06 })
 	box.ZIndex = 5
+	K.rarityFX(box, r.id)
+	local ttl = pw and pw:FindFirstChild("Header") and pw.Header:FindFirstChild("Title")
+	if ttl and K.RARITY_LOOK[r.id] then K.rarityText(ttl, r.id) end
 	local x = 240
 	local chips = new("Frame", { Position = UDim2.fromOffset(x, 10), Size = UDim2.new(1, -x, 0, 28), BackgroundTransparency = 1, ZIndex = 6, Parent = body })
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = chips })
-	K.chip(chips, string.upper(r.name), r.color, { LayoutOrder = 1 })
+	K.rarityChip(K.chip(chips, string.upper(r.name), r.color, { LayoutOrder = 1 }), r.id)
 	K.chip(chips, Hammers.PowerLabel(h.key, it and it.lv or 1) .. " POWER", GOLD, { LayoutOrder = 2 })
 	if it then K.chip(chips, "LV " .. it.lv .. "/" .. Hammers.MaxLevel, Color3.fromRGB(60, 56, 110), { LayoutOrder = 3 }) end
-	if h.exclusive then K.chip(chips, "EXCLUSIVE", T.red, { LayoutOrder = 4 }) end
+	if h.exclusive and r.id ~= "exclusive" then K.chip(chips, "EXCLUSIVE", T.red, { LayoutOrder = 4 }) end
 	K.text({ Position = UDim2.fromOffset(x, 46), Size = UDim2.new(1, -x, 0, 60), Text = h.desc, TextSize = 18, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 2, ZIndex = 6, Parent = body })
 	K.text({ Position = UDim2.fromOffset(x, 112), Size = UDim2.new(1, -x, 0, 24), Text = "WHERE TO FIND IT", Font = T.chunky, TextSize = 18, TextColor3 = Color3.fromRGB(255, 230, 150), Stroke = 2, ZIndex = 6, Parent = body })
@@ -189,14 +192,14 @@ local function cratePopup(cr, data)
 			local rr = Hammers.Rarities[r]
 			local row = new("Frame", { Size = UDim2.new(1, -8, 0, 92), BackgroundTransparency = 1, LayoutOrder = n, ZIndex = 6, Parent = list })
 			UI.slice("tile", { ImageColor3 = K.TILE, ZIndex = 1, Parent = row })
-			K.chip(row, string.upper(rr.name), rr.color, { Position = UDim2.fromOffset(12, 18), ZIndex = 8 })
+			K.rarityChip(K.chip(row, string.upper(rr.name), rr.color, { Position = UDim2.fromOffset(12, 18), ZIndex = 8 }), rr.id)
 			K.text({ Position = UDim2.fromOffset(12, 50), Size = UDim2.fromOffset(130, 26), Text = pct(v), Font = T.chunky, TextSize = 24, TextColor3 = rarText(rr), ZIndex = 8, Parent = row })
 			local pics = new("Frame", { Position = UDim2.fromOffset(150, 6), Size = UDim2.new(1, -160, 0, 82), BackgroundTransparency = 1, ZIndex = 7, Parent = row })
 			new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = pics })
 			for i, h in ipairs(Hammers.PoolAt(cr, r)) do
 				local b = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(96, 82), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 7, Parent = pics })
-				K.artBox(b, art(h), rr.color, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.fromOffset(58, 58), IconScale = 1.06 })
-				K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 20), Text = h.name, TextSize = 12, Max = 12, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, ZIndex = 8, Parent = b })
+				K.rarityFX(K.artBox(b, art(h), rr.color, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.fromOffset(58, 58), IconScale = 1.06 }), rr.id, { small = true })
+				K.rarityText(K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 20), Text = h.name, TextSize = 12, Max = 12, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, ZIndex = 8, Parent = b }), rr.id, rarText(rr))
 				b.Activated:Connect(function() c.click(); hammerPopup(h) end)
 			end
 		end
@@ -227,7 +230,7 @@ local function revealHammer(h, o)
 		return
 	end
 	show({ head = o.head or "NEW HAMMER!", name = h.name, icon = art(h), color = r.color, rarity = { string.upper(r.name) .. (o.isNew and "  ·  NEW!" or ""), r.color },
-		big = h.r >= 5, tier = h.r, effect = Hammers.PowerLabel(h.key, 1) .. " build power  ·  " .. h.desc, button = o.button or "KEEP",
+		big = h.r >= 5, tier = h.r, rid = r.id, effect = Hammers.PowerLabel(h.key, 1) .. " build power  ·  " .. h.desc, button = o.button or "KEEP",
 		again = o.again, onClose = o.onClose, tag = o.pity and "PITY: GUARANTEED" or nil })
 end
 
@@ -292,7 +295,7 @@ local function spinThenReveal(cr, res)
 		local hh = i == WIN and h or rollFake(cr, data.zone or "town", data.luck or 1)
 		local rr = rar(hh)
 		local tl = new("Frame", { Position = UDim2.fromOffset((i - 1) * STRIDE, 0), Size = UDim2.fromOffset(TILE, TILE), BackgroundTransparency = 1, ZIndex = 3, Parent = strip })
-		K.artBox(tl, art(hh), rr.color, { Size = UDim2.fromScale(1, 1), IconScale = 1.02 })
+		K.rarityFX(K.artBox(tl, art(hh), rr.color, { Size = UDim2.fromScale(1, 1), IconScale = 1.02 }), rr.id)
 		local band = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(1, -16, 0, 8), BackgroundColor3 = rr.color, BorderSizePixel = 0, ZIndex = 8, Parent = tl })
 		UI.corner(4).Parent = band
 		tiles[i] = tl
@@ -399,7 +402,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- Shared pieces
 ---------------------------------------------------------------------------------------------------------------------
--- the Thunderclap pass: a Mythic storm hammer + x3 power, offered in the Shop too (until you own it)
+-- the Thunderclap pass: an Exclusive storm hammer + x3 power, offered in the Shop too (until you own it)
 local function stormBanner(order)
 	local sh = Config.StormHammer
 	if not sh then return end
@@ -407,9 +410,9 @@ local function stormBanner(order)
 	for _, p in ipairs(Config.Store.passes) do if p.key == sh.pass then pass = p end end
 	if not pass or c.player:GetAttribute("Pass_" .. sh.pass) == true then return end
 	if (pass.id or 0) <= 0 and not studio then return end
-	local o = { name = string.upper(sh.name), line = "A Mythic storm hammer, yours forever, plus x" .. sh.mult .. " build power for you and your crew.",
+	local o = { name = string.upper(sh.name), line = "An Exclusive storm hammer, yours forever, plus x" .. sh.mult .. " build power for you and your crew.",
 		icon = sh.icon or "up_power", color = sh.color, tint = Color3.fromRGB(150, 200, 255), buttonW = 180,
-		chips = { { "MYTHIC", Hammers.RarityById.mythic.color }, { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
+		chips = { { "EXCLUSIVE", Hammers.RarityById.exclusive.color }, { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
 	if (pass.id or 0) > 0 then
 		o.button = { K.robux(pass.price), K.GREEN, function() c.click(); MarketplaceService:PromptGamePassPurchase(c.player, pass.id) end }
 	else
@@ -422,7 +425,7 @@ end
 local function oddsLine(cr, zone, luck)
 	local odds = Hammers.Odds(cr.id, zone, luck)
 	local parts = {}
-	for r = 1, #Hammers.Rarities do
+	for r = 1, Hammers.LadderTop do
 		if odds[r] and odds[r] > 0 then
 			local rr = Hammers.Rarities[r]
 			table.insert(parts, string.format('<font color="#%s">%s %s</font>', rarText(rr):ToHex(), rr.name, pct(odds[r])))
@@ -527,11 +530,16 @@ local function miniTile(grid, o)
 	local t = new("TextButton", { Name = "Item", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, LayoutOrder = o.order or 0, ZIndex = 2, Parent = grid })
 	local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = o.selected and Color3.fromRGB(255, 236, 160) or (o.dim and K.DIM or K.TILE), ZIndex = 1, Parent = t })
 	local artH = o.artH or 84
-	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(6, 6), Size = UDim2.new(1, -12, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = 1.04 })
-	if o.badge then small(K.chip(t, o.badge[1], o.badge[2], { Position = UDim2.fromOffset(9, 9), ZIndex = 8 }), 0.66) end
+	local box = K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(6, 6), Size = UDim2.new(1, -12, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = 1.04 })
+	if o.rid then K.rarityFX(box, o.rid, { dim = o.dim, small = true }) end
+	if o.badge then
+		local b = small(K.chip(t, o.badge[1], o.badge[2], { Position = UDim2.fromOffset(9, 9), ZIndex = 8 }), 0.66)
+		if o.rid and o.badgeRarity then K.rarityChip(b, o.rid) end
+	end
 	if o.tag then small(K.chip(t, o.tag[1], o.tag[2], { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -9, 0, 9), ZIndex = 8 }), 0.66) end
-	K.text({ Position = UDim2.fromOffset(8, artH + 9), Size = UDim2.new(1, -16, 0, 18), Text = o.name, TextSize = 15, Max = 15, TextXAlignment = Enum.TextXAlignment.Center,
+	local nm = K.text({ Position = UDim2.fromOffset(8, artH + 9), Size = UDim2.new(1, -16, 0, 18), Text = o.name, TextSize = 15, Max = 15, TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
+	if o.rid and not o.dim then K.rarityText(nm, o.rid, o.nameColor) end
 	if o.line then
 		K.text({ Position = UDim2.fromOffset(8, artH + 28), Size = UDim2.new(1, -16, 0, 16), Text = o.line, TextSize = 13, Max = 13, Font = T.chunky,
 			TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.lineColor or K.SUB, ZIndex = 3, Parent = t })
@@ -571,6 +579,8 @@ local function filterRow(order, counts, current, onPick)
 		if not on then
 			local sh = b.Bg:FindFirstChild("Shine")
 			if sh then sh.ImageTransparency = 0.55 end
+		elseif type(id) == "number" and Hammers.Rarities[id] and K.RARITY_LOOK[Hammers.Rarities[id].id] and b.Bg:IsA("ImageLabel") then
+			K.rarityChip(b.Bg, Hammers.Rarities[id].id)
 		end
 		b.Activated:Connect(function() c.click(); onPick(id) end)
 	end
@@ -622,6 +632,16 @@ local function drawHammers(tok, data)
 		end
 		if not inHand then o.extra = { label = "EQUIP", color = EQUIP_BLUE, w = 110, onClick = function() equipItem(cur, h) end } end
 		local row = K.row(c.content, 1, o)
+		-- the rare ones wear their look on top too
+		if K.RARITY_LOOK[r.id] then
+			K.rarityFX(row:FindFirstChild("Art"), r.id)
+			K.rarityText(row:FindFirstChild("Title"), r.id)
+			local cf = row:FindFirstChild("Chips")
+			for _, ch in ipairs(cf and cf:GetChildren() or {}) do
+				local lb = ch:FindFirstChildOfClass("TextLabel")
+				if lb and lb.Text == string.upper(r.name) then K.rarityChip(ch, r.id) end
+			end
+		end
 		-- the picture opens the hammer's card
 		local hit = new("TextButton", { Text = "", AutoButtonColor = false, Position = UDim2.fromOffset(9, 9), Size = UDim2.fromOffset(94, 94), BackgroundTransparency = 1, ZIndex = 9, Parent = row })
 		hit.Activated:Connect(function() c.click(); hammerPopup(h, cur, data) end)
@@ -634,7 +654,7 @@ local function drawHammers(tok, data)
 	end
 	-- filters + the grid
 	local counts = {}
-	for _, it in ipairs(data.hammers) do local r = Hammers.ById[it.k].r; counts[r] = (counts[r] or 0) + 1 end
+	for _, it in ipairs(data.hammers) do local hh = Hammers.ById[it.k]; local r = hh.dr or hh.r; counts[r] = (counts[r] or 0) + 1 end
 	if filter and not counts[filter] then filter = nil end
 	sortHammers(data.hammers, data.equip)
 	K.section(c.content, 3, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
@@ -648,11 +668,11 @@ local function drawHammers(tok, data)
 	local n = 0
 	for _, it in ipairs(data.hammers) do
 		local h = Hammers.ById[it.k]
-		if not filter or h.r == filter then
+		if not filter or (h.dr or h.r) == filter then
 			n += 1
 			local r = rar(h)
 			local isCur = cur and it.id == cur.id
-			miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK },
+			miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK }, rid = r.id, badgeRarity = true, nameColor = rarText(r),
 				line = it.id == data.equip and "✋ IN HAND" or (Hammers.PowerLabel(it.k, it.lv) .. " power"), lineColor = it.id == data.equip and GREEN_TXT or nil,
 				ring = isCur and GOLD or nil, spin = it.id == data.equip, new = isNew(it),
 				onClick = function()
@@ -763,7 +783,7 @@ local function drawTradeUp(tok, data)
 		local count = {}
 		for _, it in ipairs(data.hammers) do
 			local h = Hammers.ById[it.k]
-			if canTrade(it, h) and h.r < #Hammers.Rarities and #Hammers.PoolAt(regular, h.r + 1) > 0 then count[h.r] = (count[h.r] or 0) + 1 end
+			if canTrade(it, h) and h.r < Hammers.LadderTop and #Hammers.PoolAt(regular, h.r + 1) > 0 then count[h.r] = (count[h.r] or 0) + 1 end
 		end
 		local want, best = nil, 0
 		for r, n in pairs(count) do if n >= N and (not want or r < want) then want = r end; best = math.max(best, n) end
@@ -806,9 +826,9 @@ local function drawTradeUp(tok, data)
 		local h = Hammers.ById[it.k]
 		local r = rar(h)
 		local inside = table.find(picked, it.id) ~= nil
-		local ok = canTrade(it, h) and h.r < #Hammers.Rarities and (not rarity or h.r == rarity)
+		local ok = canTrade(it, h) and h.r < Hammers.LadderTop and (not rarity or h.r == rarity)
 		n += 1
-		miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK },
+		miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK }, rid = r.id, badgeRarity = true, nameColor = rarText(r),
 			line = inside and "IN CONTRACT" or (it.id == data.equip and "✋ IN HAND" or nil), lineColor = inside and GREEN_TXT or nil,
 			dim = not ok and not inside, selected = inside, ring = inside and K.GREEN or nil,
 			onClick = function()
@@ -841,35 +861,78 @@ function M.TradeUp(tok)
 end
 
 -- Inventory → INDEX: the collection book ----------------------------------------------------------------------------
+local idxFilter, idxFound -- rarity index (nil = all); "found" / "missing" (nil = both)
+local function drawIndex(tok, data)
+	if not c.live(tok) then return end
+	clearBody()
+	local owned, total = 0, #Hammers.List
+	for _, h in ipairs(Hammers.List) do if data.index[h.key] then owned += 1 end end
+	K.banner(c.content, 1, { name = "HAMMER INDEX", line = "Found " .. owned .. " of " .. total .. ". Tap a hammer to see where it comes from.", icon = "star", color = GOLD,
+		tint = Color3.fromRGB(255, 240, 200), bar = { owned / total, GOLD, owned .. " / " .. total }, height = 124 })
+	local function redraw()
+		local y = c.content.CanvasPosition
+		drawIndex(tok, data)
+		c.content.CanvasPosition = y
+	end
+	-- filters: every rarity (how many hammers it has), then found / missing
+	local counts = {}
+	for _, h in ipairs(Hammers.List) do counts[h.dr] = (counts[h.dr] or 0) + 1 end
+	filterRow(2, counts, idxFilter, function(r) idxFilter = r; redraw() end)
+	local row = new("Frame", { Name = "Found", Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, LayoutOrder = 3, ZIndex = 3, Parent = c.content })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
+	for i, f in ipairs({ { false, "BOTH", Color3.fromRGB(110, 200, 255) }, { "found", "✓ FOUND " .. owned, K.GREEN }, { "missing", "? MISSING " .. (total - owned), Color3.fromRGB(255, 120, 90) } }) do
+		local on = (idxFound or false) == f[1]
+		local w = TextService:GetTextSize(f[2], 15, T.body, Vector2.new(1000, 40)).X + 30
+		local bt = UI.button(f[2], on and f[3] or UI.TAB_OFF, nil, { Size = UDim2.fromOffset(w, 34), TextSize = 15, LayoutOrder = i, ZIndex = 3, Parent = row })
+		if not on then
+			local sh = bt.Bg:FindFirstChild("Shine")
+			if sh then sh.ImageTransparency = 0.55 end
+		end
+		bt.Activated:Connect(function() c.click(); idxFound = f[1] or nil; redraw() end)
+	end
+	local order, shown = 4, 0
+	for r = #Hammers.Rarities, 1, -1 do
+		if not idxFilter or idxFilter == r then
+			local rr = Hammers.Rarities[r]
+			local all, list = {}, {}
+			for _, h in ipairs(Hammers.List) do
+				if h.dr == r then
+					table.insert(all, h)
+					local got = data.index[h.key] == true
+					if not idxFound or (idxFound == "found") == got then table.insert(list, h) end
+				end
+			end
+			if #list > 0 then
+				local have = 0
+				for _, h in ipairs(all) do if data.index[h.key] then have += 1 end end
+				local sec = K.section(c.content, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color,
+					have .. " / " .. #all .. "  ·  " .. Hammers.PowerLabel(all[1].key, 1) .. " power")
+				local tl = sec:FindFirstChildOfClass("TextLabel")
+				if tl and K.RARITY_LOOK[rr.id] then K.rarityText(tl, rr.id) end
+				local grid = smallGrid(order + 1)
+				for i, h in ipairs(list) do
+					local got = data.index[h.key] == true
+					shown += 1
+					miniTile(grid, { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got, rid = rr.id, nameColor = rarText(rr),
+						badge = got and { "✓", K.GREEN } or ((h.exclusive and rr.id ~= "exclusive") and { "EXCLUSIVE", T.red } or nil),
+						line = got and "FOUND" or (h.soon and "COMING SOON" or (h.event and "EVENT ONLY" or (h.pass and "GAME PASS" or (h.exclusive and "EXCLUSIVE CRATE" or "NOT FOUND")))),
+						lineColor = got and GREEN_TXT or nil,
+						onClick = function() c.click(); hammerPopup(h) end })
+				end
+				order += 2
+			end
+		end
+	end
+	if shown == 0 then K.empty(c.content, order, idxFound == "found" and "Nothing found here yet: open some crates!" or "You found them all here!", "star") end
+end
+
 function M.Index(tok)
 	local loading = K.loading(c.content)
 	local data = fetch()
 	if not c.live(tok) then return end
 	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
-	local owned, total = 0, #Hammers.List
-	for _, h in ipairs(Hammers.List) do if data.index[h.key] then owned += 1 end end
-	K.banner(c.content, 1, { name = "HAMMER INDEX", line = "Found " .. owned .. " of " .. total .. ". Tap a hammer to see where it comes from.", icon = "star", color = GOLD,
-		tint = Color3.fromRGB(255, 240, 200), bar = { owned / total, GOLD, owned .. " / " .. total }, height = 124 })
-	local order = 2
-	for r = #Hammers.Rarities, 1, -1 do
-		local rr = Hammers.Rarities[r]
-		local list = {}
-		for _, h in ipairs(Hammers.List) do if h.r == r then table.insert(list, h) end end
-		local have = 0
-		for _, h in ipairs(list) do if data.index[h.key] then have += 1 end end
-		K.section(c.content, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color, have .. " / " .. #list .. "  ·  " .. Hammers.PowerLabel(list[1].key, 1) .. " power")
-		local grid = smallGrid(order + 1)
-		for i, h in ipairs(list) do
-			local got = data.index[h.key] == true
-			miniTile(grid, { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got,
-				badge = got and { "✓", K.GREEN } or (h.exclusive and { "EXCLUSIVE", T.red } or nil),
-				line = got and "FOUND" or (h.soon and "COMING SOON" or (h.event and "EVENT ONLY" or (h.exclusive and "EXCLUSIVE CRATE" or (h.pass and "GAME PASS" or "NOT FOUND")))),
-				lineColor = got and GREEN_TXT or nil,
-				onClick = function() c.click(); hammerPopup(h) end })
-		end
-		order += 2
-	end
+	drawIndex(tok, data)
 end
 
 ---------------------------------------------------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 -- BlockRise Empire - the hammers: collectible items with a rarity, a level and a look.
 -- Shared by server and client (pure data + pure functions; no services here).
---   Hammers.Rarities        the 8 rarities, in order (power, swing cooldown, colour, effect tier)
+--   Hammers.Rarities        the 8 rarities of the ladder, in order (power, swing cooldown, colour, effect tier), and
+--                           a 9th shown on its own: EXCLUSIVE (the pass hammer; its power stays the one of its ladder rarity)
 --   Hammers.List / ById     the 40 hammers (16 have a model in the game today; the rest are "coming soon")
 --   Hammers.Crates / CrateById  the crates and their odds (shown in the game: Roblox requires it for paid random items)
 --   Hammers.Power(key, lv)  build power of one hammer; Hammers.LevelCost(key, lv) cash to go lv -> lv+1
@@ -13,6 +14,7 @@ Hammers.LevelStep = 0.08          -- +8% power per level
 Hammers.RarityStep = 1.35         -- every rarity x1.35 power
 Hammers.TradeUpCount = 10         -- 10 of a rarity -> 1 of the next
 Hammers.InventoryCap = 300
+Hammers.LadderTop = 8              -- trade-ups and crates stop at Divine (Exclusive is a category, not a step)
 Hammers.DefaultKey = "rusty"      -- everyone's first hammer; never tradeable, never lost
 
 Hammers.Rarities = {
@@ -23,7 +25,9 @@ Hammers.Rarities = {
 	{ id = "legendary", name = "Legendary", cooldown = 0.27, color = C3(255, 170, 30), fx = 4, levelBase = 60000 },
 	{ id = "mythic", name = "Mythic", cooldown = 0.25, color = C3(255, 70, 120), fx = 5, levelBase = 300000 },
 	{ id = "secret", name = "Secret", cooldown = 0.23, color = C3(40, 40, 60), fx = 6, levelBase = 1500000, text = C3(230, 230, 255) },
-	{ id = "divine", name = "Divine", cooldown = 0.21, color = C3(255, 236, 150), fx = 7, levelBase = 8000000, text = C3(120, 80, 0) },
+	{ id = "divine", name = "Divine", cooldown = 0.21, color = C3(250, 214, 255), fx = 7, levelBase = 8000000, text = C3(120, 60, 160) },
+	-- shown, never rolled: pass hammers (h.show = "exclusive"); power, cooldown and level costs come from h.rarity
+	{ id = "exclusive", name = "Exclusive", cooldown = 0.25, color = C3(24, 214, 200), fx = 5, levelBase = 300000, display = true },
 }
 Hammers.RarityById = {}
 for i, r in ipairs(Hammers.Rarities) do r.index = i; Hammers.RarityById[r.id] = r end
@@ -66,7 +70,7 @@ Hammers.List = {
 	-- MYTHIC
 	{ key = "diamond", name = "Diamond Hammer", rarity = "mythic", model = "12", icon = "shop_12", desc = "The hardest hammer there is." },
 	{ key = "plasma", name = "Plasma Hammer", rarity = "mythic", model = "13", icon = "shop_13", desc = "Pure energy in a magnetic field." },
-	{ key = "thunder", name = "Thunderclap Hammer", rarity = "mythic", model = "thunder", exclusive = true, pass = "stormhammer", image = "stormhammer",
+	{ key = "thunder", name = "Thunderclap Hammer", rarity = "mythic", show = "exclusive", model = "thunder", exclusive = true, pass = "stormhammer", image = "stormhammer",
 		desc = "A storm in a hammer. Every hit cracks like thunder. Thunderclap Hammer pass owners only." },
 	{ key = "void", name = "Void Hammer", rarity = "mythic", soon = true, desc = "A hole in the world shaped like a hammer. Light bends around it." },
 	-- SECRET
@@ -85,7 +89,8 @@ Hammers.List = {
 Hammers.ById = {}
 for i, h in ipairs(Hammers.List) do
 	h.order = i
-	h.r = Hammers.RarityById[h.rarity].index
+	h.r = Hammers.RarityById[h.rarity].index           -- the ladder rarity: power, cooldown, trade-ups
+	h.dr = Hammers.RarityById[h.show or h.rarity].index -- the rarity it is shown as (Index section, colours, filters)
 	Hammers.ById[h.key] = h
 end
 
@@ -150,7 +155,7 @@ function Hammers.Odds(crateId, zone, luck)
 	local base = c.odds or (c.pools and (c.pools[zone] or c.pools.town)) or {}
 	luck = luck or 1
 	local w, total = {}, 0
-	for r = 1, #Hammers.Rarities do
+	for r = 1, Hammers.LadderTop do
 		local v = base[r] or 0
 		if v > 0 and #Hammers.PoolAt(c, r) > 0 then
 			if luck > 1 and r >= 3 then v *= luck end
@@ -179,7 +184,7 @@ function Hammers.Roll(crateId, zone, rng, luck, pityMin)
 	end
 	local x = rng:NextNumber() * total
 	local pick
-	for r = 1, #Hammers.Rarities do
+	for r = 1, Hammers.LadderTop do
 		local v = odds[r]
 		if v and (not pityMin or r >= pityMin) then
 			x -= v

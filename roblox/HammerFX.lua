@@ -200,7 +200,7 @@ end
 local C3 = Color3.fromRGB
 -- the ladder: every rarity a step up, so the next hammer always looks like more
 --   RARE: a few tiny sparkles   EPIC: a soft shadow trailing the head (+ sparkles)   LEGENDARY: things orbiting the head
---   MYTHIC: orbiters + a ring of light turning at your feet + more   THUNDERCLAP: a storm of its own (cloud over you, arcs everywhere)
+--   MYTHIC: orbiters + an afterimage trailing you when you run + more   THUNDERCLAP: a storm of its own (cloud + rain over you, arcs)
 local AURA = {
 	emerald = { glints = { every = { 0.35, 0.75 }, color = C3(150, 255, 190) } },
 	ruby = { glints = { every = { 0.35, 0.75 }, color = C3(255, 150, 170) } },
@@ -219,15 +219,15 @@ local AURA = {
 	solar = { rings = { { count = 3, shape = "ball", size = 0.28, colors = { C3(255, 230, 120), C3(255, 160, 40), C3(255, 110, 30) }, speed = 1.2, tilt = 0.25, r = 1.15, trail = { C3(255, 150, 30), 0.4 } },
 		{ count = 2, shape = "ball", size = 0.18, colors = { C3(255, 245, 190) }, speed = -2, tilt = -0.8, r = 1.45, trail = { C3(255, 200, 80), 0.3 } } },
 		flare = { every = { 0.5, 1.0 } }, shade = { every = { 0.05, 0.09 }, color = C3(255, 150, 40), glow = true },
-		feet = { count = 12, kind = "flame", colors = { C3(255, 230, 120), C3(255, 150, 40), C3(255, 100, 30) }, r = 2.7, speed = 0.8, glow = C3(255, 150, 40) } },
+		ghost = { colors = { C3(255, 200, 80), C3(255, 120, 30) } } },
 	galaxy = { rings = { { count = 8, shape = "ball", size = 0.16, colors = { C3(255, 255, 255), C3(255, 170, 240), C3(150, 190, 255) }, speed = 0.9, tilt = 0.45, r = 1.4, trail = { C3(190, 140, 255), 0.4 } },
 		{ count = 5, shape = "ball", size = 0.12, colors = { C3(255, 255, 255), C3(170, 220, 255) }, speed = -1.3, tilt = -0.9, r = 1.15, trail = { C3(140, 190, 255), 0.25 } } },
 		shade = { every = { 0.05, 0.09 }, color = C3(150, 90, 255), glow = true },
-		feet = { count = 16, kind = "star", colors = { C3(255, 255, 255), C3(255, 170, 240), C3(150, 190, 255) }, r = 2.9, speed = -0.5, glow = C3(150, 100, 255) },
+		ghost = { colors = { C3(170, 110, 255), C3(110, 160, 255), C3(255, 150, 235) } },
 		shooting = { every = { 1.4, 2.8 } } },
 	thunder = { arcs = { every = { 0.05, 0.16 }, color = C3(120, 190, 255) }, cloud = true, bodyArcs = { every = { 0.15, 0.35 } }, groundArcs = { every = { 0.5, 1.1 } },
 		cloudBolt = { every = { 1.4, 2.8 } }, shade = { every = { 0.05, 0.08 }, color = C3(110, 170, 255), glow = true },
-		feet = { count = 10, kind = "spark", colors = { C3(200, 230, 255), C3(110, 170, 255) }, r = 2.5, speed = 2.2, glow = C3(90, 160, 255) } },
+		ghost = { colors = { C3(110, 180, 255), C3(200, 235, 255) } } },
 }
 
 -- hammers without a look of their own get one by rarity (Tool attribute Rarity = 1..8)
@@ -236,11 +236,11 @@ local RARITY_AURA = {
 	[4] = { shade = { every = { 0.07, 0.11 }, color = C3(110, 60, 190) }, glints = { every = { 0.4, 0.8 }, color = C3(215, 170, 255) } },
 	[5] = { shade = { every = { 0.06, 0.1 }, color = C3(255, 170, 40), glow = true }, glints = { every = { 0.35, 0.7 }, color = C3(255, 220, 120) } },
 	[6] = { rings = { { count = 3, shape = "ball", size = 0.16, colors = { C3(255, 120, 160), C3(255, 220, 240) }, speed = 1.8, tilt = 0.4, r = 1.15, trail = { C3(255, 90, 140), 0.3 } } },
-		feet = { count = 10, kind = "star", colors = { C3(255, 140, 180), C3(255, 255, 255) }, r = 2.6, speed = 0.7, glow = C3(255, 80, 130) } },
+		ghost = { colors = { C3(255, 90, 150), C3(255, 170, 205) } } },
 	[7] = { rings = { { count = 4, shape = "ball", size = 0.18, colors = { C3(200, 200, 255), C3(90, 90, 140) }, speed = 1.4, tilt = 0.5, r = 1.25, trail = { C3(160, 150, 255), 0.35 } } },
-		shade = { every = { 0.05, 0.09 }, color = C3(40, 40, 70) }, feet = { count = 14, kind = "star", colors = { C3(220, 220, 255), C3(120, 110, 200) }, r = 2.8, speed = -0.6, glow = C3(110, 90, 220) } },
+		shade = { every = { 0.05, 0.09 }, color = C3(40, 40, 70) }, ghost = { colors = { C3(30, 28, 52), C3(90, 76, 170) }, dark = true } },
 	[8] = { rings = { { count = 6, shape = "ball", size = 0.16, colors = { C3(255, 245, 200), C3(255, 220, 120) }, speed = 1.0, tilt = 0.45, r = 1.4, trail = { C3(255, 230, 150), 0.4 } } },
-		shade = { every = { 0.05, 0.09 }, color = C3(255, 230, 150), glow = true }, feet = { count = 16, kind = "star", colors = { C3(255, 255, 255), C3(255, 225, 140) }, r = 3, speed = 0.5, glow = C3(255, 220, 120) },
+		shade = { every = { 0.05, 0.09 }, color = C3(255, 230, 150), glow = true }, ghost = { colors = { C3(255, 236, 190), C3(255, 190, 245), C3(185, 228, 255) } },
 		shooting = { every = { 1.6, 3 } } },
 }
 
@@ -288,11 +288,32 @@ local function makeFeet(e, f)
 	end
 end
 
+-- an afterimage of the character that fades out behind you while you run (it took the place of the ring on the ground)
+local function ghostOf(char, color, dark)
+	for _, p in ipairs(char:GetChildren()) do
+		if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" and p.Transparency < 0.9 then
+			local ok, g = pcall(function() return p:Clone() end)
+			if ok and g then
+				for _, ch in ipairs(g:GetChildren()) do if not ch:IsA("DataModelMesh") then ch:Destroy() end end
+				g.Anchored, g.CanCollide, g.CanQuery, g.CanTouch, g.CastShadow, g.Massless = true, false, false, false, false, true
+				g.Material = dark and Enum.Material.SmoothPlastic or Enum.Material.Neon
+				g.Color = color
+				g.Transparency = dark and 0.35 or 0.5
+				if g:IsA("MeshPart") then pcall(function() g.TextureID = "" end) end
+				g.CFrame = p.CFrame
+				g.Parent = fxFolder
+				UI.tween(g, 0.42, { Transparency = 1 })
+				Debris:AddItem(g, 0.45)
+			end
+		end
+	end
+end
+
 -- the Thunderclap's own storm cloud: it follows you, and moves over the house while you build
 -- a cartoon storm cloud (picture rendered in Blender): three layers facing the camera at different depths, so it looks
 -- round from every side; grey-blue normally, lit white for a blink when lightning flashes inside
 local CLOUD_IMG = "rbxassetid://84361525477052"
-local CLOUD_TINT = C3(142, 150, 178)
+local CLOUD_TINT = C3(124, 132, 166)
 local CLOUD_LIT = C3(240, 246, 255)
 local function makeCloud(e)
 	local core = fxPart({ Name = "Cloud", Transparency = 1, Size = Vector3.new(1, 1, 1) })
@@ -307,6 +328,13 @@ local function makeCloud(e)
 		table.insert(c.puffs, { img = img, tint = tint })
 	end
 	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 12, Shadows = false, Parent = core })
+	-- rain: thin streaks falling from the cloud, recycled at the bottom
+	c.rain = {}
+	for i = 1, 16 do
+		local d = fxPart({ Name = "Rain", Size = Vector3.new(0.07, 1.3, 0.07), Color = C3(170, 210, 255), Transparency = 0.35 })
+		table.insert(c.parts, { part = d })
+		table.insert(c.rain, { part = d, y = math.random() * 9, x = (math.random() - 0.5) * 7, z = (math.random() - 0.5) * 5, v = 30 + math.random() * 12 })
+	end
 	e.cloud = c
 end
 -- a flash inside the cloud: one layer (or all of them) lights up for a blink
@@ -437,35 +465,21 @@ RunService.RenderStepped:Connect(function()
 						o.part.CFrame = rd.shape == "gem" and (CFrame.new(p) * CFrame.Angles(now * (rd.spin or 1), now * (rd.spin or 1) * 1.3, math.pi / 4)) or CFrame.new(p)
 					end
 				end
-				if aura.feet and root and hum then
-					if not e.feet then makeFeet(e, aura.feet) end
-					local f = aura.feet
-					local ground = root.Position - Vector3.new(0, root.Size.Y / 2 + hum.HipHeight - 0.25, 0)
-					if e.feetGlow then
-						e.feetGlow.CFrame = CFrame.new(ground - Vector3.new(0, 0.18, 0)) * CFrame.Angles(0, 0, math.pi / 2)
-						e.feetGlow.Transparency = 0.86 + 0.06 * math.sin(now * 2.5)
-					end
-					for i, o in ipairs(e.feet) do
-						local a = o.phase + now * f.speed
-						local bob = math.sin(now * 3 + i) * 0.12
-						local p = ground + Vector3.new(math.cos(a) * f.r, bob, math.sin(a) * f.r)
-						if f.kind == "flame" then
-							o.part.CFrame = CFrame.new(p + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, -a, 0)
-							o.part.Size = Vector3.new(0.22, 0.45 + 0.3 * (0.5 + 0.5 * math.sin(now * 9 + i * 1.7)), 0.22)
-						elseif f.kind == "spark" then
-							o.part.CFrame = CFrame.lookAt(p, p + Vector3.new(-math.sin(a), 0, math.cos(a)) * (f.speed > 0 and 1 or -1))
-						else
-							o.part.CFrame = CFrame.new(p + Vector3.new(0, 0.15, 0))
-							o.part.Transparency = 0.15 + 0.5 * (0.5 + 0.5 * math.sin(now * 4 + i * 2.1))
-						end
+				-- an afterimage trailing you while you run (not in a seat: no ghost cars)
+				if aura.ghost and root and hum and not hum.Sit and due(e, "ghost", { 0.08, 0.1 }, now) then
+					local v = root.AssemblyLinearVelocity
+					if Vector3.new(v.X, 0, v.Z).Magnitude > 5 then
+						local gc = aura.ghost.colors
+						e.gi = (e.gi or 0) % #gc + 1
+						ghostOf(char, gc[e.gi], aura.ghost.dark)
 					end
 				end
 				if aura.cloud and root then
 					if not e.cloud then makeCloud(e) end
 					local c = e.cloud
 					local building = e.site and now - e.site.t < 2.5
-					-- high enough that the name tags over your head (VIP, company) stay clear below it
-					local target = building and (e.site.pos + Vector3.new(0, 17, 0)) or (root.Position + Vector3.new(0, 13, 0))
+					-- a little over the name tags above your head (VIP, company)
+					local target = building and (e.site.pos + Vector3.new(0, 15, 0)) or (root.Position + Vector3.new(0, 10.5, 0))
 					c.pos = c.pos and c.pos:Lerp(target, math.clamp(dt * (building and 2 or 4), 0, 1)) or target
 					c.core.CFrame = CFrame.new(c.pos + Vector3.new(math.sin(now * 0.7) * 0.3, math.sin(now * 0.9) * 0.2, 0)) * CFrame.Angles(0, now * 0.15, 0)
 					-- light flickering inside the cloud
@@ -473,6 +487,13 @@ RunService.RenderStepped:Connect(function()
 					if due(e, "cloudFlick", { 0.5, 1.4 }, now) then
 						c.light.Brightness = 0.5 + math.random() * 0.6
 						cloudBlink(c)
+					end
+					-- the rain falls (9 studs) and starts again at the cloud
+					for _, d in ipairs(c.rain) do
+						d.y += d.v * dt
+						if d.y > 9 then d.y = 0; d.x = (math.random() - 0.5) * 7; d.z = (math.random() - 0.5) * 5 end
+						d.part.CFrame = CFrame.new(c.pos + Vector3.new(d.x, -1.6 - d.y, d.z))
+						d.part.Transparency = 0.3 + 0.6 * (d.y / 9)
 					end
 				end
 			elseif (e.orbs and #e.orbs > 0) or e.feet or e.cloud then
@@ -910,6 +931,7 @@ local function reveal(o)
 	if o.rarity then
 		local chip = K.chip(box, o.rarity[1], o.rarity[2], { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(280, 46), ZIndex = 6 })
 		chip.ZIndex = 6
+		if o.rid and K.rarityChip then K.rarityChip(chip, o.rid) end
 	end
 
 	-- name, what it does, the button
@@ -919,6 +941,7 @@ local function reveal(o)
 	name.TextScaled = true
 	local ns = new("UIStroke", { Thickness = 3.5, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, Transparency = 1, Parent = name })
 	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), col:Lerp(Color3.new(1, 1, 1), 0.45)), Rotation = 90, Parent = name })
+	if o.rid and K.rarityText and K.RARITY_LOOK[o.rid] then K.rarityText(name, o.rid) end
 	local eff = UI.label({ Name = "Effect", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(280, 382), Size = UDim2.fromOffset(540, 26), Text = o.effect or "",
 		Font = T.title, TextSize = 21, TextColor3 = Color3.fromRGB(255, 232, 140), TextXAlignment = Enum.TextXAlignment.Center, TextTransparency = 1, ZIndex = 6, Parent = box })
 	local es = new("UIStroke", { Thickness = 2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, Transparency = 1, Parent = eff })
@@ -996,7 +1019,7 @@ end
 local function revealStorm()
 	local sh = Config.StormHammer
 	if not sh then return end
-	reveal({ head = "⚡ STORM UNLOCKED! ⚡", name = sh.name, icon = sh.icon, color = sh.color or Color3.fromRGB(80, 170, 255), rarity = { "ROBUX ADD-ON", Color3.fromRGB(80, 170, 255) },
+	reveal({ head = "⚡ STORM UNLOCKED! ⚡", name = sh.name, icon = sh.icon, color = sh.color or Color3.fromRGB(80, 170, 255), rarity = { "EXCLUSIVE", Color3.fromRGB(24, 214, 200) }, rid = "exclusive",
 		big = true, effect = "x" .. tostring(sh.mult or 3) .. " build power on top of your hammer — your crew too!", button = "LET'S GO!" })
 end
 

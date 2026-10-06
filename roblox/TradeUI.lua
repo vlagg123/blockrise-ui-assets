@@ -158,7 +158,7 @@ local function offerLines(o)
 	for _, hm in ipairs(o.hams or {}) do
 		local h = Hammers.ById[hm.k]
 		if h then
-			local r = Hammers.Rarities[h.r]
+			local r = Hammers.Rarities[h.dr or h.r]
 			table.insert(lines, { M.hammerArt(h), h.name, "LV " .. (hm.lv or 1), color = r.color, sub = r.name .. "  ·  " .. Hammers.PowerLabel(h.key, hm.lv or 1) .. " power" })
 		end
 	end
@@ -313,10 +313,10 @@ local function openWindow(v)
 			K.text({ Position = UDim2.fromOffset(6, 0), Size = UDim2.new(1, -12, 1, 0), Text = "🔨 HAMMERS (up to 6)", Font = T.chunky, TextSize = 18, TextColor3 = K.DARK, Parent = head })
 		end
 		for i, e in ipairs(list) do
-			local r = Hammers.Rarities[e.h.r]
+			local r = Hammers.Rarities[e.h.dr or e.h.r]
 			local f = lineRow(myList, 200 + i, 52)
 			iconAt(f, M.hammerArt(e.h), 6, 52)
-			K.text({ Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -160, 0, 24), Text = e.h.name, TextSize = 17, Max = 17, Parent = f })
+			K.rarityText(K.text({ Position = UDim2.fromOffset(46, 5), Size = UDim2.new(1, -160, 0, 24), Text = e.h.name, TextSize = 17, Max = 17, Parent = f }), r.id)
 			K.text({ Position = UDim2.fromOffset(46, 27), Size = UDim2.new(1, -160, 0, 18), Text = r.name .. "  ·  LV " .. (e.it.lv or 1), TextSize = 13, Font = T.chunky,
 				TextColor3 = r.text and Color3.fromRGB(70, 70, 110) or r.color, Parent = f })
 			local btn = UI.button("ADD", K.GREEN, nil, { Position = UDim2.new(1, -112, 0, 7), Size = UDim2.fromOffset(104, 38), TextSize = 17, ZIndex = 4, Parent = f })
