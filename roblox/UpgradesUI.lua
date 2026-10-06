@@ -61,7 +61,7 @@ render = function(tok, data)
 		UI.tabs(c.content, {
 			{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = hv.hammers == true },
 			{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20), badge = hv.crates },
-			{ id = "tradeup", label = "TRADE-UP", icon = "trade", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
+			{ id = "tradeup", label = "TRADE-UP", icon = "upgrades", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
 			{ id = "index", label = "INDEX", icon = "star", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(220, 140, 30) },
 			{ id = "materials", label = "MATERIALS", icon = "site", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
 			{ id = "blueprints", label = "BLUEPRINTS", icon = "codes", c1 = Color3.fromRGB(120, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = nBps },
