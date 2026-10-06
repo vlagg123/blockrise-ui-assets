@@ -220,6 +220,14 @@ end
 
 local equipItem, levelUpItem
 -- one hammer: the big picture, what it is, where it comes from (and EQUIP when it's one of yours)
+-- a button that only shows a state (EQUIPPED, MAX LEVEL): drawn exactly like the button it stands in for, but inert
+local function inert(parent, label, color, w, ts, order)
+	local b = K.button(parent, label, color, { Size = UDim2.fromOffset(w, 54), TextSize = ts, LayoutOrder = order })
+	b.Active = false
+	b.Interactable = false
+	return b
+end
+
 local function hammerPopup(h, it, data, still)
 	local r = rar(h)
 	local body, pw = openPopup(UDim2.fromOffset(620, 400), h.name, r.color:Lerp(Color3.new(1, 1, 1), 0.2), r.color, nil, still)
@@ -267,10 +275,11 @@ local function hammerPopup(h, it, data, still)
 				hammerPopup(h, now, cache or data, true)
 			end)
 		else
-			K.status(holder, "MAX LEVEL", GOLD, { Size = UDim2.fromOffset(180, 48), LayoutOrder = 1 })
+			-- MAX LEVEL / EQUIPPED: the very same button as the one they replace (size, 3D side, outline), it just can't be pressed
+			inert(holder, "MAX LEVEL", GOLD, 220, 20, 1)
 		end
 		if inHand then
-			K.status(holder, "EQUIPPED", K.GREEN, { Size = UDim2.fromOffset(170, 48), LayoutOrder = 2 })
+			inert(holder, "EQUIPPED", K.GREEN, 160, 22, 2)
 		else
 			K.button(holder, "EQUIP", EQUIP_BLUE, { Size = UDim2.fromOffset(160, 54), TextSize = 22, LayoutOrder = 2, Shine = true }, function()
 				equipItem(it, h)
