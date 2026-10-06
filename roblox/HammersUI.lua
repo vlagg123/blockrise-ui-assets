@@ -696,9 +696,9 @@ local function clearBody()
 	end
 end
 -- a grid of small tiles that always keeps its column count (a short row stays small, on the left)
-local function smallGrid(order)
+local function smallGrid(order, parent)
 	local n = invCols()
-	local f = new("Frame", { Name = "Grid", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = c.content })
+	local f = new("Frame", { Name = "Grid", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent or c.content })
 	new("UIGridLayout", { CellSize = UDim2.new(1 / n, -math.ceil(8 * (n - 1) / n), 0, 158), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder,
 		HorizontalAlignment = Enum.HorizontalAlignment.Left, Parent = f })
 	return f
@@ -785,9 +785,113 @@ local function filterRow(order, counts, current, onPick)
 	return row
 end
 
+-- the smart toolbar of the inventories (like the big games): search by name + menus (SORT, RARITY, SHOW...)
+-- o = { order, search, onSearch(text), placeholder, menus = { { label, value, w, options = { { key, text, color } }, onPick(key) } } }
+local function toolbar(o)
+	local bar = new("Frame", { Name = "Toolbar", Size = UDim2.new(1, 0, 0, 42), BackgroundTransparency = 1, LayoutOrder = o.order, ZIndex = 10, Parent = c.content })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
+		VerticalAlignment = Enum.VerticalAlignment.Center, Parent = bar })
+	new("UIPadding", { PaddingLeft = UDim.new(0, 4), Parent = bar })
+	-- search
+	local box = UI.slice("pill", { Name = "Search", Size = UDim2.fromOffset(o.searchW or 230, 38), SliceScale = 0.42, ImageColor3 = Color3.new(1, 1, 1), LayoutOrder = 1, ZIndex = 10, Parent = bar })
+	new("UIStroke", { Thickness = 2.5, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 10, Parent = box }, { UI.corner(19) }) })
+	local tb = new("TextBox", { Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -32, 1, 0), BackgroundTransparency = 1, Text = o.search or "", PlaceholderText = o.placeholder or "Search...",
+		Font = T.body, TextSize = 17, TextColor3 = K.DARK, PlaceholderColor3 = Color3.fromRGB(150, 146, 186), TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, ZIndex = 11, Parent = box })
+	local pending = 0
+	tb:GetPropertyChangedSignal("Text"):Connect(function()
+		pending += 1
+		local mine = pending
+		task.delay(0.15, function() if mine == pending and tb.Parent then o.onSearch(tb.Text) end end) -- typing fast makes one refresh
+	end)
+	-- the menus: a button that opens a list under it
+	local openMenu
+	local function closeMenu() if openMenu then openMenu.frame:Destroy(); openMenu = nil end end
+	for i, m in ipairs(o.menus) do
+		local function textOf(key) for _, op in ipairs(m.options) do if op.key == key then return op.text end end return "ALL" end
+		local b = UI.button(m.label .. ": " .. textOf(m.value), m.color or Color3.fromRGB(110, 120, 210), nil, { Size = UDim2.fromOffset(m.w or 210, 38), TextSize = 15, LayoutOrder = 1 + i, ZIndex = 10, Parent = bar })
+		b.Activated:Connect(function()
+			c.click()
+			local was = openMenu and openMenu.owner
+			closeMenu()
+			if was == b then return end
+			local list = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 1, 6), Size = UDim2.fromOffset(math.max(m.w or 210, 210), #m.options * 38 + 12), BackgroundTransparency = 1, ZIndex = 30, Parent = b })
+			UI.slice("tile", { ImageColor3 = Color3.fromRGB(44, 40, 104), ZIndex = 30, Parent = list })
+			for j, op in ipairs(m.options) do
+				local on = op.key == m.value
+				local ob = new("TextButton", { Position = UDim2.fromOffset(6, 6 + (j - 1) * 38), Size = UDim2.new(1, -12, 0, 34), BackgroundColor3 = on and Color3.fromRGB(110, 96, 220) or Color3.fromRGB(66, 60, 140),
+					AutoButtonColor = true, Text = op.text, Font = T.chunky, TextSize = 16, TextColor3 = op.color or Color3.new(1, 1, 1), ZIndex = 31, Parent = list })
+				UI.corner(9).Parent = ob
+				new("UIStroke", { Thickness = 1.6, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = ob })
+				ob.Activated:Connect(function()
+					c.click()
+					closeMenu()
+					m.value = op.key
+					local lb = b:FindFirstChild("Label")
+					if lb then lb.Text = m.label .. ": " .. op.text end
+					m.onPick(op.key)
+				end)
+			end
+			openMenu = { frame = list, owner = b }
+		end)
+	end
+	-- the bar never spills: it shrinks a little on a narrow window
+	local lay = bar:FindFirstChildOfClass("UIListLayout")
+	local fit = new("UIScale", { Parent = bar })
+	local function refit()
+		local k = math.max(fit.Scale, 0.01)
+		local w, cw = bar.AbsoluteSize.X / k, (lay.AbsoluteContentSize.X + 8) / k
+		local want = (w > 0 and cw > w) and math.max(0.6, w / cw) or 1
+		if math.abs(want - fit.Scale) > 0.005 then fit.Scale = want end
+	end
+	lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refit)
+	bar:GetPropertyChangedSignal("AbsoluteSize"):Connect(refit)
+	task.defer(refit)
+	return bar
+end
+
+-- how the hammers can be ordered (every one ends on the id: the same hammers always land in the same places)
+local function powerOf(it) return Hammers.Power(it.k, it.lv) end
+local function dr(h) return h.dr or h.r end
+local SORTS = {
+	{ key = "power_desc", text = "BEST POWER", fn = function(a, b, ha, hb) if powerOf(a) ~= powerOf(b) then return powerOf(a) > powerOf(b) end if dr(ha) ~= dr(hb) then return dr(ha) > dr(hb) end end },
+	{ key = "power_asc", text = "LOWEST POWER", fn = function(a, b, ha, hb) if powerOf(a) ~= powerOf(b) then return powerOf(a) < powerOf(b) end if dr(ha) ~= dr(hb) then return dr(ha) < dr(hb) end end },
+	{ key = "rarity_desc", text = "RAREST FIRST", fn = function(a, b, ha, hb) if dr(ha) ~= dr(hb) then return dr(ha) > dr(hb) end if powerOf(a) ~= powerOf(b) then return powerOf(a) > powerOf(b) end end },
+	{ key = "rarity_asc", text = "COMMON FIRST", fn = function(a, b, ha, hb) if dr(ha) ~= dr(hb) then return dr(ha) < dr(hb) end if powerOf(a) ~= powerOf(b) then return powerOf(a) < powerOf(b) end end },
+	{ key = "level_desc", text = "HIGHEST LEVEL", fn = function(a, b, ha, hb) if (a.lv or 1) ~= (b.lv or 1) then return (a.lv or 1) > (b.lv or 1) end if powerOf(a) ~= powerOf(b) then return powerOf(a) > powerOf(b) end end },
+	{ key = "newest", text = "NEWEST", fn = function(a, b) if (a.t or 0) ~= (b.t or 0) then return (a.t or 0) > (b.t or 0) end end },
+}
+local function sortBy(list, key)
+	local f
+	for _, so in ipairs(SORTS) do if so.key == key then f = so.fn end end
+	f = f or SORTS[1].fn
+	table.sort(list, function(a, b)
+		local ha, hb = Hammers.ById[a.k], Hammers.ById[b.k]
+		local r = f(a, b, ha, hb)
+		if r ~= nil then return r end
+		if ha.order ~= hb.order then return ha.order < hb.order end
+		return tostring(a.id) < tostring(b.id)
+	end)
+end
+-- the RARITY menu: ALL + every rarity (with how many there are)
+local function rarityOptions(counts)
+	local ops = { { key = 0, text = "ALL" } }
+	for r = #Hammers.Rarities, 1, -1 do
+		if (counts[r] or 0) > 0 then
+			local rr = Hammers.Rarities[r]
+			table.insert(ops, { key = r, text = string.upper(rr.name) .. "  " .. counts[r], color = rr.id == "secret" and Color3.fromRGB(205, 205, 240) or rr.color:Lerp(Color3.new(1, 1, 1), 0.3) })
+		end
+	end
+	return ops
+end
+local function matches(h, text)
+	if not text or text == "" then return true end
+	return string.find(string.lower(h.name), string.lower(text), 1, true) ~= nil
+end
+
 -- Inventory → HAMMERS -----------------------------------------------------------------------------------------------
 local selected -- the hammer shown on top (its EQUIP / LEVEL UP); nil = the one in your hand
 local filter -- rarity index, nil = all
+local hSort, hSearch = "power_desc", "" -- the HAMMERS toolbar: sort key, search text
 local function drawHammers(tok, data)
 	if not c.live(tok) then return end
 	clearBody()
@@ -832,24 +936,22 @@ local function drawHammers(tok, data)
 		K.row(c.content, 2, { name = total .. (total == 1 and " crate" or " crates") .. " waiting to be opened", line = "Every crate holds a new hammer", icon = "gift", color = GOLD, height = 84, buttonW = 170,
 			button = { "OPEN", K.GREEN, function() c.click(); if c.showInventory then c.showInventory("crates") end end, shine = true, size = 22 } })
 	end
-	-- filters + the grid
+	-- the toolbar (search, SORT, RARITY) and the grid; the toolbar only refills the grid (the search box keeps its focus)
 	local counts = {}
-	for _, it in ipairs(data.hammers) do local hh = Hammers.ById[it.k]; local r = hh.dr or hh.r; counts[r] = (counts[r] or 0) + 1 end
+	for _, it in ipairs(data.hammers) do local r = dr(Hammers.ById[it.k]); counts[r] = (counts[r] or 0) + 1 end
 	if filter and not counts[filter] then filter = nil end
-	sortHammers(data.hammers) -- the one in your hand keeps its place (it is on top already; a green border marks it)
 	K.section(c.content, 3, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
-	filterRow(4, counts, filter, function(r)
-		filter = r
-		local y = c.content.CanvasPosition
-		drawHammers(tok, data)
-		c.content.CanvasPosition = y
-	end)
-	local grid = smallGrid(5)
-	local n = 0
-	for _, it in ipairs(data.hammers) do
-		local h = Hammers.ById[it.k]
-		if not filter or (h.dr or h.r) == filter then
-			n += 1
+	local grid
+	local function fill()
+		for _, ch in ipairs(grid:GetChildren()) do if not ch:IsA("UIGridLayout") then ch:Destroy() end end
+		local list = {}
+		for _, it in ipairs(data.hammers) do
+			local h = Hammers.ById[it.k]
+			if (not filter or dr(h) == filter) and matches(h, hSearch) then table.insert(list, it) end
+		end
+		sortBy(list, hSort)
+		for n, it in ipairs(list) do
+			local h = Hammers.ById[it.k]
 			local r = rar(h)
 			local isCur = cur and it.id == cur.id
 			miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK }, rid = r.id, badgeRarity = true, nameColor = rarText(r),
@@ -864,7 +966,16 @@ local function drawHammers(tok, data)
 					c.content.CanvasPosition = Vector2.new(0, 0) -- the selected hammer is on top
 				end })
 		end
+		if #list == 0 then
+			K.text({ Text = "Nothing matches", TextSize = 16, Max = 16, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.NOTE, ZIndex = 3, Parent = grid })
+		end
 	end
+	toolbar({ order = 4, search = hSearch, placeholder = "Search hammers...", onSearch = function(t) hSearch = t; fill() end, menus = {
+		{ label = "SORT", value = hSort, w = 230, options = SORTS, onPick = function(k) hSort = k; fill() end },
+		{ label = "RARITY", value = filter or 0, w = 210, options = rarityOptions(counts), onPick = function(k) filter = k ~= 0 and k or nil; fill() end },
+	} })
+	grid = smallGrid(5)
+	fill()
 	K.note(c.content, 6, "Tap a hammer to see it, tap it again for its card. Trade with other builders (TRADE); Rusty and pass hammers always stay yours.")
 end
 
@@ -1036,6 +1147,7 @@ end
 
 -- Inventory → INDEX: the collection book ----------------------------------------------------------------------------
 local idxFilter, idxFound -- rarity index (nil = all); "found" / "missing" (nil = both)
+local idxSort, idxSearch = "rarity_desc", "" -- the INDEX toolbar
 local function drawIndex(tok, data)
 	if not c.live(tok) then return end
 	clearBody()
@@ -1043,64 +1155,65 @@ local function drawIndex(tok, data)
 	for _, h in ipairs(Hammers.List) do if data.index[h.key] then owned += 1 end end
 	K.banner(c.content, 1, { name = "HAMMER INDEX", line = "Found " .. owned .. " of " .. total .. ". Tap a hammer to see where it comes from.", icon = "star", color = GOLD,
 		tint = Color3.fromRGB(255, 240, 200), bar = { owned / total, GOLD, owned .. " / " .. total }, height = 124 })
-	local function redraw()
-		local y = c.content.CanvasPosition
-		drawIndex(tok, data)
-		c.content.CanvasPosition = y
-	end
-	-- filters: every rarity (how many hammers it has), then found / missing
 	local counts = {}
 	for _, h in ipairs(Hammers.List) do counts[h.dr] = (counts[h.dr] or 0) + 1 end
-	filterRow(2, counts, idxFilter, function(r) idxFilter = r; redraw() end)
-	local row = new("Frame", { Name = "Found", Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, LayoutOrder = 3, ZIndex = 3, Parent = c.content })
-	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
-	for i, f in ipairs({ { false, "BOTH", Color3.fromRGB(110, 200, 255) }, { "found", "✓ FOUND " .. owned, K.GREEN }, { "missing", "? MISSING " .. (total - owned), Color3.fromRGB(255, 120, 90) } }) do
-		local on = (idxFound or false) == f[1]
-		local w = TextService:GetTextSize(f[2], 15, T.body, Vector2.new(1000, 40)).X + 30
-		local bt = UI.button(f[2], on and f[3] or UI.TAB_OFF, nil, { Size = UDim2.fromOffset(w, 34), TextSize = 15, LayoutOrder = i, ZIndex = 3, Parent = row })
-		if not on then
-			local sh = bt.Bg:FindFirstChild("Shine")
-			if sh then sh.ImageTransparency = 0.55 end
-		end
-		bt.Activated:Connect(function() c.click(); idxFound = f[1] or nil; redraw() end)
-	end
-	local order, shown = 4, 0
-	for r = #Hammers.Rarities, 1, -1 do
-		if not idxFilter or idxFilter == r then
-			local rr = Hammers.Rarities[r]
-			local all, list = {}, {}
-			for _, h in ipairs(Hammers.List) do
-				if h.dr == r then
-					table.insert(all, h)
-					local got = data.index[h.key] == true
-					if not idxFound or (idxFound == "found") == got then table.insert(list, h) end
+	-- the book: one section per rarity (rarest or most common first), refilled by the toolbar
+	local book = new("Frame", { Name = "Book", Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = 3, ZIndex = 2, Parent = c.content })
+	new("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = book })
+	local function fill()
+		for _, ch in ipairs(book:GetChildren()) do if not ch:IsA("UIListLayout") then ch:Destroy() end end
+		local order, shown = 1, 0
+		local from, to, step = #Hammers.Rarities, 1, -1
+		if idxSort == "rarity_asc" then from, to, step = 1, #Hammers.Rarities, 1 end
+		for r = from, to, step do
+			if not idxFilter or idxFilter == r then
+				local rr = Hammers.Rarities[r]
+				local all, list = {}, {}
+				for _, h in ipairs(Hammers.List) do
+					if h.dr == r then
+						table.insert(all, h)
+						local got = data.index[h.key] == true
+						if (not idxFound or (idxFound == "found") == got) and matches(h, idxSearch) then table.insert(list, h) end
+					end
+				end
+				if #list > 0 then
+					local have = 0
+					for _, h in ipairs(all) do if data.index[h.key] then have += 1 end end
+					local sec = K.section(book, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color,
+						have .. " / " .. #all .. "  ·  " .. Hammers.PowerLabel(all[1].key, 1) .. " power")
+					-- breathing room: off the window's left edge, and a gap above and below
+					sec.Size = UDim2.new(1, 0, 0, 48)
+					local pad = sec:FindFirstChildOfClass("UIPadding") or new("UIPadding", { Parent = sec })
+					pad.PaddingLeft, pad.PaddingTop, pad.PaddingBottom = UDim.new(0, 10), UDim.new(0, 8), UDim.new(0, 4)
+					local tl = sec:FindFirstChildOfClass("TextLabel")
+					if tl and K.RARITY_LOOK[rr.id] then K.rarityText(tl, rr.id) end
+					local grid = smallGrid(order + 1, book)
+					for i, h in ipairs(list) do
+						local got = data.index[h.key] == true
+						shown += 1
+						miniTile(grid, { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got, rid = rr.id, nameColor = rarText(rr),
+							badge = got and { "✓", K.GREEN } or ((h.exclusive and rr.id ~= "exclusive") and { "EXCLUSIVE", T.red } or nil),
+							line = got and "FOUND" or (h.soon and "COMING SOON" or (h.event and "EVENT ONLY" or (h.pass and "GAME PASS" or (h.exclusive and "EXCLUSIVE CRATE" or "NOT FOUND")))),
+							lineColor = got and GREEN_TXT or nil,
+							onClick = function() c.click(); hammerPopup(h) end })
+					end
+					order += 2
 				end
 			end
-			if #list > 0 then
-				local have = 0
-				for _, h in ipairs(all) do if data.index[h.key] then have += 1 end end
-				local sec = K.section(c.content, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color,
-					have .. " / " .. #all .. "  ·  " .. Hammers.PowerLabel(all[1].key, 1) .. " power")
-				-- breathing room: off the window's left edge, and a gap above and below (the titles touched the tiles)
-				sec.Size = UDim2.new(1, 0, 0, 48)
-				new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 4), Parent = sec })
-				local tl = sec:FindFirstChildOfClass("TextLabel")
-				if tl and K.RARITY_LOOK[rr.id] then K.rarityText(tl, rr.id) end
-				local grid = smallGrid(order + 1)
-				for i, h in ipairs(list) do
-					local got = data.index[h.key] == true
-					shown += 1
-					miniTile(grid, { order = i, name = h.name, icon = h.soon and "shop" or art(h), color = rr.color, dim = not got, rid = rr.id, nameColor = rarText(rr),
-						badge = got and { "✓", K.GREEN } or ((h.exclusive and rr.id ~= "exclusive") and { "EXCLUSIVE", T.red } or nil),
-						line = got and "FOUND" or (h.soon and "COMING SOON" or (h.event and "EVENT ONLY" or (h.pass and "GAME PASS" or (h.exclusive and "EXCLUSIVE CRATE" or "NOT FOUND")))),
-						lineColor = got and GREEN_TXT or nil,
-						onClick = function() c.click(); hammerPopup(h) end })
-				end
-				order += 2
-			end
+		end
+		if shown == 0 then
+			K.text({ Size = UDim2.new(1, 0, 0, 40), Text = idxFound == "found" and "Nothing found here yet: open some crates!" or "Nothing matches", TextSize = 18, Max = 18,
+				TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.NOTE, LayoutOrder = 1, ZIndex = 3, Parent = book })
 		end
 	end
-	if shown == 0 then K.empty(c.content, order, idxFound == "found" and "Nothing found here yet: open some crates!" or "You found them all here!", "star") end
+	toolbar({ order = 2, search = idxSearch, placeholder = "Search the Index...", searchW = 180, onSearch = function(t) idxSearch = t; fill() end, menus = {
+		{ label = "SORT", value = idxSort, w = 200, options = { { key = "rarity_desc", text = "RAREST FIRST" }, { key = "rarity_asc", text = "COMMON FIRST" } },
+			onPick = function(k) idxSort = k; fill() end },
+		{ label = "RARITY", value = idxFilter or 0, w = 180, options = rarityOptions(counts), onPick = function(k) idxFilter = k ~= 0 and k or nil; fill() end },
+		{ label = "SHOW", value = idxFound or "all", w = 160, options = { { key = "all", text = "ALL" }, { key = "found", text = "FOUND " .. owned, color = K.GREEN },
+			{ key = "missing", text = "MISSING " .. (total - owned), color = Color3.fromRGB(255, 150, 120) } }, onPick = function(k) idxFound = k ~= "all" and k or nil; fill() end },
+	} })
+	fill()
 end
 
 function M.Index(tok)

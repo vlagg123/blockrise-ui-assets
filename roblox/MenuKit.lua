@@ -113,6 +113,8 @@ function K.section(parent, order, title, color, note)
 	local f = new("Frame", { Name = "Section", Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 12), VerticalAlignment = Enum.VerticalAlignment.Center,
 		SortOrder = Enum.SortOrder.LayoutOrder, Parent = f })
+	-- the title's thick outline needs room: at x = 0 the window's edge cut the first letter
+	new("UIPadding", { PaddingLeft = UDim.new(0, 8), Parent = f })
 	text({ Size = UDim2.fromOffset(0, 32), AutomaticSize = Enum.AutomaticSize.X, Text = title, Font = T.chunky, TextSize = 25, TextColor3 = color or Color3.new(1, 1, 1),
 		Stroke = 3, LayoutOrder = 1, Parent = f })
 	if note then
