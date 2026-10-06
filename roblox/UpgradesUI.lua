@@ -28,6 +28,16 @@ local function matChips(mats, have)
 	return out
 end
 
+-- every material and how many you have (so you see how many levels you can buy)
+local function haveChips(have)
+	local out = {}
+	for _, m in ipairs(Company.Materials) do
+		local n = (have or {})[m.id] or 0
+		table.insert(out, { m.name:match("^(%S+)") .. " " .. Config.FormatNum(n), n > 0 and m.color:Lerp(Color3.new(0, 0, 0), 0.25) or K.LOCK, pic = m.image or m.icon })
+	end
+	return out
+end
+
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 
 local render
@@ -75,7 +85,8 @@ render = function(tok, data)
 		end)
 	end
 	if mode == "upgrades" then
-		K.section(c.content, 1, "UPGRADES", Color3.fromRGB(160, 250, 150), "a Rebirth resets them")
+		K.section(c.content, 0, "UPGRADES", Color3.fromRGB(160, 250, 150), "a Rebirth resets them")
+		K.haveRow(c.content, 1, haveChips(data.mats))
 		local order = 1
 		for _, dp in ipairs(Company.Departments) do
 			local d

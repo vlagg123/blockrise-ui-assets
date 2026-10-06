@@ -88,7 +88,14 @@ end
 
 local function renderEstate(tok, data)
 	K.section(c.content, 2, "PROPERTIES", Color3.fromRGB(160, 215, 255), "own 10, 25, 50, 100 of one for 2x rent")
-	local grid = K.grid(c.content, 3, cols(), 268)
+	-- every material and how many you have (properties cost materials too)
+	local have = {}
+	for _, m in ipairs(Company.Materials) do
+		local n = (data.mats or {})[m.id] or 0
+		table.insert(have, { m.name:match("^(%S+)") .. " " .. Config.FormatNum(n), n > 0 and m.color:Lerp(Color3.new(0, 0, 0), 0.25) or K.LOCK, pic = m.image or m.icon })
+	end
+	K.haveRow(c.content, 3, have)
+	local grid = K.grid(c.content, 4, cols(), 268)
 	for i, p in ipairs(Company.Properties) do
 		local info
 		for _, x in ipairs(data.props) do if x.id == p.id then info = x end end

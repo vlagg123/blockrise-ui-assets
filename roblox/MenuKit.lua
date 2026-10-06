@@ -453,6 +453,21 @@ function K.row(parent, order, o)
 	return f
 end
 
+-- "YOU HAVE:" strip (where materials are spent): one picture chip per thing with how many you own
+-- chips = { { label, color, pic = picture }, ... }
+function K.haveRow(parent, order, chips, title)
+	local f = new("Frame", { Name = "YouHave", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
+	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = f })
+	local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+	local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
+		VerticalAlignment = Enum.VerticalAlignment.Center, Parent = row })
+	text({ Size = UDim2.fromOffset(0, 26), AutomaticSize = Enum.AutomaticSize.X, Text = title or "YOU HAVE:", Font = T.chunky, TextSize = 18, TextColor3 = K.DARK,
+		LayoutOrder = 0, Parent = row })
+	for i, d in ipairs(chips) do K.chip(row, d[1], d[2], { LayoutOrder = i, Pic = d.pic }) end
+	K.fitRow(row, lay, 0.55, 0, f)
+	return f
+end
+
 -- "nothing here yet" card
 function K.empty(parent, order, msg, icon)
 	return K.row(parent, order, { name = msg, icon = icon or "star", color = K.LOCK, height = 90 })
