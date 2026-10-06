@@ -37,18 +37,28 @@ function M.Missions()
 	local claimed = 0
 	for _, m in ipairs(data.list) do if m.claimed then claimed += 1 end end
 	c.modalSub.Text = claimed .. " / " .. #data.list .. " done"
-	-- streak + countdown to the next missions
+	-- streak + countdown to the next missions: one slim strip, so the three missions fit without scrolling
+	local new = UI.new
 	local resetAt = os.clock() + data.resetIn
-	local b = K.banner(c.content, 0, { name = "DAY " .. data.streak .. " STREAK", line = "New missions in " .. fmtLong(data.resetIn), icon = "daily", color = PINK2,
-		tint = Color3.fromRGB(255, 190, 210), height = 104 })
-	local line = b:FindFirstChild("Line")
+	local strip = new("Frame", { Name = "Streak", Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, LayoutOrder = 0, ZIndex = 2, Parent = c.content })
+	local sbg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 1, Parent = strip })
+	local tint = Color3.fromRGB(255, 190, 210)
+	new("UIGradient", { Color = ColorSequence.new(tint:Lerp(Color3.new(1, 1, 1), 0.55), tint), Rotation = 90, Parent = sbg })
+	local pic = new("Frame", { Position = UDim2.fromOffset(10, 5), Size = UDim2.fromOffset(50, 50), BackgroundTransparency = 1, ZIndex = 3, Parent = strip })
+	K.art(pic, "daily", UDim2.fromScale(1, 1), 4)
+	local st = K.text({ Position = UDim2.fromOffset(70, 0), Size = UDim2.new(1, -330, 1, 0), Text = "DAY " .. data.streak .. " STREAK", Font = T.chunky, TextSize = 28, Max = 28,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 4, Parent = strip })
+	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 236, 150)), Rotation = 90, Parent = st })
+	local pill = UI.slice("pill", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(250, 40), SliceScale = 0.42,
+		ImageColor3 = Color3.fromRGB(70, 28, 56), ZIndex = 3, Parent = strip })
+	local line = K.text({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = pill })
 	task.spawn(function()
-		while c.live(tok) and line and line.Parent do
-			line.Text = "New missions in " .. fmtLong(resetAt - os.clock())
+		while c.live(tok) and line.Parent do
+			line.Text = "NEW IN " .. string.upper(fmtLong(resetAt - os.clock()))
 			task.wait(20)
 		end
 	end)
-	K.section(c.content, 1, "TODAY", Color3.fromRGB(255, 190, 210), "claim them before they reset")
 	for i, m in ipairs(data.list) do
 		local done = m.p >= m.target
 		local icon, col = missionIcon(m.text)
