@@ -246,7 +246,7 @@ local function passes(tok)
 			local on = c.player:GetAttribute("SkipAnim") == true
 			o.status = nil
 			o.stats = { { on and "NO ANIMATION" or "ANIMATION ON", on and K.GREEN or T.blue } }
-			o.button = { on and "SKIP: ON" or "SKIP: OFF", on and K.GREEN or K.LOCK, function()
+			o.button = { on and "ON" or "OFF", on and K.GREEN or K.LOCK, function()
 				c.click()
 				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
 				if r then r:FireServer("skipanim", not on) end
@@ -256,7 +256,7 @@ local function passes(tok)
 			local on = c.player:GetAttribute("QuickOpen") == true
 			o.status = nil
 			o.stats = { { on and "HAMMER AT ONCE" or "STRIP ON", on and K.GREEN or T.blue } }
-			o.button = { on and "QUICK: ON" or "QUICK: OFF", on and K.GREEN or K.LOCK, function()
+			o.button = { on and "ON" or "OFF", on and K.GREEN or K.LOCK, function()
 				c.click()
 				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
 				if r then r:FireServer("quickopen", not on) end
