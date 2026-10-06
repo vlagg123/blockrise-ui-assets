@@ -200,12 +200,12 @@ local function cornerButton(t, o)
 	local cb
 	if o.plain then
 		-- a small plain square: one colour, a dark outline, the label in the middle (no stripes, no shine)
-		local sz = o.w or 34
+		local sz = o.w or 26
 		cb = new("TextButton", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 14), Size = UDim2.fromOffset(sz, sz), BackgroundColor3 = o.color or T.blue,
 			BorderSizePixel = 0, AutoButtonColor = true, Text = "", ZIndex = 9, Parent = t })
-		new("UICorner", { CornerRadius = UDim.new(0, 9), Parent = cb })
-		new("UIStroke", { Thickness = 2.5, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = cb })
-		text({ Name = "Label", Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = o.label or "", Font = T.chunky, TextSize = 21,
+		new("UICorner", { CornerRadius = UDim.new(0, 7), Parent = cb })
+		new("UIStroke", { Thickness = 2, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = cb })
+		text({ Name = "Label", Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = o.label or "", Font = T.chunky, TextSize = math.floor(sz * 0.6),
 			TextColor3 = Color3.new(1, 1, 1), Stroke = 2, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = cb })
 	else
 		cb = UI.button(o.label or "", o.color or T.red, nil, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 12), Size = UDim2.fromOffset(o.w or 58, 34),
