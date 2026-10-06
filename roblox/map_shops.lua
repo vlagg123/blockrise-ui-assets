@@ -118,7 +118,7 @@ table.insert(report, "east lawn cleared: " .. clear(CFrame.new(106, 6, 61), Vect
 do
 	local YEL, BLK = Color3.fromRGB(246, 186, 32), Color3.fromRGB(34, 36, 42)
 	local mdl, cf, P = building({ name = "MachinesDepot", parent = Plaza, pos = Vector3.new(113, 0, 61), face = Vector3.new(-1, 0, 0), w = 30, d = 20, h = 16,
-		wall = Color3.fromRGB(120, 132, 150), wallMat = Enum.Material.CorrugatedSteel, accent = YEL, text = "🚜 MACHINES DEPOT", roof = "MACHINES" })
+		wall = Color3.fromRGB(120, 132, 150), wallMat = Enum.Material.Metal, accent = YEL, text = "🚜 MACHINES DEPOT", roof = "MACHINES" })
 	local d, h = 20, 16
 	-- the big garage door with hazard stripes around it, a small door and windows on the sides
 	P("GarageDoor", Vector3.new(14, 10.5, 0.3), CFrame.new(0, 0.5 + 5.25, -d / 2 - 0.12), Color3.fromRGB(70, 76, 88), Enum.Material.DiamondPlate)
