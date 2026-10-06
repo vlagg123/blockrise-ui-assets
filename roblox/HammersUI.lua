@@ -203,7 +203,7 @@ local function cratePopup(cr, data)
 	end
 	if n == 0 then K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 30), Text = "Its hammers are still being made: coming soon!", TextSize = 18, TextColor3 = K.NOTE, ZIndex = 6, Parent = body }) end
 	local foot = {}
-	if cr.pools then table.insert(foot, "Better zones, better odds: Suburbs from Rebirth 1, Downtown from Rebirth 2 (now: " .. zone:sub(1, 1):upper() .. zone:sub(2) .. ")") end
+	if cr.pools then table.insert(foot, "Better odds once you take Suburbs, then Downtown contracts (now: " .. zone:sub(1, 1):upper() .. zone:sub(2) .. ")") end
 	if cr.pity then table.insert(foot, "Pity: " .. Hammers.Rarities[cr.pity.min].name .. " or better guaranteed every " .. cr.pity.every .. " opens") end
 	if luck > 1 then table.insert(foot, "🍀 Lucky Builder: Rare+ twice as often (already counted)") end
 	K.text({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 26), Text = table.concat(foot, "  ·  "), TextSize = 14, Max = 14, TextColor3 = K.NOTE, ZIndex = 6, Parent = body })
