@@ -1174,9 +1174,9 @@ def spec_hammer(key, rot=0.0, loc=(0, 0, 0), size=3.4):
 def ribbon(label, loc, col, w=3.3, s=1.0):
     """a wide glossy plate with big text (the rarity's name)"""
     P = _xf(loc, (0, 0, 0), s)
-    obj("ribbon", bm_box(w, 0.32, 0.78), candy(col, rough=0.22), parent=P, bevel=0.2)
-    obj("ribbon_in", bm_box(w - 0.18, 0.34, 0.6), candy(col, rough=0.16, emit=0.35), loc=(0, -0.02, 0), parent=P, bevel=0.14, outline=False)
-    size = 0.5 if len(label) <= 6 else 0.4
+    obj("ribbon", bm_box(w, 0.32, 0.92), candy(col, rough=0.22), parent=P, bevel=0.22)
+    obj("ribbon_in", bm_box(w - 0.18, 0.34, 0.74), candy(col, rough=0.16, emit=0.35), loc=(0, -0.02, 0), parent=P, bevel=0.16, outline=False)
+    size = 0.62 if len(label) <= 6 else 0.5
     t = text(label, size, 0.07, candy("#ffffff", rough=0.3, emit=0.45), bevel=0.012, outline=False, center=True)
     t.matrix_world = P @ _xf((0, -0.24, -0.02), (90, 0, 0))
     sh = text(label, size, 0.07, candy("#1b1530", rough=0.6, coat=0.0, emit=0.0), bevel=0.012, outline=False, center=True)
@@ -1185,10 +1185,14 @@ def ribbon(label, loc, col, w=3.3, s=1.0):
 
 def _hammer_day(keys, label, col):
     """Hammer of the Day: the tier's hammers crossed like swords, the rarity's name on a plate in front, a star on top"""
-    track(spec_hammer, keys[0], rot=-38, loc=(0, 0.25, 0.35), size=3.5)
-    track(spec_hammer, keys[1], rot=38, loc=(0, 0.6, 0.35), size=3.5)
-    track(ribbon, label, (0, -0.9, -1.45), col)
-    st = poly(star_pts(0.42, 0.18, 5, 90), 0.18, glow("#fff3b0", 2.2), loc=(0, -0.5, 2.15), bevel=0.03)
+    # (a spec hammer stands with its head top left, handle bottom right: the second one turned 90 degrees crosses it)
+    track(spec_hammer, keys[0], rot=0, loc=(0, 0.2, 0.3), size=3.9)
+    track(spec_hammer, keys[1], rot=HAMMER_X, loc=(0, 0.9, 0.3), size=3.9)
+    track(ribbon, label, (0, -1.2, -1.55), col, w=3.9)
+    poly(star_pts(0.42, 0.18, 5, 90), 0.18, glow("#fff3b0", 2.2), loc=(0, -0.6, 2.25), bevel=0.03)
+
+
+HAMMER_X = 90
 
 
 def i_hammer_epic():
