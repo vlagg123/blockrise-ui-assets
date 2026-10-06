@@ -253,11 +253,13 @@ function UI.button(text, c1, c2, props)
 			local iw = math.floor((h - BTN_DROP - 6) * 0.98)
 			local gap = lbl.Text ~= "" and 4 or 0
 			local size = maxSize
-			local tw = lbl.Text ~= "" and TextService:GetTextSize(lbl.Text, size, lbl.Font, Vector2.new(4000, 200)).X or 0
-			while size > 9 and tw + iw + gap > w - 12 do
-				size -= 1
-				tw = TextService:GetTextSize(lbl.Text, size, lbl.Font, Vector2.new(4000, 200)).X
-			end
+			local function width(sz) return lbl.Text ~= "" and TextService:GetTextSize(lbl.Text, sz, lbl.Font, Vector2.new(4000, 200)).X or 0 end
+			local tw = width(size)
+			-- a narrow button: the text gives way down to 15, then the icon down to 60%, then the text again
+			while size > 15 and tw + iw + gap > w - 12 do size -= 1; tw = width(size) end
+			local iwMin = math.floor(iw * 0.6)
+			while iw > iwMin and tw + iw + gap > w - 12 do iw -= 1 end
+			while size > 9 and tw + iw + gap > w - 12 do size -= 1; tw = width(size) end
 			lbl.TextSize = size
 			local x0 = math.max(4, (w - (tw + gap + iw)) / 2)
 			ic.Size = UDim2.fromOffset(iw, iw)
