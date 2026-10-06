@@ -675,10 +675,10 @@ local function crateTiles(data, order, shop)
 			end, icon = have == 0 and "cash" or nil, shine = can and have == 0 })
 		elseif cr.gems then
 			local can = gems() >= cr.gems
-			table.insert(buttons, { "💎 " .. cr.gems, can and GEM or K.LOCK, function()
+			table.insert(buttons, { Config.FormatNum(cr.gems), can and GEM or K.LOCK, function()
 				if not can then c.click(); M.GemStore("Not enough Gems") return end
 				c.click(); buyCrate(cr.id, 1, have == 0)
-			end, shine = can and have == 0 })
+			end, shine = can and have == 0, icon = "gem" })
 		end
 		-- Robux next to the Gem price (at most two buttons: with crates in the bag, OPEN + the price)
 		if shop and prod and not tut and (have == 0 or not cr.gems) then
@@ -782,7 +782,8 @@ local function dailyHammers(order, data)
 		local owned = data.index and data.index[o.key]
 		local prod = product(o.product)
 		local robuxOk = prod and ((prod.id or 0) > 0 or studio)
-		local gemLabel = "💎 " .. Config.FormatNum(o.gems)
+		-- (the gem is the button's icon: an emoji in a scaled label broke the price onto two lines)
+		local gemLabel = Config.FormatNum(o.gems)
 		local can = gems() >= o.gems
 		local buttons = {
 			{ gemLabel, can and GEM or K.LOCK, function(b)
@@ -803,7 +804,7 @@ local function dailyHammers(order, data)
 				busy = false
 				if not ok then c.toast("⚠️ " .. tostring(res), T.red) if l and l.Parent then l.Text = gemLabel end return end
 				revealBought(o.key, type(res) == "table" and res.new)
-			end, shine = can },
+			end, shine = can, icon = "gem" },
 		}
 		if robuxOk then
 			table.insert(buttons, { K.robux(prod.price), K.GREEN, function()
