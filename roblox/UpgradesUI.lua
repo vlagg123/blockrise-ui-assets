@@ -31,6 +31,7 @@ end
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 
 local render
+local lastData -- the last CompanyAction "get" answer (see open)
 local function act(tok, ...)
 	local args = table.pack(...)
 	local ok, res, msg = pcall(function() return c.R.CompanyAction:InvokeServer(table.unpack(args, 1, args.n)) end)
@@ -39,6 +40,7 @@ local function act(tok, ...)
 		if not c.live(tok) then break end
 		local ok2, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
 		if ok2 and okr and type(data) == "table" then
+			lastData = data
 			if c.live(tok) then
 				local scroll = c.content.CanvasPosition
 				render(tok, data)
@@ -140,13 +142,35 @@ render = function(tok, data)
 	end
 end
 
+-- the last answer of the server: a redraw (a level-up, a crate, a trade-up...) draws with it at once, in the same frame,
+-- so the window never empties into a loading spinner and back; the fresh answer then redraws only what it changes
 local function open(name, c1, c2)
+	local refresh = c.modalOpen() and c.modalTitle.Text == name
 	local tok = c.openModal(name, name, "", c1, c2)
+	local hammerTab = mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index")
+	if lastData and (refresh or hammerTab) then
+		render(tok, lastData)
+		c.modalSub.Text = money(c.player:GetAttribute("Money") or lastData.money or 0)
+		task.spawn(function()
+			local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
+			if not (ok and okr and type(data) == "table") then return end
+			lastData = data
+			-- the hammer tabs don't use it (only the BLUEPRINTS badge); materials, blueprints and upgrades do
+			local tabNow = mode == "inventory" and (invTab == "hammers" or invTab == "crates" or invTab == "tradeup" or invTab == "index")
+			if c.live(tok) and not tabNow then
+				local scroll = c.content.CanvasPosition
+				render(tok, data)
+				task.defer(function() if c.live(tok) then c.content.CanvasPosition = scroll end end)
+			end
+		end)
+		return
+	end
 	local loading = K.loading(c.content)
 	local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
 	if not c.live(tok) then return end
 	loading:Destroy()
 	if not ok or not okr or type(data) ~= "table" then c.toast("⚠️ Couldn't load it, try again", T.red) return end
+	lastData = data
 	c.modalSub.Text = money(data.money or 0)
 	render(tok, data)
 end

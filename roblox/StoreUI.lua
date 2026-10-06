@@ -28,6 +28,7 @@ local ICON = {
 	-- passes
 	vip = "vip", bigcrew = "hire", cash2x = "up_cash", strength2x = "up_strength", autobuild = "🤖", autotrain = "gym", gems2x = "gem",
 	fasttools = "up_power", monster = "cars", goldcar = "cars", teleporter = "locations", stormhammer = "up_power", skipanim = "⏭️", luck = "up_luck", offline = "up_rent",
+	quickopen = "gift", autoopen = "gift",
 	-- products
 	starter = "gift", rushcrew = "up_crew", cashpack = "cash", cashstack = "cash", cashvault = "coins", cashbank = "store", cashboost = "up_cash",
 	spins3 = "spin",
@@ -44,6 +45,7 @@ local PASS_COL = {
 	autobuild = Color3.fromRGB(90, 170, 255), autotrain = Color3.fromRGB(255, 150, 90), gems2x = Color3.fromRGB(70, 190, 255), fasttools = Color3.fromRGB(255, 200, 60),
 	monster = Color3.fromRGB(255, 110, 110), goldcar = Color3.fromRGB(255, 196, 46), teleporter = Color3.fromRGB(235, 70, 130),
 	stormhammer = Color3.fromRGB(80, 170, 255), skipanim = Color3.fromRGB(90, 200, 255), luck = Color3.fromRGB(80, 200, 100), offline = Color3.fromRGB(110, 110, 230),
+	quickopen = Color3.fromRGB(255, 186, 50), autoopen = Color3.fromRGB(255, 150, 60),
 }
 
 -- Robux prices load in the background so the Store opens instantly
@@ -248,6 +250,16 @@ local function passes(tok)
 				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
 				if r then r:FireServer("skipanim", not on) end
 			end }
+		elseif owned and p.key == "quickopen" then
+			-- yours: the crate strip off / on
+			local on = c.player:GetAttribute("QuickOpen") == true
+			o.status = nil
+			o.stats = { { on and "HAMMER AT ONCE" or "STRIP ON", on and K.GREEN or T.blue } }
+			o.button = { on and "QUICK: ON" or "QUICK: OFF", on and K.GREEN or K.LOCK, function()
+				c.click()
+				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
+				if r then r:FireServer("quickopen", not on) end
+			end }
 		end
 		return o
 	end })
@@ -337,7 +349,7 @@ function M.Init(ctx)
 	end)
 	-- a pass bought while the Store is open shows OWNED right away
 	c.player.AttributeChanged:Connect(function(a)
-		if (a:sub(1, 5) == "Pass_" or a == "SkipAnim") and c.modalOpen() and c.modalTitle.Text == "Store" then M.Show(nil, true) end
+		if (a:sub(1, 5) == "Pass_" or a == "SkipAnim" or a == "QuickOpen") and c.modalOpen() and c.modalTitle.Text == "Store" then M.Show(nil, true) end
 	end)
 end
 

@@ -1119,6 +1119,21 @@ def i_crate_exclusive():
     track(gem, PINK_GEM, loc=(-2.05, -0.95, 0.42), rot=(8, 0, 20), s=0.38)
 
 
+def i_quickopen():
+    """Quick Open: the chest throws its hammer out at once, a big lightning bolt in front"""
+    track(loot_chest, loc=(-0.35, 0.3, 0), rot=(0, 0, 22), kind="golden")
+    b = poly(BOLT, 0.32, glow("#ffe14a", 3.2), loc=(1.75, -1.35, 1.2), rot=(0, 14, 0))
+    b.scale = (1.15, 1.15, 1.15)
+
+
+def i_autoopen():
+    """Auto Opener: a chest with its hammer, two more chests waiting behind, the green AUTO badge in front"""
+    track(loot_chest, loc=(-1.55, 1.6, 0), rot=(0, 0, 14), s=0.66, kind="supply", open_=False)
+    track(loot_chest, loc=(1.75, 1.6, 0), rot=(0, 0, 30), s=0.66, kind="supply", open_=False)
+    track(loot_chest, loc=(0.0, -0.6, 0), rot=(0, 0, 22), s=0.8, kind="supply")
+    track(badge, "AUTO", (1.55, -2.0, 0.55), s=0.7, col="#3fd36a", rot=(-16, 0, 0))
+
+
 def _three(kind):
     # three chests: two shut at the back, the front one open with the light and its hammer
     track(loot_chest, loc=(-1.6, 1.3, 0), rot=(0, 0, 12), s=0.74, kind=kind, open_=False)
@@ -1146,10 +1161,12 @@ ICONS = {
     # hammer crates (in-game art + the Robux crate products)
     "crate_supply": i_crate_supply, "crate_builder": i_crate_builder, "crate_golden": i_crate_golden, "crate_exclusive": i_crate_exclusive,
     "crate_golden3": i_crate_golden3, "crate_exclusive3": i_crate_exclusive3,
+    # crate passes
+    "quickopen": i_quickopen, "autoopen": i_autoopen,
 }
 VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "crate_supply": (-0.3, -1, 0.4), "crate_builder": (-0.3, -1, 0.4), "crate_golden": (-0.3, -1, 0.4),
-        "crate_exclusive": (-0.3, -1, 0.4), "crate_golden3": (-0.22, -1, 0.38), "crate_exclusive3": (-0.22, -1, 0.38), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
+        "crate_exclusive": (-0.3, -1, 0.4), "quickopen": (-0.25, -1, 0.38), "autoopen": (-0.22, -1, 0.4), "crate_golden3": (-0.22, -1, 0.38), "crate_exclusive3": (-0.22, -1, 0.38), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
 # card colours: (centre glow, edge)
 CARD = {
     "skipanim": ("#6fc3ff", "#1b2f86"), "stormhammer": ("#8fd8ff", "#1a1f6e"), "teleporter": ("#7ff2ff", "#11406e"), "vip": ("#ffe27a", "#8a3a10"),
@@ -1161,6 +1178,7 @@ CARD = {
     "gems750": ("#b8e0ff", "#22348a"), "gems1700": ("#d8c0ff", "#3a1f8a"), "gems4500": ("#ffd8a0", "#5a2a7a"), "gems12000": ("#fff0b0", "#6a1f7a"),
     "crate_supply": ("#ffd98a", "#8a4a12"), "crate_builder": ("#a8d8ff", "#163a8a"), "crate_golden": ("#fff1a6", "#7a4a0c"), "crate_exclusive": ("#ffb8ee", "#5a1a7a"),
     "crate_golden3": ("#fff1a6", "#7a4a0c"), "crate_exclusive3": ("#ffb8ee", "#5a1a7a"),
+    "quickopen": ("#fff3a0", "#8a4a10"), "autoopen": ("#b8f5a8", "#145a40"),
 }
 SPARK = {"vip": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "goldcar": [(0.84, 0.2, 0.07)], "gems100": [(0.82, 0.18, 0.08), (0.18, 0.7, 0.05)],
          "gems300": [(0.84, 0.16, 0.07)], "gems750": [(0.84, 0.16, 0.07), (0.16, 0.28, 0.05)], "gems1700": [(0.84, 0.16, 0.07)],
@@ -1263,8 +1281,9 @@ def render(names=None, size=768, samples=80):
         postnp.SPARKLE[key] = SPARK.get(n, [])
         rawpx = postnp.load(raw)
         canvas = postnp.canvas_of(rawpx, key)
-        if n.startswith("crate_") and CRATE_O:
-            L = CRATE_LOOK[n.replace("crate_", "").rstrip("3")]
+        ray_kind = {"quickopen": "golden", "autoopen": "supply"}.get(n) or (n.startswith("crate_") and n.replace("crate_", "").rstrip("3"))
+        if ray_kind and CRATE_O:
+            L = CRATE_LOOK[ray_kind]
             canvas = crate_post(canvas, _px_of(CRATE_O[-1], rawpx.shape[0]), L["ray"], L["glow"])
         postnp.save(postnp.resize(canvas, 256), os.path.join(OUT, "game", n + ".png"))
         postnp.save(card(canvas, n), os.path.join(OUT, "card", n + ".png"))

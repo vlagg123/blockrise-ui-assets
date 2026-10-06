@@ -268,6 +268,25 @@ local function rollFake(cr, zone, luck)
 end
 
 local openCrate
+local autoOpen, cratePassPopup
+-- the card after a crate: KEEP, or OPEN ANOTHER while you have more of that crate
+local function revealOpened(cr, h, res)
+	local left = c.player:GetAttribute("Crate_" .. cr.id) or 0
+	revealHammer(h, { isNew = res.new, pity = res.pity, button = "KEEP",
+		again = left > 0 and { label = "OPEN ANOTHER (" .. left .. ")", fn = function() openCrate(cr.id) end } or nil,
+		onClose = function() M.Redraw() end })
+end
+
+-- the crate passes (Config.Store.passes): Quick Open (the hammer at once) and Auto Opener (opens them all by itself)
+local function passOf(key)
+	for _, p in ipairs(Config.Store.passes) do if p.key == key then return p end end
+end
+local function buyPass(p)
+	c.click()
+	if (p.id or 0) > 0 then MarketplaceService:PromptGamePassPurchase(c.player, p.id)
+	else c.toast(p.name .. ": coming soon (" .. K.robux(p.price) .. ")", T.accent, 2.5) end
+end
+
 local function spinThenReveal(cr, res)
 	stopOpening()
 	local h = Hammers.ById[res.key]
@@ -352,10 +371,7 @@ local function spinThenReveal(cr, res)
 		task.delay(0.75, function()
 			if opening ~= gui then return end
 			stopOpening()
-			local left = c.player:GetAttribute("Crate_" .. cr.id) or 0
-			revealHammer(h, { isNew = res.new, pity = res.pity, button = "KEEP",
-				again = left > 0 and { label = "OPEN ANOTHER (" .. left .. ")", fn = function() openCrate(cr.id) end } or nil,
-				onClose = function() M.Redraw() end })
+			revealOpened(cr, h, res)
 		end)
 	end
 	-- the crate shakes while the strip spins; the ticks follow the hammers passing the marker
@@ -375,7 +391,18 @@ local function spinThenReveal(cr, res)
 	end)
 	tw.Completed:Connect(function(state) if state == Enum.PlaybackState.Completed then finish() end end)
 	tw:Play()
-	back.Activated:Connect(function() if os.clock() - t0 > 0.4 then finish() end end)
+	-- the strip plays to the end (no tap to skip): the hammer at once is the Quick Open pass, offered right here
+	hint.Text = ""
+	local qp = passOf("quickopen")
+	if qp and not c.player:GetAttribute("Pass_quickopen") and ((qp.id or 0) > 0 or studio) then
+		local offer = UI.button("QUICK OPEN  " .. K.robux(qp.price), Color3.fromRGB(255, 200, 60), Color3.fromRGB(240, 130, 20),
+			{ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.5, 116), Size = UDim2.fromOffset(300, 54), TextSize = 22, Font = T.chunky, Shine = true, ZIndex = 6, Parent = gui })
+		local note = UI.label({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0.5, 174), Size = UDim2.fromOffset(600, 22),
+			Text = "Game pass: press OPEN and get your hammer at once, every crate, forever", Font = T.body, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = Color3.fromRGB(230, 232, 255), ZIndex = 6, Parent = gui })
+		UI.textStroke(0.2, 2).Parent = note
+		offer.Activated:Connect(function() buyPass(qp) end)
+	end
 	c.sound2D(c.S.Click, 0.5, 0.8)
 end
 
@@ -385,7 +412,14 @@ function openCrate(crateId)
 	local ok, res = call("open", crateId)
 	busy = false
 	if not ok then c.toast("⚠️ " .. tostring(res), T.red) return end
-	spinThenReveal(Hammers.CrateById[crateId], res)
+	local cr = Hammers.CrateById[crateId]
+	local h = Hammers.ById[res.key]
+	if c.player:GetAttribute("QuickOpen") == true and h then
+		c.sound2D(c.S.Chime, 0.6, h.r >= 5 and 0.85 or 1.15)
+		revealOpened(cr, h, res)
+	else
+		spinThenReveal(cr, res)
+	end
 end
 
 local function buyCrate(crateId, n, thenOpen)
@@ -396,6 +430,127 @@ local function buyCrate(crateId, n, thenOpen)
 	if not ok then c.toast("⚠️ " .. tostring(res), T.red) return end
 	c.sound2D(c.S.Coins, 0.4, 1)
 	if thenOpen then openCrate(crateId) else M.Redraw() end
+end
+
+-- the crate passes, side by side: what each does and its price
+function cratePassPopup()
+	local body = openPopup(UDim2.fromOffset(640, 380), "Crate passes", Color3.fromRGB(255, 214, 90), Color3.fromRGB(226, 130, 30), nil)
+	local defs = {
+		{ passOf("quickopen"), "Press OPEN and your hammer is there at once: no spinning strip, on every crate. Forever." },
+		{ passOf("autoopen"), "An AUTO button on your crates: it opens all of them by itself, one after another, fast. Forever." },
+	}
+	for i, d in ipairs(defs) do
+		local p = d[1]
+		if p then
+			local f = new("Frame", { Position = UDim2.new((i - 1) * 0.5, i == 1 and 0 or 6, 0, 0), Size = UDim2.new(0.5, -6, 1, 0), BackgroundTransparency = 1, ZIndex = 5, Parent = body })
+			UI.slice("tile", { ImageColor3 = K.TILE, ZIndex = 5, Parent = f })
+			local img = Config.ProductImages and Config.ProductImages[p.key]
+			K.artBox(f, img or "gift", Color3.fromRGB(255, 186, 60), { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10), Size = UDim2.fromOffset(120, 120), Spin = true, IconScale = 1.04 }).ZIndex = 6
+			K.text({ Position = UDim2.fromOffset(10, 136), Size = UDim2.new(1, -20, 0, 30), Text = p.name, Font = T.chunky, TextSize = 24, Max = 24, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 7, Parent = f })
+			K.text({ Position = UDim2.fromOffset(12, 168), Size = UDim2.new(1, -24, 0, 66), Text = d[2], TextSize = 15, Max = 15, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top,
+				TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.SUB, ZIndex = 7, Parent = f })
+			if c.player:GetAttribute("Pass_" .. p.key) == true then
+				K.status(f, "OWNED", K.GREEN, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Size = UDim2.fromOffset(170, 46), ZIndex = 7 })
+			else
+				K.button(f, (p.id or 0) > 0 and K.robux(p.price) or ("SOON · " .. K.robux(p.price)), (p.id or 0) > 0 and K.GREEN or K.LOCK,
+					{ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Size = UDim2.fromOffset(190, 52), TextSize = 22, Shine = (p.id or 0) > 0, ZIndex = 7 }, function()
+					closePopup(); buyPass(p)
+				end)
+			end
+		end
+	end
+end
+
+-- the Auto Opener: every crate of a kind, one after another, the hammers dropping into a grid; STOP any time
+local autoGui
+function autoOpen(crateId)
+	local cr = Hammers.CrateById[crateId]
+	if not cr or autoGui or busy then return end
+	local total = c.player:GetAttribute("Crate_" .. crateId) or 0
+	if total <= 0 then c.toast("No " .. cr.name .. " to open", T.muted, 2) return end
+	closePopup()
+	local gui = new("ScreenGui", { Name = "AutoOpen", IgnoreGuiInset = true, DisplayOrder = 110, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		Parent = c.player:WaitForChild("PlayerGui") })
+	autoGui = gui
+	local dim = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 8, 22), BackgroundTransparency = 0.35, Parent = gui })
+	local w = K.window(dim, UDim2.fromOffset(760, 500), "Auto Opener", cr.color:Lerp(Color3.new(1, 1, 1), 0.25), cr.color, nil, true)
+	local fit = math.clamp(math.min(c.camera.ViewportSize.X / 840, (c.camera.ViewportSize.Y - 40) / 580), 0.5, 1.1)
+	local sc = new("UIScale", { Scale = fit * 0.85, Parent = w })
+	UI.tween(sc, 0.25, { Scale = fit }, Enum.EasingStyle.Back)
+	local body = new("Frame", { Position = UDim2.fromOffset(20, 58), Size = UDim2.new(1, -40, 1, -76), BackgroundTransparency = 1, ZIndex = 5, Parent = w })
+	-- the crate, the count, the bar, the best hammer so far
+	local crateBox = new("Frame", { Size = UDim2.fromOffset(96, 96), BackgroundTransparency = 1, ZIndex = 6, Parent = body })
+	local crateImg = K.art(crateBox, crateArt(cr), UDim2.fromScale(1, 1), 6)
+	local head = K.text({ Position = UDim2.fromOffset(110, 0), Size = UDim2.new(1, -330, 0, 34), Text = string.upper(cr.name), Font = T.chunky, TextSize = 28, Max = 28,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 6, Parent = body })
+	local bar, fill = UI.bar({ Position = UDim2.fromOffset(110, 42), Size = UDim2.new(1, -330, 0, 26), ZIndex = 6 }, K.GREEN)
+	bar.Parent = body
+	fill.Size = UDim2.fromScale(0.03, 1)
+	local count = K.text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = "0 / " .. total, Font = T.chunky, TextSize = 16, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 8, Parent = bar })
+	local bestT = K.text({ Position = UDim2.fromOffset(110, 74), Size = UDim2.new(1, -330, 0, 22), Text = "Best so far: —", TextSize = 17, Max = 17, TextColor3 = K.NOTE, ZIndex = 6, Parent = body })
+	local bestBox = new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -110, 0, 0), Size = UDim2.fromOffset(96, 96), BackgroundTransparency = 1, ZIndex = 6, Parent = body })
+	-- the hammers that came out, newest last
+	local list = new("ScrollingFrame", { Position = UDim2.fromOffset(0, 108), Size = UDim2.new(1, 0, 1, -170), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Color3.fromRGB(200, 200, 240), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y, ZIndex = 6, Parent = body })
+	new("UIGridLayout", { CellSize = UDim2.fromOffset(78, 78), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local stopping, done = false, false
+	local stopBtn
+	local function close()
+		if autoGui == gui then autoGui = nil end
+		gui:Destroy()
+		M.Redraw()
+	end
+	stopBtn = K.button(body, "STOP", T.red, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.fromOffset(220, 54), TextSize = 24, ZIndex = 7 }, function()
+		c.click()
+		if done then close() else stopping = true end
+	end)
+	task.spawn(function()
+		local got, best, fails = 0, nil, 0
+		local t0 = os.clock()
+		while not stopping and gui.Parent do
+			if (c.player:GetAttribute("Crate_" .. crateId) or 0) <= 0 then break end
+			local ok, res = call("open", crateId)
+			if not gui.Parent then break end
+			if ok and type(res) == "table" and Hammers.ById[res.key] then
+				fails = 0
+				got += 1
+				local h = Hammers.ById[res.key]
+				local r = rar(h)
+				local cell = new("Frame", { BackgroundTransparency = 1, LayoutOrder = got, ZIndex = 6, Parent = list })
+				local box = K.artBox(cell, art(h), r.color, { Size = UDim2.fromScale(1, 1), IconScale = 1.04 })
+				K.rarityFX(box, r.id, { small = true })
+				if res.new then new("UIScale", { Scale = 0.6, Parent = K.chip(cell, "NEW", Color3.fromRGB(255, 52, 84), { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -4), ZIndex = 9 }) }) end
+				local cs = new("UIScale", { Scale = 0.4, Parent = cell })
+				UI.tween(cs, 0.2, { Scale = 1 }, Enum.EasingStyle.Back)
+				list.CanvasPosition = Vector2.new(0, math.max(0, list.AbsoluteCanvasSize.Y))
+				c.sound2D(c.S.Click, 0.3, 1.2 + math.min(0.4, got / 80))
+				if not best or h.r > best.r or (h.r == best.r and (h.dr or h.r) > (best.dr or best.r)) then
+					best = h
+					bestT.Text = "Best so far: " .. h.name .. " (" .. r.name .. ")"
+					for _, ch in ipairs(bestBox:GetChildren()) do ch:Destroy() end
+					K.rarityFX(K.artBox(bestBox, art(h), r.color, { Size = UDim2.fromScale(1, 1), Spin = true, IconScale = 1.04 }), r.id)
+				end
+				if h.r >= 5 then c.sound2D(c.S.Chime, 0.6, 0.9) end
+				count.Text = got .. " / " .. total
+				fill.Size = UDim2.fromScale(math.clamp(got / total, 0.03, 1), 1)
+				crateImg.Rotation = (got % 2 == 0) and 6 or -6
+			else
+				fails += 1
+				if fails >= 4 then c.toast("⚠️ " .. tostring(res), T.red, 3); break end
+			end
+			task.wait(0.2) -- (the server takes one action every 0.15 s)
+		end
+		if not gui.Parent then return end
+		done = true
+		crateImg.Rotation = 0
+		head.Text = got .. " HAMMERS OPENED!"
+		local lb = stopBtn:FindFirstChild("Label")
+		if lb then lb.Text = "DONE" end
+		local bg = stopBtn:FindFirstChild("Bg")
+		if bg then bg.ImageColor3 = K.GREEN end
+		c.sound2D(c.S.Chime, 0.6, 1)
+	end)
 end
 
 function levelUpItem(it, h)
@@ -435,14 +590,19 @@ local function stormBanner(order)
 	K.banner(c.content, order, o)
 end
 
--- the odds of a crate on one line (Roblox: paid random items show them)
+-- the odds of a crate on one line (Roblox: paid random items show them): 40% · 6% · 0.9% · 0.1%
+local function shortPct(v)
+	local t = v >= 10 and string.format("%d", math.floor(v + 0.5)) or (v >= 1 and string.format("%.1f", v) or string.format("%.2f", v))
+	t = t:find("%.") and t:gsub("0+$", ""):gsub("%.$", "") or t
+	return t .. "%"
+end
 local function oddsLine(cr, zone, luck)
 	local odds = Hammers.Odds(cr.id, zone, luck)
 	local parts = {}
 	for r = 1, Hammers.LadderTop do
 		if odds[r] and odds[r] > 0 then
 			local rr = Hammers.Rarities[r]
-			table.insert(parts, string.format('<font color="#%s">%s %s</font>', rarText(rr):ToHex(), rr.name, pct(odds[r])))
+			table.insert(parts, string.format('<font color="#%s">%s %s</font>', rarText(rr):ToHex(), rr.name, shortPct(odds[r])))
 		end
 	end
 	return #parts > 0 and table.concat(parts, " · ") or "Nothing to drop yet"
@@ -468,7 +628,14 @@ local function crateTiles(data, order, shop)
 		local buttons = {}
 		if have > 0 then table.insert(buttons, { "OPEN", K.GREEN, function() c.click(); openCrate(cr.id) end, shine = true }) end
 		if not shop then
-			-- (the inventory only opens them)
+			-- the inventory opens them: one at a time, or all of them by themselves (the Auto Opener pass)
+			if have >= 2 then
+				local owns = c.player:GetAttribute("Pass_autoopen") == true
+				table.insert(buttons, { "AUTO", owns and Color3.fromRGB(255, 176, 40) or K.LOCK, function()
+					c.click()
+					if owns then autoOpen(cr.id) else cratePassPopup() end
+				end, shine = owns })
+			end
 		elseif cr.cash then
 			local price = data.supplyPrice or Hammers.SupplyPrice(60)
 			local can = money() >= price
@@ -496,7 +663,8 @@ local function crateTiles(data, order, shop)
 		end
 		if #buttons > 0 then o.buttons = buttons end
 		local t = K.tile(grid, o)
-		K.text({ Position = UDim2.fromOffset(12, 198), Size = UDim2.new(1, -24, 0, 40), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14,
+		-- (shrinks to fit two lines: it never runs into the buttons)
+		K.text({ Position = UDim2.fromOffset(12, 198), Size = UDim2.new(1, -24, 0, 34), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
 			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 	end
 	return grid
@@ -989,6 +1157,10 @@ function M.Init(ctx)
 		local ok, info = pcall(function() return PolicyService:GetPolicyInfoForPlayerAsync(c.player) end)
 		if ok and type(info) == "table" then c.paidRandomRestricted = info.ArePaidRandomItemsRestricted == true end
 	end)
+	-- a crate pass bought (or switched): the crate views follow at once
+	for _, at in ipairs({ "Pass_quickopen", "Pass_autoopen" }) do
+		c.player:GetAttributeChangedSignal(at):Connect(function() if M.Showing() then M.Redraw() end end)
+	end
 	c.R.Feedback.OnClientEvent:Connect(function(kind, d)
 		if kind ~= "Hammer" or type(d) ~= "table" then return end
 		if d.kind == "crate" and d.reason ~= "silent" then
