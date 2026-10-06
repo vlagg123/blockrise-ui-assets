@@ -992,13 +992,13 @@ def i_gems12000():
 # glow softly behind the chest without a sticker outline. One look per crate.
 CRATE_LOOK = {
     "supply": dict(body=("#c98546", "grain", "#a8672f", "#dc9a58"), lid="#b0703a", trim=("#6b7388", 0.9), inner="#4a2c18",
-                   glow="#ffc93a", ray="#ffb21f", gem=None, hammer="steel", pose=(0.0, -16.0, 18.0)),
+                   glow="#ffc93a", ray="#ff9f1c", gem=None, hammer="steel", pose=(0.0, -24.0, 24.0)),
     "builder": dict(body=("#3f8cff", None, None, None), lid="#2a62d8", trim=("#ffc534", 1.0), inner="#163a8a",
-                    glow="#8fd8ff", ray="#3fb8ff", gem=None, hammer="gold", pose=(0.0, -16.0, 18.0)),
+                    glow="#8fd8ff", ray="#3fb8ff", gem=None, hammer="gold", pose=(0.0, -24.0, 24.0)),
     "golden": dict(body=("#ffc534", "hammered", "#f2ae22", "#ffd86a"), lid="#e39a1a", trim=("#fff1c0", 1.0), inner="#8a4a10",
-                   glow="#ffe680", ray="#ffcf2e", gem=None, hammer="diamond", pose=(0.0, -16.0, 18.0)),
+                   glow="#ffe680", ray="#ff8a1c", gem=None, hammer="ruby", pose=(0.0, -24.0, 24.0)),
     "exclusive": dict(body=("#ff4fc8", None, None, None), lid="#d42c9e", trim=("#8a4df8", 0.6), inner="#4a1070",
-                      glow="#ff9cf0", ray="#d65cff", gem="pink", hammer="plasma", pose=(0.0, -16.0, 18.0)),
+                      glow="#ff9cf0", ray="#b65cff", gem="pink", hammer="plasma", pose=(0.0, -24.0, 24.0)),
 }
 CRATE_O = []      # world points of the glowing openings (for the 2D rays)
 _SPEC = None
@@ -1022,7 +1022,7 @@ def _chest_mats(kind):
     return body, lid, trim, inner, L
 
 
-def burst_hammer(P, key, H, pose, height=3.0):
+def burst_hammer(P, key, H, pose, height=3.5):
     """the hammer `key` (hammers/spec.json) standing up out of the chest: handle in the light, head high above the lid"""
     global _SPEC
     import bl_build as B
