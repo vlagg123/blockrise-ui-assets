@@ -165,13 +165,18 @@ function M.Show()
 				end
 			end
 			if go then
-				local ar = UI.label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -2), Size = UDim2.fromOffset(44, 40), Text = "▼", TextSize = 40, Font = T.title,
-					TextColor3 = Color3.fromRGB(255, 214, 60), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 20, Parent = go })
-				UI.textStroke(0.1, 3).Parent = ar
+				-- a glowing ring that breathes around GO (an arrow on top covered the place's name)
+				local ring = new("Frame", { Name = "TutRing", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 10, 1, 10),
+					BackgroundTransparency = 1, ZIndex = 20, Parent = go })
+				new("UICorner", { CornerRadius = UDim.new(0, 14), Parent = ring })
+				local rs = new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(255, 220, 60), Parent = ring })
 				task.spawn(function()
 					local t0 = os.clock()
-					while ar.Parent do
-						ar.Position = UDim2.new(0.5, 0, 0, -2 - math.abs(math.sin((os.clock() - t0) * 5)) * 10)
+					while ring.Parent do
+						local k = math.abs(math.sin((os.clock() - t0) * 4))
+						rs.Transparency = 0.1 + 0.5 * (1 - k)
+						rs.Thickness = 3 + 3 * k
+						ring.Size = UDim2.new(1, 8 + 8 * k, 1, 8 + 8 * k)
 						task.wait()
 					end
 				end)

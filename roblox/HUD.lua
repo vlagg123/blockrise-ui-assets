@@ -1046,19 +1046,20 @@ function M.Init(ctx)
 		-- at the last step a big arrow points at PLACES (tap it, then GO at My Property)
 		local want = homeStep()
 		if want and not placesArrow then
+			-- (on its own layer over the menu: inside the button, CARS next to it would cover it)
 			local b = menu.locations.button
-			placesArrow = new("Frame", { Name = "PlacesArrow", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(1, 4, 0.5, 0), Size = UDim2.fromOffset(150, 56),
-				BackgroundTransparency = 1, ZIndex = 9, Parent = b })
-			local ar = text({ AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(44, 44), Text = "▼", TextSize = 40, Rotation = 90,
-				TextColor3 = Color3.fromRGB(255, 214, 60), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 9, Parent = placesArrow })
-			tstroke(ar, 3)
-			local tap = text({ AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 44, 0.5, 0), Size = UDim2.fromOffset(110, 30), Text = "TAP: GO HOME", TextSize = 17,
-				TextColor3 = Color3.fromRGB(255, 236, 140), ZIndex = 9, Parent = placesArrow })
-			tstroke(tap, 2.5)
+			placesArrow = new("Frame", { Name = "PlacesArrow", AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.fromOffset(52, 52), BackgroundTransparency = 1, ZIndex = 40, Parent = root })
+			local asc = new("UIScale", { Parent = placesArrow })
+			local ar = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(52, 52), Text = "▼", TextSize = 50, Rotation = 90,
+				TextColor3 = Color3.fromRGB(255, 214, 60), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 40, Parent = placesArrow })
+			tstroke(ar, 3.5)
 			task.spawn(function()
 				local t0 = os.clock()
 				while placesArrow and placesArrow.Parent do
-					placesArrow.Position = UDim2.new(1, 4 + math.abs(math.sin((os.clock() - t0) * 5)) * 12, 0.5, 0)
+					local ap, as, rp = b.AbsolutePosition, b.AbsoluteSize, root.AbsolutePosition
+					local sc = leftScale.Scale * MENU_SCALE
+					asc.Scale = sc
+					placesArrow.Position = UDim2.fromOffset(ap.X - rp.X + as.X - 6 + math.abs(math.sin((os.clock() - t0) * 5)) * 12 * sc, ap.Y - rp.Y + as.Y / 2)
 					task.wait()
 				end
 			end)
