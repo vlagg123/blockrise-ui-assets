@@ -384,13 +384,12 @@ local autoOpen, cratePassPopup
 -- crate and stops; opening the next one takes a real move of the mouse
 local openedFrom
 local function noteOpen(b)
-	-- (in whole-screen pixels: the card's ScreenGui ignores the top bar inset, the windows' ScreenGui does not)
+	-- (AbsolutePosition is the same space in every ScreenGui, inset or not: a ScreenGui that ignores the top bar just starts
+	-- at y = -inset. The mouse is in whole-screen pixels: minus the inset)
 	if typeof(b) == "Instance" and b:IsA("GuiObject") and b.AbsoluteSize.X > 0 then
-		local sg = b:FindFirstAncestorWhichIsA("ScreenGui")
-		local inset = (sg and not sg.IgnoreGuiInset) and game:GetService("GuiService"):GetGuiInset() or Vector2.zero
-		openedFrom = { b.AbsolutePosition + inset, b.AbsoluteSize }
+		openedFrom = { b.AbsolutePosition, b.AbsoluteSize }
 	else
-		local m = game:GetService("UserInputService"):GetMouseLocation()
+		local m = game:GetService("UserInputService"):GetMouseLocation() - game:GetService("GuiService"):GetGuiInset()
 		openedFrom = { m - Vector2.new(30, 30), Vector2.new(60, 60) }
 	end
 end

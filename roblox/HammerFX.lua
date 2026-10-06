@@ -985,14 +985,14 @@ local function reveal(o)
 		if av and not again and btn.AbsoluteSize.X > 0 then
 			local k = btn.AbsoluteSize.Y / btn.Size.Y.Offset
 			local p0, sz = btn.AbsolutePosition, btn.AbsoluteSize
-			local m = 22 * k -- the gap: their edges never touch, not even when one grows under the mouse
+			local m = 18 * k -- a small gap: their edges never touch, not even when one grows under the mouse
 			local top, bottom = av[1].Y, av[1].Y + av[2].Y
 			local overlapsY = p0.Y < bottom + m and p0.Y + sz.Y > top - m
 			local overlapsX = p0.X < av[1].X + av[2].X + m and p0.X + sz.X > av[1].X - m
 			if overlapsY and overlapsX then
-				local screenH = gui.AbsoluteSize.Y
+				local screenBottom = gui.AbsolutePosition.Y + gui.AbsoluteSize.Y -- (this ScreenGui starts at y = -inset)
 				local dy
-				if bottom + m + sz.Y < screenH - 8 then
+				if bottom + m + sz.Y < screenBottom - 8 then
 					dy = bottom + m - p0.Y -- under the OPEN row
 				else
 					dy = (top - m - sz.Y) - p0.Y -- (no room under it: above it)
