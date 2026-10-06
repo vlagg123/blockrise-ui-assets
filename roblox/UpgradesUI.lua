@@ -104,7 +104,7 @@ render = function(tok, data)
 		HammersUI = HammersUI or require(script.Parent:WaitForChild("HammersUI"))
 		local hv = HammersUI.Available()
 		UI.tabs(c.content, {
-			{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = hv.hammers == true },
+			{ id = "hammers", label = "HAMMERS", icon = "shop", c1 = Color3.fromRGB(110, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = hv.hammers },
 			{ id = "crates", label = "CRATES", icon = CRATE_PIC, c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20), badge = hv.crates },
 			{ id = "materials", label = "MATERIALS", icon = "site", c1 = Color3.fromRGB(255, 214, 70), c2 = Color3.fromRGB(240, 135, 20) },
 			{ id = "blueprints", label = "BLUEPRINTS", icon = "codes", c1 = Color3.fromRGB(120, 200, 255), c2 = Color3.fromRGB(40, 110, 230), badge = nBps },

@@ -249,25 +249,26 @@ end
 function M.Available()
 	local p = c.player
 	local cash = money()
-	local out = { hammers = false, gear = false, machines = false, crew = false, count = 0 }
+	local out = { hammers = false, gear = false, machines = false, crew = false, count = 0, n = { gear = 0, machines = 0, crew = 0 } }
 	local gt = attr("GearTier") or 1
 	local ng = Config.TrainingGear[gt + 1]
 	out.hammers = false -- (crates are opened in the Inventory: its button carries the count)
 	out.gear = ng ~= nil and cash >= ng.price
-	if out.gear then out.count += 1 end
+	if out.gear then out.count += 1; out.n.gear = 1 end
 	local lvl = attr("Level") or 1
 	for _, m in ipairs(Config.Machines) do
 		if attr("M_" .. m.id) == true then
 			local mlv = math.max(1, attr("ML_" .. m.id) or 1)
-			if mlv < Config.MachineMaxLevel and cash >= Config.MachineUpgradeCost(m, mlv) then out.machines = true; out.count += 1 end
+			if mlv < Config.MachineMaxLevel and cash >= Config.MachineUpgradeCost(m, mlv) then out.machines = true; out.count += 1; out.n.machines += 1 end
 		elseif lvl >= m.reqLevel and cash >= m.price then
 			out.machines = true
 			out.count += 1
+			out.n.machines += 1
 		end
 	end
 	if (attr("WorkerCount") or 0) < (attr("MaxWorkers") or 2) then
 		for _, w in ipairs(Config.WorkerTypes) do
-			if lvl >= (w.reqLevel or 1) and cash >= w.price then out.crew = true; out.count += 1 end
+			if lvl >= (w.reqLevel or 1) and cash >= w.price then out.crew = true; out.count += 1; out.n.crew += 1 end
 		end
 	end
 	return out
@@ -297,7 +298,8 @@ function M.Show(t, keepScroll, at)
 	for i, t2 in ipairs(TABS) do
 		tabs[i] = table.clone(t2)
 		if t2.id == "hammers" and hammerPic then tabs[i].icon = hammerPic end
-		tabs[i].badge = avail[t2.id] == true and not tutLock -- a red "!" dot where something can be bought (none in the tutorial)
+		-- a red number: how many things you can buy there now (none in the tutorial)
+		tabs[i].badge = (not tutLock) and (avail.n[t2.id] or 0) or nil
 	end
 	UI.tabs(c.content, tabs, tab, function(id)
 		c.click()

@@ -178,7 +178,7 @@ local popup
 local function closePopup()
 	if popup then popup:Destroy(); popup = nil end
 end
-local function openPopup(size, title, c1, c2, icon)
+local function openPopup(size, title, c1, c2, icon, still)
 	closePopup()
 	local gui = new("ScreenGui", { Name = "HammerPopup", IgnoreGuiInset = true, DisplayOrder = 100, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = c.player:WaitForChild("PlayerGui") })
 	popup = gui
@@ -186,8 +186,8 @@ local function openPopup(size, title, c1, c2, icon)
 	dim.Activated:Connect(closePopup)
 	local w, x = K.window(dim, size, title, c1, c2, icon)
 	local fit = math.clamp(math.min(c.camera.ViewportSize.X / (size.X.Offset + 80), (c.camera.ViewportSize.Y - 40) / (size.Y.Offset + 80)), 0.5, 1.1)
-	local sc = new("UIScale", { Scale = fit * 0.8, Parent = w })
-	UI.tween(sc, 0.25, { Scale = fit }, Enum.EasingStyle.Back)
+	local sc = new("UIScale", { Scale = still and fit or fit * 0.8, Parent = w })
+	if not still then UI.tween(sc, 0.25, { Scale = fit }, Enum.EasingStyle.Back) end
 	x.Activated:Connect(function() c.click(); closePopup() end)
 	local body = new("Frame", { Name = "Content", Position = UDim2.fromOffset(18, 56), Size = UDim2.new(1, -36, 1, -74), BackgroundTransparency = 1, ZIndex = 5, Parent = w })
 	return body, w
@@ -218,9 +218,9 @@ end
 
 local equipItem, levelUpItem
 -- one hammer: the big picture, what it is, where it comes from (and EQUIP when it's one of yours)
-local function hammerPopup(h, it, data)
+local function hammerPopup(h, it, data, still)
 	local r = rar(h)
-	local body, pw = openPopup(UDim2.fromOffset(620, 400), h.name, r.color:Lerp(Color3.new(1, 1, 1), 0.2), r.color, nil)
+	local body, pw = openPopup(UDim2.fromOffset(620, 400), h.name, r.color:Lerp(Color3.new(1, 1, 1), 0.2), r.color, nil, still)
 	local box = K.artBox(body, art(h), r.color, { Position = UDim2.fromOffset(0, 8), Size = UDim2.fromOffset(220, 220), Spin = true, IconScale = 1.06 })
 	box.ZIndex = 5
 	K.rarityFX(box, r.id)
@@ -255,14 +255,26 @@ local function hammerPopup(h, it, data)
 		local cost = Hammers.LevelCost(it.k, it.lv)
 		if cost then
 			local can = money() >= cost
+			-- the card stays open: tap again for the next level (it shows the new level and price at once)
 			K.button(holder, "⬆ LV " .. (it.lv + 1) .. "  " .. fmt(cost), can and GOLD or K.LOCK, { Size = UDim2.fromOffset(220, 54), TextSize = 20, LayoutOrder = 1, Shine = can }, function()
-				closePopup(); levelUpItem(it, h)
+				levelUpItem(it, h)
+				-- (the shown state: a fetch may have replaced the list since the card opened)
+				local now = it
+				for _, x in ipairs(cache and cache.hammers or {}) do if x.id == it.id then now = x end end
+				hammerPopup(h, now, cache or data, true)
 			end)
+		else
+			K.status(holder, "MAX LEVEL", GOLD, { Size = UDim2.fromOffset(180, 48), LayoutOrder = 1 })
 		end
 		if inHand then
-			K.status(holder, "IN YOUR HAND", K.GREEN, { Size = UDim2.fromOffset(180, 48), LayoutOrder = 2 })
+			K.status(holder, "EQUIPPED", K.GREEN, { Size = UDim2.fromOffset(170, 48), LayoutOrder = 2 })
 		else
-			K.button(holder, "EQUIP", EQUIP_BLUE, { Size = UDim2.fromOffset(160, 54), TextSize = 22, LayoutOrder = 2, Shine = true }, function() closePopup(); equipItem(it, h) end)
+			K.button(holder, "EQUIP", EQUIP_BLUE, { Size = UDim2.fromOffset(160, 54), TextSize = 22, LayoutOrder = 2, Shine = true }, function()
+				equipItem(it, h)
+				local now = it
+				for _, x in ipairs(cache and cache.hammers or {}) do if x.id == it.id then now = x end end
+				hammerPopup(h, now, cache or data, true)
+			end)
 		end
 	end
 end
@@ -1410,10 +1422,17 @@ local function miniTile(grid, o)
 			TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.lineColor or K.SUB, ZIndex = 3, Parent = t })
 	end
 	if o.ring then
-		new("UIStroke", { Thickness = 3, Color = o.ring, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = new("Frame", { Name = "Ring",
+		new("UIStroke", { Thickness = o.ringW or 3, Color = o.ring, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = new("Frame", { Name = "Ring",
 			Position = UDim2.fromOffset(2, 2), Size = UDim2.new(1, -4, 1, -4), BackgroundTransparency = 1, ZIndex = 9, Parent = t }, { UI.corner(16) }) })
 	end
-	if o.new then
+	if o.equipped then
+		-- the hammer in your hand: a green EQUIPPED pill on top (and a thick green ring, see ring)
+		local pill = new("Frame", { Name = "Equipped", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -8), Size = UDim2.fromOffset(84, 22), BackgroundColor3 = K.GREEN,
+			BorderSizePixel = 0, ZIndex = 10, Parent = t })
+		UI.corner(9).Parent = pill
+		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = pill })
+		new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "EQUIPPED", Font = T.chunky, TextSize = 13, TextColor3 = Color3.new(1, 1, 1), ZIndex = 11, Parent = pill })
+	elseif o.new then
 		-- a pulsing NEW pill on the picture's corner
 		local pill = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -7), Size = UDim2.fromOffset(44, 20), BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 10, Parent = t })
 		UI.corner(8).Parent = pill
@@ -1555,58 +1574,16 @@ local function matches(h, text)
 end
 
 -- Inventory → HAMMERS -----------------------------------------------------------------------------------------------
-local selected -- the hammer shown on top (its EQUIP / LEVEL UP); nil = the one in your hand
 local filter -- rarity index, nil = all
 local hSort, hSearch = "power_desc", "" -- the HAMMERS toolbar: sort key, search text
 local function drawHammers(tok, data)
 	if not c.live(tok) then return end
 	clearBody()
-	local byId = {}
-	for _, it in ipairs(data.hammers) do byId[it.id] = it end
-	if selected and not byId[selected] then selected = nil end
-	local cur = byId[selected or data.equip] or byId[data.equip]
-	-- the selected hammer, big: what it is, EQUIP, LEVEL UP
-	if cur then
-		local h = Hammers.ById[cur.k]
-		local r = rar(h)
-		local inHand = cur.id == data.equip
-		local cost = Hammers.LevelCost(cur.k, cur.lv)
-		local o = { name = h.name, line = h.desc, icon = art(h), color = r.color, height = 112, buttonW = 190, spin = inHand,
-			chips = { { string.upper(r.name), r.color }, { "LV " .. cur.lv .. "/" .. Hammers.MaxLevel, K.DARK }, { Hammers.PowerLabel(cur.k, cur.lv) .. " POWER", GOLD } } }
-		if inHand then table.insert(o.chips, 1, { "IN YOUR HAND", K.GREEN }) end
-		if cost then
-			local can = money() >= cost
-			o.button = { "⬆ LV " .. (cur.lv + 1) .. "  " .. fmt(cost), can and GOLD or K.LOCK, function() levelUpItem(cur, h) end, shine = can, size = 19 }
-		else
-			o.status = { "MAX LEVEL", GOLD }
-		end
-		if not inHand then o.extra = { label = "EQUIP", color = EQUIP_BLUE, w = 110, onClick = function() equipItem(cur, h) end } end
-		local row = K.row(c.content, 1, o)
-		-- the rare ones wear their look on top too
-		if K.RARITY_LOOK[r.id] then
-			K.rarityFX(row:FindFirstChild("Art"), r.id)
-			K.rarityText(row:FindFirstChild("Title"), r.id)
-			local cf = row:FindFirstChild("Chips")
-			for _, ch in ipairs(cf and cf:GetChildren() or {}) do
-				local lb = ch:FindFirstChildOfClass("TextLabel")
-				if lb and lb.Text == string.upper(r.name) then K.rarityChip(ch, r.id) end
-			end
-		end
-		-- the picture opens the hammer's card
-		local hit = new("TextButton", { Text = "", AutoButtonColor = false, Position = UDim2.fromOffset(9, 9), Size = UDim2.fromOffset(94, 94), BackgroundTransparency = 1, ZIndex = 9, Parent = row })
-		hit.Activated:Connect(function() c.click(); hammerPopup(h, cur, data) end)
-	end
-	local total = 0
-	for _, n in pairs(data.crates) do total += n end
-	if total > 0 then
-		K.row(c.content, 2, { name = total .. (total == 1 and " crate" or " crates") .. " waiting to be opened", line = "Every crate holds a new hammer", icon = "gift", color = GOLD, height = 84, buttonW = 170,
-			button = { "OPEN", K.GREEN, function() c.click(); if c.showInventory then c.showInventory("crates") end end, shine = true, size = 22 } })
-	end
 	-- the toolbar (search, SORT, RARITY) and the grid; the toolbar only refills the grid (the search box keeps its focus)
 	local counts = {}
 	for _, it in ipairs(data.hammers) do local r = dr(Hammers.ById[it.k]); counts[r] = (counts[r] or 0) + 1 end
 	if filter and not counts[filter] then filter = nil end
-	K.section(c.content, 3, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
+	K.section(c.content, 3, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to equip it or level it up")
 	local grid
 	local function fill()
 		for _, ch in ipairs(grid:GetChildren()) do if not ch:IsA("UIGridLayout") then ch:Destroy() end end
@@ -1616,20 +1593,21 @@ local function drawHammers(tok, data)
 			if (not filter or dr(h) == filter) and matches(h, hSearch) then table.insert(list, it) end
 		end
 		sortBy(list, hSort)
+		-- the hammer in your hand always comes first (easy to find for its level-ups)
+		for i, it in ipairs(list) do
+			if it.id == data.equip then table.remove(list, i); table.insert(list, 1, it) break end
+		end
 		for n, it in ipairs(list) do
 			local h = Hammers.ById[it.k]
 			local r = rar(h)
-			local isCur = cur and it.id == cur.id
+			local inHand = it.id == data.equip
 			miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK }, rid = r.id, badgeRarity = true, nameColor = rarText(r),
-				line = it.id == data.equip and "✋ IN HAND" or (Hammers.PowerLabel(it.k, it.lv) .. " power"), lineColor = it.id == data.equip and GREEN_TXT or nil,
-				ring = it.id == data.equip and K.GREEN or (isCur and GOLD or nil), spin = it.id == data.equip, new = isNew(it),
+				line = Hammers.PowerLabel(it.k, it.lv) .. " power", lineColor = inHand and GREEN_TXT or nil,
+				ring = inHand and K.GREEN or nil, ringW = inHand and 5 or nil, equipped = inHand, spin = inHand, new = not inHand and isNew(it),
 				onClick = function()
 					c.click()
 					seen[it.id] = true
-					if selected == it.id then hammerPopup(h, it, data) return end -- a second tap opens its card
-					selected = it.id
-					drawHammers(tok, data)
-					c.content.CanvasPosition = Vector2.new(0, 0) -- the selected hammer is on top
+					hammerPopup(h, it, data) -- its card: EQUIP, LEVEL UP
 				end })
 		end
 		if #list == 0 then
@@ -1642,7 +1620,7 @@ local function drawHammers(tok, data)
 	} })
 	grid = smallGrid(5)
 	fill()
-	K.note(c.content, 6, "Tap a hammer to see it, tap it again for its card. Trade with other builders (TRADE); Rusty and pass hammers always stay yours.")
+	K.note(c.content, 6, "Tap a hammer to equip it or level it up. Trade with other builders (TRADE); your Rusty Hammer always stays yours.")
 end
 
 function M.Hammers(tok)
@@ -1892,13 +1870,15 @@ end
 ---------------------------------------------------------------------------------------------------------------------
 -- wiring
 ---------------------------------------------------------------------------------------------------------------------
--- the Inventory's red dots: a crate to open, a level-up you can afford on the hammer in your hand
+-- the Inventory's red numbers: crates to open; hammers: the new ones you haven't looked at + 1 when you can afford a
+-- level-up on the hammer in your hand
 function M.Available()
 	local p = c.player
-	local out = { crates = p:GetAttribute("CrateTotal") or 0, hammers = false }
+	local out = { crates = p:GetAttribute("CrateTotal") or 0, hammers = 0 }
 	local key, lv = p:GetAttribute("EquipKey"), p:GetAttribute("EquipLevel") or 1
 	local cost = key and Hammers.LevelCost(key, lv)
-	out.hammers = cost ~= nil and money() >= cost
+	if cost ~= nil and money() >= cost then out.hammers += 1 end
+	for _, it in ipairs(cache and cache.hammers or {}) do if isNew(it) then out.hammers += 1 end end
 	return out
 end
 
