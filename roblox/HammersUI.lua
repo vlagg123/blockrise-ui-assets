@@ -779,9 +779,9 @@ local function dailyHammers(order, data)
 			K.button(holder, bd[1], bd[2], { Size = UDim2.new(1, 0, 0, BH), TextSize = 21, Shine = bd.shine, LayoutOrder = i }, bd[3])
 		end
 	end
-	-- the card's tag (GREAT DEAL, POPULAR...) sits on the bottom edge of the picture, in the middle
+	-- the card's tag (GREAT DEAL, POPULAR...) sits at the bottom of the picture, in the middle (clear of the name)
 	local function tagChip(t, label, color)
-		K.chip(t, label, color, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 8 + ART), ZIndex = 8 })
+		K.chip(t, label, color, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 8 + ART - 5), ZIndex = 8 })
 	end
 	for i, o in ipairs(list) do
 		local h = Hammers.ById[o.key]

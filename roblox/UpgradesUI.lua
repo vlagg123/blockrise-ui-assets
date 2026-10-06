@@ -112,7 +112,7 @@ render = function(tok, data)
 		if invTab == "hammers" then HammersUI.Hammers(tok) elseif invTab == "crates" then HammersUI.MyCrates(tok)
 		elseif invTab == "tradeup" then HammersUI.TradeUp(tok) else HammersUI.Index(tok) end
 	elseif invTab == "materials" then
-		K.section(c.content, 1, "MATERIALS", Color3.fromRGB(255, 220, 110), "they drop while you build")
+		K.section(c.content, 1, "MATERIALS", Color3.fromRGB(255, 220, 110), "they drop while you build · the Job Board shows what each building drops")
 		local grid = K.grid(c.content, 2, cols(), 268)
 		for i, m in ipairs(Company.Materials) do
 			local n = data.mats[m.id] or 0
