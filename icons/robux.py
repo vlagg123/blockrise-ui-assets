@@ -987,18 +987,21 @@ def i_gems12000():
 
 
 # ------------------------------------------------------------------------------------------- hammer crates
-# loot chests: a chunky rounded chest with metal straps, the lid thrown open, light pouring out in cartoon beams,
-# sparkles in the air and a big floating "?" (what's inside is a mystery). One look per crate.
+# loot chests: a chunky rounded chest with metal straps, the lid thrown open, a real hammer (from the hammer spec)
+# bursting out of a glowing opening; the light rays and the bloom are painted in 2D afterwards (crate_post), so they
+# glow softly behind the chest without a sticker outline. One look per crate.
 CRATE_LOOK = {
     "supply": dict(body=("#c98546", "grain", "#a8672f", "#dc9a58"), lid="#b0703a", trim=("#6b7388", 0.9), inner="#4a2c18",
-                   glow="#ffd23f", beam="#ffe26a", mark="#ffd23f", gem=None),
+                   glow="#ffc93a", ray="#ffb21f", gem=None, hammer="steel", pose=(0.0, -16.0, 18.0)),
     "builder": dict(body=("#3f8cff", None, None, None), lid="#2a62d8", trim=("#ffc534", 1.0), inner="#163a8a",
-                    glow="#9fe0ff", beam="#c8f0ff", mark="#ffffff", gem=None),
+                    glow="#8fd8ff", ray="#3fb8ff", gem=None, hammer="gold", pose=(0.0, -16.0, 18.0)),
     "golden": dict(body=("#ffc534", "hammered", "#f2ae22", "#ffd86a"), lid="#e39a1a", trim=("#fff1c0", 1.0), inner="#8a4a10",
-                   glow="#fff2a0", beam="#fff7d0", mark="#fff7d6", gem=None),
+                   glow="#ffe680", ray="#ffcf2e", gem=None, hammer="diamond", pose=(0.0, -16.0, 18.0)),
     "exclusive": dict(body=("#ff4fc8", None, None, None), lid="#d42c9e", trim=("#8a4df8", 0.6), inner="#4a1070",
-                      glow="#ffb3f0", beam="#ffd6fa", mark="#ffffff", gem="pink"),
+                      glow="#ff9cf0", ray="#d65cff", gem="pink", hammer="plasma", pose=(0.0, -16.0, 18.0)),
 }
+CRATE_O = []      # world points of the glowing openings (for the 2D rays)
+_SPEC = None
 
 
 def _chest_mats(kind):
@@ -1017,6 +1020,30 @@ def _chest_mats(kind):
     trim = pbr("lc_trim_" + kind, tc, metal=tm, rough=0.22 if tm > 0.8 else 0.3, coat=0.5, emit=0.22)
     inner = candy(L["inner"], rough=0.6, coat=0.1, emit=0.05)
     return body, lid, trim, inner, L
+
+
+def burst_hammer(P, key, H, pose, height=3.0):
+    """the hammer `key` (hammers/spec.json) standing up out of the chest: handle in the light, head high above the lid"""
+    global _SPEC
+    import bl_build as B
+    if _SPEC is None:
+        _SPEC = B.load_spec()
+    h = [x for x in _SPEC["hammers"] if x["key"] == key][0]
+    B._M.clear()
+    before = set(bpy.data.objects)
+    B.build(h, _SPEC["palette"], pose=pose)
+    parts = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(c) for o in parts if o.type == "MESH" for c in o.bound_box]
+    lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
+    hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
+    k = height / max(hi.z - lo.z, 1e-6)
+    # bottom of the handle sinks 0.45 into the light, centred over the opening
+    move = P @ Matrix.Translation((0.05, -0.05, H - 0.45)) @ Matrix.Scale(k, 4) @ Matrix.Translation((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z))
+    for o in parts:
+        if o.parent is None:
+            o.matrix_world = move @ o.matrix_world
+    return parts
 
 
 def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, mark=True):
@@ -1056,23 +1083,15 @@ def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, m
         obj("lidband", bm, trim, loc=(x, -D / 2, 0), parent=Lf, smooth=30, bevel=0.02)
     obj("lidrim", bm_box(W + 0.06, 0.22, 0.16), trim, loc=(0, -D + 0.05, 0.02), parent=Lf, bevel=0.04)
     if open_:
-        # light pouring out: a bright slab in the opening and cartoon beams fanning up
-        obj("light", bm_box(W - 0.34, D - 0.34, 0.26), glow(L["glow"], 8.0), loc=(0, 0, H - 0.02), parent=P, bevel=0.06, outline=False)
-        beams = [(-40, 1.9, 0.2), (-21, 2.5, 0.18), (-4, 2.9, 0.24), (14, 2.6, 0.18), (32, 2.1, 0.2)]
-        for a, ln, w in beams:
-            pts = [(-w, 0.0), (w, 0.0), (w * 0.4, ln), (-w * 0.4, ln)]
-            b = poly(pts, 0.04, glow(L["beam"], 3.2), bevel=0.0, outline=False)
-            b.matrix_world = P @ _xf((0, 0.1, H - 0.05), (0, a, 0))
-        # sparkles in the air
-        for (x, z, r) in ((-1.55, 2.35, 0.2), (1.6, 2.1, 0.17), (-0.9, 3.4, 0.14), (1.15, 3.35, 0.2), (0.3, 2.65, 0.1), (-1.9, 1.35, 0.11), (2.0, 3.0, 0.1)):
+        # the opening glows in the crate's colour (bright, not blown out); the rays come in 2D (crate_post)
+        obj("light", bm_box(W - 0.34, D - 0.34, 0.26), glow(L["glow"], 4.0), loc=(0, 0, H - 0.02), parent=P, bevel=0.06, outline=False)
+        CRATE_O.append(P @ Vector((0, 0, H + 0.15)))
+        if mark and L.get("hammer"):
+            burst_hammer(P, L["hammer"], H, L["pose"])
+        # a few sparkles in the air
+        for (x, z, r) in ((-1.75, 2.5, 0.2), (1.85, 2.2, 0.17), (-1.25, 3.7, 0.13), (1.5, 3.6, 0.15)):
             st = poly(star_pts(r, r * 0.34, 4, 90), 0.05, glow("#ffffff", 4.5), bevel=0.0, outline=False)
             st.matrix_world = P @ _xf((x, -0.3, z), (0, 0, 0))
-        if mark:
-            # a big, readable "?": the glyph is thin enough for its hook to stay open under the outline
-            q = text("?", 2.3, 0.18, candy(L["mark"], rough=0.25, emit=0.55), bevel=0.03, outline=True, center=True)
-            q.matrix_world = P @ _xf((0.15, -1.0, H + 1.75), (90, -12, 0))
-            sh = text("?", 2.3, 0.18, candy("#1b1530", rough=0.6, coat=0.0, emit=0.0), bevel=0.03, outline=False, center=True)
-            sh.matrix_world = P @ _xf((0.22, -0.92, H + 1.68), (90, -12, 0))
     return P
 
 
@@ -1086,22 +1105,22 @@ def i_crate_builder():
 
 def i_crate_golden():
     track(loot_chest, rot=(0, 0, 22), kind="golden")
-    track(coin, loc=(-0.55, -0.2, 1.42), rot=(62, 0, 24), r=0.4)
-    track(coin, loc=(0.5, -0.1, 1.38), rot=(70, 0, -30), r=0.36)
+    track(coin, loc=(-0.78, -0.25, 1.42), rot=(62, 0, 24), r=0.38)
+    track(coin, loc=(0.82, -0.15, 1.38), rot=(70, 0, -30), r=0.34)
     track(coin, loc=(2.0, -1.15, 0.42), rot=(75, 0, -25), r=0.42)
     track(coin, loc=(-2.05, -0.95, 0.42), rot=(75, 0, 25), r=0.42)
 
 
 def i_crate_exclusive():
     track(loot_chest, rot=(0, 0, 22), kind="exclusive")
-    track(gem, PURPLE_GEM, loc=(-0.5, -0.15, 1.5), rot=(12, 0, 25), s=0.36)
-    track(gem, PINK_GEM, loc=(0.55, -0.1, 1.46), rot=(12, 0, -20), s=0.34)
+    track(gem, PURPLE_GEM, loc=(-0.8, -0.2, 1.5), rot=(12, 0, 25), s=0.34)
+    track(gem, PINK_GEM, loc=(0.85, -0.15, 1.46), rot=(12, 0, -20), s=0.32)
     track(gem, BLUE_GEM, loc=(2.0, -1.15, 0.45), rot=(8, 0, -20), s=0.42)
     track(gem, PINK_GEM, loc=(-2.05, -0.95, 0.42), rot=(8, 0, 20), s=0.38)
 
 
 def _three(kind):
-    # three chests: two shut at the back, the front one open with the light and the "?"
+    # three chests: two shut at the back, the front one open with the light and its hammer
     track(loot_chest, loc=(-1.6, 1.3, 0), rot=(0, 0, 12), s=0.74, kind=kind, open_=False)
     track(loot_chest, loc=(1.7, 1.3, 0), rot=(0, 0, 32), s=0.74, kind=kind, open_=False)
     track(loot_chest, loc=(0.0, -0.9, 0), rot=(0, 0, 22), s=0.8, kind=kind)
@@ -1181,6 +1200,45 @@ def card(icon_canvas, key, size=512):
     return out
 
 
+# ------------------------------------------------------------------------------------------- 2D: crate light
+def crate_post(canvas, o_px, ray_hex, glow_hex):
+    """soft coloured light rays fanning up behind the chest (no outline, they fade out) and a small bloom over the
+    opening. o_px = the opening in canvas pixels (x, y from the top)."""
+    S = canvas.shape[0]
+    ox, oy = o_px
+    yy, xx = np.mgrid[0:S, 0:S].astype(np.float32)
+    dx, dy = xx - ox, yy - oy
+    d = np.sqrt(dx * dx + dy * dy) / S
+    ang = np.degrees(np.arctan2(dx, -dy))          # 0 = straight up
+    n, spread, length = 9, 156.0, 0.56
+    m = np.zeros((S, S), np.float32)
+    for i in range(n):
+        a = -spread / 2 + (i + 0.5) * spread / n
+        w = (spread / n) * (0.36 if i % 2 == 0 else 0.24)
+        L = length * (1.0 if i % 2 == 0 else 0.8)
+        band = np.clip(1 - np.abs(ang - a) / w, 0, 1) ** 0.7
+        fall = np.clip(1 - d / L, 0, 1) ** 1.4
+        m = np.maximum(m, band * fall)
+    halo = np.exp(-(d / 0.2) ** 2)
+    alpha = np.clip(m * 0.62 + halo * 0.55, 0, 1)
+    c = _hex(ray_hex)
+    tint = np.clip(d / length, 0, 1)[..., None] ** 0.6
+    rgb = (1 - tint) * (0.55 * c + 0.45) + tint * c        # pale near the chest, full colour further out
+    rays = np.concatenate([rgb, alpha[..., None]], -1)
+    out = postnp.over(rays, canvas)                        # the chest sticker sits on the light
+    g = _hex(glow_hex)
+    bloom = np.exp(-(d / 0.075) ** 2) * 0.38
+    out = postnp.over(out, np.concatenate([np.broadcast_to(0.5 * g + 0.5, (S, S, 3)), bloom[..., None]], -1).astype(np.float32))
+    return out
+
+
+def _px_of(world, S):
+    from bpy_extras.object_utils import world_to_camera_view
+    scn = bpy.context.scene
+    u = world_to_camera_view(scn, scn.camera, world)
+    return (u.x * S, (1 - u.y) * S)
+
+
 # ------------------------------------------------------------------------------------------- run
 def render(names=None, size=768, samples=80):
     names = names or list(ICONS)
@@ -1192,6 +1250,7 @@ def render(names=None, size=768, samples=80):
         T._M.clear()
         I.OUTLINE = 0.034
         GROUPS.clear()
+        CRATE_O.clear()
         ICONS[n]()
         TOUCH_LOG.append(("clash", clashes()))
         I.add_outlines()
@@ -1202,7 +1261,11 @@ def render(names=None, size=768, samples=80):
         I.frame_and_render(raw, view=VIEW.get(n, (-0.2, -1, 0.32)), margin=1.08)
         key = "robux_" + n
         postnp.SPARKLE[key] = SPARK.get(n, [])
-        canvas = postnp.canvas_of(postnp.load(raw), key)
+        rawpx = postnp.load(raw)
+        canvas = postnp.canvas_of(rawpx, key)
+        if n.startswith("crate_") and CRATE_O:
+            L = CRATE_LOOK[n.replace("crate_", "").rstrip("3")]
+            canvas = crate_post(canvas, _px_of(CRATE_O[-1], rawpx.shape[0]), L["ray"], L["glow"])
         postnp.save(postnp.resize(canvas, 256), os.path.join(OUT, "game", n + ".png"))
         postnp.save(card(canvas, n), os.path.join(OUT, "card", n + ".png"))
         done.append(n)
