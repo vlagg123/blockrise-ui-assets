@@ -646,7 +646,7 @@ local function crateTiles(data, order, shop)
 			end
 		elseif tut then
 			-- the tutorial: one Supply Crate, bought and opened at once; the rest waits
-			if cr.cash and have == 0 and (c.player:GetAttribute("IndexCount") or 1) < 2 then
+			if cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
 				local price = data.supplyPrice or Hammers.SupplyPrice(60)
 				local can = money() >= price
 				table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function()
