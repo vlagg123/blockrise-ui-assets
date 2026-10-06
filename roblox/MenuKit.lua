@@ -227,6 +227,41 @@ end
 	      button = {label, color, onClick, icon =, shine =} | buttons = { {...}, {...} } | status = {label, color},
 	      corner = {label, color, onClick}, dim = true, spin = true, order }
 ]]
+-- a horizontal list that never spills out of its frame: it shrinks (down to minScale) when it is too long.
+-- It measures only once everything has settled, one pass at a time, and never reacts to its own shrinking (the old
+-- version read the list's content size a frame late, picked another scale, and the chips wobbled left-right forever).
+-- watch = the frame around the list (its size changes are not caused by the list's own scale).
+function K.fitRow(row, lay, minScale, extra, watch)
+	local fit = new("UIScale", { Parent = row })
+	local busy, again = false, false
+	local function refit()
+		if not row.Parent then return end
+		if busy then again = true return end
+		busy = true
+		task.defer(function()
+			RunService.Heartbeat:Wait() -- (the list and the chips' automatic sizes settle)
+			if row.Parent then
+				local k = math.max(fit.Scale, 0.01)
+				local w, cw = row.AbsoluteSize.X / k, lay.AbsoluteContentSize.X / k + (extra or 0)
+				local want = (w > 0 and cw > w + 0.5) and math.max(minScale or 0.55, w / cw) or 1
+				if math.abs(want - fit.Scale) > 0.01 then
+					fit.Scale = want
+					-- the new scale settles before anything is measured again
+					RunService.Heartbeat:Wait()
+					RunService.Heartbeat:Wait()
+					again = false
+				end
+			end
+			busy = false
+			if again then again = false; refit() end
+		end)
+	end
+	if watch then watch:GetPropertyChangedSignal("AbsoluteSize"):Connect(refit) end
+	lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refit) -- a label that changes later (a timer...)
+	task.defer(refit)
+	return fit
+end
+
 function K.tile(grid, o)
 	local t = new("Frame", { Name = "Tile", BackgroundTransparency = 1, LayoutOrder = o.order or 0, ZIndex = 2, Parent = grid })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
@@ -251,16 +286,7 @@ function K.tile(grid, o)
 		local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
 		for i, s in ipairs(o.stats) do K.chip(row, s[1], s[2], { LayoutOrder = i, Pic = s.pic }) end
 		-- the chips always fit inside the tile: a row too long for it shrinks a little (never spills onto the next tile)
-		local fit = new("UIScale", { Parent = row })
-		local function refit()
-			local k = math.max(fit.Scale, 0.01)
-			local w, cw = row.AbsoluteSize.X / k, lay.AbsoluteContentSize.X / k
-			local want = (w > 0 and cw > w) and math.max(0.55, w / cw) or 1
-			if math.abs(want - fit.Scale) > 0.005 then fit.Scale = want end
-		end
-		lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refit)
-		row:GetPropertyChangedSignal("AbsoluteSize"):Connect(refit)
-		task.defer(refit)
+		K.fitRow(row, lay, 0.55, 0, t)
 	end
 	local bp = { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -20, 0, 50) }
 	if o.buttons then
@@ -340,6 +366,7 @@ end
 
 --[[ light list row (contracts, upgrades...)
 	o = { name, line, icon, color, chips = {{label,color},...}, bar = {fraction, color, label}, button = {...}, status = {...},
+	      drops = {{label, color, pic = picture},...} (a "DROPS:" line of picture chips; dropsLabel replaces the word),
 	      extra = {label, color, onClick, w, icon} (small button left of the main one),
 	      dim, order, height, buttonW }
 ]]
@@ -354,7 +381,8 @@ function K.row(parent, order, o)
 	local x = h + 4
 	local hasChips = o.chips and #o.chips > 0
 	-- title, line, bar and chips stacked with even 6 px gaps, the whole block centred in the row
-	local total = 28 + (o.line and 26 or 0) + (o.bar and 26 or 0) + (hasChips and 32 or 0)
+	local hasDrops = o.drops and #o.drops > 0
+	local total = 28 + (o.line and 26 or 0) + (o.bar and 26 or 0) + (hasDrops and 32 or 0) + (hasChips and 32 or 0)
 	local y = math.floor((h - total) / 2)
 	local w = UDim2.new(1, -x - right, 0, 0)
 	local tx = 0
@@ -391,6 +419,17 @@ function K.row(parent, order, o)
 				TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = bar })
 		end
 		y += 26
+	end
+	if hasDrops then
+		-- what it gives besides the pay (the materials a building drops): "DROPS" and a picture chip per thing
+		local row = new("Frame", { Name = "Drops", Position = UDim2.fromOffset(x - 2, y), Size = w + UDim2.fromOffset(0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+		local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder,
+			VerticalAlignment = Enum.VerticalAlignment.Center, Parent = row })
+		text({ Size = UDim2.fromOffset(0, 26), AutomaticSize = Enum.AutomaticSize.X, Text = o.dropsLabel or "DROPS:", Font = T.chunky, TextSize = 16,
+			TextColor3 = o.dim and K.SUB or K.DARK, LayoutOrder = 0, Parent = row })
+		for i, d in ipairs(o.drops) do K.chip(row, d[1], d[2], { LayoutOrder = i, Pic = d.pic }) end
+		K.fitRow(row, lay, 0.6, 0, f)
+		y += 32
 	end
 	if hasChips then
 		local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(x - 2, y), Size = w + UDim2.fromOffset(0, 26), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
@@ -631,6 +670,7 @@ end
 function K.rarityChip(img, id)
 	local L = K.RARITY_LOOK[id]
 	if not L or not img then return img end
+	img:SetAttribute("Skin", id) -- (a button face keeps this look: its own colouring stands aside)
 	img.ImageColor3 = Color3.new(1, 1, 1)
 	local g = img:FindFirstChildOfClass("UIGradient") or new("UIGradient", { Parent = img })
 	g.Color = bgSeq(L)

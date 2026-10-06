@@ -196,15 +196,14 @@ function Hammers.Roll(crateId, zone, rng, luck, pityMin)
 	return pool[rng:NextInteger(1, #pool)].key, pick
 end
 
--- Hammer Shop: four hammers of the day (Rare, Epic, Legendary, Mythic), the same for everyone, a new set every
--- day at 00:00 UTC. Bought with lots of Gems or with Robux (a developer product per tier). Only hammers that exist in the
--- game and drop from the normal crates are sold (never Exclusive, event, pass, Secret or Divine ones: those stay rare).
+-- Hammer Shop: three hammers of the day (Epic, Legendary, Mythic), the same for everyone, a new set every day at
+-- 00:00 UTC. Bought with lots of Gems or with Robux (a developer product per tier, pointing at it by index). Only hammers
+-- that exist in the game and drop from the normal crates are sold (never Exclusive, event, pass, Secret or Divine ones:
+-- those stay rare). The shop shows them in one row with the Thunderclap (Robux only) last on the right.
 Hammers.ShopTiers = {
 	{ r = 4, gems = 1500, product = "hammer_epic", tag = "GREAT DEAL" },
 	{ r = 5, gems = 6000, product = "hammer_legendary", tag = "POPULAR" },
 	{ r = 6, gems = 20000, product = "hammer_mythic", tag = "ULTRA RARE" },
-	-- (added later: keeps the index of the three above, the Robux products point at them by index)
-	{ r = 3, gems = 400, product = "hammer_rare", tag = "STARTER" },
 }
 function Hammers.ShopDay(t) return math.floor((t or os.time()) / 86400) end
 function Hammers.Featured(day)

@@ -41,6 +41,7 @@ local function rarText(r) return r.text and Color3.fromRGB(90, 80, 130) or r.col
 local function art(h)
 	if Config.StormHammer and h.key == Config.StormHammer.key and Config.StormHammer.icon then return Config.StormHammer.icon end
 	if h.image and Config.ProductImages and Config.ProductImages[h.image] then return Config.ProductImages[h.image] end
+	if h.img then return h.img end -- (its own render: every hammer made after the first 15)
 	for _, t in ipairs(Config.Tools) do if t.key == h.key and t.icon then return t.icon end end
 	return "shop"
 end
@@ -760,16 +761,28 @@ local function dailyHammers(order, data)
 			task.wait(1)
 		end
 	end)
-	-- the hammers of the day on the left (two rows of two: Rare, Epic / Legendary, Mythic), on the right the
+	-- one row of four cards: the three Hammers of the Day (Epic, Legendary, Mythic) and, last on the right, the
 	-- Thunderclap: a hammer only Robux buys (never in a crate)
 	local list = {}
 	for _, o in pairs(offers) do table.insert(list, o) end
 	table.sort(list, function(x, y) return x.r < y.r end)
-	local CELL, GAP = 292, 12
-	local rows = math.ceil(#list / 2)
-	local wrap = new("Frame", { Name = "DailyHammers", Size = UDim2.new(1, 0, 0, rows * CELL + (rows - 1) * GAP), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
-	local grid = new("Frame", { Name = "Grid", Size = UDim2.new(0.66, -GAP / 2, 1, 0), BackgroundTransparency = 1, ZIndex = 2, Parent = wrap })
-	new("UIGridLayout", { CellSize = UDim2.new(0.5, -GAP / 2, 0, CELL), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
+	local CELL, GAP, ART, BH = 350, 12, 156, 44
+	local grid = new("Frame", { Name = "DailyHammers", Size = UDim2.new(1, 0, 0, CELL), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
+	new("UIGridLayout", { CellSize = UDim2.new(0.25, -math.ceil(GAP * 3 / 4), 0, CELL), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = grid })
+	-- the buttons one above the other (a card is narrow: Gems and Robux side by side didn't fit)
+	local function stack(t, defs)
+		local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10), Size = UDim2.new(1, -20, 0, #defs * BH + (#defs - 1) * 6),
+			BackgroundTransparency = 1, ZIndex = 7, Parent = t })
+		new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
+		for i, bd in ipairs(defs) do
+			K.button(holder, bd[1], bd[2], { Size = UDim2.new(1, 0, 0, BH), TextSize = 21, Shine = bd.shine, LayoutOrder = i }, bd[3])
+		end
+	end
+	-- the card's tag (GREAT DEAL, POPULAR...) sits on the bottom edge of the picture, in the middle
+	local function tagChip(t, label, color)
+		K.chip(t, label, color, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 8 + ART), ZIndex = 8 })
+	end
 	for i, o in ipairs(list) do
 		local h = Hammers.ById[o.key]
 		local r = rar(h)
@@ -807,9 +820,11 @@ local function dailyHammers(order, data)
 				else c.toast(h.name .. ": Robux coming soon (" .. K.robux(prod.price) .. ")", T.accent, 2.5) end
 			end, shine = true })
 		end
-		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = 132, spin = true,
-			badge = { string.upper(r.name), r.color }, tag = { o.tag, o.r == 5 and T.red or K.DARK },
-			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } }, buttons = buttons })
+		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = ART, spin = true,
+			badge = { string.upper(r.name), r.color },
+			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } } })
+		tagChip(t, o.tag, o.r == 5 and T.red or K.DARK)
+		stack(t, buttons)
 		K.rarityFX(t:FindFirstChild("Art"), r.id)
 		local tl = t:FindFirstChild("Title")
 		if tl then K.rarityText(tl, r.id, rarText(r)) end
@@ -827,35 +842,35 @@ local function dailyHammers(order, data)
 			end)
 		end
 	end
-	-- the right column: the Thunderclap Hammer, Robux only (the game pass), tall and electric
+	-- the last card on the right: the Thunderclap Hammer, Robux only (the game pass), electric
 	local sh = Config.StormHammer
 	local pass
 	if sh then for _, pp in ipairs(Config.Store.passes) do if pp.key == sh.pass then pass = pp end end end
 	if sh and pass then
-		local side = new("Frame", { Name = "Exclusive", Position = UDim2.new(0.66, GAP / 2, 0, 0), Size = UDim2.new(0.34, -GAP / 2, 1, 0), BackgroundTransparency = 1, ZIndex = 2, Parent = wrap })
-		new("UIGridLayout", { CellSize = UDim2.fromScale(1, 1), Parent = side })
 		local ex = Hammers.RarityById.exclusive
 		local owns = c.player:GetAttribute("Pass_" .. sh.pass) == true
-		local o = { order = 1, name = sh.name, icon = sh.icon or art(Hammers.ById[sh.key or "thunder"]), iconScale = 1.04, color = ex.color, spin = true,
-			artH = rows * CELL + (rows - 1) * GAP - 190, badge = { "EXCLUSIVE", ex.color }, tag = { "ROBUX ONLY", T.red },
-			stats = { { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
+		local o = { order = 10, name = sh.name, icon = sh.icon or art(Hammers.ById[sh.key or "thunder"]), iconScale = 1.04, color = ex.color, spin = true,
+			artH = ART, badge = { "EXCLUSIVE", ex.color }, stats = { { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
 		if owns then
 			o.status = { "OWNED", K.GREEN }
-		elseif (pass.id or 0) > 0 or studio then
-			o.buttons = { { K.robux(pass.price), K.GREEN, function()
+		end
+		local t = K.tile(grid, o)
+		tagChip(t, "ROBUX ONLY", T.red)
+		if not owns and ((pass.id or 0) > 0 or studio) then
+			stack(t, { { K.robux(pass.price), K.GREEN, function()
 				c.click()
 				if (pass.id or 0) > 0 then MarketplaceService:PromptGamePassPurchase(c.player, pass.id)
 				else c.toast(sh.name .. ": coming soon (" .. K.robux(pass.price) .. ")", T.accent, 2.5) end
-			end, shine = true } }
+			end, shine = true } })
 		end
-		local t = K.tile(side, o)
 		K.rarityFX(t:FindFirstChild("Art"), "exclusive")
 		local tl = t:FindFirstChild("Title")
 		if tl then K.rarityText(tl, "exclusive", ex.color) end
 		local chip = t:FindFirstChild("Chip")
 		if chip then K.rarityChip(chip, "exclusive") end
-		K.text({ Position = UDim2.new(0, 13, 1, -96), Size = UDim2.new(1, -26, 0, 30), Text = "Never in a crate · x" .. sh.mult .. " build power for you and your crew",
-			TextSize = 14, Max = 14, TextWrapped = true, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
+		-- (in the place of a second button: what makes it special)
+		K.text({ Position = UDim2.new(0, 13, 1, -10 - BH - 6 - BH), Size = UDim2.new(1, -26, 0, BH), Text = "Never in a crate · x" .. sh.mult .. " build power for you and your crew",
+			TextSize = 15, Max = 15, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 		-- an electric glow around the card
 		local glow = new("UIStroke", { Thickness = 4, Color = ex.color, Transparency = 0.2, Parent = glowFrame(t) })
 		task.spawn(function()
@@ -969,16 +984,7 @@ local function filterRow(order, counts, current, onPick)
 		end
 	end
 	-- the row never spills: it shrinks a little when there are many rarities
-	local lay = row:FindFirstChildOfClass("UIListLayout")
-	local fit = new("UIScale", { Parent = row })
-	local function refit()
-		local k = math.max(fit.Scale, 0.01)
-		local w, cw = row.AbsoluteSize.X / k, lay.AbsoluteContentSize.X / k
-		local want = (w > 0 and cw > w) and math.max(0.6, w / cw) or 1
-		if math.abs(want - fit.Scale) > 0.005 then fit.Scale = want end
-	end
-	lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refit)
-	task.defer(refit)
+	K.fitRow(row, row:FindFirstChildOfClass("UIListLayout"), 0.6, 0, c.content)
 	return row
 end
 
@@ -1032,17 +1038,7 @@ local function toolbar(o)
 		end)
 	end
 	-- the bar never spills: it shrinks a little on a narrow window
-	local lay = bar:FindFirstChildOfClass("UIListLayout")
-	local fit = new("UIScale", { Parent = bar })
-	local function refit()
-		local k = math.max(fit.Scale, 0.01)
-		local w, cw = bar.AbsoluteSize.X / k, (lay.AbsoluteContentSize.X + 8) / k
-		local want = (w > 0 and cw > w) and math.max(0.6, w / cw) or 1
-		if math.abs(want - fit.Scale) > 0.005 then fit.Scale = want end
-	end
-	lay:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refit)
-	bar:GetPropertyChangedSignal("AbsoluteSize"):Connect(refit)
-	task.defer(refit)
+	K.fitRow(bar, bar:FindFirstChildOfClass("UIListLayout"), 0.6, 8, c.content)
 	return bar
 end
 

@@ -3,6 +3,7 @@ local RS = game:GetService("ReplicatedStorage")
 local K = require(RS.Shared:WaitForChild("MenuKit"))
 
 local Hammers = require(RS.Shared:WaitForChild("Hammers"))
+local Company = require(RS.Shared:WaitForChild("Company"))
 
 local M = {}
 local c, UI, T, Config
@@ -17,8 +18,22 @@ local function contractOrder(id)
 	return 1
 end
 
+-- the materials a building drops while you build it (and when it's finished): picture, name and chance, most first
+local function dropsOf(ord, narrow)
+	local out = {}
+	if not Company.DropTable then return out end
+	for id, pct in pairs(Company.DropTable(ord)) do
+		local m = Company.MaterialById[id]
+		if m and pct > 0 then
+			local name = narrow and m.name:match("^(%S+)") or m.name
+			table.insert(out, { name .. " " .. pct .. "%", m.color:Lerp(Color3.new(0, 0, 0), 0.25), pic = m.image or m.icon, pct = pct, order = m.order })
+		end
+	end
+	table.sort(out, function(a, b) if a.pct ~= b.pct then return a.pct > b.pct end return a.order < b.order end)
+	return out
+end
+
 local function blueprintPicker(order)
-	local Company = require(RS.Shared:WaitForChild("Company"))
 	local owned = {}
 	for _, bp in ipairs(Company.Blueprints) do
 		local n = c.player:GetAttribute("BP_" .. bp.id) or 0
@@ -92,13 +107,14 @@ function M.Show()
 			local r = Hammers.Rarities[ct.reqHammer]
 			table.insert(chips, { "🔨 " .. string.upper(r.name) .. "+", r.text and Color3.fromRGB(70, 70, 110) or r.color })
 		end
-		if (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) < 700 then
+		local narrow = (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) < 700
+		if narrow then
 			-- narrow window (phones): only the reward, the stars and the strength you need
 			table.remove(chips, 4)
 			table.remove(chips, 2)
 		end
 		local o = { name = ct.name, line = ct.unlocked and (ct.client .. " · " .. ct.stages .. " stages" .. (ct.done > 0 and ("  ·  done x" .. ct.done) or "")) or needs(ct),
-			icon = K.BUILDING[ct.id] or ART[ord] or "site", color = K.RAR[rk], chips = chips, height = 120, buttonW = 168,
+			icon = K.BUILDING[ct.id] or ART[ord] or "site", color = K.RAR[rk], chips = chips, drops = dropsOf(ord, narrow), height = 150, buttonW = 168,
 			new = ct.unlocked and (ct.done or 0) == 0 }
 		if ct.unlocked and data.active == ct.id then
 			o.status = { "ACTIVE", Color3.fromRGB(255, 176, 40) }

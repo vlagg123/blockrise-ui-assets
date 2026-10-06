@@ -1,5 +1,6 @@
--- BlockRise Empire - UI toolkit. Windows, buttons, tiles and bars are drawn with 9-slice images from one skin
--- atlas (ui_skin.png): ink outline, 3D lip, gloss and soft shading are baked in, Roblox tints them with ImageColor3.
+-- BlockRise Empire - UI toolkit. Windows, tiles and bars are drawn with 9-slice images from one skin atlas
+-- (ui_skin.png): ink outline, gloss and soft shading are baked in, Roblox tints them with ImageColor3. Buttons are
+-- built like the big HUD buttons (a face on a darker base that sinks when pressed).
 local TweenService = game:GetService("TweenService")
 
 local UI = {}
@@ -131,7 +132,11 @@ end
 
 -- a light band that sweeps across a button every few seconds (buy buttons, the main action)
 function UI.shine(b, z, period)
-	local sweep = UI.slice("face", { Name = "Sweep", ImageTransparency = 0.45, ZIndex = z or 1, Parent = b:FindFirstChild("Bg") or b })
+	local host = b:FindFirstChild("Bg") or b
+	local sweep = new("Frame", { Name = "Sweep", BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.45, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1),
+		ZIndex = z or 1, Parent = host })
+	local hc = host:FindFirstChildOfClass("UICorner")
+	new("UICorner", { CornerRadius = hc and hc.CornerRadius or UDim.new(0, 14), Parent = sweep })
 	local g = new("UIGradient", { Rotation = 25, Offset = Vector2.new(-1, 0), Parent = sweep,
 		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 1), NumberSequenceKeypoint.new(0.5, 0.2),
 			NumberSequenceKeypoint.new(0.6, 1), NumberSequenceKeypoint.new(1, 1) }) })
@@ -141,27 +146,89 @@ function UI.shine(b, z, period)
 	return sweep
 end
 
--- chunky game button: one 9-slice image (face + 3D lip + ink outline) tinted with the colour, a gloss on top.
--- Hover brightens it, pressing darkens and sinks it a little. Nothing grows over its neighbours.
--- Extra props: Icon (atlas icon shown left of the text), Shine (sweeping light band).
+-- chunky game button, the same as the big HUD buttons: a face (colour gradient, gloss, ink outline) sitting on a darker
+-- base. Pressing pushes the face down onto the base (the label and the icon go down with it) and it springs back up
+-- when you let go; with a mouse it grows a little under the pointer.
+-- Bg is the face: an ImageLabel without an image, so the old way of colouring a button still works (Bg.ImageColor3 =
+-- the colour: face gradient and base follow; Bg.ImageTransparency fades the button; Bg.Shine is the gloss).
+-- Extra props: Icon (atlas icon shown left of the text), Shine (sweeping light band), Radius (corner radius).
 local LABEL_KEYS = { Text = true, TextSize = true, Font = true, TextColor3 = true, Icon = true, Shine = true }
+local BTN_DROP, BTN_PRESS, BTN_RADIUS = 6, 5, 14 -- the base shows 6 px under the face; a press sinks the face 5 px
+local UIS = game:GetService("UserInputService")
+local WHITE, BLACK = Color3.new(1, 1, 1), Color3.new(0, 0, 0)
 function UI.button(text, c1, c2, props)
 	props = props or {}
 	local z = props.ZIndex or 1
 	local color = c2 and c1:Lerp(c2, 0.35) or c1
+	local radius = props.Radius or BTN_RADIUS
 	local b = new("TextButton", { AutoButtonColor = false, BackgroundTransparency = 1, BorderSizePixel = 0, Text = "" })
 	for k, v in pairs(props) do
 		if k ~= "Parent" and k ~= "Radius" and not LABEL_KEYS[k] then b[k] = v end
 	end
-	local bg = UI.slice("button", { Name = "Bg", ImageColor3 = color, ZIndex = z, Parent = b })
-	UI.slice("gloss", { Name = "Shine", ImageTransparency = 0.1, ZIndex = z, Parent = bg })
-	-- the label sits on the face (above the 3D lip)
-	local lbl = new("TextLabel", { Name = "Label", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 3), Size = UDim2.new(1, -14, 1, -13),
-		BackgroundTransparency = 1, Text = text, Font = props.Font or T.body, TextColor3 = props.TextColor3 or Color3.new(1, 1, 1), TextWrapped = false,
+	-- the base: the button's darker 3D side, showing under the face
+	local base = new("Frame", { Name = "Base", Position = UDim2.fromOffset(0, BTN_DROP), Size = UDim2.new(1, 0, 1, -BTN_DROP), BorderSizePixel = 0,
+		ZIndex = math.max(0, z - 1), Parent = b })
+	UI.corner(radius).Parent = base
+	local baseStroke = new("UIStroke", { Thickness = 3, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = base })
+	-- the face
+	local bg = new("ImageLabel", { Name = "Bg", Image = "", ImageColor3 = color, BackgroundColor3 = WHITE, BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 1, -BTN_DROP), ZIndex = z, Parent = b })
+	UI.corner(radius).Parent = bg
+	local faceStroke = new("UIStroke", { Thickness = 3, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = bg })
+	local grad = new("UIGradient", { Name = "FaceGrad", Rotation = 90, Parent = bg })
+	-- the gloss on the top of the face (an ImageLabel too: Shine.ImageTransparency dims it, like before)
+	local shine = new("ImageLabel", { Name = "Shine", Image = "", BackgroundColor3 = WHITE, BackgroundTransparency = 0.55, BorderSizePixel = 0,
+		Position = UDim2.fromOffset(5, 4), Size = UDim2.new(1, -10, 0.42, 0), ZIndex = z, Parent = bg })
+	UI.corner(math.max(4, radius - 4)).Parent = shine
+	new("UIGradient", { Transparency = NumberSequence.new(0.2, 1), Rotation = 90, Parent = shine })
+	shine:GetPropertyChangedSignal("ImageTransparency"):Connect(function()
+		shine.BackgroundTransparency = math.clamp(0.55 + (shine.ImageTransparency - 0.1) * 0.8, 0, 1)
+	end)
+	local function paint()
+		local skin = bg:GetAttribute("Skin")
+		if skin == "plain" then return end
+		local bot
+		if skin then
+			-- someone else colours the face (a rarity look): the base follows the bottom of that gradient
+			local k = grad.Color.Keypoints
+			bot = k[#k].Value
+		else
+			local col = bg.ImageColor3
+			bot = col:Lerp(BLACK, 0.12)
+			grad.Color = ColorSequence.new(col:Lerp(WHITE, 0.16), bot)
+		end
+		base.BackgroundColor3 = bot:Lerp(T.ink, 0.4)
+		local tr = bg.ImageTransparency
+		bg.BackgroundTransparency = tr
+		base.BackgroundTransparency = tr
+		faceStroke.Transparency = tr
+		baseStroke.Transparency = tr
+	end
+	bg:GetPropertyChangedSignal("ImageColor3"):Connect(paint)
+	bg:GetPropertyChangedSignal("ImageTransparency"):Connect(paint)
+	bg:GetAttributeChangedSignal("Skin"):Connect(paint)
+	grad:GetPropertyChangedSignal("Color"):Connect(function() if bg:GetAttribute("Skin") and bg:GetAttribute("Skin") ~= "plain" then paint() end end)
+	bg:SetAttribute("Color", color)
+	paint()
+	-- the label sits on the face
+	local lbl = new("TextLabel", { Name = "Label", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 2), Size = UDim2.new(1, -14, 1, -BTN_DROP - 4),
+		BackgroundTransparency = 1, Text = text, Font = props.Font or T.body, TextColor3 = props.TextColor3 or WHITE, TextWrapped = false,
 		ZIndex = z + 1, Parent = b })
 	new("UITextSizeConstraint", { MaxTextSize = props.TextSize or 20, MinTextSize = 9, Parent = lbl })
 	lbl.TextScaled = true
 	new("UIStroke", { Thickness = 2.2, Color = T.ink, LineJoinMode = Enum.LineJoinMode.Round, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Parent = lbl })
+	-- pressing: one value (0 = up, BTN_PRESS = down) moves the face and what is drawn on it
+	local press = Instance.new("NumberValue")
+	local rest = {} -- [label / icon] = where it sits when the button is up
+	local function apply()
+		local y = press.Value
+		bg.Position = UDim2.fromOffset(0, y)
+		for g, p in pairs(rest) do
+			if g.Parent == b then g.Position = p + UDim2.fromOffset(0, y) end
+		end
+	end
+	press.Changed:Connect(apply)
+	b.Destroying:Connect(function() press:Destroy() end)
 	if props.Icon then
 		-- icon + text centred together as one group on the face
 		local Icons = require(script.Parent:WaitForChild("Icons"))
@@ -180,7 +247,7 @@ function UI.button(text, c1, c2, props)
 			if k <= 0 then return end
 			local w = b.AbsoluteSize.X / k
 			local h = hD > 0 and hD or b.AbsoluteSize.Y
-			local iw = math.floor((h - 9) * 0.98)
+			local iw = math.floor((h - BTN_DROP - 6) * 0.98)
 			local gap = lbl.Text ~= "" and 4 or 0
 			local size = maxSize
 			local tw = lbl.Text ~= "" and TextService:GetTextSize(lbl.Text, size, lbl.Font, Vector2.new(4000, 200)).X or 0
@@ -191,9 +258,10 @@ function UI.button(text, c1, c2, props)
 			lbl.TextSize = size
 			local x0 = math.max(4, (w - (tw + gap + iw)) / 2)
 			ic.Size = UDim2.fromOffset(iw, iw)
-			ic.Position = UDim2.new(0, x0, 0.5, -4)
-			lbl.Position = UDim2.new(0, x0 + iw + gap, 0, 3)
-			lbl.Size = UDim2.new(0, tw + 6, 1, -13)
+			rest[ic] = UDim2.new(0, x0, 0.5, -BTN_DROP / 2)
+			rest[lbl] = UDim2.new(0, x0 + iw + gap, 0, 2)
+			lbl.Size = UDim2.new(0, tw + 6, 1, -BTN_DROP - 4)
+			apply()
 		end
 		b:GetPropertyChangedSignal("AbsoluteSize"):Connect(place)
 		lbl:GetPropertyChangedSignal("Text"):Connect(place)
@@ -202,16 +270,39 @@ function UI.button(text, c1, c2, props)
 	if props.Shine then UI.shine(b, z) end
 	local sc = new("UIScale", { Parent = b })
 	local hover = false
-	local function paint(down)
-		local col = bg:GetAttribute("Color") or color
-		if down then col = col:Lerp(Color3.new(0, 0, 0), 0.18) elseif hover then col = col:Lerp(Color3.new(1, 1, 1), 0.12) end
-		bg.ImageColor3 = col
+	local function pressTo(y, t, style)
+		if bg:GetAttribute("Skin") == "plain" then
+			-- (a flat button, the close X: no base to sink onto, it shrinks a little instead)
+			UI.tween(sc, t, { Scale = y > 0 and 0.92 or (hover and 1.05 or 1) }, style)
+			return
+		end
+		if y > 0 and math.abs(press.Value) < 0.01 then
+			-- remember where the label (and an icon without a layout of its own) sit while the button is up
+			if not props.Icon then
+				rest[lbl] = lbl.Position
+			end
+		end
+		local tw = UI.tween(press, t, { Value = y }, style)
+		if y == 0 and not props.Icon then
+			-- back up: forget the label's place (whoever moves it later is not undone by the next press)
+			tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed and press.Value == 0 then rest[lbl] = nil end end)
+		end
 	end
-	bg:SetAttribute("Color", color)
-	b.MouseEnter:Connect(function() hover = true; paint(false) end)
-	b.MouseLeave:Connect(function() hover = false; paint(false); UI.tween(sc, 0.1, { Scale = 1 }) end)
-	b.MouseButton1Down:Connect(function() paint(true); UI.tween(sc, 0.05, { Scale = 0.96 }) end)
-	b.MouseButton1Up:Connect(function() paint(false); UI.tween(sc, 0.15, { Scale = 1 }, Enum.EasingStyle.Back) end)
+	b.MouseEnter:Connect(function()
+		if not UIS.MouseEnabled then return end -- (a finger has no hover: it would stay big)
+		hover = true
+		UI.tween(sc, 0.12, { Scale = 1.05 })
+	end)
+	b.MouseLeave:Connect(function()
+		hover = false
+		UI.tween(sc, 0.12, { Scale = 1 })
+		pressTo(0, 0.1)
+	end)
+	b.MouseButton1Down:Connect(function() pressTo(BTN_PRESS, 0.05) end)
+	b.MouseButton1Up:Connect(function() pressTo(0, 0.18, Enum.EasingStyle.Back) end)
+	b.InputEnded:Connect(function(io)
+		if io.UserInputType == Enum.UserInputType.Touch or io.UserInputType == Enum.UserInputType.MouseButton1 then pressTo(0, 0.18, Enum.EasingStyle.Back) end
+	end)
 	if props and props.Parent then b.Parent = props.Parent end
 	return b
 end
@@ -235,6 +326,10 @@ end
 function UI.closeStyle(btn, z)
 	local bg = btn:FindFirstChild("Bg")
 	if bg then
+		bg:SetAttribute("Skin", "plain") -- (the button's own colouring stops here)
+		local base = btn:FindFirstChild("Base")
+		if base then base:Destroy() end
+		bg.Size = UDim2.fromScale(1, 1)
 		for _, d in ipairs(bg:GetChildren()) do d:Destroy() end
 		bg.ImageTransparency = 1
 		bg.BackgroundTransparency = 0
