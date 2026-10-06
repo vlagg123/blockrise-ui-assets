@@ -151,7 +151,8 @@ local function gems(tok)
 	K.section(c.content, 3, "GEM PACKS", GEM1, "boosts, helpers and more")
 	local packs = {}
 	for _, p in ipairs(Config.Store.products) do if p.gems and visible(p) then table.insert(packs, p) end end
-	itemTiles(tok, packs, 4, { make = function(p, i)
+	-- (no chips on these cards: the price sits right under the name)
+	itemTiles(tok, packs, 4, { h = 232, make = function(p, i)
 		local bonus = (p.desc or ""):match("%+(%d+)%%")
 		local icon, sc = iconOf(p.key, "gem")
 		return { name = p.name, icon = icon, color = GEM_COLS[math.min(i, #GEM_COLS)], badge = p.tag and { p.tag, p.tag == "POPULAR" and T.red or Color3.fromRGB(255, 150, 20) },
