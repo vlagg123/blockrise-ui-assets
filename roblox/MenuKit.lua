@@ -680,7 +680,7 @@ function K.robux(n) return n and ("\u{E002} " .. tostring(n)) or "\u{E002} ..." 
 
 ---------------------------------------------------------------------------------------------------------------------
 -- Rarity looks: the rare hammers get backgrounds and names you spot from across the room
---   legendary: molten gold + a rainbow name   mythic: hot pink   secret: black metal with a silver sheen
+--   legendary: molten gold + a rainbow name   mythic: hot pink   secret: light silver metal with a white sheen
 --   divine: a holographic sky that keeps turning   exclusive: electric turquoise
 ---------------------------------------------------------------------------------------------------------------------
 local C3 = Color3.fromRGB
@@ -720,7 +720,8 @@ local DIVINE_HALO = { C3(150, 70, 235), C3(60, 110, 240), C3(215, 60, 175) }
 local HOLO_BG = seqOf({ { 0, C3(255, 200, 238) }, { 0.2, C3(220, 196, 255) }, { 0.4, C3(186, 228, 255) }, { 0.6, C3(196, 255, 226) },
 	{ 0.8, C3(255, 246, 196) }, { 1, C3(255, 200, 238) } })
 local SHEEN = { -- a bright band that sweeps across the text
-	metal = seqOf({ { 0, C3(58, 58, 74) }, { 0.36, C3(112, 112, 138) }, { 0.5, C3(255, 255, 255) }, { 0.64, C3(112, 112, 138) }, { 1, C3(58, 58, 74) } }),
+	-- (Secret: a light silver metal, easy to read on light tiles and on dark ones, with the white sheen passing over it)
+	metal = seqOf({ { 0, C3(150, 150, 176) }, { 0.36, C3(200, 200, 222) }, { 0.5, C3(255, 255, 255) }, { 0.64, C3(200, 200, 222) }, { 1, C3(150, 150, 176) } }),
 	electric = seqOf({ { 0, C3(0, 188, 178) }, { 0.38, C3(30, 228, 214) }, { 0.5, C3(255, 255, 255) }, { 0.62, C3(30, 228, 214) }, { 1, C3(0, 188, 178) } }),
 	mythic = seqOf({ { 0, C3(255, 70, 130) }, { 0.38, C3(255, 110, 160) }, { 0.5, C3(255, 235, 245) }, { 0.62, C3(255, 110, 160) }, { 1, C3(235, 40, 105) } }),
 }
@@ -730,7 +731,7 @@ K.RARITY_LOOK = {
 	mythic = { bg = { { 0, C3(255, 160, 196) }, { 0.5, C3(255, 70, 128) }, { 1, C3(178, 16, 74) } }, rays = C3(255, 225, 238), raysT = 0.3,
 		sweep = C3(255, 235, 245), text = "mythic" },
 	secret = { bg = { { 0, C3(96, 96, 124) }, { 0.42, C3(30, 30, 42) }, { 1, C3(6, 6, 12) } }, rays = C3(170, 160, 240), raysT = 0.5,
-		glow = C3(140, 100, 255), sweep = C3(225, 225, 255), stars = C3(255, 255, 255), text = "metal", stroke = C3(176, 172, 214) },
+		glow = C3(140, 100, 255), sweep = C3(225, 225, 255), stars = C3(255, 255, 255), text = "metal", stroke = C3(34, 30, 54) },
 	divine = { bg = "holo", rays = C3(255, 255, 255), raysT = 0.05, glow = C3(255, 255, 255), sweep = C3(255, 255, 255), stars = C3(255, 236, 170), text = "divine" },
 	exclusive = { bg = { { 0, C3(170, 255, 244) }, { 0.45, C3(24, 214, 200) }, { 1, C3(0, 104, 132) } }, rays = C3(215, 255, 250), raysT = 0.18,
 		glow = C3(130, 255, 242), sweep = C3(240, 255, 255), stars = C3(205, 255, 250), text = "electric" },

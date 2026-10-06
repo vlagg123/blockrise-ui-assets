@@ -978,6 +978,36 @@ local function reveal(o)
 	end
 	task.delay(0.75, function()
 		if c.closing then return end
+		-- anti autoclicker (crates): the KEEP never sits on the button that opened the crate, nor touches it. The card is
+		-- at its full size now: try the middle, then the left and the right of the card, the farthest from that button.
+		local av = o.avoid
+		if av and not again and btn.AbsoluteSize.X > 0 then
+			local k = btn.AbsoluteSize.X / 250
+			local p0, sz = btn.AbsolutePosition, btn.AbsoluteSize
+			local m = 24 * k -- a gap between them: they must not touch
+			local function hits(dx)
+				local x0, y0 = p0.X + dx - m, p0.Y - m
+				local x1, y1 = x0 + sz.X + 2 * m, y0 + sz.Y + 2 * m
+				return not (x1 < av[1].X or x0 > av[1].X + av[2].X or y1 < av[1].Y or y0 > av[1].Y + av[2].Y)
+			end
+			if hits(0) then
+				local ac = av[1].X + av[2].X / 2
+				local best, bestD
+				for _, x in ipairs({ 135, 425, 280 }) do
+					local dx = (x - 280) * k
+					if not hits(dx) then
+						local d = math.abs(p0.X + dx + sz.X / 2 - ac)
+						if not best or d > bestD then best, bestD = x, d end
+					end
+				end
+				if best then
+					btn.Position = UDim2.fromOffset(best, 418)
+				else
+					-- nowhere on the card's row is clear: under the card
+					btn.Position = UDim2.fromOffset(280, 500)
+				end
+			end
+		end
 		-- the buttons pop in
 		for _, b in ipairs({ btn, again }) do
 			b.Visible = true
@@ -989,7 +1019,8 @@ local function reveal(o)
 		end
 	end)
 	btn.Activated:Connect(function() sound(S.Click, 0.35); closeCard() end)
-	dim.Activated:Connect(function() if os.clock() - c.t0 > 1.2 then closeCard() end end)
+	-- (a crate's card closes only with its KEEP: a tap anywhere else does nothing, so an autoclicker can't get past it)
+	dim.Activated:Connect(function() if not o.crate and os.clock() - c.t0 > 1.2 then closeCard() end end)
 	c.t0 = os.clock()
 
 	-- keep it alive: rays turn, the hammer floats
@@ -1003,7 +1034,7 @@ local function reveal(o)
 		icon.Rotation = math.sin(t * 1.6) * 4
 		glow.Size = UDim2.fromOffset(420 + math.sin(t * 3) * 18, 420 + math.sin(t * 3) * 18)
 	end)
-	task.delay(o.again and 30 or 9, function() if card == c then closeCard() end end)
+	if not o.crate then task.delay(o.again and 30 or 9, function() if card == c then closeCard() end end) end
 	if o.big then sound(S.Fanfare, 0.45, (o.tier or 0) >= 7 and 0.9 or 1.05) end
 	-- the rarer, the louder: Secret and Divine shake the screen and flash
 	if (o.tier or 0) >= 6 then

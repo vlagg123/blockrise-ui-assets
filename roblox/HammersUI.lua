@@ -76,9 +76,12 @@ local function call(action, a, b)
 	return res, msg
 end
 
+local inFlight = 0 -- taps shown on screen whose answer hasn't come back yet (see predict / settle)
 local function fetch()
 	local ok, data = call("get")
-	if ok and type(data) == "table" then cache = data end
+	-- a tap made while this was on its way is already on screen (a crate more...): this older state would undo it, and
+	-- the count would climb again as the answers come in; that tap's own answer brings the fresh state
+	if ok and type(data) == "table" and (inFlight == 0 or not cache) then cache = data end
 	return cache
 end
 -- a redraw right after M.Redraw fetched the new state draws in one go: no spinner, no empty window blinking in between
@@ -95,7 +98,6 @@ end
 -- hammer in your hand), the server gets it right after (one call at a time, in tap order) and when every tap has its
 -- answer the window takes the server's state, redrawn only where it differs (a refused tap goes back, with the reason).
 local HttpService = game:GetService("HttpService")
-local inFlight = 0
 local jobs, working = {}, false
 local function later(fn)
 	table.insert(jobs, fn)
@@ -314,7 +316,7 @@ local function revealHammer(h, o)
 	end
 	show({ head = o.head or "NEW HAMMER!", name = h.name, icon = art(h), color = r.color, rarity = { string.upper(r.name) .. (o.isNew and "  ·  NEW!" or ""), r.color },
 		big = h.r >= 5, tier = h.r, rid = r.id, effect = Hammers.PowerLabel(h.key, 1) .. " build power  ·  " .. h.desc, button = o.button or "KEEP",
-		again = o.again, onClose = o.onClose, tag = o.pity and "PITY: GUARANTEED" or nil })
+		again = o.again, onClose = o.onClose, tag = o.pity and "PITY: GUARANTEED" or nil, crate = o.crate, avoid = o.avoid })
 end
 
 -- a random hammer the crate could drop (for the strip), weighted like the real odds
@@ -338,15 +340,25 @@ end
 
 local openCrate, showPending
 local autoOpen, cratePassPopup
--- the card after a crate: KEEP, or OPEN ANOTHER while you have more of that crate
+-- anti autoclicker: where the button that opened the crate was (screen pixels). The card's KEEP never sits on it, the card
+-- closes only with KEEP (no tap outside, no timer) and there is no OPEN ANOTHER: a clicker left on one spot opens one
+-- crate and stops; opening the next one takes a real move of the mouse
+local openedFrom
+local function noteOpen(b)
+	if typeof(b) == "Instance" and b:IsA("GuiObject") and b.AbsoluteSize.X > 0 then
+		openedFrom = { b.AbsolutePosition, b.AbsoluteSize }
+	else
+		local m = game:GetService("UserInputService"):GetMouseLocation() - game:GetService("GuiService"):GetGuiInset()
+		openedFrom = { m - Vector2.new(30, 30), Vector2.new(60, 60) }
+	end
+end
+-- the card after a crate: KEEP (away from the OPEN you pressed)
 local function revealOpened(cr, h, res)
 	-- you saw it: the server stops keeping it to show again (see showPending)
 	if res.id then later(function() call("seen", res.id) end) end
-	local left = c.player:GetAttribute("Crate_" .. cr.id) or 0
 	-- in the tutorial the new hammer is already in your hand (the server equips it)
 	local tut = inTut() and c.player:GetAttribute("EquipId") == res.id
-	revealHammer(h, { isNew = res.new, pity = res.pity, button = tut and "BUILD WITH IT!" or "KEEP",
-		again = left > 0 and { label = "OPEN ANOTHER (" .. left .. ")", fn = function() openCrate(cr.id) end } or nil,
+	revealHammer(h, { isNew = res.new, pity = res.pity, button = tut and "BUILD WITH IT!" or "KEEP", crate = true, avoid = openedFrom,
 		onClose = function()
 			M.Redraw()
 			if tut then c.toast("🔨 " .. h.name .. " is in your hand now!", rar(h).color, 3.5) end
@@ -832,9 +844,10 @@ local function crateBurst(cr)
 end
 
 -- open one crate (buyFirst: buy it in the same go, the tutorial's Supply Crate): the opening starts at once
-function openCrate(crateId, buyFirst)
+function openCrate(crateId, buyFirst, fromBtn)
 	if busy then return end
 	busy = true
+	noteOpen(fromBtn)
 	local cr = Hammers.CrateById[crateId]
 	local quick = c.player:GetAttribute("QuickOpen") == true
 	local ctl = (not quick) and spinThenReveal(cr) or nil
@@ -874,10 +887,10 @@ function openCrate(crateId, buyFirst)
 end
 
 -- buy crates: in your bag at once (the server is told right after); the tutorial's crate is bought and opened in one go
-local function buyCrate(crateId, n, thenOpen)
+local function buyCrate(crateId, n, thenOpen, fromBtn)
 	local cr = Hammers.CrateById[crateId]
 	c.sound2D(c.S.Coins, 0.4, 1)
-	if thenOpen then openCrate(crateId, true) return end
+	if thenOpen then openCrate(crateId, true, fromBtn) return end
 	local cost = (cr.cash and { "cash", ((cache and cache.supplyPrice) or Hammers.SupplyPrice(60)) * n }) or (cr.gems and { "gems", cr.gems * n }) or nil
 	predict(function(d) d.crates[crateId] = (d.crates[crateId] or 0) + n end, cost)
 	later(function()
@@ -1098,7 +1111,7 @@ local function crateTiles(data, order, shop)
 		if cr.exclusiveOnly then table.insert(o.stats, { "EXCLUSIVES", T.red }) end
 		if (data.luck or 1) > 1 and not cr.exclusiveOnly then table.insert(o.stats, { "🍀 2x", K.GREEN }) end
 		local buttons = {}
-		if have > 0 and not shop then table.insert(buttons, { "OPEN", K.GREEN, function() c.click(); openCrate(cr.id) end, shine = true }) end
+		if have > 0 and not shop then table.insert(buttons, { "OPEN", K.GREEN, function(b) c.click(); openCrate(cr.id, nil, b) end, shine = true }) end
 		if not shop then
 			-- the inventory opens them: one at a time, or all of them by themselves (the Auto Opener pass)
 			if have >= 2 then
@@ -1113,9 +1126,9 @@ local function crateTiles(data, order, shop)
 			if cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
 				local price = data.supplyPrice or Hammers.SupplyPrice(60)
 				local can = money() >= price
-				table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function()
+				table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function(b)
 					if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
-					c.click(); buyCrate(cr.id, 1, true)
+					c.click(); buyCrate(cr.id, 1, true, b)
 				end, icon = "cash", shine = can })
 			elseif have == 0 then
 				o.dim = true
@@ -1157,7 +1170,7 @@ local function crateTiles(data, order, shop)
 		if owned then
 			-- the ones in your bag open right here: OPEN over the prices (the odds are behind the "?")
 			K.button(t, "OPEN  x" .. have, K.GREEN, { Name = "Open", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -68), Size = UDim2.new(1, -20, 0, 42),
-				TextSize = 20, Shine = true, ZIndex = 7 }, function() c.click(); openCrate(cr.id) end)
+				TextSize = 20, Shine = true, ZIndex = 7 }, function(b) c.click(); openCrate(cr.id, nil, b) end)
 		end
 		-- (shrinks to fit two lines: it never runs into the buttons)
 		if not owned then K.text({ Position = UDim2.fromOffset(12, ART + 12 + 32 + (#o.stats > 0 and 32 or 0)), Size = UDim2.new(1, -24, 0, 32), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
@@ -1787,7 +1800,7 @@ local function drawIndex(tok, data)
 	clearBody()
 	local owned, total = 0, #Hammers.List
 	for _, h in ipairs(Hammers.List) do if data.index[h.key] then owned += 1 end end
-	K.banner(c.content, 1, { name = "HAMMER INDEX", line = "Found " .. owned .. " of " .. total .. ". Tap a hammer to see where it comes from.", icon = "star", color = GOLD,
+	K.banner(c.content, 1, { name = "HAMMER INDEX", line = "Found " .. owned .. " of " .. total .. ". Tap a hammer to see where it comes from.", icon = "hammer_index", color = GOLD,
 		tint = Color3.fromRGB(255, 240, 200), bar = { owned / total, GOLD, owned .. " / " .. total }, height = 124 })
 	local counts = {}
 	for _, h in ipairs(Hammers.List) do counts[h.dr] = (counts[h.dr] or 0) + 1 end

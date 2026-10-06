@@ -711,7 +711,7 @@ function M.Init(ctx)
 	more = popup("MorePopup", {
 		{ "daily", "DAILY", Color3.fromRGB(255, 150, 175), Color3.fromRGB(225, 60, 105), A.daily },
 		{ "upgrades", "TRADE-UP", Color3.fromRGB(130, 240, 120), Color3.fromRGB(30, 160, 70), A.tradeup },
-		{ "star", "INDEX", Color3.fromRGB(255, 220, 110), Color3.fromRGB(220, 140, 30), A.index },
+		{ "hammer_index", "INDEX", Color3.fromRGB(255, 220, 110), Color3.fromRGB(220, 140, 30), A.index },
 		{ "codes", "CODES", Color3.fromRGB(185, 155, 255), Color3.fromRGB(105, 70, 225), function() toggle("Codes", _G.__CE_ShowCodes) end },
 		{ "invite", "INVITE", Color3.fromRGB(255, 160, 200), Color3.fromRGB(225, 70, 140), function() if _G.__CE_Invite then _G.__CE_Invite() end end },
 		{ "portfolio", "TROPHIES", Color3.fromRGB(255, 220, 110), Color3.fromRGB(230, 145, 25), function() toggle("Portfolio", _G.__CE_ShowPortfolio) end },
