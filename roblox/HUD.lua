@@ -339,7 +339,9 @@ function M.Init(ctx)
 	local camera = c.camera
 	local GuiService = game:GetService("GuiService")
 
-	local root = new("Frame", { Name = "HUD2", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 2, Parent = gui })
+	-- above the window's dark backdrop (z 19), under the window (z 21): with a window open the menu buttons still work
+	-- (they switch to their own window instead of a first click only closing the open one)
+	local root = new("Frame", { Name = "HUD2", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 20, Parent = gui })
 	-- the top strip lives in Roblox's top bar row, so it gets its own layer that ignores the top bar inset
 	-- (one layer below the HUD, so an open window's dark backdrop covers it too)
 	gui.DisplayOrder = math.max(gui.DisplayOrder, 1)

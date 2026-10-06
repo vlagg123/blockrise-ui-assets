@@ -24,6 +24,11 @@ local WORKER_ICON = { laborer = "crew", builder = "hire", foreman = "up_crew" }
 local WORKER_COL = { laborer = Color3.fromRGB(255, 196, 70), builder = Color3.fromRGB(90, 200, 120), foreman = Color3.fromRGB(165, 110, 255) }
 
 local function money() return c.player:GetAttribute("Money") or 0 end
+-- what the crew and the machines build with: your hammer and bonuses, without your own Strength (like on the server)
+local function crewPower()
+	local sm = Config.StrengthMult and Config.StrengthMult(c.player:GetAttribute("Strength") or 0) or 1
+	return c.buildPower() / math.max(sm, 0.0001)
+end
 local function fmt(n) return Config.FormatMoney(n) end
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 
@@ -98,7 +103,7 @@ local function machines()
 	for i, m in ipairs(Config.Machines) do
 		local owned = c.player:GetAttribute("M_" .. m.id) == true
 		local mlv = owned and math.max(1, c.player:GetAttribute("ML_" .. m.id) or 1) or 1
-		local rate = m.rate * Config.MachineMult(mlv) * c.buildPower()
+		local rate = m.rate * Config.MachineMult(mlv) * crewPower()
 		local o = { order = i, name = m.name, icon = m.image or MACHINE_ICON[m.id] or m.icon, iconScale = m.image and 1.06 or nil, color = MACHINE_COL[m.id] or GOLD,
 			stats = { { Config.FormatNum(math.floor(rate)) .. " WORK/S", GOLD } } }
 		if owned then
@@ -137,7 +142,7 @@ local function crew()
 	local cash = money()
 	for i, w in ipairs(Config.WorkerTypes) do
 		local have = c.player:GetAttribute("W_" .. w.id) or 0
-		local wps = w.rate * c.buildPower()
+		local wps = w.rate * crewPower()
 		local stat = w.boost and { "CREW +" .. math.floor(w.boost * 100) .. "%", T.purple }
 			or { (wps < 10 and string.format("%.1f", wps) or Config.FormatNum(math.floor(wps))) .. " WORK/S", GOLD }
 		local o = { order = i, name = w.name, icon = WORKER_ICON[w.id] or "crew", color = WORKER_COL[w.id] or K.GREEN, stats = { stat } }
