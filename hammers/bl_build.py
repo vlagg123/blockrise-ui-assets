@@ -157,22 +157,27 @@ def piece_mesh(piece, S):
     _base(bm, piece["shape"], piece["size"], S)
     planes = piece["planes"]
     if planes:
+        def hull(bm):
+            # every cut piece is convex: rebuild it as the hull of what is left (closes the cut faces)
+            bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-4)
+            pts = [v.co.copy() for v in bm.verts]
+            bm.free()
+            bm = bmesh.new()
+            for p in pts:
+                bm.verts.new(p)
+            if len(pts) >= 4:
+                ret = bmesh.ops.convex_hull(bm, input=bm.verts[:])
+                kill = list({g for g in ret["geom_interior"] + ret["geom_unused"] if isinstance(g, bmesh.types.BMVert)})
+                if kill:
+                    bmesh.ops.delete(bm, geom=kill, context="VERTS")
+            return bm
         for pl in planes:
             n = Vector(pl[:3])
             co = n * (pl[3] * S)
             geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
             bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-6, plane_co=co, plane_no=n, clear_outer=True)
-        # every cut piece is convex: rebuild it as the hull of what is left (closes the cut faces)
-        bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-4)
-        pts = [v.co.copy() for v in bm.verts]
-        bm.free()
-        bm = bmesh.new()
-        for p in pts:
-            bm.verts.new(p)
-        ret = bmesh.ops.convex_hull(bm, input=bm.verts[:])
-        kill = list({g for g in ret["geom_interior"] + ret["geom_unused"] if isinstance(g, bmesh.types.BMVert)})
-        if kill:
-            bmesh.ops.delete(bm, geom=kill, context="VERTS")
+            # closed again after every cut: a cut that removes whole faces must not leave the next cuts without edges
+            bm = hull(bm)
         bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(0.5), verts=bm.verts[:], edges=bm.edges[:])
     # smooth where the spec says so (cylinders, balls), sharp facets everywhere else
     smooth = piece.get("smooth", 0) > 0 or piece["shape"] == "ball"

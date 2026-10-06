@@ -315,7 +315,7 @@ PALETTE = {
     "void_purple": dict(rbx=["Fabric", [56, 26, 84], 0, 0], bl=dict(color=[0.04, 0.008, 0.09], metal=0, rough=0.6)),
     "accretion": dict(rbx=["Neon", [255, 150, 50], 0, 0], bl=dict(color=[1.0, 0.32, 0.03], metal=0, rough=0.4, emit=11.0)),
     "accretion_hot": dict(rbx=["Neon", [255, 236, 190], 0, 0], bl=dict(color=[1.0, 0.85, 0.55], metal=0, rough=0.4, emit=14.0)),
-    "crimson":   dict(rbx=["Slate", [130, 14, 26], 0, 0.05], bl=dict(color=[0.22, 0.004, 0.01], metal=0.2, rough=0.4)),
+    "crimson":   dict(rbx=["Slate", [118, 12, 22], 0, 0.05], bl=dict(color=[0.11, 0.0, 0.004], metal=0.3, rough=0.35)),
     "horn":      dict(rbx=["SmoothPlastic", [28, 22, 26], 0, 0.1], bl=dict(color=[0.012, 0.008, 0.01], metal=0, rough=0.3)),
     "chain":     dict(rbx=["Metal", [120, 124, 134], 0, 0.1], bl=dict(color=[0.22, 0.23, 0.26], metal=1, rough=0.35)),
     "marble":    dict(rbx=["Marble", [246, 244, 238], 0, 0], bl=dict(color=[0.9, 0.88, 0.84], metal=0, rough=0.25)),
@@ -377,12 +377,14 @@ def toward(d, twist=0.0):
     return R @ Ry(twist)
 
 
-def chain(h, name, start, d0, axis, segs, mat, tip=True, tip_frac=0.6):
+def chain(h, name, start, d0, axis, segs, mat, tip=True, tip_frac=0.6, joints=None):
     """a curved horn / fang / wisp: octagonal segments (length, width, bend in degrees after it) from start along d0,
-    bending about axis; the last one ends in a point. Returns the tip."""
+    bending about axis; the last one ends in a point. Returns the tip (joints: a list that gets every joint)."""
     p = np.array(start, dtype=float)
     d = unit(d0)
     for i, (L, w, bend) in enumerate(segs):
+        if joints is not None:
+            joints.append(p.copy())
         planes = octagon(w, "y")
         if tip and i == len(segs) - 1:
             planes = planes + _shard_tip(w, L, tip_frac=tip_frac)
@@ -1030,8 +1032,8 @@ def build_new(H):
     h.add("PommelClaw", "box", (0.16, 0.28, 0.16), (0, -0.6, 0), R=Rx(180), mat="bone", planes=octagon(0.16, "y") + _shard_tip(0.16, 0.28))
     hp = np.array([0.0, hy, 0.0])
     h.add("Mount", "box", (0.44, 0.46, 0.36), hp + [0, 0, 0.02], mat="scale_red", planes=chamfer(0.44, 0.46, 0.36, 0.07))
-    tip = chain(h, "Fang", hp + [0, 0.04, -0.62], (0, 0.05, 1), (1, 0, 0),
-                [(0.5, 0.40, 8), (0.36, 0.34, 14), (0.3, 0.27, 20), (0.26, 0.2, 26), (0.26, 0.14, 0)], "bone")
+    tip = chain(h, "Fang", hp + [0, 0.02, -0.58], (0, 0.08, 1), (1, 0, 0),
+                [(0.4, 0.32, 12), (0.36, 0.28, 18), (0.32, 0.23, 24), (0.3, 0.18, 30), (0.3, 0.12, 0)], "bone")
     for i, z in enumerate((-0.14, 0.12)):
         h.add("Strap%d" % i, "box", (0.47, 0.5, 0.07), hp + [0, 0.03, z], R=Rz(4 if i else -4), mat="leather", planes=chamfer(0.47, 0.5, 0.07, 0.1, edges="z"))
     h.headbox(hp + [0, -0.1, 0], (0.5, 0.7, 1.5))
@@ -1137,13 +1139,14 @@ def build_new(H):
     h.add("PommelShell", "ball", (0.2,), (0, -0.56, 0), mat="foam")
     h.add("Knot", "ball", (0.26,), (0, hy - 0.3, 0), mat="driftwood")
     hp = np.array([0.0, hy, 0.0])
-    h.add("Wave", "box", (0.52, 0.5, 0.86), hp + [0, -0.06, 0.12], mat="water", planes=chamfer(0.52, 0.5, 0.86, 0.14), cast=False)
-    cc = hp + [0, 0.1, -0.3]
-    h.add("Curl", "ring", (0.5, 0.38, 0.17), cc, R=ALONG_X, mat="water", smooth=40, cast=False)
-    for i, (ang, dia) in enumerate(((40, 0.2), (80, 0.22), (120, 0.2), (155, 0.17), (188, 0.14))):
-        a = math.radians(ang)
-        h.add("Foam%d" % i, "ball", (dia,), cc + [0, math.sin(a) * 0.38, math.cos(a) * 0.38], mat="foam")
-    h.add("FoamBack", "ball", (0.2,), hp + [0, 0.2, 0.38], mat="foam")
+    h.add("Wave", "box", (0.5, 0.44, 0.92), hp + [0, -0.1, 0.06], mat="water", planes=chamfer(0.5, 0.44, 0.92, 0.12), cast=False)
+    crest = []
+    chain(h, "Lip", hp + [0, 0.02, 0.36], (0, 0.75, -0.66), (1, 0, 0),
+          [(0.3, 0.4, -38), (0.28, 0.36, -42), (0.26, 0.3, -46), (0.24, 0.24, -40), (0.22, 0.18, 0)], "water", joints=crest)
+    for i, j in enumerate(crest):
+        h.add("Foam%d" % i, "ball", (0.2 - 0.02 * i,), j + [0, 0.1, 0], mat="foam")
+    h.add("FoamBack", "ball", (0.2,), hp + [0, 0.1, 0.46], mat="foam")
+    h.add("Spray", "ball", (0.12,), hp + [0, 0.42, -0.2], mat="foam", cast=False)
     h.headbox(hp, (0.56, 0.8, 1.25))
     h.fx("snow", hp + [0, 0.2, 0], [[255, 255, 255], [150, 210, 255]], 4, [0.05, 0.1], area=(0.5, 0.3, 1.0))
     h.fx("mist", hp, [[170, 220, 255]], 1.5, [0.3, 0.5], area=(0.5, 0.4, 1.0))
@@ -1283,9 +1286,11 @@ def build_new(H):
     for i, e in enumerate((-1, 1)):
         h.add("Tip%d" % i, "cyl", (0.03, 0.12), hp + [0, 0, e * 0.585], R=ALONG_Z, mat="gold", smooth=40, cast=False)
     for i, sx in enumerate((-1, 1)):
-        for j, z in enumerate((-0.18, 0.18)):
-            h.add("Sun%d%d" % (i, j), "ring", (0.025, 0.12, 0.085), hp + [sx * 0.316, 0, z], R=ALONG_X, mat="gold", smooth=40, cast=False)
-            h.add("SunCore%d%d" % (i, j), "ball", (0.09,), hp + [sx * 0.3, 0, z], mat="star", cast=False)
+        # a four-pointed star: two long thin diamonds crossed, a glowing heart
+        for j, ang in enumerate((0, 90)):
+            h.add("Star%d%d" % (i, j), "box", (0.03, 0.09, 0.42 if j == 0 else 0.34), hp + [sx * 0.315, 0, 0], R=Rx(ang) @ Rx(0), mat="gold",
+                  planes=[plane((0, 1, 0.2), 0.042), plane((0, 1, -0.2), 0.042), plane((0, -1, 0.2), 0.042), plane((0, -1, -0.2), 0.042)], cast=False)
+        h.add("StarCore%d" % i, "ball", (0.11,), hp + [sx * 0.31, 0, 0], mat="star", cast=False)
     h.add("Halo", "ring", (0.04, 0.38, 0.32), hp + [0, 0.62, 0], R=Rx(12), mat="halo", smooth=40, cast=False)
     h.add("HaloStar", "ball", (0.12,), hp + [0, 0.62, 0], mat="star", cast=False)
     h.headbox(hp, (0.7, 1.4, 1.5))
@@ -1305,15 +1310,15 @@ def build_new(H):
     h.add("PommelCup", "cyl", (0.1, 0.13), (0, -0.5, 0), mat="gold", planes=cyl_bevel(0.1, 0.13, 0.03), smooth=40)
     h.add("PommelGem", "box", (0.15, 0.15, 0.15), (0, -0.6, 0), R=Rx(45) @ Rz(35), mat="ruby")
     hp = np.array([0.0, hy, 0.0])
-    h.add("Velvet", "ball", (0.5,), hp + [0, 0.06, 0], mat="velvet")
+    h.add("Velvet", "ball", (0.44,), hp + [0, 0.02, 0], mat="velvet")
     h.add("Band", "ring", (0.26, 0.31, 0.25), hp + [0, -0.02, 0], mat="gold", smooth=40)
     h.add("RimLow", "ring", (0.05, 0.33, 0.25), hp + [0, -0.14, 0], mat="gold_dk", smooth=40, cast=False)
     h.add("RimHigh", "ring", (0.04, 0.325, 0.25), hp + [0, 0.1, 0], mat="gold_dk", smooth=40, cast=False)
     for k in range(6):
         a = math.radians(k * 60 + 30)
-        p = hp + [math.cos(a) * 0.29, 0.2, math.sin(a) * 0.29]
-        h.add("Point%d" % k, "box", (0.1, 0.2, 0.1), p, R=Ry(k * 60), mat="gold", planes=spike(0.1, 0.2), cast=False)
-        h.add("Pearl%d" % k, "ball", (0.07,), p + [0, 0.11, 0], mat="white_gold", cast=False)
+        p = hp + [math.cos(a) * 0.29, 0.26, math.sin(a) * 0.29]
+        h.add("Point%d" % k, "box", (0.15, 0.32, 0.15), p, R=Ry(k * 60), mat="gold", planes=spike(0.15, 0.32), cast=False)
+        h.add("Pearl%d" % k, "ball", (0.09,), p + [0, 0.17, 0], mat="white_gold", cast=False)
     for i, sx in enumerate((-1, 1)):
         for j, (ang, m) in enumerate(((-30, "sapphire"), (0, "ruby"), (30, "emerald"))):
             a = math.radians(ang)
@@ -1339,8 +1344,8 @@ def build_new(H):
     h.add("Body", "box", (0.6, 0.62, 0.7), hp + [0, 0, -0.08], mat="ghost", planes=chamfer(0.6, 0.62, 0.7, 0.14))
     h.add("Brow", "ball", (0.6,), hp + [0, 0.02, -0.38], mat="ghost")
     for j, (dy, dx, bends) in enumerate(((0.12, 0.0, (-14, 22, 0)), (-0.14, 0.08, (12, -20, 0)), (-0.02, -0.1, (-8, 18, 0)))):
-        chain(h, "Wisp%d" % j, hp + [dx, dy, 0.18], (0, 0.08, 1), (1, 0, 0),
-              [(0.3, 0.26, bends[0]), (0.26, 0.18, bends[1]), (0.24, 0.12, 0)], "ghost")
+        chain(h, "Wisp%d" % j, hp + [dx, dy, 0.16], (0, 0.08, 1), (1, 0, 0),
+              [(0.26, 0.2, bends[0] * 1.4), (0.24, 0.15, bends[1] * 1.4), (0.22, 0.11, -bends[0]), (0.22, 0.07, 0)], "ghost")
     for i, sx in enumerate((-1, 1)):
         for k, z in enumerate((-0.24, -0.06)):
             h.add("Eye%d%d" % (i, k), "cyl", (0.025, 0.065), hp + [sx * 0.3, 0.08, z], R=ALONG_X, mat="ghost_eye", smooth=40, cast=False)
@@ -1363,18 +1368,23 @@ def build_new(H):
     h.band("Socket", hy - 0.32, 0.16, 0.18, "chrome")
     h.add("PommelPrism", "box", (0.18, 0.18, 0.18), (0, -0.6, 0), R=Rx(45) @ Rz(35), mat="prism_glass")
     hp = np.array([0.0, hy, 0.0])
-    tri = lambda a: [plane((0, -1, 0), a), plane((0.866, 0.5, 0), a), plane((-0.866, 0.5, 0), a)]
-    h.add("Prism", "box", (0.8, 0.9, 1.2), hp, mat="prism_glass", planes=tri(0.22), cast=False)
+    # the triangle stands in the side view (apex up, the two lower corners are the striking faces)
+    tri = lambda a: [plane((0, -1, 0), a), plane((0, 0.5, 0.866), a), plane((0, 0.5, -0.866), a)]
+    h.add("Prism", "box", (0.46, 1.2, 1.4), hp, mat="prism_glass", planes=tri(0.34) + chamfer(0.46, 1.2, 1.4, 0.04, edges="yz"), cast=False)
+    h.add("Base", "box", (0.5, 0.1, 1.0), hp + [0, -0.33, 0], mat="chrome", planes=chamfer(0.5, 0.1, 1.0, 0.03))
     for i, e in enumerate((-1, 1)):
-        h.add("Cap%d" % i, "box", (0.9, 1.0, 0.06), hp + [0, 0, e * 0.6], mat="chrome", planes=tri(0.25))
-    h.add("Beam", "box", (0.03, 0.03, 0.55), hp + [0, 0.04, -0.3], mat="beam_white", cast=False)
+        h.add("Corner%d" % i, "box", (0.5, 0.16, 0.16), hp + [0, -0.28, e * 0.5], R=Rx(e * 30), mat="chrome", planes=chamfer(0.5, 0.16, 0.16, 0.03), cast=False)
+    # light: a white beam enters the front face, a rainbow fans out of the back face
+    def ray(name, p0, p1, w, mat):
+        p0, p1 = np.array(p0, dtype=float), np.array(p1, dtype=float)
+        d = p1 - p0
+        L = float(np.linalg.norm(d))
+        h.add(name, "box", (0.04, w, L), (p0 + p1) / 2, R=Rx(-math.degrees(math.atan2(d[1], d[2]))), mat=mat, cast=False)
+    entry = hp + [0, 0.12, -0.12]
+    ray("Beam", hp + [0, 0.02, -0.82], entry, 0.05, "beam_white")
     for i, m in enumerate(rb):
-        dy = (i - 2.5) * 0.05
-        dz = 0.57
-        ang = math.degrees(math.atan2(dy, dz))
-        d = unit((0, dy, dz))
-        h.add("Ray%d" % i, "box", (0.03, 0.026, 0.58), hp + [0, 0.04, -0.02] + d * 0.29, R=Rx(-ang), mat=m, cast=False)
-    h.headbox(hp, (0.8, 0.7, 1.3))
+        ray("Ray%d" % i, entry, hp + [0, 0.24 - i * 0.075, 0.86], 0.045, m)
+    h.headbox(hp, (0.5, 1.0, 1.4))
     h.fx("rainbow", hp, [[255, 80, 80], [255, 220, 80], [80, 255, 140], [80, 180, 255], [220, 100, 255]], 6, [0.1, 0.22], area=(0.7, 0.6, 1.2))
     h.fx("glint", hp, [[255, 255, 255]], 2, [0.16, 0.3], area=(0.7, 0.6, 1.2))
     h.light(hp, [255, 255, 255], 1.8, 9)
