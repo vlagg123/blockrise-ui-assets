@@ -1115,22 +1115,57 @@ local function stormBanner(order)
 	K.banner(c.content, order, o)
 end
 
--- the odds of a crate on one line (Roblox: paid random items show them): 40% · 6% · 0.9% · 0.1%
+-- a chance as a short number: 40% · 6% · 0.9% · 0.15%
 local function shortPct(v)
 	local t = v >= 10 and string.format("%d", math.floor(v + 0.5)) or (v >= 1 and string.format("%.1f", v) or string.format("%.2f", v))
 	t = t:find("%.") and t:gsub("0+$", ""):gsub("%.$", "") or t
 	return t .. "%"
 end
-local function oddsLine(cr, zone, luck)
-	local odds = Hammers.Odds(cr.id, zone, luck)
-	local parts = {}
-	for r = 1, Hammers.LadderTop do
-		if odds[r] and odds[r] > 0 then
-			local rr = Hammers.Rarities[r]
-			table.insert(parts, string.format('<font color="#%s">%s %s</font>', rarText(rr):ToHex(), rr.name, shortPct(odds[r])))
-		end
+-- the odds of a crate, on hover (tap on a phone) over its bar: a small white box, one rarity a line, the rarest on top
+local function oddsTip(t, odds, pos, size)
+	local hit = new("TextButton", { Name = "OddsHit", Position = pos - UDim2.fromOffset(0, 8), Size = size + UDim2.fromOffset(0, 16), BackgroundTransparency = 1, Text = "",
+		AutoButtonColor = false, ZIndex = 6, Parent = t })
+	local tip
+	local function hide()
+		if tip then tip:Destroy() tip = nil end
 	end
-	return #parts > 0 and table.concat(parts, " · ") or "Nothing to drop yet"
+	local function show()
+		if tip or not hit.Parent then return end
+		local rows = {}
+		for r = Hammers.LadderTop, 1, -1 do
+			if odds[r] and odds[r] > 0 then table.insert(rows, r) end
+		end
+		if #rows == 0 then return end
+		local RH, PAD = 24, 10
+		tip = new("Frame", { Name = "OddsTip", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, pos.Y.Offset - 8), Size = UDim2.fromOffset(196, #rows * RH + PAD * 2),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 30, Parent = t })
+		new("UICorner", { CornerRadius = UDim.new(0, 12), Parent = tip })
+		new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = tip })
+		-- a little arrow down to the bar
+		local nib = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.fromOffset(12, 12), Rotation = 45,
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 29, Parent = tip })
+		new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = nib })
+		for i, r in ipairs(rows) do
+			local rr = Hammers.Rarities[r]
+			local y = PAD + (i - 1) * RH
+			local dot = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.fromOffset(12, y + RH / 2), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = rr.color,
+				BorderSizePixel = 0, ZIndex = 31, Parent = tip })
+			new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = dot })
+			new("UIStroke", { Thickness = 1.5, Color = T.ink, Parent = dot })
+			local nm = K.text({ Position = UDim2.fromOffset(30, y), Size = UDim2.new(1, -100, 0, RH), Text = rr.name, Font = T.chunky, TextSize = 16, Max = 16,
+				TextColor3 = rarText(rr), ZIndex = 31, Parent = tip })
+			if K.RARITY_LOOK and K.RARITY_LOOK[rr.id] and K.rarityText then pcall(K.rarityText, nm, rr.id) end
+			K.text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, y), Size = UDim2.fromOffset(70, RH), Text = shortPct(odds[r]), Font = T.chunky, TextSize = 16, Max = 16,
+				TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = K.DARK, ZIndex = 31, Parent = tip })
+		end
+		local sc = new("UIScale", { Scale = 0.85, Parent = tip })
+		UI.tween(sc, 0.14, { Scale = 1 }, Enum.EasingStyle.Back)
+	end
+	hit.MouseEnter:Connect(show)
+	hit.MouseLeave:Connect(hide)
+	-- a phone has no hover: a tap shows it, the next tap hides it
+	hit.Activated:Connect(function() if tip then hide() else show() end end)
+	t.AncestryChanged:Connect(function() if not t:IsDescendantOf(game) then hide() end end)
 end
 
 -- one crate as a card (the Shop and the Inventory): the whole crate picture in a tall frame (the count on it, "?" for
@@ -1173,6 +1208,7 @@ local function crateCard(grid, cr, i, data, o)
 		end
 		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = new("Frame", { Position = UDim2.fromOffset(16, ART + 48), Size = UDim2.new(1, -32, 0, 12), BackgroundTransparency = 1,
 			ZIndex = 5, Parent = t }, { new("UICorner", { CornerRadius = UDim.new(1, 0) }) }) })
+		oddsTip(t, odds, UDim2.fromOffset(16, ART + 48), UDim2.new(1, -32, 0, 12))
 	end
 	-- the best it can give (and where, for the Supply Crate; the luck boost when it is on)
 	local parts = {}
@@ -1194,9 +1230,11 @@ local function crateCard(grid, cr, i, data, o)
 			if c.showInventory then c.showInventory("crates") end
 		end)
 	elseif o.mid == "odds" then
-		K.text({ Name = "OddsText", Position = UDim2.fromOffset(12, ART + 90), Size = UDim2.new(1, -24, 0, 40), Text = next(odds) and oddsLine(cr, zone, luck) or "Nothing to drop yet",
-			TextSize = 14, Max = 14, TextWrapped = true, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, TextXAlignment = Enum.TextXAlignment.Center,
-			TextColor3 = K.SUB, ZIndex = 3, Parent = t })
+		-- (the odds themselves are in the white box over the bar: hover it, or tap it on a phone)
+		local uis = game:GetService("UserInputService")
+		local touch = uis.TouchEnabled and not uis.MouseEnabled
+		K.text({ Name = "OddsHint", Position = UDim2.fromOffset(12, ART + 98), Size = UDim2.new(1, -24, 0, 20), TextSize = 14, Max = 14, TextXAlignment = Enum.TextXAlignment.Center,
+			Text = next(odds) and ((touch and "Tap" or "Hover") .. " the bar to see the odds") or "Nothing to drop yet", TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 	end
 	-- the bottom: the buttons, side by side, or a status
 	local BH, GAPB = 47, 10
