@@ -270,16 +270,17 @@ function K.tile(grid, o)
 	if o.badge then K.chip(t, o.badge[1], o.badge[2] or T.red, { Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
 	if o.tag then K.chip(t, o.tag[1], o.tag[2] or K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), ZIndex = 8 }) end
 	if o.bubble then
-		-- a sticker on the picture's top-right corner ("+15%" over "BONUS")
+		-- a round green sticker up in the card's top-right corner ("+15%" over "BONUS"), kept inside the card (the last card
+		-- of a row sits against the list's edge, which would cut it)
 		local col = o.bubble[3] or K.GREEN
-		local bub = new("Frame", { Name = "Bubble", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 14), Size = UDim2.fromOffset(66, 50),
+		local bub = new("Frame", { Name = "Bubble", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -29, 0, 25), Size = UDim2.fromOffset(50, 50), Rotation = 12,
 			BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 9, Parent = t })
-		new("UICorner", { CornerRadius = UDim.new(0, 10), Parent = bub })
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = bub })
 		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(col:Lerp(Color3.new(1, 1, 1), 0.25), col:Lerp(Color3.new(0, 0, 0), 0.15)), Parent = bub })
 		new("UIStroke", { Thickness = 3, Color = T.ink, Parent = bub })
-		text({ Position = UDim2.fromOffset(0, 5), Size = UDim2.new(1, 0, 0, 25), Text = o.bubble[1], Font = T.chunky, TextSize = 22, Max = 22, TextColor3 = Color3.new(1, 1, 1),
+		text({ Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 20), Text = o.bubble[1], Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.new(1, 1, 1),
 			Stroke = 2.4, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = bub })
-		text({ Position = UDim2.fromOffset(0, 29), Size = UDim2.new(1, 0, 0, 14), Text = o.bubble[2] or "", Font = T.chunky, TextSize = 13, Max = 13, TextColor3 = Color3.new(1, 1, 1),
+		text({ Position = UDim2.fromOffset(0, 28), Size = UDim2.new(1, 0, 0, 11), Text = o.bubble[2] or "", Font = T.chunky, TextSize = 10, Max = 10, TextColor3 = Color3.new(1, 1, 1),
 			Stroke = 1.8, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = bub })
 		local bs = new("UIScale", { Parent = bub })
 		game:GetService("TweenService"):Create(bs, TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Scale = 1.08 }):Play()
