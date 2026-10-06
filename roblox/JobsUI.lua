@@ -43,8 +43,10 @@ local function blueprintPicker(order)
 	if #owned == 0 then return 1 end
 	local mult = 1
 	K.section(c.content, order, "BLUEPRINT", Color3.fromRGB(150, 210, 255), "pick one for a premium job")
-	local row = UI.new("Frame", { Name = "Blueprints", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
+	local row = UI.new("Frame", { Name = "Blueprints", Size = UDim2.new(1, 0, 0, 56), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
 	UI.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
+	-- (the buttons' ink outline sits outside them: a little room so the list's edge never cuts it)
+	UI.new("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingTop = UDim.new(0, 3), Parent = row })
 	local function pick(id, label, col, i)
 		local on = blueprint == id
 		local b = UI.button(label, on and col or UI.TAB_OFF, nil, { Size = UDim2.fromOffset(id and 170 or 100, 48), TextSize = 18, LayoutOrder = i, ZIndex = 3, Parent = row })

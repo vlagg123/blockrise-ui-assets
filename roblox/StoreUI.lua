@@ -237,7 +237,11 @@ end
 local function passes(tok)
 	K.section(c.content, 2, "GAME PASSES", Color3.fromRGB(220, 185, 255), "buy once, keep forever")
 	local list = {}
-	for _, p in ipairs(Config.Store.passes) do if visible(p) then table.insert(list, p) end end
+	for _, p in ipairs(Config.Store.passes) do
+		-- the Thunderclap pass isn't sold any more (the hammer is in the Exclusive Crate): only its owners still see it
+		local gone = Config.StormHammer and p.key == Config.StormHammer.pass and c.player:GetAttribute("Pass_" .. p.key) ~= true
+		if visible(p) and not gone then table.insert(list, p) end
+	end
 	itemTiles(tok, list, 3, { pass = true, make = function(p)
 		local owned = c.player:GetAttribute("Pass_" .. p.key) == true
 		local icon, sc = iconOf(p.key, p.icon)

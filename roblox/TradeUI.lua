@@ -293,7 +293,7 @@ local function openWindow(v)
 		local ok, msg = invoke("set", "cash", "cash", n)
 		if not ok then c.toast("⚠️ " .. tostring(msg), T.red) end
 	end)
-	-- my hammers (the Rusty Hammer and pass hammers can't be traded, so they are not listed)
+	-- my hammers (every one but the starter Rusty: it stays with you)
 	local hamRows = {}
 	local hf = c.Remotes:FindFirstChild("HammerAction")
 	-- (not "hf and hf:InvokeServer()": an and-expression keeps only the first of the two answers)
@@ -305,7 +305,7 @@ local function openWindow(v)
 		local list = {}
 		for _, it in ipairs(data.hammers or {}) do
 			local h = Hammers.ById[it.k]
-			if h and not it.bound and not it.pass and it.id ~= "rusty" then table.insert(list, { it = it, h = h }) end
+			if h and it.id ~= "rusty" then table.insert(list, { it = it, h = h }) end
 		end
 		table.sort(list, function(a, b) if a.h.r ~= b.h.r then return a.h.r > b.h.r end return (a.it.lv or 1) > (b.it.lv or 1) end)
 		if #list > 0 then

@@ -53,7 +53,8 @@ local function product(key)
 	for _, p in ipairs(Config.Store.products) do if p.key == key then return p end end
 end
 local function pct(v) return v >= 10 and string.format("%d%%", math.floor(v + 0.5)) or (v >= 1 and string.format("%.1f%%", v) or string.format("%.2f%%", v)) end
-local function canTrade(it, h) return not it.bound and not it.pass and not h.exclusive and not h.event and it.id ~= "rusty" end
+-- every hammer is a normal item you can trade (only everyone's starter Rusty stays with you)
+local function canTrade(it, h) return it.id ~= "rusty" end
 -- a hammer that arrived in the last half hour (from a crate, a trade-up or a trade) is NEW until you look at it
 local seen = {}
 local function isNew(it)
@@ -177,7 +178,6 @@ end
 local function sources(h)
 	local out = {}
 	if h.key == Hammers.DefaultKey then return { "Everyone's first hammer. Yours forever." } end
-	if h.pass then return { "The Thunderclap Hammer game pass (Store → PASSES)" } end
 	if h.event then return { "The launch event only" } end
 	if h.soon then return { "Coming soon: it isn't in any crate yet" } end
 	for _, cr in ipairs(Hammers.Crates) do
@@ -193,7 +193,7 @@ local function sources(h)
 		if fits then table.insert(out, cr.name .. (#zones > 0 and (" (" .. table.concat(zones, ", ") .. ")") or "")) end
 	end
 	if not h.exclusive and h.r > 1 then table.insert(out, "Trade-up: " .. Hammers.TradeUpCount .. " " .. Hammers.Rarities[h.r - 1].name .. " hammers") end
-	if not h.exclusive or h.r >= 5 then table.insert(out, "Trades with other builders") end
+	table.insert(out, "Trades with other builders")
 	return out
 end
 
@@ -258,6 +258,7 @@ local function cratePopup(cr, data)
 		ScrollBarImageColor3 = Color3.fromRGB(200, 200, 240), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y, ZIndex = 6, Parent = body })
 	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	local odds = Hammers.Odds(cr.id, zone, luck)
+	local chances = Hammers.Chances(cr.id, zone, luck)
 	local n = 0
 	for r = #Hammers.Rarities, 1, -1 do
 		local v = odds[r]
@@ -270,18 +271,24 @@ local function cratePopup(cr, data)
 			K.text({ Position = UDim2.fromOffset(12, 50), Size = UDim2.fromOffset(130, 26), Text = pct(v), Font = T.chunky, TextSize = 24, TextColor3 = rarText(rr), ZIndex = 8, Parent = row })
 			local pics = new("Frame", { Position = UDim2.fromOffset(150, 6), Size = UDim2.new(1, -160, 0, 82), BackgroundTransparency = 1, ZIndex = 7, Parent = row })
 			new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = pics })
-			for i, h in ipairs(Hammers.PoolAt(cr, r)) do
+			local pool = Hammers.PoolAt(cr, r)
+			local uneven = false
+			for _, ph in ipairs(pool) do if (ph.w or 1) ~= (pool[1].w or 1) then uneven = true end end
+			for i, h in ipairs(pool) do
 				local b = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(96, 82), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 7, Parent = pics })
 				K.rarityFX(K.artBox(b, art(h), rr.color, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.fromOffset(58, 58), IconScale = 1.06 }), rr.id, { small = true })
+				-- (its own chance when the rarity's hammers aren't equally likely)
+				if uneven and chances[h.key] then
+					K.chip(b, pct(chances[h.key]), K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, -4), ZIndex = 9 })
+				end
 				K.rarityText(K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 20), Text = h.name, TextSize = 12, Max = 12, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, ZIndex = 8, Parent = b }), rr.id, rarText(rr))
 				b.Activated:Connect(function() c.click(); hammerPopup(h) end)
 			end
 		end
 	end
 	if n == 0 then K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 30), Text = "Its hammers are still being made: coming soon!", TextSize = 18, TextColor3 = K.NOTE, ZIndex = 6, Parent = body }) end
-	local foot = {}
+	local foot = { "Pure luck: every crate is a new roll" }
 	if cr.pools then table.insert(foot, "Better odds once you take Suburbs, then Downtown contracts (now: " .. zone:sub(1, 1):upper() .. zone:sub(2) .. ")") end
-	if cr.pity then table.insert(foot, "Pity: " .. Hammers.Rarities[cr.pity.min].name .. " or better guaranteed every " .. cr.pity.every .. " opens") end
 	if luck > 1 then table.insert(foot, "🍀 Lucky Builder: Rare+ twice as often (already counted)") end
 	K.text({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 26), Text = table.concat(foot, "  ·  "), TextSize = 14, Max = 14, TextColor3 = K.NOTE, ZIndex = 6, Parent = body })
 end
@@ -443,10 +450,17 @@ local function spinThenReveal(cr, res)
 		if conn then conn:Disconnect() end
 		tw:Cancel()
 		strip.Position = UDim2.fromOffset(xEnd, 7)
-		-- the winner lights up
+		-- the winner lights up: it grows only into the gap (never over its neighbours) and the others go dark
 		local win = tiles[WIN]
 		local ws = new("UIScale", { Parent = win })
-		UI.tween(ws, 0.25, { Scale = 1.12 }, Enum.EasingStyle.Back)
+		UI.tween(ws, 0.25, { Scale = 1.05 }, Enum.EasingStyle.Back)
+		for i, tl in ipairs(tiles) do
+			if i ~= WIN and math.abs(i - WIN) <= 5 then
+				local shade = new("Frame", { Name = "Shade", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 8, 26), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 9, Parent = tl })
+				UI.corner(14).Parent = shade
+				UI.tween(shade, 0.3, { BackgroundTransparency = 0.45 })
+			end
+		end
 		local glow = UI.slice("glow", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(10, 10), ImageColor3 = rar(h).color, ImageTransparency = 0.2, ZIndex = 2, Parent = win })
 		UI.tween(glow, 0.4, { Size = UDim2.fromOffset(300, 300), ImageTransparency = 0.6 })
 		c.sound2D(c.S.Chime, 0.6, h.r >= 5 and 0.85 or 1.15)
@@ -930,8 +944,8 @@ local function dailyHammers(order, data)
 			task.wait(1)
 		end
 	end)
-	-- one row of four cards: the three Hammers of the Day (Epic, Legendary, Mythic) and, last on the right, the
-	-- Thunderclap: a hammer only Robux buys (never in a crate)
+	-- one row of four cards: the three Hammers of the Day (Epic, Legendary, Mythic), Gems only, and, last on the right,
+	-- the Thunderclap: the rarest hammer of the Exclusive Crate (no hammer is sold for Robux)
 	local list = {}
 	for _, o in pairs(offers) do table.insert(list, o) end
 	table.sort(list, function(x, y) return x.r < y.r end)
@@ -948,8 +962,6 @@ local function dailyHammers(order, data)
 		local h = Hammers.ById[o.key]
 		local r = rar(h)
 		local owned = data.index and data.index[o.key]
-		local prod = product(o.product)
-		local robuxOk = prod and ((prod.id or 0) > 0 or studio)
 		-- (the gem is the button's icon: an emoji in a scaled label broke the price onto two lines)
 		local gemLabel = Config.FormatNum(o.gems)
 		local can = gems() >= o.gems
@@ -974,14 +986,6 @@ local function dailyHammers(order, data)
 				revealBought(o.key, type(res) == "table" and res.new)
 			end, shine = can, icon = "gem" },
 		}
-		if robuxOk then
-			table.insert(buttons, { K.robux(prod.price), K.GREEN, function()
-				c.click()
-				call("shopintent", o.key)
-				if (prod.id or 0) > 0 then MarketplaceService:PromptProductPurchase(c.player, prod.id)
-				else c.toast(h.name .. ": Robux coming soon (" .. K.robux(prod.price) .. ")", T.accent, 2.5) end
-			end, shine = true })
-		end
 		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = ART, spin = true,
 			badge = { string.upper(r.name), r.color },
 			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } }, buttons = buttons })
@@ -1003,26 +1007,20 @@ local function dailyHammers(order, data)
 			end)
 		end
 	end
-	-- the last card on the right: the Thunderclap Hammer, Robux only (the game pass), electric
-	local sh = Config.StormHammer
-	local pass
-	if sh then for _, pp in ipairs(Config.Store.passes) do if pp.key == sh.pass then pass = pp end end end
-	if sh and pass then
-		local ex = Hammers.RarityById.exclusive
-		local owns = c.player:GetAttribute("Pass_" .. sh.pass) == true
-		local o = { order = 10, name = sh.name, icon = sh.icon or art(Hammers.ById[sh.key or "thunder"]), iconScale = 1.04, color = ex.color, spin = true,
-			artH = ART, badge = { "EXCLUSIVE", ex.color }, stats = { { "x" .. sh.mult .. " POWER", GOLD }, { "FOREVER", K.GREEN } } }
-		if owns then
-			o.status = { "OWNED", K.GREEN }
-		elseif (pass.id or 0) > 0 or studio then
-			o.buttons = { { K.robux(pass.price), K.GREEN, function()
+	-- the last card on the right: the Thunderclap, the rarest hammer of the Exclusive Crate (1 in 100), electric; it
+	-- shows the crate and its odds
+	local th, ex, exCrate = Hammers.ById.thunder, Hammers.RarityById.exclusive, Hammers.CrateById.exclusive
+	if th and exCrate then
+		local chance = Hammers.Chances("exclusive", data.zone or "town", 1).thunder
+		local owned = data.index and data.index.thunder
+		local o = { order = 10, name = th.name, icon = art(th), iconScale = 1.04, color = ex.color, spin = true, artH = ART, badge = { "EXCLUSIVE", ex.color },
+			stats = { { Hammers.PowerLabel("thunder", 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { chance and (pct(chance) .. " CHANCE") or "SOON", K.GREEN } },
+			buttons = { { chance and "SEE CRATE" or "COMING SOON", chance and ex.color or K.LOCK, function()
 				c.click()
-				if (pass.id or 0) > 0 then MarketplaceService:PromptGamePassPurchase(c.player, pass.id)
-				else c.toast(sh.name .. ": coming soon (" .. K.robux(pass.price) .. ")", T.accent, 2.5) end
-			end, shine = true } }
-		end
+				cratePopup(exCrate, data)
+			end, shine = chance ~= nil } } }
 		local t = K.tile(grid, o)
-		tagChip(t, "ROBUX ONLY", T.red)
+		tagChip(t, "CRATE ONLY", T.red)
 		K.rarityFX(t:FindFirstChild("Art"), "exclusive")
 		local tl = t:FindFirstChild("Title")
 		if tl then K.rarityText(tl, "exclusive", ex.color) end

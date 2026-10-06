@@ -1,7 +1,9 @@
 -- BlockRise Empire - the hammers: collectible items with a rarity, a level and a look.
 -- Shared by server and client (pure data + pure functions; no services here).
 --   Hammers.Rarities        the 8 rarities of the ladder, in order (power, swing cooldown, colour, effect tier), and
---                           a 9th shown on its own: EXCLUSIVE (the pass hammer; its power stays the one of its ladder rarity)
+--                           a 9th shown on its own: EXCLUSIVE (the Thunderclap; its power stays the one of its ladder rarity)
+-- Every hammer is an item you can trade (only everyone's starter Rusty stays with you). The Exclusive ones only come out
+-- of the Exclusive Crate (Robux); no hammer is sold for Robux. Crates are pure luck (no pity).
 --   Hammers.List / ById     the 40 hammers (16 have a model in the game today; the rest are "coming soon")
 --   Hammers.Crates / CrateById  the crates and their odds (shown in the game: Roblox requires it for paid random items)
 --   Hammers.Power(key, lv)  build power of one hammer; Hammers.LevelCost(key, lv) cash to go lv -> lv+1
@@ -15,7 +17,7 @@ Hammers.RarityStep = 1.35         -- every rarity x1.35 power
 Hammers.TradeUpCount = 10         -- 10 of a rarity -> 1 of the next
 Hammers.InventoryCap = 300
 Hammers.LadderTop = 8              -- trade-ups and crates stop at Divine (Exclusive is a category, not a step)
-Hammers.DefaultKey = "rusty"      -- everyone's first hammer; never tradeable, never lost
+Hammers.DefaultKey = "rusty"      -- everyone's first hammer; the only one you can't trade, never lost
 
 Hammers.Rarities = {
 	{ id = "common", name = "Common", cooldown = 0.42, color = C3(150, 156, 178), fx = 0, levelBase = 120 },
@@ -26,14 +28,15 @@ Hammers.Rarities = {
 	{ id = "mythic", name = "Mythic", cooldown = 0.25, color = C3(255, 70, 120), fx = 5, levelBase = 300000 },
 	{ id = "secret", name = "Secret", cooldown = 0.23, color = C3(40, 40, 60), fx = 6, levelBase = 1500000, text = C3(230, 230, 255) },
 	{ id = "divine", name = "Divine", cooldown = 0.21, color = C3(250, 214, 255), fx = 7, levelBase = 8000000, text = C3(120, 60, 160) },
-	-- shown, never rolled: pass hammers (h.show = "exclusive"); power, cooldown and level costs come from h.rarity
+	-- a look, not a step: the Thunderclap (h.show = "exclusive"); power, cooldown and level costs come from h.rarity
 	{ id = "exclusive", name = "Exclusive", cooldown = 0.25, color = C3(24, 214, 200), fx = 5, levelBase = 300000, display = true },
 }
 Hammers.RarityById = {}
 for i, r in ipairs(Hammers.Rarities) do r.index = i; Hammers.RarityById[r.id] = r end
 
 -- model = the Tool in ServerStorage.Hammers (Hammer_<model>); icon = the Shop atlas icon; soon = no model yet
--- exclusive = only from the Exclusive Crate (Robux) / a pass; event = only from an event crate
+-- exclusive = only from the Exclusive Crate (Robux); event = only from an event; w = its weight among the hammers of
+-- its rarity in a crate (1 if not set: the Thunderclap is 1 in 8 of the Exclusive Crate's Secrets)
 Hammers.List = {
 	-- COMMON
 	{ key = "rusty", name = "Rusty Hammer", rarity = "common", model = "1", icon = "shop_1", desc = "Old, bent and held together with tape. It works. Mostly. Yours forever." },
@@ -70,8 +73,8 @@ Hammers.List = {
 	-- MYTHIC
 	{ key = "diamond", name = "Diamond Hammer", rarity = "mythic", model = "12", icon = "shop_12", desc = "The hardest hammer there is." },
 	{ key = "plasma", name = "Plasma Hammer", rarity = "mythic", model = "13", icon = "shop_13", desc = "Pure energy in a magnetic field." },
-	{ key = "thunder", name = "Thunderclap Hammer", rarity = "mythic", show = "exclusive", model = "thunder", exclusive = true, pass = "stormhammer", image = "stormhammer",
-		desc = "A storm in a hammer. Every hit cracks like thunder. Thunderclap Hammer pass owners only." },
+	{ key = "thunder", name = "Thunderclap Hammer", rarity = "secret", show = "exclusive", model = "thunder", exclusive = true, w = 1, image = "stormhammer",
+		desc = "A storm in a hammer. Every hit cracks like thunder. The rarest hammer of the Exclusive Crate." },
 	{ key = "void", name = "Void Hammer", rarity = "mythic", soon = true, desc = "A hole in the world shaped like a hammer. Light bends around it." },
 	-- SECRET
 	{ key = "solar", name = "Solar Hammer", rarity = "secret", model = "14", icon = "shop_14", desc = "A tiny sun on a stick." },
@@ -83,7 +86,7 @@ Hammers.List = {
 	-- EXCLUSIVE (Exclusive Crate - Robux - and events only)
 	{ key = "crown", name = "Royal Crown Hammer", rarity = "legendary", exclusive = true, soon = true, desc = "A jewelled crown for a head, red velvet grip. Exclusive." },
 	{ key = "ghost", name = "Ghost Hammer", rarity = "mythic", exclusive = true, soon = true, desc = "Translucent and glowing, with wisps trailing behind. Exclusive." },
-	{ key = "prism", name = "Rainbow Prism Hammer", rarity = "secret", exclusive = true, soon = true, desc = "A crystal prism that splits every hit into a rainbow. Exclusive." },
+	{ key = "prism", name = "Rainbow Prism Hammer", rarity = "secret", exclusive = true, w = 7, soon = true, desc = "A crystal prism that splits every hit into a rainbow. Exclusive." },
 	{ key = "founder", name = "Founder's Hammer", rarity = "secret", exclusive = true, event = true, soon = true, desc = "Only given during the launch event. Never again." },
 }
 Hammers.ById = {}
@@ -108,11 +111,12 @@ Hammers.Crates = {
 		desc = "Uncommon or better, with a real shot at Legendary. 1 in 200 is Mythic.",
 		odds = { 0, 45, 35, 15, 4.5, 0.5, 0, 0 } },
 	{ id = "golden", image = "rbxassetid://108198116543312", name = "Golden Crate", icon = "crate_golden", color = C3(255, 206, 40), gems = 600, product = "crate_golden",
-		desc = "Rare or better. Mythic, Secret and even Divine hammers live here. Pity: Legendary+ guaranteed every 20.",
-		odds = { 0, 0, 40, 35, 18, 6, 0.9, 0.1 }, pity = { every = 20, min = 5 } },
+		desc = "Rare or better. Mythic, Secret and even Divine hammers live here.",
+		odds = { 0, 0, 40, 35, 18, 6, 0.9, 0.1 } },
+	-- soon: closed until its hammers have their models (it would drop only the Thunderclap)
 	{ id = "exclusive", image = "rbxassetid://117610832518353", name = "Exclusive Crate", icon = "crate_exclusive", color = C3(255, 90, 200), product = "crate_exclusive", exclusiveOnly = true,
-		desc = "Hammers nobody else can get: Legendary, Mythic and Secret exclusives. Pity: Secret guaranteed every 25.",
-		odds = { 0, 0, 0, 0, 60, 32, 8, 0 }, pity = { every = 25, min = 7 } },
+		soon = true, desc = "Hammers nobody else can get: the Royal Crown, the Ghost, the Rainbow Prism and, 1 in 100, the Thunderclap.",
+		odds = { 0, 0, 0, 0, 65, 27, 8, 0 } },
 }
 Hammers.CrateById = {}
 for _, c in ipairs(Hammers.Crates) do Hammers.CrateById[c.id] = c end
@@ -151,7 +155,7 @@ end
 -- odds of a crate as shown (per rarity, only rarities with something to drop), luck shifts weight to the rarer half
 function Hammers.Odds(crateId, zone, luck)
 	local c = Hammers.CrateById[crateId]
-	if not c then return {} end
+	if not c or c.soon then return {} end
 	local base = c.odds or (c.pools and (c.pools[zone] or c.pools.town)) or {}
 	luck = luck or 1
 	local w, total = {}, 0
@@ -167,7 +171,33 @@ function Hammers.Odds(crateId, zone, luck)
 	return out
 end
 
--- roll one hammer. rng: a Random; pityHit: force at least rarity `min`
+-- one hammer of a rarity's pool, by weight (h.w, 1 if not set)
+local function pickIn(pool, rng)
+	local total = 0
+	for _, h in ipairs(pool) do total += h.w or 1 end
+	local x = rng:NextNumber() * total
+	for _, h in ipairs(pool) do
+		x -= h.w or 1
+		if x <= 0 then return h end
+	end
+	return pool[#pool]
+end
+
+-- the chance of each hammer in a crate, in % ({ [key] = % }): the rarity's odds shared by weight
+function Hammers.Chances(crateId, zone, luck)
+	local c = Hammers.CrateById[crateId]
+	local out = {}
+	if not c then return out end
+	for r, pct in pairs(Hammers.Odds(crateId, zone, luck)) do
+		local pool = Hammers.PoolAt(c, r)
+		local total = 0
+		for _, h in ipairs(pool) do total += h.w or 1 end
+		for _, h in ipairs(pool) do out[h.key] = pct * (h.w or 1) / total end
+	end
+	return out
+end
+
+-- roll one hammer. rng: a Random; pityMin: at least that rarity (only the first crate you ever open uses it)
 function Hammers.Roll(crateId, zone, rng, luck, pityMin)
 	local c = Hammers.CrateById[crateId]
 	local odds = Hammers.Odds(crateId, zone, luck)
@@ -180,7 +210,7 @@ function Hammers.Roll(crateId, zone, rng, luck, pityMin)
 		for r in pairs(odds) do best = math.max(best or r, r) end
 		if not best then return nil end
 		local pool = Hammers.PoolAt(c, best)
-		return pool[rng:NextInteger(1, #pool)].key, best
+		return pickIn(pool, rng).key, best
 	end
 	local x = rng:NextNumber() * total
 	local pick
@@ -193,17 +223,18 @@ function Hammers.Roll(crateId, zone, rng, luck, pityMin)
 	end
 	pick = pick or best
 	local pool = Hammers.PoolAt(c, pick)
-	return pool[rng:NextInteger(1, #pool)].key, pick
+	return pickIn(pool, rng).key, pick
 end
 
 -- Hammer Shop: three hammers of the day (Epic, Legendary, Mythic), the same for everyone, a new set every day at
--- 00:00 UTC. Bought with lots of Gems or with Robux (a developer product per tier, pointing at it by index). Only hammers
--- that exist in the game and drop from the normal crates are sold (never Exclusive, event, pass, Secret or Divine ones:
--- those stay rare). The shop shows them in one row with the Thunderclap (Robux only) last on the right.
+-- 00:00 UTC. Gems only, and a lot of them: the rarer, the harder to afford (no hammer is sold for Robux: they come out
+-- of crates). Only hammers that exist in the game and drop from the normal crates are sold (never Exclusive, event,
+-- Secret or Divine ones). The shop shows them in one row with the Exclusive Crate's Thunderclap last on the right.
+-- (product: the old Robux products, still honoured if a purchase from before arrives)
 Hammers.ShopTiers = {
-	{ r = 4, gems = 1500, product = "hammer_epic", tag = "GREAT DEAL" },
-	{ r = 5, gems = 6000, product = "hammer_legendary", tag = "POPULAR" },
-	{ r = 6, gems = 20000, product = "hammer_mythic", tag = "ULTRA RARE" },
+	{ r = 4, gems = 2500, product = "hammer_epic", tag = "GREAT DEAL" },
+	{ r = 5, gems = 12000, product = "hammer_legendary", tag = "POPULAR" },
+	{ r = 6, gems = 40000, product = "hammer_mythic", tag = "ULTRA RARE" },
 }
 function Hammers.ShopDay(t) return math.floor((t or os.time()) / 86400) end
 function Hammers.Featured(day)
