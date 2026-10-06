@@ -172,7 +172,7 @@ function M.Show()
 		Font = T.chunky, ZIndex = 7, Shine = true, Parent = ctrl })
 	local btnLbl = btn:FindFirstChild("Label")
 	local p1 = packOf("spin1")
-	local robuxBtn = UI.button("SPIN  R$ " .. tostring(p1 and p1.price or 19), K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0.5, 0),
+	local robuxBtn = UI.button("SPIN  \u{E002} " .. tostring(p1 and p1.price or 19), K.GREEN, nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0.5, 0),
 		Size = UDim2.fromOffset(190, 66), TextSize = 25, Font = T.chunky, ZIndex = 7, Shine = true, Parent = ctrl })
 	local gemBtn = UI.button(tostring(Config.Spin.gemCost), C3(60, 170, 255), nil, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -218, 0.5, 0),
 		Size = UDim2.fromOffset(160, 66), TextSize = 27, Font = T.chunky, ZIndex = 7, Icon = "gem", Parent = ctrl })
@@ -378,8 +378,8 @@ function M.Show()
 	if pack and not restricted and ((pack.id or 0) > 0 or RunService:IsStudio()) then
 		K.banner(c.content, 4, { name = string.upper(pack.name), line = "Cheaper than one by one. Every spin can be the " .. (top and top.name or "jackpot") .. "!",
 			icon = (Config.ProductImages and Config.ProductImages.spins3) or "spin", color = GOLD2, tint = C3(255, 226, 150), height = 104, buttonW = 190,
-			button = (pack.id or 0) > 0 and { "R$ " .. tostring(pack.price or "?"), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, pack.id) end, shine = true } or nil,
-			status = (pack.id or 0) <= 0 and { "SOON · R$" .. tostring(pack.price or "?"), K.LOCK } or nil })
+			button = (pack.id or 0) > 0 and { "\u{E002} " .. tostring(pack.price or "?"), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, pack.id) end, shine = true } or nil,
+			status = (pack.id or 0) <= 0 and { "SOON · \u{E002} " .. tostring(pack.price or "?"), K.LOCK } or nil })
 	end
 
 	-- the best prizes, big
