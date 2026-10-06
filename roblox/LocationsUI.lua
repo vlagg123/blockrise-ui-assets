@@ -105,7 +105,10 @@ function M.Show()
 	local player = c.player
 	local owned = hasTeleporter()
 	local tut = inTutorial() -- the tutorial's last step: only the free trip home
+	-- a redraw (a waypoint taken away) keeps the list where it was
+	local scroll = c.modalOpen() and c.modalTitle.Text == "Places" and c.content.CanvasPosition or nil
 	c.openModal("Locations", "Places", "", R1, R2)
+	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
 	if not owned and not tut then
 		-- the Teleporter offer sits on top
 		local pass = teleporterPass()
@@ -113,18 +116,24 @@ function M.Show()
 			color = Color3.fromRGB(235, 70, 130), tint = Color3.fromRGB(255, 214, 120), buttonW = 170,
 			button = { "\u{E002} " .. tostring(pass and pass.price or 39), K.GREEN, function() c.click(); offerTeleporter() end } })
 	end
-	-- the waypoint you have now: one tap takes it away (you know the way, or it's in your way)
+	-- the waypoint you have now: one tap takes it away (you know the way, or it's in your way). The row is always there
+	-- (with no waypoint it says how to set one), so taking it away changes the text and nothing moves
 	local wpName = c.waypointName and c.waypointName()
-	if wpName and not tut then
-		local label = wpName
-		for _, p in ipairs(PLACES) do if p.id == wpName then label = p.name end end
-		K.row(c.content, 1, { name = "Waypoint: " .. label, line = "The arrow shows you the way there", icon = PIN_ICON, color = Color3.fromRGB(255, 190, 50), height = 88, buttonW = 170,
-			button = { "REMOVE", T.red, function()
-				c.click()
-				if c.clearWaypoint then c.clearWaypoint() end
-				c.toast("✖ Waypoint removed", T.muted, 1.8)
-				M.Show()
-			end } })
+	if not tut then
+		if wpName then
+			local label = wpName
+			for _, p in ipairs(PLACES) do if p.id == wpName then label = p.name end end
+			K.row(c.content, 1, { name = "Waypoint: " .. label, line = "The arrow shows you the way there", icon = PIN_ICON, color = Color3.fromRGB(255, 190, 50), height = 88, buttonW = 170,
+				button = { "REMOVE", T.red, function()
+					c.click()
+					if c.clearWaypoint then c.clearWaypoint() end
+					c.toast("✖ Waypoint removed", T.muted, 1.8)
+					M.Show()
+				end } })
+		else
+			K.row(c.content, 1, { name = "Waypoint: none", line = "Tap the pin on a place: an arrow shows you the way", icon = PIN_ICON, color = Color3.fromRGB(255, 190, 50), height = 88, buttonW = 170,
+				status = { "NO WAYPOINT", K.LOCK } })
+		end
 	end
 	local grid = K.grid(c.content, 2, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 250)
 	for i, p in ipairs(PLACES) do
