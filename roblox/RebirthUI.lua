@@ -26,6 +26,59 @@ local function effect(p, f)
 	return ""
 end
 
+-- what a Rebirth takes away (back to the start) and what it never touches: two cards side by side, so nobody is surprised
+local RED, GREEN = Color3.fromRGB(226, 64, 72), Color3.fromRGB(46, 170, 90)
+local function lines(parent, list, color)
+	local box = new("Frame", { Name = "Lines", Position = UDim2.fromOffset(14, 52), Size = UDim2.new(1, -28, 1, -60), BackgroundTransparency = 1, ZIndex = 3, Parent = parent })
+	new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, Parent = box })
+	for i, l in ipairs(list) do
+		local row = new("Frame", { Size = UDim2.new(1, 0, 0, 25), BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 3, Parent = box })
+		new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(8, 8), BackgroundColor3 = color, BorderSizePixel = 0, ZIndex = 3, Parent = row },
+			{ new("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+		K.text({ Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -16, 1, 0), Text = l, TextSize = 17, Max = 17, Font = T.bold or T.body, ZIndex = 3, Parent = row })
+	end
+end
+local function card(parent, x, title, color, list)
+	local f = new("Frame", { Position = UDim2.new(x, x > 0 and 6 or 0, 0, 0), Size = UDim2.new(0.5, -6, 1, 0), BackgroundTransparency = 1, ZIndex = 2, Parent = parent })
+	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = f })
+	local head = UI.slice("pill", { Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 0, 34), SliceScale = 0.42, ImageColor3 = color, ZIndex = 2, Parent = f })
+	K.text({ Size = UDim2.fromScale(1, 1), Text = title, Font = T.chunky, TextSize = 20, Max = 20, TextColor3 = Color3.new(1, 1, 1), Stroke = 2.2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Parent = head })
+	lines(f, list, color)
+end
+local function resetCards(order, f)
+	local p = c.player
+	local start = (Config.StartMoney or 0) + (f.headStart or 0)
+	local gear1 = Config.TrainingGear[1] and Config.TrainingGear[1].name or "Bare Hands"
+	local workers, keep = p:GetAttribute("WorkerCount") or 0, f.keepCrew or 0
+	local machines = 0
+	for _, m in ipairs(Config.Machines) do if p:GetAttribute("M_" .. m.id) == true then machines += 1 end end
+	local fmtN = Config.FormatNum
+	local wiped = {
+		"<b>Cash</b>  " .. money(p:GetAttribute("Money") or 0) .. "  →  " .. money(start),
+		"<b>Strength</b>  " .. fmtN(math.floor(p:GetAttribute("Strength") or 0)) .. "  →  0",
+		"<b>Training gear</b>  →  " .. gear1,
+		"<b>Crew</b>  " .. workers .. "  →  " .. math.min(keep, workers) .. (keep > 0 and " (Star Shop keeps them)" or ""),
+		"<b>Machines</b>  " .. machines .. "  →  0",
+		"<b>Upgrades</b>  every level  →  LV 0",
+		"<b>Properties</b>  all of them  →  0",
+		"<b>Your contract</b>  →  cancelled",
+	}
+	local kept = {
+		"<b>Level</b> and <b>Rep</b>",
+		"<b>Hammers</b> (every one, with its level)",
+		"<b>Gems</b>",
+		"<b>Materials</b> and <b>blueprints</b>",
+		"<b>Cars</b> and your <b>house</b>",
+		"<b>Your company</b> and its name",
+		"<b>Game passes</b>",
+		"<b>Stars</b> and the <b>Star Shop</b>",
+	}
+	local box = new("Frame", { Name = "ResetCards", Size = UDim2.new(1, 0, 0, 62 + 27 * math.max(#wiped, #kept)), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = c.content })
+	card(box, 0, "✖  BACK TO THE START", RED, wiped)
+	card(box, 0.5, "✔  YOU KEEP", GREEN, kept)
+end
+
 function M.Show(keepScroll)
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	local tok = c.openModal("Rebirth", "Rebirth", "", P1, P2)
@@ -60,17 +113,18 @@ function M.Show(keepScroll)
 			local ok2, res, msg = pcall(function() return c.R.FranchiseAction:InvokeServer("franchise") end)
 			if ok2 and res then c.closeModal() else c.toast("⚠️ " .. tostring(msg or "Can't Rebirth right now"), T.red) end
 		end, shine = ready } })
-	local opens = f.rebirths == 0 and "  Rebirth 1 opens the SUBURBS!" or (f.rebirths == 1 and "  Rebirth 2 opens DOWNTOWN!" or "")
-	K.note(c.content, 2, "You keep your Level, Rep, house, Gems, materials, blueprints, cars and hammers." .. opens)
+	local opens = f.rebirths == 0 and "Rebirth 1 opens the SUBURBS!  " or (f.rebirths == 1 and "Rebirth 2 opens DOWNTOWN!  " or "")
+	K.note(c.content, 3, opens .. "The cash and Strength bonus and your Stars stay forever.")
+	resetCards(4, f)
 	if f.gate then
-		K.row(c.content, 3, { name = (f.gate.done and "✓ " or "") .. "Build the " .. f.gate.name, line = f.gate.done and "Done: this zone is finished" or "Finish this zone's top building once to Rebirth",
+		K.row(c.content, 2, { name = (f.gate.done and "✓ " or "") .. "Build the " .. f.gate.name, line = f.gate.done and "Done: this zone is finished" or "Finish this zone's top building once to Rebirth",
 			icon = "contract", color = f.gate.done and K.GREEN or Color3.fromRGB(255, 176, 40), height = 84, buttonW = 150,
 			status = { f.gate.done and "DONE" or "TO DO", f.gate.done and K.GREEN or K.LOCK } })
 	end
 
 	-- Star Shop
-	K.section(c.content, 4, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐")
-	local grid = K.grid(c.content, 5, cols(), 268)
+	K.section(c.content, 5, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐")
+	local grid = K.grid(c.content, 6, cols(), 268)
 	for i, p in ipairs(Company.StarPerks) do
 		local info
 		for _, x in ipairs(f.perks) do if x.id == p.id then info = x end end

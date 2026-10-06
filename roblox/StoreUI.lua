@@ -7,16 +7,17 @@ local K = require(RS.Shared:WaitForChild("MenuKit"))
 
 local M = {}
 local c, UI, T, Config
-local tab = "gems"
+local tab = "gemshop"
 
 local GEM1, GEM2 = Color3.fromRGB(120, 230, 255), Color3.fromRGB(30, 140, 220)
+-- (the Gem Shop first: the Store always opens on it; the CRATES tab shows a crate, set in M.Init)
 local TABS = {
+	{ id = "gemshop", label = "GEM SHOP", icon = "store", c1 = Color3.fromRGB(255, 150, 200), c2 = Color3.fromRGB(215, 60, 140) },
 	{ id = "gems", label = "GEMS", icon = "gem", c1 = GEM1, c2 = GEM2 },
 	{ id = "cash", label = "CASH", icon = "cash", c1 = Color3.fromRGB(130, 240, 120), c2 = Color3.fromRGB(30, 160, 70) },
 	{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 120, 30) },
 	{ id = "boosts", label = "BOOSTS", icon = "up_power", c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20) },
 	{ id = "passes", label = "PASSES", icon = "vip", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
-	{ id = "gemshop", label = "GEM SHOP", icon = "store", c1 = Color3.fromRGB(255, 150, 200), c2 = Color3.fromRGB(215, 60, 140) },
 }
 local THEME = {}
 for _, t in ipairs(TABS) do THEME[t.id] = t end
@@ -318,10 +319,10 @@ local function gemshop(tok)
 end
 
 function M.Show(t, keepScroll)
-	-- opening the window (not a redraw while it is open) always starts on the first tab
-	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Store") then tab = "gems" end
+	-- opening the window (not a redraw while it is open) always starts on the first tab: the Gem Shop
+	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Store") then tab = "gemshop" end
 	if type(t) == "string" then tab = (t == "packs" and "gems") or t end
-	if not THEME[tab] then tab = "gems" end
+	if not THEME[tab] then tab = "gemshop" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	local th = THEME[tab]
 	local tok = c.openModal("Store", "Store", "", th.c1, th.c2)
@@ -341,6 +342,9 @@ function M.Init(ctx)
 	c = ctx
 	if c.Config.StormHammer and c.Config.StormHammer.icon then ICON.stormhammer = c.Config.StormHammer.icon end
 	UI, T, Config = c.UI, c.T, c.Config
+	local Hammers = require(RS.Shared:WaitForChild("Hammers"))
+	local crate = Hammers.CrateById and (Hammers.CrateById.golden or Hammers.CrateById.builder)
+	if crate and crate.image then THEME.crates.icon = crate.image end
 	task.spawn(function()
 		for _, p in ipairs(Config.Store.passes) do robuxPrice(p.id, Enum.InfoType.GamePass) end
 		for _, p in ipairs(Config.Store.products) do robuxPrice(p.id, Enum.InfoType.Product) end
