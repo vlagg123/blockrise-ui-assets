@@ -634,7 +634,7 @@ local function crateTiles(data, order, shop)
 		local robuxOk = prod and (prod.id or 0) > 0 and not c.paidRandomRestricted
 		local exists = next(Hammers.Odds(cr.id, zone, 1)) ~= nil
 		local o = { order = i, name = cr.name, icon = crateArt(cr), iconScale = cr.image and 1.06 or 0.9, color = cr.color, stats = {}, spin = have > 0,
-			corner = { label = "?", color = EQUIP_BLUE, w = 40, onClick = function() c.click(); cratePopup(cr, data) end } }
+			corner = { label = "?", color = EQUIP_BLUE, w = 34, plain = true, onClick = function() c.click(); cratePopup(cr, data) end } }
 		if have > 0 then o.badge = { "x" .. have, T.red } end
 		if cr.pity then table.insert(o.stats, { "PITY " .. tostring(data.pity[cr.id] or cr.pity.every), GOLD }) end
 		if cr.cash then table.insert(o.stats, { string.upper(zone), K.SUB }) end
