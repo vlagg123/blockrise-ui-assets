@@ -313,13 +313,13 @@ end
 -- a cartoon storm cloud (picture rendered in Blender): three layers facing the camera at different depths, so it looks
 -- round from every side; grey-blue normally, lit white for a blink when lightning flashes inside
 local CLOUD_IMG = "rbxassetid://84361525477052"
-local CLOUD_TINT = C3(124, 132, 166)
+local CLOUD_TINT = C3(134, 142, 176)
 local CLOUD_LIT = C3(240, 246, 255)
 local function makeCloud(e)
 	local core = fxPart({ Name = "Cloud", Transparency = 1, Size = Vector3.new(1, 1, 1) })
 	local c = { parts = { { part = core } }, pos = nil, core = core, puffs = {} }
 	-- { offset, size (studs), darker }
-	local layers = { { Vector3.new(-2.6, -0.3, -0.6), 8, 0.18 }, { Vector3.new(2.8, -0.2, -0.5), 8.8, 0.14 }, { Vector3.new(0, 0.2, 0.3), 11.5, 0 } }
+	local layers = { { Vector3.new(-2.2, -0.3, -0.6), 6.8, 0.16 }, { Vector3.new(2.4, -0.2, -0.5), 7.5, 0.12 }, { Vector3.new(0, 0.2, 0.3), 9.8, 0 } }
 	for _, L in ipairs(layers) do
 		local bb = new("BillboardGui", { Name = "CloudLayer", Size = UDim2.fromScale(L[2], L[2]), StudsOffsetWorldSpace = L[1], LightInfluence = 0, MaxDistance = 160,
 			ResetOnSpawn = false, Adornee = core, Parent = core })
@@ -330,10 +330,10 @@ local function makeCloud(e)
 	c.light = new("PointLight", { Color = C3(150, 200, 255), Brightness = 0, Range = 12, Shadows = false, Parent = core })
 	-- rain: thin streaks falling from the cloud, recycled at the bottom
 	c.rain = {}
-	for i = 1, 16 do
-		local d = fxPart({ Name = "Rain", Size = Vector3.new(0.07, 1.3, 0.07), Color = C3(170, 210, 255), Transparency = 0.35 })
+	for i = 1, 20 do
+		local d = fxPart({ Name = "Rain", Size = Vector3.new(0.06, 1.0, 0.06), Color = C3(170, 210, 255), Transparency = 0.35 })
 		table.insert(c.parts, { part = d })
-		table.insert(c.rain, { part = d, y = math.random() * 9, x = (math.random() - 0.5) * 7, z = (math.random() - 0.5) * 5, v = 30 + math.random() * 12 })
+		table.insert(c.rain, { part = d, y = math.random() * 8, x = (math.random() - 0.5) * 6, z = (math.random() - 0.5) * 4, v = 30 + math.random() * 12 })
 	end
 	e.cloud = c
 end
@@ -479,7 +479,7 @@ RunService.RenderStepped:Connect(function()
 					local c = e.cloud
 					local building = e.site and now - e.site.t < 2.5
 					-- a little over the name tags above your head (VIP, company)
-					local target = building and (e.site.pos + Vector3.new(0, 15, 0)) or (root.Position + Vector3.new(0, 10.5, 0))
+					local target = building and (e.site.pos + Vector3.new(0, 14, 0)) or (root.Position + Vector3.new(0, 9, 0))
 					c.pos = c.pos and c.pos:Lerp(target, math.clamp(dt * (building and 2 or 4), 0, 1)) or target
 					c.core.CFrame = CFrame.new(c.pos + Vector3.new(math.sin(now * 0.7) * 0.3, math.sin(now * 0.9) * 0.2, 0)) * CFrame.Angles(0, now * 0.15, 0)
 					-- light flickering inside the cloud
@@ -488,12 +488,12 @@ RunService.RenderStepped:Connect(function()
 						c.light.Brightness = 0.5 + math.random() * 0.6
 						cloudBlink(c)
 					end
-					-- the rain falls (9 studs) and starts again at the cloud
+					-- the rain falls (8 studs) and starts again at the cloud
 					for _, d in ipairs(c.rain) do
 						d.y += d.v * dt
-						if d.y > 9 then d.y = 0; d.x = (math.random() - 0.5) * 7; d.z = (math.random() - 0.5) * 5 end
-						d.part.CFrame = CFrame.new(c.pos + Vector3.new(d.x, -1.6 - d.y, d.z))
-						d.part.Transparency = 0.3 + 0.6 * (d.y / 9)
+						if d.y > 8 then d.y = 0; d.x = (math.random() - 0.5) * 6; d.z = (math.random() - 0.5) * 4 end
+						d.part.CFrame = CFrame.new(c.pos + Vector3.new(d.x, -1.4 - d.y, d.z))
+						d.part.Transparency = 0.3 + 0.6 * (d.y / 8)
 					end
 				end
 			elseif (e.orbs and #e.orbs > 0) or e.feet or e.cloud then

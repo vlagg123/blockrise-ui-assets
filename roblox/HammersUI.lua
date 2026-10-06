@@ -136,7 +136,11 @@ local function hammerPopup(h, it, data)
 	box.ZIndex = 5
 	K.rarityFX(box, r.id)
 	local ttl = pw and pw:FindFirstChild("Header") and pw.Header:FindFirstChild("Title")
-	if ttl and K.RARITY_LOOK[r.id] then K.rarityText(ttl, r.id) end
+	if ttl and K.RARITY_LOOK[r.id] then
+		K.rarityText(ttl, r.id)
+		local rib = pw.Header:FindFirstChild("Ribbon")
+		if rib then K.rarityChip(rib, r.id) end
+	end
 	local x = 240
 	local chips = new("Frame", { Position = UDim2.fromOffset(x, 10), Size = UDim2.new(1, -x, 0, 28), BackgroundTransparency = 1, ZIndex = 6, Parent = body })
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = chips })
