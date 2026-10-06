@@ -601,6 +601,8 @@ function M.Init(ctx)
 		return p
 	end
 	local function openPopup(p)
+		-- a popup never sits behind a window: MORE with a window open closes the window and opens the popup
+		if c.modalOpen() and c.closeModal then c.closeModal(); p.frame.Visible = false end
 		local was = p.frame.Visible
 		for _, q in ipairs(popups) do q.frame.Visible = false end
 		p.frame.Visible = not was
