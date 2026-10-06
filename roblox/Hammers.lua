@@ -100,21 +100,21 @@ end
 -- crates: price in cash (scaled per zone, see Hammers.SupplyPrice), gems, or a Robux developer product (Store key)
 -- odds = chance in % per rarity index 1..8 (they add up to 100). Pools by zone for the cash crate.
 Hammers.Crates = {
-	{ id = "supply", image = "rbxassetid://75330431497360", name = "Supply Crate", icon = "crate_supply", color = C3(255, 186, 60), cash = true,
+	{ id = "supply", image = "rbxassetid://81484084637371", name = "Supply Crate", icon = "crate_supply", color = C3(255, 186, 60), cash = true,
 		desc = "The builders' crate: Common to Epic in Town, Legendary from the Suburbs. It also drops while you build.",
 		pools = {
 			town = { 62, 28, 9, 1, 0, 0, 0, 0 },
 			suburbs = { 30, 38, 22, 8, 2, 0, 0, 0 },
 			downtown = { 0, 30, 40, 24, 6, 0, 0, 0 },
 		} },
-	{ id = "builder", image = "rbxassetid://104449117497713", name = "Builder's Crate", icon = "crate_builder", color = C3(70, 160, 255), gems = 150, product = "crate_builder",
+	{ id = "builder", image = "rbxassetid://72301801875933", name = "Builder's Crate", icon = "crate_builder", color = C3(70, 160, 255), gems = 150, product = "crate_builder",
 		desc = "Uncommon or better, with a real shot at Legendary. 1 in 200 is Mythic.",
 		odds = { 0, 45, 35, 15, 4.5, 0.5, 0, 0 } },
-	{ id = "golden", image = "rbxassetid://108198116543312", name = "Golden Crate", icon = "crate_golden", color = C3(255, 206, 40), gems = 600, product = "crate_golden",
+	{ id = "golden", image = "rbxassetid://111757044275990", name = "Golden Crate", icon = "crate_golden", color = C3(255, 206, 40), gems = 600, product = "crate_golden",
 		desc = "Rare or better. Mythic, Secret and even Divine hammers live here.",
 		odds = { 0, 0, 40, 35, 18, 6, 0.9, 0.1 } },
 	-- soon: closed until its hammers have their models (it would drop only the Thunderclap)
-	{ id = "exclusive", image = "rbxassetid://117610832518353", name = "Exclusive Crate", icon = "crate_exclusive", color = C3(255, 90, 200), product = "crate_exclusive", exclusiveOnly = true,
+	{ id = "exclusive", image = "rbxassetid://140362380150130", name = "Exclusive Crate", icon = "crate_exclusive", color = C3(255, 90, 200), product = "crate_exclusive", exclusiveOnly = true,
 		soon = true, desc = "Hammers nobody else can get: the Royal Crown, the Ghost, the Rainbow Prism and, 1 in 100, the Thunderclap.",
 		odds = { 0, 0, 0, 0, 65, 27, 8, 0 } },
 }
