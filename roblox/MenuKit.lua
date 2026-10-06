@@ -644,6 +644,9 @@ function K.instant(o)
 			if self.inFlight > 0 then return end
 			for _ = 1, 3 do
 				local ok2, okr, data = pcall(function() return rf:InvokeServer("get") end)
+				-- a tap made while this was on its way is already on screen: this older state would undo it (the
+				-- numbers would climb again after you stop tapping); that tap's own answer brings the fresh state
+				if self.inFlight > 0 then break end
 				if ok2 and okr and type(data) == "table" then
 					local before = o.state()
 					o.setState(data)
