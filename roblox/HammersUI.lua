@@ -175,8 +175,10 @@ end
 -- Popups: a small window over everything (what's inside a crate / one hammer)
 ---------------------------------------------------------------------------------------------------------------------
 local popup
+local card -- the hammer card on screen ({ h, id }): it follows your hammer live (level, equipped) instead of closing
 local function closePopup()
 	if popup then popup:Destroy(); popup = nil end
+	card = nil
 end
 local function openPopup(size, title, c1, c2, icon, still)
 	closePopup()
@@ -221,6 +223,7 @@ local equipItem, levelUpItem
 local function hammerPopup(h, it, data, still)
 	local r = rar(h)
 	local body, pw = openPopup(UDim2.fromOffset(620, 400), h.name, r.color:Lerp(Color3.new(1, 1, 1), 0.2), r.color, nil, still)
+	card = it and data and { h = h, id = it.id } or nil
 	local box = K.artBox(body, art(h), r.color, { Position = UDim2.fromOffset(0, 8), Size = UDim2.fromOffset(220, 220), Spin = true, IconScale = 1.06 })
 	box.ZIndex = 5
 	K.rarityFX(box, r.id)
@@ -1427,7 +1430,8 @@ local function miniTile(grid, o)
 	end
 	if o.equipped then
 		-- the hammer in your hand: a green EQUIPPED pill on top (and a thick green ring, see ring)
-		local pill = new("Frame", { Name = "Equipped", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -8), Size = UDim2.fromOffset(84, 22), BackgroundColor3 = K.GREEN,
+		-- (on the bottom edge of the picture: clear of the rarity and level chips on its top corners)
+		local pill = new("Frame", { Name = "Equipped", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 6 + artH), Size = UDim2.fromOffset(84, 22), BackgroundColor3 = K.GREEN,
 			BorderSizePixel = 0, ZIndex = 10, Parent = t })
 		UI.corner(9).Parent = pill
 		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = pill })
@@ -1760,7 +1764,7 @@ local function drawTradeUp(tok, data)
 		local ok = canTrade(it, h) and h.r < Hammers.LadderTop and (not rarity or h.r == rarity)
 		n += 1
 		miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK }, rid = r.id, badgeRarity = true, nameColor = rarText(r),
-			line = inside and "IN CONTRACT" or (it.id == data.equip and "✋ IN HAND" or nil), lineColor = inside and GREEN_TXT or nil,
+			line = inside and "IN CONTRACT" or (it.id == data.equip and "EQUIPPED" or nil), lineColor = inside and GREEN_TXT or nil,
 			dim = not ok and not inside, selected = inside, ring = inside and K.GREEN or nil,
 			onClick = function()
 				c.click()
@@ -1884,7 +1888,8 @@ end
 
 local redrawing = false
 function M.Redraw()
-	closePopup()
+	-- (a hammer card stays open and follows the new state; any other popup closes)
+	if not card then closePopup() end
 	if redrawing or inFlight > 0 then return end
 	redrawing = true
 	task.spawn(function()
@@ -1896,6 +1901,11 @@ function M.Redraw()
 			if c.redrawInventory then c.redrawInventory() end
 		elseif c.redrawShop then
 			c.redrawShop()
+		end
+		if card and inFlight == 0 then
+			local now
+			for _, x in ipairs(cache and cache.hammers or {}) do if x.id == card.id then now = x end end
+			if now then hammerPopup(card.h, now, cache, true) else closePopup() end
 		end
 	end)
 end
