@@ -911,6 +911,9 @@ local function drawIndex(tok, data)
 				for _, h in ipairs(all) do if data.index[h.key] then have += 1 end end
 				local sec = K.section(c.content, order, string.upper(rr.name), rr.text and Color3.fromRGB(200, 200, 235) or rr.color,
 					have .. " / " .. #all .. "  ·  " .. Hammers.PowerLabel(all[1].key, 1) .. " power")
+				-- breathing room: off the window's left edge, and a gap above and below (the titles touched the tiles)
+				sec.Size = UDim2.new(1, 0, 0, 48)
+				new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 4), Parent = sec })
 				local tl = sec:FindFirstChildOfClass("TextLabel")
 				if tl and K.RARITY_LOOK[rr.id] then K.rarityText(tl, rr.id) end
 				local grid = smallGrid(order + 1)
