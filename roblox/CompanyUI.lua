@@ -145,7 +145,7 @@ local function renderEstate(tok, data)
 		local n = (data.mats or {})[m.id] or 0
 		table.insert(have, { m.name:match("^(%S+)") .. " " .. Config.FormatNum(n), n > 0 and m.color:Lerp(Color3.new(0, 0, 0), 0.25) or K.LOCK, pic = m.image or m.icon })
 	end
-	K.haveRow(c.content, 3, have)
+	K.haveRow(c.content, 1, have) -- (first: the strip pinned over the top of the list covers its row, not the title)
 	local grid = K.grid(c.content, 4, cols(), 268)
 	for i, p in ipairs(Company.Properties) do
 		local info

@@ -107,7 +107,7 @@ render = function(tok, data)
 	end
 	if mode == "upgrades" then
 		K.section(c.content, 0, "UPGRADES", Color3.fromRGB(160, 250, 150), "a Rebirth resets them")
-		K.haveRow(c.content, 1, haveChips(data.mats))
+		K.haveRow(c.content, -1, haveChips(data.mats)) -- (first: the strip pinned over the top of the list covers its row, not the title)
 		local order = 1
 		for _, dp in ipairs(Company.Departments) do
 			local d
