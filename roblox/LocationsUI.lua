@@ -16,7 +16,7 @@ local PLACES = {
 	{ id = "site", name = "My Construction Site", icon = "site", desc = "Back to the contract you're building", tint = Color3.fromRGB(255, 150, 70), needs = "contract" },
 	{ id = "shop", name = "Hammers Shop", icon = "shop", desc = "Hammer crates: a hammer in every one", tint = Color3.fromRGB(90, 170, 255) },
 	{ id = "gearshop", name = "Training Shop", icon = "strength", desc = "Training gear: more Strength from every rep", tint = Color3.fromRGB(255, 150, 90) },
-	{ id = "machines", name = "Machines Depot", icon = "mega", desc = "Heavy machines that build on their own", tint = Color3.fromRGB(255, 196, 60) },
+	{ id = "machines", name = "Machines Depot", icon = "mega", art = "excavator", desc = "Heavy machines that build on their own", tint = Color3.fromRGB(255, 196, 60) },
 	{ id = "hire", name = "Hiring Office", icon = "hire", desc = "Hire workers for your crew", tint = Color3.fromRGB(110, 210, 120) },
 	{ id = "gym", name = "Training Yard", icon = "gym", desc = "Train your Strength", tint = Color3.fromRGB(255, 120, 90) },
 	{ id = "home", name = "My Property", icon = "home", desc = "Upgrade your house and build extensions", tint = Color3.fromRGB(190, 140, 255) },
@@ -125,7 +125,9 @@ function M.Show()
 			badge = { "NO JOB", K.DARK }
 		end
 		local goText = owned and (locked and (p.zone and "GATE" or "NO JOB") or "GO") or "🔒 GO"
-		K.tile(grid, { order = i, name = p.name, icon = p.icon, color = p.tint, badge = badge, artH = 124, buttons = {
+		-- (the Machines Depot shows the Mini Excavator's picture)
+		local art = p.art and Config.MachineById and Config.MachineById[p.art] and Config.MachineById[p.art].image
+		K.tile(grid, { order = i, name = p.name, icon = art or p.icon, iconScale = art and 1.06 or nil, color = p.tint, badge = badge, artH = 124, buttons = {
 			{ goText, owned and not locked and K.GREEN or K.LOCK, function()
 				c.click()
 				if not hasTeleporter() then

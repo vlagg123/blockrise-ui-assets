@@ -246,7 +246,7 @@ function M.Show(t, keepScroll, at)
 	local tabs = {}
 	for i, t2 in ipairs(TABS) do
 		tabs[i] = table.clone(t2)
-		tabs[i].badge = avail[t2.id] == true and not (only and t2.id ~= only) -- a red "!" dot where something can be bought
+		tabs[i].badge = avail[t2.id] == true and not tutLock -- a red "!" dot where something can be bought (none in the tutorial)
 	end
 	UI.tabs(c.content, tabs, tab, function(id)
 		c.click()

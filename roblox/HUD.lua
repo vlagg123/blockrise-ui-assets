@@ -520,8 +520,10 @@ function M.Init(ctx)
 		end
 		qTitle.Text = step.title
 		local v = player:GetAttribute("RoadValue") or 0
-		setFill(qFill, v / math.max(step.target, 1))
-		qVal.Text = (step.target > 1 and (short(v) .. " / " .. short(step.target) .. "   ") or "") .. "+" .. Config.FormatMoney(step.cash)
+		-- a tier to reach (gear, house, best hammer) is one buy: no "1 / 2" counter, no half-full bar
+		local tier = step.stat == "GearTier" or step.stat == "HouseLevel" or step.stat == "ToolTier"
+		setFill(qFill, tier and (v >= step.target and 1 or 0) or v / math.max(step.target, 1))
+		qVal.Text = ((step.target > 1 and not tier) and (short(v) .. " / " .. short(step.target) .. "   ") or "") .. "+" .. Config.FormatMoney(step.cash)
 		qPlace = step.place
 	end
 	player:GetAttributeChangedSignal("RoadStep"):Connect(refreshQuest)

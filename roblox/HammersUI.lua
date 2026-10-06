@@ -432,7 +432,14 @@ end
 local function buyCrate(crateId, n, thenOpen)
 	if busy then return end
 	busy = true
+	local t0 = os.clock()
 	local ok, res = call("buy", crateId, n)
+	-- BUY & OPEN: the server takes one hammer action every 0.15 s, so the open waits that long after the buy
+	-- (on a fast connection it came back "Slow down!" and the crate stayed shut)
+	if ok and thenOpen then
+		local w = 0.2 - (os.clock() - t0)
+		if w > 0 then task.wait(w) end
+	end
 	busy = false
 	if not ok then c.toast("⚠️ " .. tostring(res), T.red) return end
 	c.sound2D(c.S.Coins, 0.4, 1)

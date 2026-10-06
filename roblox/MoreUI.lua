@@ -185,7 +185,7 @@ end
 -- How to play (first join, and from the menu) --------------------------------------------------------------------
 local STEPS = {
 	{ "Take contracts", "Job Board, build, get paid", "jobs", Color3.fromRGB(255, 190, 60) },
-	{ "Grow your crew", "Tools, workers, machines", "crew", Color3.fromRGB(90, 200, 120) },
+	{ "Grow your crew", "Workers and machines", "crew", Color3.fromRGB(90, 200, 120) },
 	{ "Get stronger", "Train at the Training Yard", "strength", Color3.fromRGB(255, 120, 80) },
 	{ "Find Gems", "They drop while you build", "gem", Color3.fromRGB(60, 160, 255) },
 	{ "Empire Road", "The top bar shows your goal", "quest", Color3.fromRGB(165, 110, 255) },
@@ -203,7 +203,10 @@ function M.HowTo()
 		Shine = true }, function()
 		c.click()
 		c.closeModal()
-		if (c.player:GetAttribute("ContractJob") or "") == "" then c.setWaypoint("board") end
+		-- the tutorial's arrow already shows the way (no arrow of its own on top of it); after the tutorial the
+		-- Job Board opens from anywhere
+		local tut = (c.player:GetAttribute("RoadStep") or 1) <= (Config.TutorialSteps or 7)
+		if not tut and (c.player:GetAttribute("ContractJob") or "") == "" and c.actions and c.actions.jobs then c.actions.jobs() end
 	end)
 end
 
