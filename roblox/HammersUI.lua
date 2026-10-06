@@ -1261,6 +1261,8 @@ local function dailyHammers(order, data)
 					return
 				end
 				armedGems[o.key] = nil
+				-- confirmed: the price is back on the button at once (the hammer's reveal is on its way)
+				if l then l.Text = gemLabel end
 				if busy then return end
 				busy = true
 				local ok, res = call("shopbuy", o.key)
