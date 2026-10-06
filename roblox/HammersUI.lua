@@ -722,6 +722,12 @@ local function revealBought(key, new)
 end
 
 local armedGems = {} -- [hammer key] = until when the Gem button waits for its second tap
+-- a rounded outline that follows a tile's corners (a stroke on the 9-slice background drew a square box around it)
+local function glowFrame(t)
+	local f = new("Frame", { Name = "Glow", Position = UDim2.fromOffset(1, 1), Size = UDim2.new(1, -2, 1, -2), BackgroundTransparency = 1, ZIndex = 1, Parent = t })
+	new("UICorner", { CornerRadius = UDim.new(0, 20), Parent = f })
+	return f
+end
 local function dailyHammers(order, data)
 	local offers = Hammers.Featured(Hammers.ShopDay())
 	if #offers == 0 then return end
@@ -811,7 +817,7 @@ local function dailyHammers(order, data)
 		if chip then K.rarityChip(chip, r.id) end
 		-- the Legendary is the one most players want: a soft gold glow around it
 		if o.r == 5 then
-			local glow = new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(255, 200, 60), Transparency = 0.2, Parent = t:FindFirstChild("Bg") or t })
+			local glow = new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(255, 200, 60), Transparency = 0.2, Parent = glowFrame(t) })
 			task.spawn(function()
 				local t0 = os.clock()
 				while glow.Parent do
@@ -851,7 +857,7 @@ local function dailyHammers(order, data)
 		K.text({ Position = UDim2.new(0, 13, 1, -96), Size = UDim2.new(1, -26, 0, 30), Text = "Never in a crate · x" .. sh.mult .. " build power for you and your crew",
 			TextSize = 14, Max = 14, TextWrapped = true, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 		-- an electric glow around the card
-		local glow = new("UIStroke", { Thickness = 4, Color = ex.color, Transparency = 0.2, Parent = t:FindFirstChild("Bg") or t })
+		local glow = new("UIStroke", { Thickness = 4, Color = ex.color, Transparency = 0.2, Parent = glowFrame(t) })
 		task.spawn(function()
 			local t0 = os.clock()
 			while glow.Parent do
