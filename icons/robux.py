@@ -1149,7 +1149,63 @@ def i_crate_exclusive3():
     _three("exclusive")
 
 
+def spec_hammer(key, rot=0.0, loc=(0, 0, 0), size=3.4):
+    """a hammer from its spec (hammers/bl_build.py), centred on loc, its longest side `size`, turned `rot` degrees in the
+    picture's plane (the camera looks along +Y)"""
+    import bl_build as B
+    spec = B.load_spec()
+    h = [x for x in spec["hammers"] if x["key"] == key][0]
+    B._M.clear()
+    before = set(bpy.data.objects)
+    B.build(h, spec["palette"])
+    parts = [o for o in bpy.data.objects if o not in before]
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(c) for o in parts if o.type == "MESH" for c in o.bound_box]
+    lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
+    hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
+    k = size / max((hi - lo).length * 0.82, 1e-6)
+    move = Matrix.Translation(loc) @ Matrix.Rotation(math.radians(rot), 4, "Y") @ Matrix.Scale(k, 4) @ Matrix.Translation(-(lo + hi) / 2)
+    for o in parts:
+        if o.parent is None:
+            o.matrix_world = move @ o.matrix_world
+    return parts
+
+
+def ribbon(label, loc, col, w=3.3, s=1.0):
+    """a wide glossy plate with big text (the rarity's name)"""
+    P = _xf(loc, (0, 0, 0), s)
+    obj("ribbon", bm_box(w, 0.32, 0.78), candy(col, rough=0.22), parent=P, bevel=0.2)
+    obj("ribbon_in", bm_box(w - 0.18, 0.34, 0.6), candy(col, rough=0.16, emit=0.35), loc=(0, -0.02, 0), parent=P, bevel=0.14, outline=False)
+    size = 0.5 if len(label) <= 6 else 0.4
+    t = text(label, size, 0.07, candy("#ffffff", rough=0.3, emit=0.45), bevel=0.012, outline=False, center=True)
+    t.matrix_world = P @ _xf((0, -0.24, -0.02), (90, 0, 0))
+    sh = text(label, size, 0.07, candy("#1b1530", rough=0.6, coat=0.0, emit=0.0), bevel=0.012, outline=False, center=True)
+    sh.matrix_world = P @ _xf((0.03, -0.18, -0.065), (90, 0, 0))
+
+
+def _hammer_day(keys, label, col):
+    """Hammer of the Day: the tier's hammers crossed like swords, the rarity's name on a plate in front, a star on top"""
+    track(spec_hammer, keys[0], rot=-38, loc=(0, 0.25, 0.35), size=3.5)
+    track(spec_hammer, keys[1], rot=38, loc=(0, 0.6, 0.35), size=3.5)
+    track(ribbon, label, (0, -0.9, -1.45), col)
+    st = poly(star_pts(0.42, 0.18, 5, 90), 0.18, glow("#fff3b0", 2.2), loc=(0, -0.5, 2.15), bevel=0.03)
+
+
+def i_hammer_epic():
+    _hammer_day(("amethyst", "sapphire"), "EPIC", "#9a4dff")
+
+
+def i_hammer_legendary():
+    _hammer_day(("lava", "frost"), "LEGENDARY", "#ff9f1a")
+
+
+def i_hammer_mythic():
+    _hammer_day(("diamond", "plasma"), "MYTHIC", "#ff3d7f")
+
+
 ICONS = {
+    # Hammer Shop: the Hammers of the Day (developer products)
+    "hammer_epic": i_hammer_epic, "hammer_legendary": i_hammer_legendary, "hammer_mythic": i_hammer_mythic,
     # game passes
     "skipanim": i_skipanim, "stormhammer": i_stormhammer, "teleporter": i_teleporter, "vip": i_vip, "bigcrew": i_bigcrew,
     "cash2x": i_cash2x, "strength2x": i_strength2x, "autobuild": i_autobuild, "autotrain": i_autotrain, "gems2x": i_gems2x,
@@ -1164,7 +1220,7 @@ ICONS = {
     # crate passes
     "quickopen": i_quickopen, "autoopen": i_autoopen,
 }
-VIEW = {"cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
+VIEW = {"hammer_epic": (0, -1, 0.12), "hammer_legendary": (0, -1, 0.12), "hammer_mythic": (0, -1, 0.12), "cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "crate_supply": (-0.3, -1, 0.4), "crate_builder": (-0.3, -1, 0.4), "crate_golden": (-0.3, -1, 0.4),
         "crate_exclusive": (-0.3, -1, 0.4), "quickopen": (-0.25, -1, 0.38), "autoopen": (-0.22, -1, 0.4), "crate_golden3": (-0.22, -1, 0.38), "crate_exclusive3": (-0.22, -1, 0.38), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
 # card colours: (centre glow, edge)
@@ -1179,8 +1235,10 @@ CARD = {
     "crate_supply": ("#ffd98a", "#8a4a12"), "crate_builder": ("#a8d8ff", "#163a8a"), "crate_golden": ("#fff1a6", "#7a4a0c"), "crate_exclusive": ("#ffb8ee", "#5a1a7a"),
     "crate_golden3": ("#fff1a6", "#7a4a0c"), "crate_exclusive3": ("#ffb8ee", "#5a1a7a"),
     "quickopen": ("#fff3a0", "#8a4a10"), "autoopen": ("#b8f5a8", "#145a40"),
+    "hammer_epic": ("#d6b8ff", "#2e1270"), "hammer_legendary": ("#ffe48a", "#8a3a08"), "hammer_mythic": ("#ffa8cc", "#6a0a34"),
 }
-SPARK = {"vip": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "goldcar": [(0.84, 0.2, 0.07)], "gems100": [(0.82, 0.18, 0.08), (0.18, 0.7, 0.05)],
+SPARK = {"hammer_epic": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)], "hammer_legendary": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)],
+         "hammer_mythic": [(0.86, 0.14, 0.08), (0.14, 0.3, 0.06), (0.6, 0.06, 0.04)], "vip": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "goldcar": [(0.84, 0.2, 0.07)], "gems100": [(0.82, 0.18, 0.08), (0.18, 0.7, 0.05)],
          "gems300": [(0.84, 0.16, 0.07)], "gems750": [(0.84, 0.16, 0.07), (0.16, 0.28, 0.05)], "gems1700": [(0.84, 0.16, 0.07)],
          "gems4500": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)], "gems12000": [(0.86, 0.12, 0.08), (0.12, 0.26, 0.06), (0.6, 0.06, 0.04)],
          "cashbank": [(0.86, 0.14, 0.07)], "cashvault": [(0.84, 0.16, 0.06)], "starter": [(0.84, 0.16, 0.07)], "stormhammer": [(0.84, 0.16, 0.07)],
