@@ -1045,6 +1045,9 @@ def build_new(H):
         n = np.array([-dv, du]) / math.hypot(du, dv)                        # its normal, pointing up
         w = 0.5 * (1 - t) ** 0.85 + 0.004                                   # the width of the tooth
         fang.append((c, n, w))
+    # the tooth also gets thinner towards its point: two side planes shared by every slice (no steps between them)
+    tb = (0.07 - 0.22) / (0.66 + 0.56)
+    ta = 0.22 + tb * 0.56
     tip = None
     for k in range(N):
         (c0, n0, w0), (c1, n1, w1) = fang[k], fang[k + 1]
@@ -1052,8 +1055,22 @@ def build_new(H):
         if k == N - 1:
             pts = [tuple(c0 - n0 * w0 / 2), tuple(c1), tuple(c0 + n0 * w0 / 2)]
             tip = c1
-        thick = 0.44 - 0.3 * (k / (N - 1))
-        h.poly("Fang%d" % k, pts, thick, hp, I3, "bone", union="Fang")
+        us, vs = [q[0] for q in pts], [q[1] for q in pts]
+        cu, cv = (max(us) + min(us)) / 2, (max(vs) + min(vs)) / 2
+        rel = [(q[0] - cu, q[1] - cv) for q in pts]
+        n = len(rel)
+        area = sum(rel[i][0] * rel[(i + 1) % n][1] - rel[(i + 1) % n][0] * rel[i][1] for i in range(n)) / 2
+        planes = []
+        for i in range(n):
+            u0, v0 = rel[i]
+            u1, v1 = rel[(i + 1) % n]
+            du, dv = u1 - u0, v1 - v0
+            nu, nv = (dv, -du) if area > 0 else (-dv, du)
+            planes.append(plane_through((0, nv, nu), (0, v0, u0)))
+        half = ta + tb * cu
+        for e in (-1, 1):
+            planes.append(plane_through((e, 0, -tb), (e * half, 0, 0)))
+        h.add("Fang%d" % k, "box", (0.44, max(vs) - min(vs), max(us) - min(us)), hp + [0, cv, cu], mat="bone", planes=planes, cast=False, union="Fang")
     # the root: a bone face and a collar of red scales
     h.add("Face", "cyl", (0.08, 0.24), hp + [0, 0.07, -0.6], R=ALONG_Z, mat="bone_dk", planes=cyl_bevel(0.08, 0.24, 0.03), smooth=40)
     h.add("Collar", "box", (0.5, 0.56, 0.12), hp + [0, 0.06, -0.38], mat="scale_red", planes=chamfer(0.5, 0.56, 0.12, 0.1, edges="z"), cast=False)
@@ -1187,7 +1204,7 @@ def build_new(H):
         arc.append((C + d * (rm - tk / 2), C + d * (rm + tk / 2)))
     for k in range(N):
         (i0, o0), (i1, o1) = arc[k], arc[k + 1]
-        h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], W * 0.9, hp, I3, "water", union="Wave")
+        h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], W, hp, I3, "water", union="Wave")
     # white foam: on the top of the crest, along the falling lip, and spray in front of it
     for i, k in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
         i0, o0 = arc[k]
