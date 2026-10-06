@@ -74,6 +74,11 @@ def material(key, pal):
     p.inputs["Emission Color"].default_value = (*col, 1)
     # a little self light keeps cartoon shadows coloured, neon parts glow for real
     p.inputs["Emission Strength"].default_value = em if em else (0.06 if metal >= 0.5 else 0.12)
+    if b.get("flat"):
+        # a hole in the world (Void, Black Hole): no gloss, no light of its own, pure black
+        p.inputs["Coat Weight"].default_value = 0.0
+        p.inputs["Emission Strength"].default_value = 0.0
+        p.inputs["Specular IOR Level"].default_value = 0.0
     if b.get("alpha"):
         p.inputs["Alpha"].default_value = b["alpha"]
     tex = b.get("tex")
