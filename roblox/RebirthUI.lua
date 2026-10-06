@@ -79,51 +79,72 @@ local function resetCards(order, f)
 	card(box, 0.5, "✔  YOU KEEP", GREEN, kept)
 end
 
-function M.Show(keepScroll)
-	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
-	local tok = c.openModal("Rebirth", "Rebirth", "", P1, P2)
-	if scroll then task.defer(function() c.content.CanvasPosition = scroll end) end
-	local loading = K.loading(c.content)
+-- the window: REBIRTH (progress, the button, one clear warning line) and the STAR SHOP under it. The full list of what a
+-- Rebirth resets and what it keeps is a page of its own: REBIRTH! opens it, CONFIRM there brings you back here, and the
+-- button then says I'M SURE! (one more tap Rebirths). Two steps, nobody Rebirths by accident.
+local lastF -- the server's last answer: the window draws with it at once, the fresh one follows
+local page = "main" -- "main" or "confirm"
+local armed = false -- CONFIRM was pressed on the page: the REBIRTH button now Rebirths
+local tokNow
+local draw
+local HttpService = game:GetService("HttpService")
+local function sigOf(f)
+	local ok, js = pcall(HttpService.JSONEncode, HttpService, f)
+	return ok and js or tostring(os.clock())
+end
+local function fetch()
 	local ok, okr, f = pcall(function() return c.R.FranchiseAction:InvokeServer("get") end)
-	if not c.live(tok) then return end
-	loading:Destroy()
-	if not ok or not okr or type(f) ~= "table" then c.toast("⚠️ Couldn't load the Rebirth info, try again", T.red) return end
-	c.modalSub.Text = "⭐ " .. f.stars
+	if ok and okr and type(f) == "table" then lastF = f return f end
+end
+-- redraw the window with what it has (keeps the scroll on the same page)
+local function redraw(top)
+	local tok = c.openModal("Rebirth", "Rebirth", "", P1, P2)
+	tokNow = tok
+	if top then c.content.CanvasPosition = Vector2.zero end
+	if lastF then draw(tok, lastF) end
+end
 
-	-- the big card: progress, what you get, the button (two taps)
+local function drawMain(tok, f)
+	c.modalSub.Text = "⭐ " .. f.stars
 	local frac = math.clamp(f.run / math.max(f.cost, 1), 0, 1)
 	local gateOk = not f.gate or f.gate.done
 	local ready = f.run >= f.cost and gateOk
-	local confirm = false
+	if not ready then armed = false end
+	local label = (ready and armed) and "I'M SURE!" or (ready and "REBIRTH!" or "NOT YET")
+	local col = (ready and armed) and Color3.fromRGB(226, 64, 72) or (ready and P2 or K.LOCK)
 	K.banner(c.content, 1, { name = "REBIRTH #" .. (f.rebirths + 1), icon = "rebirth", color = P2, tint = Color3.fromRGB(215, 185, 255), height = 130, buttonW = 210,
 		bar = { frac, GOLD, money(f.run) .. " / " .. money(f.cost) },
 		chips = { { "+" .. f.starsNow .. (f.starsNow == 1 and " STAR" or " STARS"), Color3.fromRGB(150, 90, 230) }, { "+" .. math.floor(Company.FranchiseCashPer * 100) .. "% CASH", K.GREEN },
 			{ "+" .. math.floor(Company.FranchiseStrengthPer * 100) .. "% STRENGTH", Color3.fromRGB(255, 120, 80) } },
-		button = { ready and "REBIRTH!" or "NOT YET", ready and P2 or K.LOCK, function(b)
+		button = { label, col, function()
 			c.click()
 			if not gateOk then c.toast("🏗️ Build the " .. f.gate.name .. " once first (Job Board)", T.muted, 3) return end
 			if not ready then c.toast("Earn " .. money(f.cost - f.run) .. " more to Rebirth", T.muted, 3) return end
-			local lbl = b:FindFirstChild("Label")
-			if not confirm then
-				confirm = true
-				if lbl then lbl.Text = "SURE? TAP AGAIN" end
-				task.delay(3, function() confirm = false; if lbl and lbl.Parent then lbl.Text = "REBIRTH!" end end)
+			if not armed then
+				-- first: the page with everything you lose and keep
+				page = "confirm"
+				redraw(true)
 				return
 			end
+			armed = false
 			local ok2, res, msg = pcall(function() return c.R.FranchiseAction:InvokeServer("franchise") end)
-			if ok2 and res then c.closeModal() else c.toast("⚠️ " .. tostring(msg or "Can't Rebirth right now"), T.red) end
+			if ok2 and res then lastF = nil; c.closeModal() else c.toast("⚠️ " .. tostring(msg or "Can't Rebirth right now"), T.red) end
 		end, shine = ready } })
-	local opens = f.rebirths == 0 and "Rebirth 1 opens the SUBURBS!  " or (f.rebirths == 1 and "Rebirth 2 opens DOWNTOWN!  " or "")
-	K.note(c.content, 3, opens .. "The cash and Strength bonus and your Stars stay forever.")
-	resetCards(4, f)
 	if f.gate then
 		K.row(c.content, 2, { name = (f.gate.done and "✓ " or "") .. "Build the " .. f.gate.name, line = f.gate.done and "Done: this zone is finished" or "Finish this zone's top building once to Rebirth",
 			icon = "contract", color = f.gate.done and K.GREEN or Color3.fromRGB(255, 176, 40), height = 84, buttonW = 150,
 			status = { f.gate.done and "DONE" or "TO DO", f.gate.done and K.GREEN or K.LOCK } })
 	end
+	-- the warning, always on screen: what a Rebirth means, in one line, and the full list a tap away
+	K.row(c.content, 3, { name = armed and "Tap I'M SURE! to Rebirth" or "A Rebirth sends you back to the start",
+		line = "Cash, Strength, gear, crew, machines, upgrades and properties reset. Hammers, Gems, Level and Stars stay.",
+		icon = "rebirth", color = Color3.fromRGB(226, 64, 72), height = 92, buttonW = 150,
+		button = { "DETAILS", Color3.fromRGB(226, 64, 72), function() c.click(); page = "confirm"; redraw(true) end } })
+	local opens = f.rebirths == 0 and "Rebirth 1 opens the SUBURBS!  " or (f.rebirths == 1 and "Rebirth 2 opens DOWNTOWN!  " or "")
+	K.note(c.content, 4, opens .. "The cash and Strength bonus and your Stars stay forever.")
 
 	-- Star Shop
-	K.section(c.content, 5, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐")
+	K.section(c.content, 5, "STAR SHOP", Color3.fromRGB(255, 220, 110), "you have " .. f.stars .. " ⭐  ·  every Rebirth gives Stars")
 	local grid = K.grid(c.content, 6, cols(), 268)
 	for i, p in ipairs(Company.StarPerks) do
 		local info
@@ -140,12 +161,61 @@ function M.Show(keepScroll)
 					c.click()
 					local ok3, res3, msg3 = pcall(function() return c.R.FranchiseAction:InvokeServer("perk", p.id) end)
 					if not (ok3 and res3) then c.toast("⚠️ " .. tostring(msg3 or "Can't buy"), T.red) end
-					if c.live(tok) then M.Show(true) end
+					-- the new state first, then one redraw (no loading in between)
+					fetch()
+					if c.live(tok) then redraw() end
 				end, shine = can }
 			end
 			K.tile(grid, o)
 		end
 	end
+end
+
+-- the page before a Rebirth: everything it resets, everything it keeps, BACK or CONFIRM
+local function drawConfirm(tok, f)
+	c.modalSub.Text = "⭐ " .. f.stars
+	K.banner(c.content, 1, { name = "ARE YOU SURE?", line = "A Rebirth sends you back to the start. Here is exactly what you lose and what stays yours.",
+		icon = "rebirth", color = Color3.fromRGB(226, 64, 72), tint = Color3.fromRGB(255, 205, 210), height = 112 })
+	resetCards(2, f)
+	K.note(c.content, 3, "You get +" .. f.starsNow .. (f.starsNow == 1 and " Star" or " Stars") .. ", +" .. math.floor(Company.FranchiseCashPer * 100) .. "% cash and +"
+		.. math.floor(Company.FranchiseStrengthPer * 100) .. "% Strength, forever.")
+	local row = new("Frame", { Name = "Choice", Size = UDim2.new(1, 0, 0, 66), BackgroundTransparency = 1, LayoutOrder = 4, ZIndex = 2, Parent = c.content })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 18), HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
+	K.button(row, "BACK", K.LOCK, { Size = UDim2.fromOffset(200, 56), TextSize = 23, LayoutOrder = 1 }, function()
+		c.click(); armed = false; page = "main"; redraw(true)
+	end)
+	K.button(row, "CONFIRM", Color3.fromRGB(226, 64, 72), { Size = UDim2.fromOffset(240, 56), TextSize = 23, LayoutOrder = 2, Shine = true }, function()
+		c.click(); armed = true; page = "main"; redraw(true)
+		c.toast("Now tap I'M SURE! to Rebirth", Color3.fromRGB(226, 64, 72), 2.5)
+	end)
+end
+
+draw = function(tok, f)
+	if not c.live(tok) then return end
+	if page == "confirm" then drawConfirm(tok, f) else drawMain(tok, f) end
+end
+
+function M.Show()
+	-- (opened from the HUD: always the main page, nothing armed)
+	page, armed = "main", false
+	local tok = c.openModal("Rebirth", "Rebirth", "", P1, P2)
+	tokNow = tok
+	if lastF then
+		draw(tok, lastF)
+		local before = sigOf(lastF)
+		task.spawn(function()
+			local f = fetch()
+			if f and c.live(tok) and tokNow == tok and sigOf(f) ~= before then redraw() end
+		end)
+		return
+	end
+	local loading = K.loading(c.content)
+	local f = fetch()
+	if not c.live(tok) then return end
+	loading:Destroy()
+	if not f then c.toast("⚠️ Couldn't load the Rebirth info, try again", T.red) return end
+	draw(tok, f)
 end
 
 function M.Init(ctx)

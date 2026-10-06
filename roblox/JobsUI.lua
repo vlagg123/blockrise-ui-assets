@@ -42,7 +42,12 @@ local function blueprintPicker(order)
 	if blueprint and (c.player:GetAttribute("BP_" .. blueprint) or 0) < 1 then blueprint = nil end
 	if #owned == 0 then return 1 end
 	local mult = 1
-	K.section(c.content, order, "BLUEPRINT", Color3.fromRGB(150, 210, 255), "pick one for a premium job")
+	-- the line says what the picked one gives
+	local note = "pick one for a premium job"
+	for _, e in ipairs(owned) do
+		if e.bp.id == blueprint then note = (e.bp.name:gsub(" Blueprint", "")) .. ": x" .. tostring(e.bp.pay) .. " pay on the contract you accept" end
+	end
+	K.section(c.content, order, "BLUEPRINT", Color3.fromRGB(150, 210, 255), note)
 	local row = UI.new("Frame", { Name = "Blueprints", Size = UDim2.new(1, 0, 0, 56), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
 	UI.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = row })
 	-- (the buttons' ink outline sits outside them: a little room so the list's edge never cuts it)
@@ -50,7 +55,8 @@ local function blueprintPicker(order)
 	local function pick(id, label, col, i)
 		local on = blueprint == id
 		local b = UI.button(label, on and col or UI.TAB_OFF, nil, { Size = UDim2.fromOffset(id and 170 or 100, 48), TextSize = 18, LayoutOrder = i, ZIndex = 3, Parent = row })
-		b.Activated:Connect(function() c.click(); blueprint = id; M.Show() end)
+		-- (redrawn at once from the list it already has: no loading, the server checks the blueprint on ACCEPT)
+		b.Activated:Connect(function() c.click(); blueprint = id; M.Show(true) end)
 	end
 	pick(nil, "NONE", Color3.fromRGB(150, 156, 196), 0)
 	for i, e in ipairs(owned) do
@@ -60,8 +66,31 @@ local function blueprintPicker(order)
 	return mult
 end
 
-function M.Show()
+local lastData -- the last list from the server: the window opens with it at once, the fresh one follows
+local draw
+local HttpService = game:GetService("HttpService")
+local function sigOf(d)
+	local ok, js = pcall(HttpService.JSONEncode, HttpService, d)
+	return ok and js or tostring(os.clock())
+end
+-- fast: a redraw from the list it has (a blueprint picked), no call to the server
+function M.Show(fast)
 	local tok = c.openModal("Contracts", "Job Board", "", J1, J2)
+	if lastData then
+		draw(tok, lastData)
+		if fast then return end
+		local before = sigOf(lastData)
+		task.spawn(function()
+			local ok, data = pcall(function() return c.R.GetContracts:InvokeServer() end)
+			if not (ok and data and data.contracts and #data.contracts > 0) then return end
+			lastData = data
+			if c.live(tok) and sigOf(data) ~= before then
+				local tok2 = c.openModal("Contracts", "Job Board", "", J1, J2)
+				draw(tok2, data)
+			end
+		end)
+		return
+	end
 	local loading = K.loading(c.content)
 	local ok, data = pcall(function() return c.R.GetContracts:InvokeServer() end)
 	if not c.live(tok) then return end
@@ -70,6 +99,12 @@ function M.Show()
 		K.empty(c.content, 1, "The job list didn't load. Open it again.", "jobs")
 		return
 	end
+	lastData = data
+	draw(tok, data)
+end
+
+draw = function(tok, data)
+	if not c.live(tok) then return end
 	c.modalSub.Text = data.freeSites .. " free site" .. (data.freeSites == 1 and "" or "s")
 	local mult = blueprintPicker(1)
 	K.section(c.content, 3, "CONTRACTS", Color3.fromRGB(255, 220, 110), "finish fast for a bonus")
@@ -125,7 +160,7 @@ function M.Show()
 			o.button = { "ACCEPT", K.GREEN, function()
 				c.click()
 				local ok2, res, msg = pcall(function() return c.R.Accept:InvokeServer(ct.id, blueprint) end)
-				if ok2 and res then blueprint = nil; c.closeModal() else c.toast("⚠️ " .. tostring(msg or "Can't accept right now"), T.red) end
+				if ok2 and res then blueprint = nil; lastData = nil; c.closeModal() else c.toast("⚠️ " .. tostring(msg or "Can't accept right now"), T.red) end
 			end, shine = true, size = 24 }
 		elseif reb < (ct.reqRebirth or 0) then
 			o.dim = true

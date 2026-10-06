@@ -1125,18 +1125,20 @@ local function oddsLine(cr, zone, luck)
 	return #parts > 0 and table.concat(parts, " · ") or "Nothing to drop yet"
 end
 
--- Inventory → CRATES: one card per crate you have. The whole crate picture in a tall frame, the count on it, the name,
--- a bar of its odds coloured by rarity (the exact numbers are behind the "?"), the best rarity it can give, OPEN (+ AUTO)
-local function myCrateTile(grid, cr, have, data, i)
+-- one crate as a card (the Shop and the Inventory): the whole crate picture in a tall frame (the count on it, "?" for
+-- what's inside), the name, a bar of its odds coloured by rarity, the best rarity it gives, then
+--   mid = "bag": a button to your crates in the Inventory (crates open only there) | "odds": the odds in numbers
+--   buttons = { {label, color, fn(b), icon =, shine =, w = share}, ... } along the bottom | status = {label, color}
+local CRATE_ART = 150
+local function crateCard(grid, cr, i, data, o)
 	local zone = data.zone or "town"
 	local luck = data.luck or 1
 	local t = new("Frame", { Name = "Crate_" .. cr.id, BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 2, Parent = grid })
-	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = t })
-	local ART = 150
-	local box = K.artBox(t, crateArt(cr), cr.color, { Name = "Art", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, ART), Spin = true, IconScale = 0.92 })
+	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
+	local ART = CRATE_ART
+	local box = K.artBox(t, crateArt(cr), cr.color, { Name = "Art", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, ART), Spin = (o.count or 0) > 0, Dim = o.dim, IconScale = 0.92 })
 	box.ZIndex = 2
-	-- the count, on the picture's top-left corner; "?" (what's inside) on its top-right
-	K.chip(t, "x" .. have, T.red, { Name = "Count", Position = UDim2.fromOffset(16, 16), ZIndex = 8 })
+	if (o.count or 0) > 0 then K.chip(t, "x" .. o.count, T.red, { Name = "Count", Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
 	local q = new("TextButton", { Name = "Corner", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), Size = UDim2.fromOffset(28, 28), BackgroundColor3 = EQUIP_BLUE,
 		BorderSizePixel = 0, AutoButtonColor = true, Text = "", ZIndex = 9, Parent = t })
 	new("UICorner", { CornerRadius = UDim.new(0, 8), Parent = q })
@@ -1144,89 +1146,100 @@ local function myCrateTile(grid, cr, have, data, i)
 	K.text({ Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = "?", Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
 		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = q })
 	q.Activated:Connect(function() c.click(); cratePopup(cr, data) end)
-	-- the name
 	K.text({ Name = "Title", Position = UDim2.fromOffset(10, ART + 14), Size = UDim2.new(1, -20, 0, 28), Text = cr.name, Font = T.chunky, TextSize = 22, Max = 22,
-		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.DARK, ZIndex = 3, Parent = t })
+		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
 	-- the odds as one bar, a coloured part per rarity (widths = the chances)
 	local odds = Hammers.Odds(cr.id, zone, luck)
-	local bar = new("CanvasGroup", { Name = "Odds", Position = UDim2.fromOffset(16, ART + 48), Size = UDim2.new(1, -32, 0, 12), BackgroundColor3 = Color3.fromRGB(40, 36, 70),
-		BorderSizePixel = 0, ZIndex = 3, Parent = t })
-	new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = bar })
-	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Parent = bar })
 	local top
-	for r = 1, Hammers.LadderTop do
-		local v = odds[r]
-		if v and v > 0 then
-			top = r
-			new("Frame", { Size = UDim2.new(v / 100, 0, 1, 0), BackgroundColor3 = Hammers.Rarities[r].color, BorderSizePixel = 0, LayoutOrder = r, ZIndex = 4, Parent = bar })
+	if next(odds) then
+		local bar = new("CanvasGroup", { Name = "Odds", Position = UDim2.fromOffset(16, ART + 48), Size = UDim2.new(1, -32, 0, 12), BackgroundColor3 = Color3.fromRGB(40, 36, 70),
+			BorderSizePixel = 0, ZIndex = 3, Parent = t })
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = bar })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Parent = bar })
+		for r = 1, Hammers.LadderTop do
+			local v = odds[r]
+			if v and v > 0 then
+				top = r
+				new("Frame", { Size = UDim2.new(v / 100, 0, 1, 0), BackgroundColor3 = Hammers.Rarities[r].color, BorderSizePixel = 0, LayoutOrder = r, ZIndex = 4, Parent = bar })
+			end
 		end
+		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = new("Frame", { Position = UDim2.fromOffset(16, ART + 48), Size = UDim2.new(1, -32, 0, 12), BackgroundTransparency = 1,
+			ZIndex = 5, Parent = t }, { new("UICorner", { CornerRadius = UDim.new(1, 0) }) }) })
 	end
-	new("UIStroke", { Thickness = 2, Color = T.ink, Parent = new("Frame", { Position = UDim2.fromOffset(16, ART + 48), Size = UDim2.new(1, -32, 0, 12), BackgroundTransparency = 1,
-		ZIndex = 5, Parent = t }, { new("UICorner", { CornerRadius = UDim.new(1, 0) }) }) })
-	-- under it: the best it can give (and where, for the Supply Crate; the luck boost when it is on)
+	-- the best it can give (and where, for the Supply Crate; the luck boost when it is on)
 	local parts = {}
 	if cr.cash then table.insert(parts, string.upper(zone)) end
 	if top then
 		local rr = Hammers.Rarities[top]
 		table.insert(parts, string.format('up to <font color="#%s">%s</font>', rarText(rr):ToHex(), string.upper(rr.name)))
+	elseif cr.exclusiveOnly then
+		table.insert(parts, '<font color="#E0344F">EXCLUSIVE HAMMERS</font>')
 	end
-	if luck > 1 and not cr.exclusiveOnly then table.insert(parts, '<font color="#2E9E4F">2x LUCK</font>') end
+	if luck > 1 and not cr.exclusiveOnly and top then table.insert(parts, '<font color="#2E9E4F">2x LUCK</font>') end
 	K.text({ Name = "Best", Position = UDim2.fromOffset(10, ART + 64), Size = UDim2.new(1, -20, 0, 20), Text = table.concat(parts, "  ·  "), TextSize = 15, Max = 15, Font = T.chunky,
 		RichText = true, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
-	-- OPEN (and AUTO with 2 or more: the Auto Opener pass)
+	-- the middle: your crates of this kind (they open in the Inventory) or the odds in numbers
+	if o.mid == "bag" then
+		K.button(t, "YOUR CRATES  x" .. o.count, Color3.fromRGB(150, 110, 255), { Name = "Bag", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, ART + 92),
+			Size = UDim2.new(1, -20, 0, 42), TextSize = 19, ZIndex = 7 }, function()
+			c.click()
+			if c.showInventory then c.showInventory("crates") end
+		end)
+	elseif o.mid == "odds" then
+		K.text({ Name = "OddsText", Position = UDim2.fromOffset(12, ART + 90), Size = UDim2.new(1, -24, 0, 40), Text = next(odds) and oddsLine(cr, zone, luck) or "Nothing to drop yet",
+			TextSize = 14, Max = 14, TextWrapped = true, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = K.SUB, ZIndex = 3, Parent = t })
+	end
+	-- the bottom: the buttons, side by side, or a status
 	local BH, GAPB = 47, 10
-	local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -11), Size = UDim2.new(1, -20, 0, BH), BackgroundTransparency = 1, ZIndex = 7, Parent = t })
-	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, GAPB), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
-	local two = have >= 2
-	K.button(holder, "OPEN", K.GREEN, { Name = "Open", Size = two and UDim2.new(0.58, -GAPB / 2, 0, BH) or UDim2.new(1, 0, 0, BH), TextSize = 21, Shine = true, LayoutOrder = 1 },
-		function(b) c.click(); openCrate(cr.id, nil, b) end)
-	if two then
-		local owns = c.player:GetAttribute("Pass_autoopen") == true
-		K.button(holder, "AUTO", owns and Color3.fromRGB(255, 176, 40) or K.LOCK, { Name = "Auto", Size = UDim2.new(0.42, -GAPB / 2, 0, BH), TextSize = 21, Shine = owns, LayoutOrder = 2 },
-			function() c.click(); if owns then autoOpen(cr.id) else cratePassPopup() end end)
+	if o.buttons and #o.buttons > 0 then
+		local holder = new("Frame", { Name = "Buttons", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -11), Size = UDim2.new(1, -20, 0, BH), BackgroundTransparency = 1, ZIndex = 7, Parent = t })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, GAPB), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
+		local n = #o.buttons
+		for k, bd in ipairs(o.buttons) do
+			local w = bd.w or (1 / n)
+			K.button(holder, bd[1], bd[2], { Name = bd.name or ("B" .. k), Size = UDim2.new(w, -GAPB * (n - 1) / n, 0, BH), TextSize = 20, Icon = bd.icon, Shine = bd.shine, LayoutOrder = k }, bd[3])
+		end
+	elseif o.status then
+		K.status(t, o.status[1], o.status[2], { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -13), Size = UDim2.new(1, -20, 0, 44) })
 	end
 	return t
 end
 
--- the crates as tiles: shop = every crate with its price; mine = only the ones you have, one OPEN each
+-- Inventory → CRATES: one card per crate you have, OPEN (+ AUTO with 2 or more: the Auto Opener pass)
+local function myCrateTile(grid, cr, have, data, i)
+	local buttons = { { "OPEN", K.GREEN, function(b) c.click(); openCrate(cr.id, nil, b) end, shine = true, name = "Open" } }
+	if have >= 2 then
+		local owns = c.player:GetAttribute("Pass_autoopen") == true
+		buttons[1].w = 0.58
+		table.insert(buttons, { "AUTO", owns and Color3.fromRGB(255, 176, 40) or K.LOCK, function() c.click(); if owns then autoOpen(cr.id) else cratePassPopup() end end,
+			shine = owns, name = "Auto", w = 0.42 })
+	end
+	return crateCard(grid, cr, i, data, { count = have, buttons = buttons })
+end
+
+-- the crates as cards: shop = every crate with its prices (the ones you have open in the Inventory); mine = only the
+-- ones you have, OPEN each
 local function crateTiles(data, order, shop)
 	local zone = data.zone or "town"
 	local tut = shop and inTut()
-	local ART = 106
 	if not shop then
-		local grid = K.grid(c.content, order, cols(), 302)
+		local grid = K.grid(c.content, order, cols(), CRATE_ART + 152)
 		for i, cr in ipairs(Hammers.Crates) do
 			local have = data.crates[cr.id] or 0
 			if have > 0 then myCrateTile(grid, cr, have, data, i) end
 		end
 		return grid
 	end
-	local grid = K.grid(c.content, order, cols(), 290)
+	local grid = K.grid(c.content, order, cols(), CRATE_ART + 200)
 	for i, cr in ipairs(Hammers.Crates) do
 		local have = data.crates[cr.id] or 0
-		if not shop and have == 0 then continue end
 		local prod = cr.product and product(cr.product)
 		local robuxOk = prod and ((prod.id or 0) > 0 or studio) and not c.paidRandomRestricted
 		local exists = next(Hammers.Odds(cr.id, zone, 1)) ~= nil
-		local o = { order = i, name = cr.name, icon = crateArt(cr), iconScale = cr.image and 1.06 or 0.9, color = cr.color, stats = {}, spin = have > 0, artH = ART,
-			corner = { label = "?", color = EQUIP_BLUE, w = 26, plain = true, onClick = function() c.click(); cratePopup(cr, data) end } }
-		if have > 0 and not shop then o.badge = { "x" .. have, T.red } end
-		if cr.pity then table.insert(o.stats, { "PITY " .. tostring(data.pity[cr.id] or cr.pity.every), GOLD }) end
-		if cr.cash then table.insert(o.stats, { string.upper(zone), K.SUB }) end
-		if cr.exclusiveOnly then table.insert(o.stats, { "EXCLUSIVES", T.red }) end
-		if (data.luck or 1) > 1 and not cr.exclusiveOnly then table.insert(o.stats, { "🍀 2x", K.GREEN }) end
-		local buttons = {}
-		if have > 0 and not shop then table.insert(buttons, { "OPEN", K.GREEN, function(b) c.click(); openCrate(cr.id, nil, b) end, shine = true }) end
-		if not shop then
-			-- the inventory opens them: one at a time, or all of them by themselves (the Auto Opener pass)
-			if have >= 2 then
-				local owns = c.player:GetAttribute("Pass_autoopen") == true
-				table.insert(buttons, { "AUTO", owns and Color3.fromRGB(255, 176, 40) or K.LOCK, function()
-					c.click()
-					if owns then autoOpen(cr.id) else cratePassPopup() end
-				end, shine = owns })
-			end
-		elseif tut then
+		local o = { count = (not tut) and have or 0, mid = (have > 0 and not tut) and "bag" or "odds", buttons = {} }
+		local buttons = o.buttons
+		if tut then
 			-- the tutorial: one Supply Crate, bought and opened at once; the rest waits
 			if cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
 				local price = data.supplyPrice or Hammers.SupplyPrice(60)
@@ -1254,7 +1267,7 @@ local function crateTiles(data, order, shop)
 			end, shine = can, icon = "gem" })
 		end
 		-- Robux next to the Gem price: half Gems, half Robux, like the Hammers of the Day
-		if shop and prod and not tut then
+		if prod and not tut then
 			if robuxOk then
 				table.insert(buttons, { K.robux(prod.price), K.GREEN, function()
 					c.click()
@@ -1266,20 +1279,10 @@ local function crateTiles(data, order, shop)
 			end
 		end
 		if not exists and have == 0 then
-			buttons = {}
+			o.buttons = nil
 			o.status = { "COMING SOON", K.LOCK }
 		end
-		if #buttons > 0 then o.buttons = buttons end
-		local t = K.tile(grid, o)
-		local owned = shop and have > 0 and not tut
-		if owned then
-			-- the ones in your bag open right here: OPEN over the prices (the odds are behind the "?")
-			K.button(t, "OPEN  x" .. have, K.GREEN, { Name = "Open", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -68), Size = UDim2.new(1, -20, 0, 42),
-				TextSize = 20, Shine = true, ZIndex = 7 }, function(b) c.click(); openCrate(cr.id, nil, b) end)
-		end
-		-- (shrinks to fit two lines: it never runs into the buttons)
-		if not owned then K.text({ Position = UDim2.fromOffset(12, ART + 12 + 32 + (#o.stats > 0 and 32 or 0)), Size = UDim2.new(1, -24, 0, 32), Text = oddsLine(cr, zone, data.luck or 1), TextSize = 14, Max = 14,
-			TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = t }) end
+		crateCard(grid, cr, i, data, o)
 	end
 	return grid
 end
