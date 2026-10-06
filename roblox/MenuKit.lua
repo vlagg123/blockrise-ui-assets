@@ -479,16 +479,28 @@ function K.category(parent, order, o)
 end
 
 -- "YOU HAVE:" strip (where materials are spent): one picture chip per thing with how many you own
--- chips = { { label, color, pic = picture }, ... }. In a window it is pinned under the tabs (it stays in view while
--- the list scrolls); anywhere else it is a row of the list.
+-- chips = { { label, color, pic = picture }, ... }. In a window's scrolling list it is pinned to the top of the list
+-- (it stays in view while you scroll: the list keeps an empty row under it); anywhere else it is a row of the list.
 function K.haveRow(parent, order, chips, title)
-	local host = UI.tabHosts and UI.tabHosts[parent]
-	local pinned = host and host.sticky
-	if pinned then
-		for _, o in ipairs(pinned:GetChildren()) do o:Destroy() end
+	local f
+	if parent:IsA("ScrollingFrame") and parent.Parent then
+		local list = parent
+		local space = new("Frame", { Name = "PinnedSpace", Size = UDim2.new(1, 0, 0, 56), BackgroundTransparency = 1, LayoutOrder = order, Parent = list })
+		f = new("Frame", { Name = "YouHave", BackgroundTransparency = 1, ZIndex = list.ZIndex + 5, Parent = list.Parent })
+		local function follow()
+			f.Position = list.Position
+			f.Size = UDim2.new(list.Size.X.Scale, list.Size.X.Offset - 10, 0, 50)
+		end
+		follow()
+		local c1 = list:GetPropertyChangedSignal("Position"):Connect(follow)
+		local c2 = list:GetPropertyChangedSignal("Size"):Connect(follow)
+		-- the list is redrawn (or another window opens in it): the strip goes with its row
+		space.AncestryChanged:Connect(function()
+			if not space:IsDescendantOf(list) then c1:Disconnect(); c2:Disconnect(); f:Destroy() end
+		end)
+	else
+		f = new("Frame", { Name = "YouHave", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = parent })
 	end
-	local f = new("Frame", { Name = "YouHave", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 21, Parent = pinned or parent })
-	if pinned and host.changed then task.defer(host.changed) end
 	UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = f })
 	local row = new("Frame", { Name = "Chips", Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -28, 1, 0), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
 	local lay = new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,

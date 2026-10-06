@@ -726,7 +726,7 @@ function M.Init(ctx)
 	-- at most 10 lines (fewer if the menu buttons are closer): more than that scroll, they never climb over the HUD
 	local fx = new("ScrollingFrame", { Name = "Effects", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -64), Size = UDim2.fromOffset(460, 0),
 		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollingDirection = Enum.ScrollingDirection.Y, CanvasSize = UDim2.new(),
-		ScrollBarThickness = 0, ScrollBarImageColor3 = Color3.new(1, 1, 1), ScrollBarImageTransparency = 0.35, ElasticBehavior = Enum.ElasticBehavior.Never,
+		ScrollBarThickness = 0, ScrollBarImageColor3 = Color3.new(1, 1, 1), ScrollBarImageTransparency = 0.5, ElasticBehavior = Enum.ElasticBehavior.Never,
 		ScrollingEnabled = false, Active = false, Parent = root })
 	local fxScale = new("UIScale", { Parent = fx })
 	-- small lines of text, one per effect, stacked upwards from the level bar (the box is exactly as tall as its lines, bottom-anchored)
@@ -822,7 +822,15 @@ function M.Init(ctx)
 			local lines = math.max(3, math.min(10, math.floor((room + 1) / 21)))
 			local over = n > lines
 			local h = (over and lines or n) * 21 - 1
-			if fx.Size.Y.Offset ~= h then fx.Size = UDim2.fromOffset(fx.Size.X.Offset, math.max(h, 0)) end
+			-- as wide as its longest line: the scroll bar sits right next to the lines, not far out on the screen
+			local widest = 0
+			for _, ch in pairs(fxChips) do
+				local csc = ch.frame:FindFirstChildOfClass("UIScale")
+				local s = csc and csc.Scale or 1
+				if s > 0.5 then widest = math.max(widest, ch.frame.AbsoluteSize.X / s) end
+			end
+			local w = math.clamp(math.ceil(widest / k) + 12, 120, 460)
+			if math.abs(fx.Size.X.Offset - w) > 2 or fx.Size.Y.Offset ~= h then fx.Size = UDim2.fromOffset(w, math.max(h, 0)) end
 			fx.CanvasSize = UDim2.fromOffset(0, math.max(n * 21 - 1, 0))
 			if fx.ScrollingEnabled ~= over then
 				fx.ScrollingEnabled, fx.Active = over, over
