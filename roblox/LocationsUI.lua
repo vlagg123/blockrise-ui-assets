@@ -44,10 +44,12 @@ end
 M.Has = hasTeleporter
 M.Offer = offerTeleporter
 
+local function inTutorial() return (c.player:GetAttribute("RoadStep") or 1) <= (Config.TutorialSteps or 7) end
+
 -- travel: stand a few steps in front of the place (towards the middle of the map), facing it.
--- Without the Teleporter you get the waypoint arrow instead.
+-- Without the Teleporter you get the waypoint arrow instead. GO home is free for everyone.
 function M.Go(id)
-	if not hasTeleporter() then
+	if not hasTeleporter() and id ~= "home" then
 		if id == "site" then
 			c.toast("🏗️ Follow the arrow to your construction site", T.accent, 2.5)
 		else
@@ -102,8 +104,9 @@ end
 function M.Show()
 	local player = c.player
 	local owned = hasTeleporter()
+	local tut = inTutorial() -- the tutorial's last step: only the free trip home
 	c.openModal("Locations", "Places", "", R1, R2)
-	if not owned then
+	if not owned and not tut then
 		-- the Teleporter offer sits on top
 		local pass = teleporterPass()
 		K.banner(c.content, 0, { name = "TELEPORTER", line = "Unlock GO and travel anywhere in one tap. Pins stay free.", icon = "locations",
@@ -124,12 +127,18 @@ function M.Show()
 			locked = true
 			badge = { "NO JOB", K.DARK }
 		end
-		local goText = owned and (locked and (p.zone and "GATE" or "NO JOB") or "GO") or "🔒 GO"
+		-- GO home is free for everyone (no Teleporter needed)
+		local free = p.id == "home"
+		if free then badge = { "FREE", K.GREEN } end
+		local can = (owned or free) and not locked and not (tut and not free)
+		local goText = (owned or free) and (locked and (p.zone and "GATE" or "NO JOB") or "GO") or "🔒 GO"
 		-- (the Machines Depot shows the Mini Excavator's picture)
 		local art = p.art and Config.MachineById and Config.MachineById[p.art] and Config.MachineById[p.art].image
-		K.tile(grid, { order = i, name = p.name, icon = art or p.icon, iconScale = art and 1.06 or nil, color = p.tint, badge = badge, artH = 124, buttons = {
-			{ goText, owned and not locked and K.GREEN or K.LOCK, function()
+		local tile = K.tile(grid, { order = (tut and free) and 0 or i, name = p.name, icon = art or p.icon, iconScale = art and 1.06 or nil, color = p.tint, badge = badge, artH = 124, dim = tut and not free, buttons = {
+			{ goText, can and K.GREEN or K.LOCK, function()
 				c.click()
+				if tut and not free then c.toast("🔒 After the tutorial. Now tap GO at My Property!", T.muted, 2.5) return end
+				if free then M.Go(p.id) return end
 				if not hasTeleporter() then
 					c.toast("📍 GO needs the Teleporter. The pin is free!", Color3.fromRGB(255, 214, 80), 3)
 					offerTeleporter()
@@ -140,13 +149,36 @@ function M.Show()
 			end },
 			{ "", Color3.fromRGB(255, 190, 50), function()
 				c.click()
+				if tut and not free then c.toast("🔒 After the tutorial. Now tap GO at My Property!", T.muted, 2.5) return end
 				c.closeModal()
 				if p.id == "site" then c.toast("🏗️ Follow the arrow to your site", T.accent) return end
 				c.setWaypoint(p.id)
 			end, icon = PIN_ICON, square = true },
 		} })
+		-- the tutorial: a bouncing arrow on My Property's GO
+		if tut and free and tile then
+			local go
+			for _, d in ipairs(tile:GetDescendants()) do
+				if d:IsA("GuiButton") and not go then
+					local l = d:FindFirstChildWhichIsA("TextLabel", true)
+					if l and l.Text == "GO" then go = d end
+				end
+			end
+			if go then
+				local ar = UI.label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, -2), Size = UDim2.fromOffset(44, 40), Text = "▼", TextSize = 40, Font = T.title,
+					TextColor3 = Color3.fromRGB(255, 214, 60), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 20, Parent = go })
+				UI.textStroke(0.1, 3).Parent = ar
+				task.spawn(function()
+					local t0 = os.clock()
+					while ar.Parent do
+						ar.Position = UDim2.new(0.5, 0, 0, -2 - math.abs(math.sin((os.clock() - t0) * 5)) * 10)
+						task.wait()
+					end
+				end)
+			end
+		end
 	end
-	K.note(c.content, 3, "The pin shows the way for free.  GO takes you there with the Teleporter.")
+	K.note(c.content, 3, "The pin shows the way for free.  GO takes you there with the Teleporter (home is always free).")
 end
 
 function M.Init(ctx)

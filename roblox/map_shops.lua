@@ -181,12 +181,13 @@ do
 end
 
 ---------------------------------------------------------------------------------------------------------------------
--- 3. TRAINING SHOP at the Training Yard gate: east of the path, front to the path (west)
+-- 3. TRAINING SHOP at the Training Yard gate: east of the path, front to the street (south), like the gate
+--    (you see its front as you walk up the path, not a brick side wall)
 ---------------------------------------------------------------------------------------------------------------------
-table.insert(report, "yard gate cleared: " .. clear(CFrame.new(-196, 6, 196), Vector3.new(24, 30, 24), roots))
+table.insert(report, "yard gate cleared: " .. clear(CFrame.new(-197, 6, 195), Vector3.new(26, 30, 24), roots))
 do
 	local OR = Color3.fromRGB(255, 120, 40)
-	local mdl, cf, P = building({ name = "TrainingShop", parent = Plaza, pos = Vector3.new(-195, 0, 196), face = Vector3.new(-1, 0, 0), w = 17, d = 12, h = 11,
+	local mdl, cf, P = building({ name = "TrainingShop", parent = Plaza, pos = Vector3.new(-197, 0, 196), face = Vector3.new(0, 0, -1), w = 17, d = 12, h = 11,
 		wall = Color3.fromRGB(200, 80, 60), accent = OR, text = "🧤 TRAINING GEAR", roof = "TRAINING" })
 	local d = 12
 	-- an open front: door, two windows with gear behind them

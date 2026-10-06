@@ -356,6 +356,11 @@ function M.Init(ctx)
 		local rs = player:GetAttribute("RoadStep")
 		return rs ~= nil and rs > (Config.TutorialSteps or 6)
 	end
+	-- the tutorial's last step (your property): PLACES opens, it's how you get home (GO at My Property is free)
+	local function homeStep()
+		local st = Config.Road[player:GetAttribute("RoadStep") or 1]
+		return not tutorialDone() and st ~= nil and st.place == "home"
+	end
 	local function lockedToast(which)
 		c.toast("🔒 Complete the tutorial first — follow the arrow!", T.muted, 2.5)
 		if which and menu and menu[which] then menu[which].nudge() end
@@ -398,7 +403,7 @@ function M.Init(ctx)
 		toggle("Rebirth", c.showRebirth)
 	end
 	function A.locations()
-		if not tutorialDone() then lockedToast("locations") return end
+		if not tutorialDone() and not homeStep() then lockedToast("locations") return end
 		toggle("Locations", c.showLocations)
 	end
 	function A.store(tab) if tab then _G.__CE_ShowStore(tab) else toggle("Store", _G.__CE_ShowStore) end end
@@ -1016,17 +1021,50 @@ function M.Init(ctx)
 
 	-- the lock on every menu on the left: they open one after the other with the padlock animation when the tutorial
 	-- ends during this session, silently for players past the tutorial
-	local wasLocked, sawLocked = nil, false
+	-- (PLACES opens on its own at the last step: it's how you get home)
+	local wasLocked, sawLocked = {}, false
+	local placesArrow
 	local function applyLock()
-		local locked = not tutorialDone()
+		local tut = not tutorialDone()
 		-- only a player we actually saw doing the tutorial gets the unlock show
-		if locked and player:GetAttribute("RoadStep") ~= nil and player:GetAttribute("Loaded") == true then sawLocked = true end
-		if locked == wasLocked then return end
-		local animate = (not locked) and sawLocked
-		wasLocked = locked
-		for i, d in ipairs(defs) do
-			local api = menu[d[1]]
-			if animate then task.delay((i - 1) * 0.22, function() api.setLocked(false, true) end) else api.setLocked(locked, false) end
+		if tut and player:GetAttribute("RoadStep") ~= nil and player:GetAttribute("Loaded") == true then sawLocked = true end
+		local k = 0
+		for _, d in ipairs(defs) do
+			local id = d[1]
+			local locked = tut and not (id == "locations" and homeStep())
+			if locked ~= wasLocked[id] then
+				local api = menu[id]
+				if (not locked) and sawLocked and wasLocked[id] ~= nil then
+					k += 1
+					task.delay((k - 1) * 0.22, function() api.setLocked(false, true) end)
+				else
+					api.setLocked(locked, false)
+				end
+				wasLocked[id] = locked
+			end
+		end
+		-- at the last step a big arrow points at PLACES (tap it, then GO at My Property)
+		local want = homeStep()
+		if want and not placesArrow then
+			local b = menu.locations.button
+			placesArrow = new("Frame", { Name = "PlacesArrow", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(1, 4, 0.5, 0), Size = UDim2.fromOffset(150, 56),
+				BackgroundTransparency = 1, ZIndex = 9, Parent = b })
+			local ar = text({ AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(44, 44), Text = "▼", TextSize = 40, Rotation = 90,
+				TextColor3 = Color3.fromRGB(255, 214, 60), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 9, Parent = placesArrow })
+			tstroke(ar, 3)
+			local tap = text({ AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 44, 0.5, 0), Size = UDim2.fromOffset(110, 30), Text = "TAP: GO HOME", TextSize = 17,
+				TextColor3 = Color3.fromRGB(255, 236, 140), ZIndex = 9, Parent = placesArrow })
+			tstroke(tap, 2.5)
+			task.spawn(function()
+				local t0 = os.clock()
+				while placesArrow and placesArrow.Parent do
+					placesArrow.Position = UDim2.new(1, 4 + math.abs(math.sin((os.clock() - t0) * 5)) * 12, 0.5, 0)
+					task.wait()
+				end
+			end)
+		elseif not want and placesArrow then
+			placesArrow:Destroy()
+			placesArrow = nil
 		end
 	end
 	applyLock()
