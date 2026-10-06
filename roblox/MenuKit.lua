@@ -269,6 +269,21 @@ function K.tile(grid, o)
 	K.artBox(t, o.icon, o.color, { Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, artH), Spin = o.spin, Dim = o.dim, IconScale = o.iconScale, Custom = o.custom })
 	if o.badge then K.chip(t, o.badge[1], o.badge[2] or T.red, { Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
 	if o.tag then K.chip(t, o.tag[1], o.tag[2] or K.DARK, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), ZIndex = 8 }) end
+	if o.bubble then
+		-- a round sticker on the picture's top-right corner ("+15%" over "BONUS")
+		local col = o.bubble[3] or K.GREEN
+		local bub = new("Frame", { Name = "Bubble", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -26, 0, 26), Size = UDim2.fromOffset(64, 64), Rotation = 12,
+			BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 9, Parent = t })
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = bub })
+		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(col:Lerp(Color3.new(1, 1, 1), 0.25), col:Lerp(Color3.new(0, 0, 0), 0.15)), Parent = bub })
+		new("UIStroke", { Thickness = 3, Color = T.ink, Parent = bub })
+		text({ Position = UDim2.fromOffset(0, 10), Size = UDim2.new(1, 0, 0, 26), Text = o.bubble[1], Font = T.chunky, TextSize = 22, Max = 22, TextColor3 = Color3.new(1, 1, 1),
+			Stroke = 2.4, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = bub })
+		text({ Position = UDim2.fromOffset(0, 36), Size = UDim2.new(1, 0, 0, 14), Text = o.bubble[2] or "", Font = T.chunky, TextSize = 13, Max = 13, TextColor3 = Color3.new(1, 1, 1),
+			Stroke = 1.8, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = bub })
+		local bs = new("UIScale", { Parent = bub })
+		game:GetService("TweenService"):Create(bs, TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Scale = 1.08 }):Play()
+	end
 	if o.corner then cornerButton(t, o.corner) end
 	local y = artH + 12
 	text({ Name = "Title", Position = UDim2.fromOffset(13, y), Size = UDim2.new(1, -26, 0, 26), Text = o.name or "", TextSize = 22, Max = 22, TextColor3 = o.dim and K.SUB or K.DARK, Parent = t })

@@ -155,7 +155,7 @@ local function gems(tok)
 		local bonus = (p.desc or ""):match("%+(%d+)%%")
 		local icon, sc = iconOf(p.key, "gem")
 		return { name = p.name, icon = icon, color = GEM_COLS[math.min(i, #GEM_COLS)], badge = p.tag and { p.tag, p.tag == "POPULAR" and T.red or Color3.fromRGB(255, 150, 20) },
-			stats = bonus and { { "+" .. bonus .. "% BONUS", K.GREEN } } or { { "GEMS", GEM2 } }, spin = p.tag ~= nil, iconScale = sc or (0.8 + 0.2 * (i / #packs)) }
+			bubble = bonus and { "+" .. bonus .. "%", "BONUS", K.GREEN } or nil, spin = p.tag ~= nil, iconScale = sc or (0.8 + 0.2 * (i / #packs)) }
 	end })
 end
 

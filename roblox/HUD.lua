@@ -616,7 +616,10 @@ function M.Init(ctx)
 	-- (12 px between the buttons: a timer pill on a button's corner never touches the button above)
 	local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.fromOffset(84, 540), Parent = root })
 	local rightScale = new("UIScale", { Parent = right })
-	new("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
+	-- a grid of fixed cells (one column), not a list: a button that grows under the mouse or bounces never pushes the
+	-- ones below it down
+	new("UIGridLayout", { CellSize = UDim2.fromOffset(84, 94), CellPadding = UDim2.fromOffset(0, 12), SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = right })
 
 	local popups = {}
 	local function popup(name, defs2, anchorBtn, cols)
