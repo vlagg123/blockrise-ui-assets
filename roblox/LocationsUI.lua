@@ -185,18 +185,23 @@ function M.Show()
 				end
 			end
 			if go then
-				-- a glowing ring that breathes around GO (an arrow on top covered the place's name)
-				local ring = new("Frame", { Name = "TutRing", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 10, 1, 10),
-					BackgroundTransparency = 1, ZIndex = 20, Parent = go })
+				-- a glowing ring that breathes around GO, on the tile's top layer (inside the button row the pin
+				-- button next to it was drawn over it)
+				local ring = new("Frame", { Name = "TutRing", AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, ZIndex = 50, Parent = tile })
 				new("UICorner", { CornerRadius = UDim.new(0, 14), Parent = ring })
 				local rs = new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(255, 220, 60), Parent = ring })
 				task.spawn(function()
 					local t0 = os.clock()
-					while ring.Parent do
+					while ring.Parent and go.Parent do
 						local k = math.abs(math.sin((os.clock() - t0) * 4))
+						-- the window is scaled: AbsoluteSize / the button's own 50 px height = the scale
+						local sc = math.max(go.AbsoluteSize.Y / 50, 0.01)
+						local rel = (go.AbsolutePosition - tile.AbsolutePosition) / sc
+						local sz = go.AbsoluteSize / sc
+						ring.Position = UDim2.fromOffset(rel.X + sz.X / 2, rel.Y + sz.Y / 2)
+						ring.Size = UDim2.fromOffset(sz.X + 6 + 6 * k, sz.Y + 6 + 6 * k)
 						rs.Transparency = 0.1 + 0.5 * (1 - k)
-						rs.Thickness = 3 + 3 * k
-						ring.Size = UDim2.new(1, 8 + 8 * k, 1, 8 + 8 * k)
+						rs.Thickness = 3 + 2 * k
 						task.wait()
 					end
 				end)
