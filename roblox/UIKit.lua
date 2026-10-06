@@ -197,6 +197,7 @@ function UI.button(text, c1, c2, props)
 			bot = k[#k].Value
 		else
 			local col = bg.ImageColor3
+			if bg:GetAttribute("Hover") then col = col:Lerp(WHITE, 0.12) end
 			bot = col:Lerp(BLACK, 0.12)
 			grad.Color = ColorSequence.new(col:Lerp(WHITE, 0.16), bot)
 		end
@@ -210,6 +211,7 @@ function UI.button(text, c1, c2, props)
 	bg:GetPropertyChangedSignal("ImageColor3"):Connect(paint)
 	bg:GetPropertyChangedSignal("ImageTransparency"):Connect(paint)
 	bg:GetAttributeChangedSignal("Skin"):Connect(paint)
+	bg:GetAttributeChangedSignal("Hover"):Connect(paint)
 	grad:GetPropertyChangedSignal("Color"):Connect(function() if bg:GetAttribute("Skin") and bg:GetAttribute("Skin") ~= "plain" then paint() end end)
 	bg:SetAttribute("Color", color)
 	paint()
@@ -226,8 +228,7 @@ function UI.button(text, c1, c2, props)
 	local grow = { x = 0, y = 0, left = 0.5 } -- how much the face grows on hover (px) and which share of it goes left
 	local rest = {}     -- [label / icon] = where it sits when the button is up and not grown
 	local restSize = {} -- [label] = its size then
-	-- the face (and the base under it) grow in place: upwards, and sideways on the side away from the neighbours (the
-	-- first of a row grows to the left, the last to the right, the ones between both ways); the layout never moves
+	-- the face sinks onto the base when pressed (hov / grow stay at 0: a hover only lights the face up)
 	local function apply()
 		local y, k = press.Value, hov.Value
 		local gx, gy = grow.x * k, grow.y * k
@@ -306,7 +307,6 @@ function UI.button(text, c1, c2, props)
 	if props.Shine then UI.shine(b, z) end
 	local sc = new("UIScale", { Parent = b })
 	local hover = false
-	local zRest
 	local function pressTo(y, t, style)
 		if bg:GetAttribute("Skin") == "plain" then
 			-- (a flat button, the close X: no base to sink onto, it shrinks a little instead)
@@ -317,35 +317,13 @@ function UI.button(text, c1, c2, props)
 		local tw = UI.tween(press, t, { Value = y }, style)
 		if y == 0 then tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed then release() end end) end
 	end
+	-- hover: the face lights up a little; nothing grows or moves (a growing button pushed or covered its neighbours)
 	local function hoverTo(on)
 		if bg:GetAttribute("Skin") == "plain" then
 			UI.tween(sc, 0.12, { Scale = on and 1.05 or 1 })
 			return
 		end
-		if on then
-			-- how much: a touch, about 3.5% of the width (3..8 px) and 2 px up; which way: by its place among its neighbours
-			local hD = b.Size.Y.Offset
-			local k = (hD > 0 and b.AbsoluteSize.Y > 0) and b.AbsoluteSize.Y / hD or 1
-			local wD = b.AbsoluteSize.X / math.max(k, 0.01)
-			grow.x, grow.y = math.clamp(wD * 0.035, 3, 8), 2
-			local minX, maxX, n = math.huge, -math.huge, 0
-			for _, o in ipairs(b.Parent and b.Parent:GetChildren() or {}) do
-				if o:IsA("GuiButton") and o.Visible then
-					n += 1
-					minX, maxX = math.min(minX, o.AbsolutePosition.X), math.max(maxX, o.AbsolutePosition.X)
-				end
-			end
-			local x = b.AbsolutePosition.X
-			grow.left = (n < 2 and 0.5) or (x <= minX + 1 and 1) or (x >= maxX - 1 and 0) or 0.5
-			capture()
-			zRest = zRest or b.ZIndex
-			b.ZIndex = zRest + 1 -- (over its neighbours while it is bigger)
-			UI.tween(hov, 0.16, { Value = 1 }, Enum.EasingStyle.Back)
-		else
-			if zRest then b.ZIndex = zRest; zRest = nil end
-			local tw = UI.tween(hov, 0.12, { Value = 0 })
-			tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed then release() end end)
-		end
+		bg:SetAttribute("Hover", on)
 	end
 	b.MouseEnter:Connect(function()
 		if not UIS.MouseEnabled then return end -- (a finger has no hover: it would stay big)
