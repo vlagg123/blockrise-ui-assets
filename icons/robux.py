@@ -1131,7 +1131,7 @@ def i_autoopen():
     track(loot_chest, loc=(-1.55, 1.6, 0), rot=(0, 0, 14), s=0.66, kind="supply", open_=False)
     track(loot_chest, loc=(1.75, 1.6, 0), rot=(0, 0, 30), s=0.66, kind="supply", open_=False)
     track(loot_chest, loc=(0.0, -0.6, 0), rot=(0, 0, 22), s=0.8, kind="supply")
-    track(badge, "AUTO", (1.55, -2.0, 0.55), s=0.7, col="#3fd36a", rot=(-16, 0, 0))
+    track(badge, "AUTO", (1.6, -2.1, 0.75), s=1.0, col="#3fd36a", rot=(-16, 0, 0))
 
 
 def _three(kind):
