@@ -86,8 +86,16 @@ local function fetch()
 end
 -- a redraw right after M.Redraw fetched the new state draws in one go: no spinner, no empty window blinking in between
 local freshUntil = 0
+local refreshSoon -- (set below: the server's state in the background, redrawn only where it differs)
 local function dataNow()
 	if cache and os.clock() < freshUntil then return cache end
+	if cache then
+		-- the last state at once (no "loading..."): the server's answer follows in the background and the window is
+		-- redrawn only if something changed (every action is checked by the server anyway)
+		freshUntil = os.clock() + 1
+		if refreshSoon then task.spawn(refreshSoon) end
+		return cache
+	end
 	local loading = K.loading(c.content)
 	local data = fetch()
 	if loading.Parent then loading:Destroy() end
@@ -130,6 +138,13 @@ local function refresh()
 	fetch()
 	if cache and stateOf(cache) == before then return end
 	redrawNow()
+end
+local refreshing = false
+refreshSoon = function()
+	if refreshing or inFlight > 0 then return end -- (a tap's own answer refreshes it)
+	refreshing = true
+	refresh()
+	refreshing = false
 end
 local function predict(change, cost)
 	if cache and change then change(cache) end

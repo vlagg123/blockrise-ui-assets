@@ -186,20 +186,19 @@ end
 -- the last answer of the server: a redraw (a level-up, a crate, a trade-up...) draws with it at once, in the same frame,
 -- so the window never empties into a loading spinner and back; the fresh answer then redraws only what it changes
 local function open(name, c1, c2, title)
-	local refresh = c.modalOpen() and c.modalTitle.Text == (title or name)
 	local tok = c.openModal(name, title or name, "", c1, c2)
-	local hammerTab = HAMMER_VIEW()
-	if lastData and (refresh or hammerTab) then
+	-- the last answer at once (no "loading..."), the fresh one right after: redrawn only if what it shows changed
+	if lastData then
 		render(tok, lastData)
 		c.modalSub.Text = money(c.player:GetAttribute("Money") or lastData.money or 0)
+		local before = sig(lastData)
 		task.spawn(function()
 			local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
 			if not (ok and okr and type(data) == "table") then return end
 			if inst and inst.inFlight > 0 then return end -- a tap is on its way: its answer redraws
 			lastData = data
 			-- the hammer tabs don't use it (only the BLUEPRINTS badge); materials, blueprints and upgrades do
-			local tabNow = HAMMER_VIEW()
-			if c.live(tok) and not tabNow then
+			if c.live(tok) and not HAMMER_VIEW() and sig(data) ~= before then
 				local scroll = c.content.CanvasPosition
 				render(tok, data)
 				task.defer(function() if c.live(tok) then c.content.CanvasPosition = scroll end end)
@@ -253,6 +252,15 @@ function M.Init(ctx)
 	end
 	c.inventoryHammerTab = HAMMER_VIEW
 	_G.__CE_ShowTradeUp, _G.__CE_ShowIndex = M.TradeUp, M.Index
+	-- the first opening shows at once too: the state is fetched once you are in the game
+	task.spawn(function()
+		local t0 = os.clock()
+		while c.player:GetAttribute("Loaded") ~= true and os.clock() - t0 < 120 do task.wait(0.5) end
+		task.wait(2)
+		if lastData then return end
+		local ok, okr, data = pcall(function() return c.R.CompanyAction:InvokeServer("get") end)
+		if ok and okr and type(data) == "table" and not lastData then lastData = data end
+	end)
 	-- a crate opened (or traded away) lowers what you have "seen", so the next new crate shows the hint again
 	c.player:GetAttributeChangedSignal("CrateTotal"):Connect(function()
 		local n = c.player:GetAttribute("CrateTotal") or 0
