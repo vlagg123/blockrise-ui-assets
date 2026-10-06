@@ -955,14 +955,15 @@ local function reveal(o)
 		if c.closing then return end
 		UI.tween(eff, 0.25, { TextTransparency = 0 }); UI.tween(es, 0.25, { Transparency = 0 })
 	end)
-	local btn = UI.button(o.button or "AWESOME!", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(o.again and 160 or 280, 420), Size = UDim2.fromOffset(o.again and 200 or 230, 58),
-		TextSize = 26, Font = T.chunky, ZIndex = 7, Shine = not o.again, Parent = box })
+	-- the buttons look like every other button of the game (same font, the label in the middle of the face)
+	local btn = UI.button(o.button or "AWESOME!", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(o.again and 162 or 280, 418), Size = UDim2.fromOffset(o.again and 210 or 250, 62),
+		TextSize = 30, ZIndex = 7, Shine = not o.again, Parent = box })
 	btn.Visible = false
 	local again
 	if o.again then
 		-- open the next crate straight from the card
-		again = UI.button(o.again.label, Color3.fromRGB(255, 176, 40), nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(392, 420), Size = UDim2.fromOffset(250, 58),
-			TextSize = 21, Font = T.chunky, ZIndex = 7, Shine = true, Parent = box })
+		again = UI.button(o.again.label, Color3.fromRGB(255, 176, 40), nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(394, 418), Size = UDim2.fromOffset(250, 62),
+			TextSize = 23, ZIndex = 7, Shine = true, Parent = box })
 		again.Visible = false
 		again.Activated:Connect(function()
 			sound(S.Click, 0.35)
@@ -975,7 +976,18 @@ local function reveal(o)
 		local tg = K.chip(box, o.tag, Color3.fromRGB(255, 176, 40), { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(280, 80), ZIndex = 6 })
 		tg.ZIndex = 6
 	end
-	task.delay(0.75, function() if not c.closing then btn.Visible = true; if again then again.Visible = true end end end)
+	task.delay(0.75, function()
+		if c.closing then return end
+		-- the buttons pop in
+		for _, b in ipairs({ btn, again }) do
+			b.Visible = true
+			local bs = b:FindFirstChildOfClass("UIScale") -- (the button's own: one UIScale per object)
+			if bs then
+				bs.Scale = 0.6
+				UI.tween(bs, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
+			end
+		end
+	end)
 	btn.Activated:Connect(function() sound(S.Click, 0.35); closeCard() end)
 	dim.Activated:Connect(function() if os.clock() - c.t0 > 1.2 then closeCard() end end)
 	c.t0 = os.clock()

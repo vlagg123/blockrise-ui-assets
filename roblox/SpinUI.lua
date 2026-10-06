@@ -139,14 +139,16 @@ function M.Show()
 	local tiles = {}
 	for i = 1, 60 do tiles[i] = tile(strip, Config.Spin.prizes[items[i]], (i - 1) * (TILE + GAP)) end
 	-- selector: a glowing golden frame with arrows and a soft beam
-	local beam = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(TILE + 18, 200), BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.88, ZIndex = 4, Parent = reel })
-	UI.corner(16).Parent = beam
 	local marker = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(TILE + 16, TILE + 30), BackgroundTransparency = 1,
 		ZIndex = 8, Parent = reel })
 	UI.corner(18).Parent = marker
 	local markStroke = new("UIStroke", { Thickness = 5, Color = GOLD1, Parent = marker })
 	local markScale = new("UIScale", { Parent = marker })
+	-- the soft light inside the golden frame: it IS the frame's inside, so it is never taller than the frame and it
+	-- grows with it on every tick
+	local beam = new("Frame", { Name = "Beam", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, -2, 1, -2),
+		BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.88, ZIndex = 8, Parent = marker })
+	UI.corner(17).Parent = beam
 	for _, y in ipairs({ 0, 1 }) do
 		local tri = new("TextLabel", { AnchorPoint = Vector2.new(0.5, y), Position = UDim2.new(0.5, 0, y, y == 0 and -6 or 6), Size = UDim2.fromOffset(40, 30), BackgroundTransparency = 1,
 			Text = y == 0 and "▼" or "▲", TextSize = 30, Font = Enum.Font.GothamBlack, TextColor3 = GOLD1, ZIndex = 9, Parent = reel })

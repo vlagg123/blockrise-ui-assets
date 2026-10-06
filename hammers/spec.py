@@ -306,6 +306,8 @@ PALETTE = {
     "flame":     dict(rbx=["Neon", [255, 128, 30], 0, 0], bl=dict(color=[1.0, 0.22, 0.01], metal=0, rough=0.4, emit=8.0)),
     "flame_red": dict(rbx=["Neon", [255, 64, 30], 0, 0], bl=dict(color=[1.0, 0.05, 0.01], metal=0, rough=0.4, emit=8.0)),
     "white_gold": dict(rbx=["Metal", [255, 238, 196], 0, 0.2], bl=dict(color=[1.0, 0.85, 0.55], metal=1, rough=0.15)),
+    "water_deep": dict(rbx=["Glass", [20, 70, 190], 0.1, 0.2], bl=dict(color=[0.006, 0.07, 0.42], metal=0, rough=0.04, trans=0.8, ior=1.33, emit=0.15)),
+    "bone_dk":   dict(rbx=["SmoothPlastic", [196, 182, 150], 0, 0], bl=dict(color=[0.55, 0.47, 0.3], metal=0, rough=0.45)),
     "water":     dict(rbx=["Glass", [36, 120, 236], 0.15, 0.2], bl=dict(color=[0.02, 0.18, 0.82], metal=0, rough=0.03, trans=0.85, ior=1.33, emit=0.25)),
     "foam":      dict(rbx=["SmoothPlastic", [240, 250, 255], 0, 0], bl=dict(color=[0.88, 0.95, 1.0], metal=0, rough=0.5, emit=0.15)),
     "driftwood": dict(rbx=["Wood", [176, 160, 138], 0, 0], bl=dict(color=[0.43, 0.36, 0.27], metal=0, rough=0.85, tex="wood")),
@@ -1031,18 +1033,45 @@ def build_new(H):
     h.band("Socket", hy - 0.28, 0.16, 0.18, "scale_blk")
     h.add("PommelClaw", "box", (0.16, 0.28, 0.16), (0, -0.6, 0), R=Rx(180), mat="bone", planes=octagon(0.16, "y") + _shard_tip(0.16, 0.28))
     hp = np.array([0.0, hy, 0.0])
-    # the striking end: a block of red scales with a bone face; the fang grows out of its back and curls down to a point
-    h.add("Mount", "box", (0.46, 0.48, 0.52), hp + [0, 0, -0.16], mat="scale_red", planes=chamfer(0.46, 0.48, 0.52, 0.08))
-    for i, z in enumerate((-0.3, -0.12, 0.06)):
-        h.add("ScaleRow%d" % i, "box", (0.47, 0.49, 0.04), hp + [0, 0, z], mat="scale_blk", planes=chamfer(0.47, 0.49, 0.04, 0.08, edges="z"), cast=False)
-    h.add("Face", "cyl", (0.1, 0.2), hp + [0, 0, -0.45], R=ALONG_Z, mat="bone", planes=cyl_bevel(0.1, 0.2, 0.03), smooth=40)
-    tip = chain(h, "Fang", hp + [0, 0.04, 0.02], (0, 0.3, 1), (1, 0, 0),
-                [(0.3, 0.34, 16), (0.28, 0.29, 22), (0.27, 0.24, 28), (0.26, 0.19, 32), (0.28, 0.13, 0)], "bone")
-    for i, z in enumerate((0.0, 0.14)):
-        h.add("Strap%d" % i, "box", (0.4, 0.42, 0.06), hp + [0, 0.06 + i * 0.03, z + 0.06], R=Rx(-14 - 6 * i), mat="leather", planes=chamfer(0.4, 0.42, 0.06, 0.09, edges="z"))
-    h.headbox(hp + [0, -0.05, 0.1], (0.5, 0.7, 1.4))
-    h.fx("smoke", rf(tip), [[90, 80, 80]], 1.5, [0.15, 0.35], area=(0.15, 0.15, 0.15))
-    h.fx("embers", rf(tip), [[255, 180, 80], [255, 90, 20]], 4, [0.04, 0.08], area=(0.15, 0.15, 0.15))
+    # the head IS the fang: a big curved tooth lying along the head, its wide root is the striking face (front), it
+    # narrows and curls down to a sharp point at the back. Side profile (u = Z, v = Y) cut into convex slices.
+    fang = []
+    N = 9
+    for k in range(N + 1):
+        t = k / N
+        c = np.array([-0.56 + 1.22 * t, 0.07 - 0.42 * t ** 2.2])            # the centre line (u, v)
+        du = 1.22
+        dv = -0.42 * 2.2 * t ** 1.2
+        n = np.array([-dv, du]) / math.hypot(du, dv)                        # its normal, pointing up
+        w = 0.5 * (1 - t) ** 0.85 + 0.004                                   # the width of the tooth
+        fang.append((c, n, w))
+    tip = None
+    for k in range(N):
+        (c0, n0, w0), (c1, n1, w1) = fang[k], fang[k + 1]
+        pts = [tuple(c0 - n0 * w0 / 2), tuple(c1 - n1 * w1 / 2), tuple(c1 + n1 * w1 / 2), tuple(c0 + n0 * w0 / 2)]
+        if k == N - 1:
+            pts = [tuple(c0 - n0 * w0 / 2), tuple(c1), tuple(c0 + n0 * w0 / 2)]
+            tip = c1
+        thick = 0.44 - 0.3 * (k / (N - 1))
+        h.poly("Fang%d" % k, pts, thick, hp, I3, "bone", union="Fang")
+    # a darker groove along the tooth (both sides) and the root collar of red scales
+    for i, sx in enumerate((-1, 1)):
+        for k in range(1, 6):
+            (c0, n0, w0), (c1, n1, w1) = fang[k], fang[k + 1]
+            g = [tuple(c0 + n0 * w0 * 0.05), tuple(c1 + n1 * w1 * 0.05), tuple(c1 - n1 * w1 * 0.05), tuple(c0 - n0 * w0 * 0.05)]
+            thick = 0.44 - 0.3 * (k / (N - 1))
+            h.poly("Groove%d%d" % (i, k), g, 0.01, hp + [sx * (thick / 2 + 0.002), 0, 0], I3, "bone_dk", union="Groove%d" % i)
+    h.add("Face", "cyl", (0.08, 0.24), hp + [0, 0.07, -0.6], R=ALONG_Z, mat="bone_dk", planes=cyl_bevel(0.08, 0.24, 0.03), smooth=40)
+    h.add("Collar", "box", (0.5, 0.56, 0.12), hp + [0, 0.06, -0.38], mat="scale_red", planes=chamfer(0.5, 0.56, 0.12, 0.1, edges="z"), cast=False)
+    for i, z in enumerate((-0.43, -0.33)):
+        h.add("CollarScale%d" % i, "box", (0.52, 0.58, 0.03), hp + [0, 0.06, z], mat="scale_blk", planes=chamfer(0.52, 0.58, 0.03, 0.1, edges="z"), cast=False)
+    # leather straps tie the tooth onto the handle
+    for i, z in enumerate((-0.06, 0.1)):
+        h.add("Strap%d" % i, "box", (0.47, 0.5, 0.07), hp + [0, 0.03 - 0.06 * i, z], R=Rx(-6 - 6 * i), mat="leather", planes=chamfer(0.47, 0.5, 0.07, 0.1, edges="z"))
+    tip3 = hp + [0, tip[1], tip[0]]
+    h.headbox(hp + [0, -0.05, 0.05], (0.5, 0.7, 1.4))
+    h.fx("smoke", rf(tip3), [[90, 80, 80]], 1.5, [0.15, 0.35], area=(0.15, 0.15, 0.15))
+    h.fx("embers", rf(tip3), [[255, 180, 80], [255, 90, 20]], 4, [0.04, 0.08], area=(0.15, 0.15, 0.15))
     h.light(hp, [255, 120, 40], 1.0, 6)
     H.append(h)
 
@@ -1143,15 +1172,37 @@ def build_new(H):
     h.add("PommelShell", "ball", (0.2,), (0, -0.56, 0), mat="foam")
     h.add("Knot", "ball", (0.26,), (0, hy - 0.3, 0), mat="driftwood")
     hp = np.array([0.0, hy, 0.0])
-    h.add("Wave", "box", (0.5, 0.44, 0.92), hp + [0, -0.1, 0.06], mat="water", planes=chamfer(0.5, 0.44, 0.92, 0.12), cast=False)
-    crest = []
-    chain(h, "Lip", hp + [0, 0.02, 0.36], (0, 0.75, -0.66), (1, 0, 0),
-          [(0.3, 0.4, -38), (0.28, 0.36, -42), (0.26, 0.3, -46), (0.24, 0.24, -40), (0.22, 0.18, 0)], "water", joints=crest)
-    for i, j in enumerate(crest):
-        h.add("Foam%d" % i, "ball", (0.2 - 0.02 * i,), j + [0, 0.1, 0], mat="foam")
-    h.add("FoamBack", "ball", (0.2,), hp + [0, 0.1, 0.46], mat="foam")
-    h.add("Spray", "ball", (0.12,), hp + [0, 0.42, -0.2], mat="foam", cast=False)
-    h.headbox(hp, (0.56, 0.8, 1.25))
+    # a breaking wave seen from the side (u = Z, v = Y): a swell low at the front (the striking face) rising to the back,
+    # and the crest that rises from the back, rolls over the top and falls forward, leaving the tube open under it.
+    W = 0.48
+    h.poly("Swell", [(-0.62, -0.3), (0.56, -0.3), (0.56, 0.1), (0.1, 0.03), (-0.62, -0.1)], W, hp, I3, "water_deep", union="Swell")
+    C = np.array([0.02, 0.2])
+    arc = []
+    N = 11
+    for k in range(N + 1):
+        t = k / N
+        th = math.radians(-18 + 243 * t)                # from the back, over the top, down at the front
+        rm = 0.28 - 0.06 * t                            # the curl tightens a little (a spiral)
+        tk = 0.24 * (1 - t) ** 0.9 + 0.02               # and gets thinner towards its lip
+        d = np.array([math.cos(th), math.sin(th)])
+        arc.append((C + d * (rm - tk / 2), C + d * (rm + tk / 2)))
+    for k in range(N):
+        (i0, o0), (i1, o1) = arc[k], arc[k + 1]
+        thick = W - 0.12 * (k / (N - 1))
+        h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], thick, hp, I3, "water", union="Crest")
+    # white foam: on the top of the crest, along the falling lip, and spray in front of it
+    for i, k in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
+        i0, o0 = arc[k]
+        q = o0 * 0.75 + i0 * 0.25
+        r = 0.15 - 0.008 * i
+        for j, sx in enumerate((-1, 1)):
+            h.add("Foam%d%d" % (i, j), "ball", (r,), hp + [sx * 0.12, q[1], q[0]], mat="foam", cast=False)
+    lip = (arc[N][0] + arc[N][1]) / 2
+    h.add("LipFoam", "ball", (0.12,), hp + [0, lip[1] - 0.02, lip[0]], mat="foam", cast=False)
+    for i, (z, y, d) in enumerate(((-0.48, 0.2, 0.08), (-0.56, 0.08, 0.06), (-0.4, 0.32, 0.05))):
+        h.add("Spray%d" % i, "ball", (d,), hp + [0.05 * (i - 1), y, z], mat="foam", cast=False)
+    h.add("SwellFoam", "box", (W + 0.01, 0.04, 0.5), hp + [0, -0.07, -0.36], R=Rx(-10.5), mat="foam", planes=chamfer(W + 0.01, 0.04, 0.5, 0.015), cast=False)
+    h.headbox(hp + [0, 0.05, 0], (0.56, 0.85, 1.25))
     h.fx("snow", hp + [0, 0.2, 0], [[255, 255, 255], [150, 210, 255]], 4, [0.05, 0.1], area=(0.5, 0.3, 1.0))
     h.fx("mist", hp, [[170, 220, 255]], 1.5, [0.3, 0.5], area=(0.5, 0.4, 1.0))
     h.light(hp, [60, 160, 255], 1.2, 7)

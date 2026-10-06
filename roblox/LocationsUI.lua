@@ -51,7 +51,11 @@ local function inTutorial() return (c.player:GetAttribute("RoadStep") or 1) <= (
 function M.Go(id)
 	if not hasTeleporter() and id ~= "home" then
 		if id == "site" then
-			c.toast("🏗️ Follow the arrow to your construction site", T.accent, 2.5)
+			if (c.player:GetAttribute("ContractJob") or "") == "" then
+				c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5)
+			else
+				c.toast("🏗️ Follow the arrow to your construction site", T.accent, 2.5)
+			end
 		else
 			c.setWaypoint(id)
 		end
@@ -179,6 +183,8 @@ function M.Show()
 					M.Show()
 					return
 				end
+				-- no contract: there is no site to point at (the pin stays as it is, the window stays open)
+				if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
 				c.closeModal()
 				if p.id == "site" then c.toast("🏗️ Follow the arrow to your site", T.accent) return end
 				c.setWaypoint(p.id)
