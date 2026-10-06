@@ -1031,12 +1031,16 @@ def build_new(H):
     h.band("Socket", hy - 0.28, 0.16, 0.18, "scale_blk")
     h.add("PommelClaw", "box", (0.16, 0.28, 0.16), (0, -0.6, 0), R=Rx(180), mat="bone", planes=octagon(0.16, "y") + _shard_tip(0.16, 0.28))
     hp = np.array([0.0, hy, 0.0])
-    h.add("Mount", "box", (0.44, 0.46, 0.36), hp + [0, 0, 0.02], mat="scale_red", planes=chamfer(0.44, 0.46, 0.36, 0.07))
-    tip = chain(h, "Fang", hp + [0, 0.02, -0.58], (0, 0.08, 1), (1, 0, 0),
-                [(0.4, 0.32, 12), (0.36, 0.28, 18), (0.32, 0.23, 24), (0.3, 0.18, 30), (0.3, 0.12, 0)], "bone")
-    for i, z in enumerate((-0.14, 0.12)):
-        h.add("Strap%d" % i, "box", (0.47, 0.5, 0.07), hp + [0, 0.03, z], R=Rz(4 if i else -4), mat="leather", planes=chamfer(0.47, 0.5, 0.07, 0.1, edges="z"))
-    h.headbox(hp + [0, -0.1, 0], (0.5, 0.7, 1.5))
+    # the striking end: a block of red scales with a bone face; the fang grows out of its back and curls down to a point
+    h.add("Mount", "box", (0.46, 0.48, 0.52), hp + [0, 0, -0.16], mat="scale_red", planes=chamfer(0.46, 0.48, 0.52, 0.08))
+    for i, z in enumerate((-0.3, -0.12, 0.06)):
+        h.add("ScaleRow%d" % i, "box", (0.47, 0.49, 0.04), hp + [0, 0, z], mat="scale_blk", planes=chamfer(0.47, 0.49, 0.04, 0.08, edges="z"), cast=False)
+    h.add("Face", "cyl", (0.1, 0.2), hp + [0, 0, -0.45], R=ALONG_Z, mat="bone", planes=cyl_bevel(0.1, 0.2, 0.03), smooth=40)
+    tip = chain(h, "Fang", hp + [0, 0.04, 0.02], (0, 0.3, 1), (1, 0, 0),
+                [(0.3, 0.34, 16), (0.28, 0.29, 22), (0.27, 0.24, 28), (0.26, 0.19, 32), (0.28, 0.13, 0)], "bone")
+    for i, z in enumerate((0.0, 0.14)):
+        h.add("Strap%d" % i, "box", (0.4, 0.42, 0.06), hp + [0, 0.06 + i * 0.03, z + 0.06], R=Rx(-14 - 6 * i), mat="leather", planes=chamfer(0.4, 0.42, 0.06, 0.09, edges="z"))
+    h.headbox(hp + [0, -0.05, 0.1], (0.5, 0.7, 1.4))
     h.fx("smoke", rf(tip), [[90, 80, 80]], 1.5, [0.15, 0.35], area=(0.15, 0.15, 0.15))
     h.fx("embers", rf(tip), [[255, 180, 80], [255, 90, 20]], 4, [0.04, 0.08], area=(0.15, 0.15, 0.15))
     h.light(hp, [255, 120, 40], 1.0, 6)
