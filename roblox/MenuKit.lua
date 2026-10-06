@@ -551,14 +551,16 @@ function K.rarityFX(box, id, o)
 		end
 	end
 	if L.stars then
+		-- (a sparkle picture, not a text glyph: the game fonts have no star character and drew empty boxes)
 		for i = 1, 3 do
-			local s = new("TextLabel", { Name = "Star", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.16 + math.random() * 0.68, 0.14 + math.random() * 0.62),
-				Size = UDim2.fromScale(0.2, 0.2), BackgroundTransparency = 1, Text = "✦", TextScaled = true, Font = Enum.Font.GothamBold, TextColor3 = L.stars, ZIndex = 7, Parent = box })
+			local s = new("ImageLabel", { Name = "Star", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.18 + math.random() * 0.64, 0.16 + math.random() * 0.58),
+				Size = UDim2.fromScale(0.3, 0.3), BackgroundTransparency = 1, Image = "rbxasset://textures/particles/sparkles_main.dds", ImageColor3 = L.stars,
+				ImageTransparency = 1, ZIndex = 7, Parent = box })
+			new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height, Parent = s })
 			local ph, sp = math.random() * 6, 2.2 + math.random() * 1.6
 			anims[s] = function(now)
 				local k = math.sin(now * sp + ph)
-				s.TextTransparency = 1 - math.max(0, k) ^ 1.5
-				s.Rotation = k * 25
+				s.ImageTransparency = 1 - math.max(0, k) ^ 1.5
 			end
 		end
 	end

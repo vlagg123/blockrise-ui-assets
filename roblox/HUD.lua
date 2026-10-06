@@ -176,11 +176,12 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	local function burst()
 		for i = 1, 10 do
 			local a = (i / 10) * math.pi * 2 + math.random() * 0.4
-			local st = new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(22, 22), BackgroundTransparency = 1,
-				Text = "✦", Font = BIG, TextSize = 18 + math.random(0, 8), TextColor3 = (i % 2 == 0) and Color3.fromRGB(255, 236, 120) or WHITE, ZIndex = 9, Parent = b })
-			tstroke(st, 1.5)
+			-- (a sparkle picture: the fonts have no star character and drew empty boxes)
+			local sz = 26 + math.random(0, 10)
+			local st = new("ImageLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(sz, sz), BackgroundTransparency = 1,
+				Image = "rbxasset://textures/particles/sparkles_main.dds", ImageColor3 = (i % 2 == 0) and Color3.fromRGB(255, 236, 120) or WHITE, ZIndex = 9, Parent = b })
 			local d = 46 + math.random(0, 18)
-			UI.tween(st, 0.55, { Position = UDim2.new(0.5, math.cos(a) * d, 0.45, math.sin(a) * d), TextTransparency = 1, Rotation = math.random(-90, 90) })
+			UI.tween(st, 0.55, { Position = UDim2.new(0.5, math.cos(a) * d, 0.45, math.sin(a) * d), ImageTransparency = 1 })
 			task.delay(0.6, function() st:Destroy() end)
 		end
 	end
