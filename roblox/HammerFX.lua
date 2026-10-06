@@ -956,8 +956,8 @@ local function reveal(o)
 		UI.tween(eff, 0.25, { TextTransparency = 0 }); UI.tween(es, 0.25, { Transparency = 0 })
 	end)
 	-- the buttons look like every other button of the game (same font, the label in the middle of the face)
-	local btn = UI.button(o.button or "AWESOME!", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(o.again and 162 or 280, 418), Size = UDim2.fromOffset(o.again and 210 or 250, 62),
-		TextSize = 30, ZIndex = 7, Shine = not o.again, Parent = box })
+	local btn = UI.button(o.button or "AWESOME!", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(o.again and 162 or 280, 418),
+		Size = UDim2.fromOffset(o.again and 210 or 250, o.crate and 54 or 62), TextSize = o.crate and 27 or 30, ZIndex = 7, Shine = not o.again, Parent = box })
 	btn.Visible = false
 	local again
 	if o.again then
@@ -978,34 +978,26 @@ local function reveal(o)
 	end
 	task.delay(0.75, function()
 		if c.closing then return end
-		-- anti autoclicker (crates): the KEEP never sits on the button that opened the crate, nor touches it. The card is
-		-- at its full size now: try the middle, then the left and the right of the card, the farthest from that button.
+		-- anti autoclicker (crates): the KEEP goes under the row of OPEN buttons, in the middle, a little lower than
+		-- usual, so it never touches the OPEN you pressed (nor the others of that row): a clicker left on one spot opens
+		-- one crate and stops. The card is at its full size now.
 		local av = o.avoid
 		if av and not again and btn.AbsoluteSize.X > 0 then
-			local k = btn.AbsoluteSize.X / 250
+			local k = btn.AbsoluteSize.Y / btn.Size.Y.Offset
 			local p0, sz = btn.AbsolutePosition, btn.AbsoluteSize
-			local m = 24 * k -- a gap between them: they must not touch
-			local function hits(dx)
-				local x0, y0 = p0.X + dx - m, p0.Y - m
-				local x1, y1 = x0 + sz.X + 2 * m, y0 + sz.Y + 2 * m
-				return not (x1 < av[1].X or x0 > av[1].X + av[2].X or y1 < av[1].Y or y0 > av[1].Y + av[2].Y)
-			end
-			if hits(0) then
-				local ac = av[1].X + av[2].X / 2
-				local best, bestD
-				for _, x in ipairs({ 135, 425, 280 }) do
-					local dx = (x - 280) * k
-					if not hits(dx) then
-						local d = math.abs(p0.X + dx + sz.X / 2 - ac)
-						if not best or d > bestD then best, bestD = x, d end
-					end
-				end
-				if best then
-					btn.Position = UDim2.fromOffset(best, 418)
+			local m = 22 * k -- the gap: their edges never touch, not even when one grows under the mouse
+			local top, bottom = av[1].Y, av[1].Y + av[2].Y
+			local overlapsY = p0.Y < bottom + m and p0.Y + sz.Y > top - m
+			local overlapsX = p0.X < av[1].X + av[2].X + m and p0.X + sz.X > av[1].X - m
+			if overlapsY and overlapsX then
+				local screenH = gui.AbsoluteSize.Y
+				local dy
+				if bottom + m + sz.Y < screenH - 8 then
+					dy = bottom + m - p0.Y -- under the OPEN row
 				else
-					-- nowhere on the card's row is clear: under the card
-					btn.Position = UDim2.fromOffset(280, 500)
+					dy = (top - m - sz.Y) - p0.Y -- (no room under it: above it)
 				end
+				btn.Position = UDim2.fromOffset(280, 418 + dy / k)
 			end
 		end
 		-- the buttons pop in
