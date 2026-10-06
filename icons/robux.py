@@ -1195,6 +1195,10 @@ def _hammer_day(keys, label, col):
 HAMMER_X = 90
 
 
+def i_hammer_rare():
+    _hammer_day(("emerald", "ruby"), "RARE", "#2f8cff")
+
+
 def i_hammer_epic():
     _hammer_day(("amethyst", "sapphire"), "EPIC", "#9a4dff")
 
@@ -1209,7 +1213,7 @@ def i_hammer_mythic():
 
 ICONS = {
     # Hammer Shop: the Hammers of the Day (developer products)
-    "hammer_epic": i_hammer_epic, "hammer_legendary": i_hammer_legendary, "hammer_mythic": i_hammer_mythic,
+    "hammer_rare": i_hammer_rare, "hammer_epic": i_hammer_epic, "hammer_legendary": i_hammer_legendary, "hammer_mythic": i_hammer_mythic,
     # game passes
     "skipanim": i_skipanim, "stormhammer": i_stormhammer, "teleporter": i_teleporter, "vip": i_vip, "bigcrew": i_bigcrew,
     "cash2x": i_cash2x, "strength2x": i_strength2x, "autobuild": i_autobuild, "autotrain": i_autotrain, "gems2x": i_gems2x,
@@ -1224,7 +1228,7 @@ ICONS = {
     # crate passes
     "quickopen": i_quickopen, "autoopen": i_autoopen,
 }
-VIEW = {"hammer_epic": (0, -1, 0.12), "hammer_legendary": (0, -1, 0.12), "hammer_mythic": (0, -1, 0.12), "cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
+VIEW = {"hammer_rare": (0, -1, 0.12), "hammer_epic": (0, -1, 0.12), "hammer_legendary": (0, -1, 0.12), "hammer_mythic": (0, -1, 0.12), "cashpack": (0, -1, 0.3), "cash2x": (-0.2, -1, 0.75), "cashstack": (-0.2, -1, 0.75), "cashboost": (-0.2, -1, 0.6), "stormhammer": (-0.18, -1, 0.22), "monster": (-0.3, -1, 0.3), "rushcrew": (-0.1, -1, 0.42), "bigcrew": (0, -1, 0.45), "fasttools": (-0.1, -1, 0.2), "goldcar": (-0.45, -1, 0.5), "teleporter": (0, -1, 0.35),
         "vip": (0, -1, 0.42), "crate_supply": (-0.3, -1, 0.4), "crate_builder": (-0.3, -1, 0.4), "crate_golden": (-0.3, -1, 0.4),
         "crate_exclusive": (-0.3, -1, 0.4), "quickopen": (-0.25, -1, 0.38), "autoopen": (-0.22, -1, 0.4), "crate_golden3": (-0.22, -1, 0.38), "crate_exclusive3": (-0.22, -1, 0.38), "gems750": (0, -1, 0.5), "spin1": (0, -1, 0.12), "spins3": (0, -1, 0.12), "skipanim": (0, -1, 0.15)}
 # card colours: (centre glow, edge)
@@ -1239,9 +1243,9 @@ CARD = {
     "crate_supply": ("#ffd98a", "#8a4a12"), "crate_builder": ("#a8d8ff", "#163a8a"), "crate_golden": ("#fff1a6", "#7a4a0c"), "crate_exclusive": ("#ffb8ee", "#5a1a7a"),
     "crate_golden3": ("#fff1a6", "#7a4a0c"), "crate_exclusive3": ("#ffb8ee", "#5a1a7a"),
     "quickopen": ("#fff3a0", "#8a4a10"), "autoopen": ("#b8f5a8", "#145a40"),
-    "hammer_epic": ("#d6b8ff", "#2e1270"), "hammer_legendary": ("#ffe48a", "#8a3a08"), "hammer_mythic": ("#ffa8cc", "#6a0a34"),
+    "hammer_rare": ("#a8d8ff", "#123a8a"), "hammer_epic": ("#d6b8ff", "#2e1270"), "hammer_legendary": ("#ffe48a", "#8a3a08"), "hammer_mythic": ("#ffa8cc", "#6a0a34"),
 }
-SPARK = {"hammer_epic": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)], "hammer_legendary": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)],
+SPARK = {"hammer_rare": [(0.86, 0.14, 0.07)], "hammer_epic": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)], "hammer_legendary": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)],
          "hammer_mythic": [(0.86, 0.14, 0.08), (0.14, 0.3, 0.06), (0.6, 0.06, 0.04)], "vip": [(0.84, 0.16, 0.07), (0.16, 0.3, 0.05)], "goldcar": [(0.84, 0.2, 0.07)], "gems100": [(0.82, 0.18, 0.08), (0.18, 0.7, 0.05)],
          "gems300": [(0.84, 0.16, 0.07)], "gems750": [(0.84, 0.16, 0.07), (0.16, 0.28, 0.05)], "gems1700": [(0.84, 0.16, 0.07)],
          "gems4500": [(0.86, 0.14, 0.07), (0.14, 0.3, 0.05)], "gems12000": [(0.86, 0.12, 0.08), (0.12, 0.26, 0.06), (0.6, 0.06, 0.04)],
