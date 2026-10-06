@@ -1431,11 +1431,11 @@ local function miniTile(grid, o)
 	if o.equipped then
 		-- the hammer in your hand: a green EQUIPPED pill on top (and a thick green ring, see ring)
 		-- (on the bottom edge of the picture: clear of the rarity and level chips on its top corners)
-		local pill = new("Frame", { Name = "Equipped", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 6 + artH), Size = UDim2.fromOffset(84, 22), BackgroundColor3 = K.GREEN,
+		local pill = new("Frame", { Name = "Equipped", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 2 + artH), Size = UDim2.fromOffset(78, 19), BackgroundColor3 = K.GREEN,
 			BorderSizePixel = 0, ZIndex = 10, Parent = t })
-		UI.corner(9).Parent = pill
+		UI.corner(8).Parent = pill
 		new("UIStroke", { Thickness = 2, Color = T.ink, Parent = pill })
-		new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "EQUIPPED", Font = T.chunky, TextSize = 13, TextColor3 = Color3.new(1, 1, 1), ZIndex = 11, Parent = pill })
+		new("TextLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "EQUIPPED", Font = T.chunky, TextSize = 12, TextColor3 = Color3.new(1, 1, 1), ZIndex = 11, Parent = pill })
 	elseif o.new then
 		-- a pulsing NEW pill on the picture's corner
 		local pill = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -7), Size = UDim2.fromOffset(44, 20), BackgroundColor3 = Color3.fromRGB(255, 52, 84), BorderSizePixel = 0, ZIndex = 10, Parent = t })
