@@ -1080,7 +1080,7 @@ function M.Init(ctx)
 					local ap, as, rp = b.AbsolutePosition, b.AbsoluteSize, root.AbsolutePosition
 					local sc = leftScale.Scale * MENU_SCALE
 					asc.Scale = sc
-					placesArrow.Position = UDim2.fromOffset(ap.X - rp.X + as.X / 2, ap.Y - rp.Y + as.Y + (2 + math.abs(math.sin((os.clock() - t0) * 5)) * 10) * sc)
+					placesArrow.Position = UDim2.fromOffset(ap.X - rp.X + as.X / 2, ap.Y - rp.Y + as.Y + (-8 + math.abs(math.sin((os.clock() - t0) * 5)) * 9) * sc)
 					task.wait()
 				end
 			end)
