@@ -654,6 +654,26 @@ function M.Init(ctx)
 		end
 	end
 
+	-- a tap anywhere outside an open popup (on the world, beside it, on another button) closes it, as if you tapped MORE
+	-- again (a tap on MORE itself is left to MORE: it toggles)
+	do
+		local UIS = game:GetService("UserInputService")
+		local function inside(g, pos)
+			local a, s = g.AbsolutePosition, g.AbsoluteSize
+			return pos.X >= a.X and pos.X <= a.X + s.X and pos.Y >= a.Y and pos.Y <= a.Y + s.Y
+		end
+		UIS.InputBegan:Connect(function(io)
+			if io.UserInputType ~= Enum.UserInputType.MouseButton1 and io.UserInputType ~= Enum.UserInputType.Touch then return end
+			local pos = Vector2.new(io.Position.X, io.Position.Y)
+			for _, p in ipairs(popups) do
+				local anchor = p.anchor and (p.anchor.button or p.anchor)
+				if p.frame.Visible and not inside(p.frame, pos) and not (typeof(anchor) == "Instance" and inside(anchor, pos)) then
+					p.frame.Visible = false
+				end
+			end
+		end)
+	end
+
 	local storeB = bigButton(right, "store", "STORE", Color3.fromRGB(255, 225, 90), Color3.fromRGB(245, 150, 20), 84, 94, function() A.store() end)
 	storeB.button.LayoutOrder = 1
 	local giftB = bigButton(right, "gift", "GIFT", Color3.fromRGB(255, 160, 220), Color3.fromRGB(215, 60, 160), 84, 94, A.gift)
