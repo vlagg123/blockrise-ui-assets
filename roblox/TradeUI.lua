@@ -296,7 +296,11 @@ local function openWindow(v)
 	-- my hammers (the Rusty Hammer and pass hammers can't be traded, so they are not listed)
 	local hamRows = {}
 	local hf = c.Remotes:FindFirstChild("HammerAction")
-	local okH, okRes, data = pcall(function() return hf and hf:InvokeServer("get") end)
+	-- (not "hf and hf:InvokeServer()": an and-expression keeps only the first of the two answers)
+	local okH, okRes, data = pcall(function()
+		if not hf then return false end
+		return hf:InvokeServer("get")
+	end)
 	if okH and okRes and type(data) == "table" then
 		local list = {}
 		for _, it in ipairs(data.hammers or {}) do
