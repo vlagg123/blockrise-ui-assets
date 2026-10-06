@@ -5,7 +5,8 @@
 -- Anything removed to make room (lawn, trees, benches, a lamp) goes to ServerStorage.Backup_pre_shops.
 local Map = workspace.Map
 local Plaza = Map.Plaza
-if Plaza:FindFirstChild("MachinesDepot") then return "already built" end
+-- (run again = rebuilt: the two new shops are made fresh)
+for _, n in ipairs({ "MachinesDepot", "TrainingShop" }) do if Plaza:FindFirstChild(n) then Plaza[n]:Destroy() end end
 local backup = game.ServerStorage:FindFirstChild("Backup_pre_shops") or Instance.new("Folder")
 backup.Name = "Backup_pre_shops"
 backup.Parent = game.ServerStorage
@@ -90,11 +91,14 @@ local function building(o)
 	P("Walls", Vector3.new(w, h, d), CFrame.new(0, 0.5 + h / 2, 0), o.wall, o.wallMat or Enum.Material.Brick)
 	P("Roof", Vector3.new(w + 1.2, 0.8, d + 1.2), CFrame.new(0, 0.5 + h + 0.4, 0), Color3.fromRGB(70, 72, 80), Enum.Material.Concrete)
 	P("Parapet", Vector3.new(w + 1.6, 1.2, 0.8), CFrame.new(0, 0.5 + h + 1.4, -d / 2 - 0.3), o.accent)
-	-- the awning (stripes), the sign over it
-	local n = math.max(3, math.floor(w / 3))
-	for k = 0, n - 1 do
-		P("Awning", Vector3.new(w / n + 0.02, 0.25, 4.4), CFrame.new(-w / 2 + (k + 0.5) * w / n, 0.5 + h * 0.62, -d / 2 - 2.0) * CFrame.Angles(math.rad(18), 0, 0),
-			(k % 2 == 0) and o.accent or Color3.fromRGB(250, 250, 250), Enum.Material.Fabric)
+	-- a striped canopy over the shop front (flat, a little tilt), the sign over it
+	if o.awning ~= false then
+		local n = math.max(3, math.floor((w - 1) / 2.4))
+		local aw = w - 1
+		for k = 0, n - 1 do
+			P("Awning", Vector3.new(aw / n + 0.02, 0.3, 3.2), CFrame.new(-aw / 2 + (k + 0.5) * aw / n, 0.5 + h * 0.66, -d / 2 - 1.55) * CFrame.Angles(math.rad(-10), 0, 0),
+				(k % 2 == 0) and o.accent or Color3.fromRGB(250, 250, 250), Enum.Material.Fabric)
+		end
 	end
 	local sign = P("Sign", Vector3.new(math.min(w - 2, 28), 3.6, 0.5), CFrame.new(0, 0.5 + h * 0.84, -d / 2 - 0.35), Color3.fromRGB(28, 32, 44))
 	signText(sign, o.text, Color3.fromRGB(255, 214, 90))
@@ -118,7 +122,7 @@ table.insert(report, "east lawn cleared: " .. clear(CFrame.new(106, 6, 61), Vect
 do
 	local YEL, BLK = Color3.fromRGB(246, 186, 32), Color3.fromRGB(34, 36, 42)
 	local mdl, cf, P = building({ name = "MachinesDepot", parent = Plaza, pos = Vector3.new(113, 0, 61), face = Vector3.new(-1, 0, 0), w = 30, d = 20, h = 16,
-		wall = Color3.fromRGB(120, 132, 150), wallMat = Enum.Material.Metal, accent = YEL, text = "🚜 MACHINES DEPOT", roof = "MACHINES" })
+		wall = Color3.fromRGB(120, 132, 150), wallMat = Enum.Material.Metal, accent = YEL, text = "MACHINES DEPOT", roof = "MACHINES", awning = false })
 	local d, h = 20, 16
 	-- the big garage door with hazard stripes around it, a small door and windows on the sides
 	P("GarageDoor", Vector3.new(14, 10.5, 0.3), CFrame.new(0, 0.5 + 5.25, -d / 2 - 0.12), Color3.fromRGB(70, 76, 88), Enum.Material.DiamondPlate)
@@ -131,16 +135,16 @@ do
 		P("Hazard", Vector3.new(1.2, 1.2, 0.5), CFrame.new(7.6, 0.5 + 0.6 + k * 0.8, -d / 2 - 0.25), col)
 	end
 	for k = 0, 12 do
-		P("Hazard", Vector3.new(1.25, 1.2, 0.5), CFrame.new(-7.5 + k * 1.25, 0.5 + 11.6, -d / 2 - 0.25), (k % 2 == 0) and YEL or BLK)
+		P("Hazard", Vector3.new(1.25, 1.1, 0.5), CFrame.new(-7.5 + k * 1.25, 0.5 + 11.5, -d / 2 - 0.25), (k % 2 == 0) and YEL or BLK)
 	end
 	for _, sx in ipairs({ -1, 1 }) do
 		P("Window", Vector3.new(4.2, 4.5, 0.3), CFrame.new(sx * 11.4, 0.5 + 6.2, -d / 2 - 0.12), Color3.fromRGB(150, 205, 235), Enum.Material.Glass, { Transparency = 0.15, Reflectance = 0.2 })
 		P("WindowLight", Vector3.new(3.6, 0.3, 0.2), CFrame.new(sx * 11.4, 0.5 + 8.2, -d / 2 - 0.3), Color3.fromRGB(255, 236, 190), Enum.Material.Neon, { CanCollide = false })
 	end
-	-- floodlights over the door
-	for _, sx in ipairs({ -4, 4 }) do
-		P("Floodlight", Vector3.new(1.2, 0.8, 1.6), CFrame.new(sx, 0.5 + 13.2, -d / 2 - 0.9), BLK, Enum.Material.Metal)
-		local l = P("FloodlightLamp", Vector3.new(1, 0.2, 1.2), CFrame.new(sx, 0.5 + 12.75, -d / 2 - 0.9), Color3.fromRGB(255, 244, 210), Enum.Material.Neon, { CanCollide = false })
+	-- floodlights over the windows
+	for _, sx in ipairs({ -11.4, 11.4 }) do
+		P("Floodlight", Vector3.new(1.2, 0.8, 1.6), CFrame.new(sx, 0.5 + 10.4, -d / 2 - 0.9), BLK, Enum.Material.Metal)
+		local l = P("FloodlightLamp", Vector3.new(1, 0.2, 1.2), CFrame.new(sx, 0.5 + 9.95, -d / 2 - 0.9), Color3.fromRGB(255, 244, 210), Enum.Material.Neon, { CanCollide = false })
 		local sl = Instance.new("SpotLight"); sl.Face = Enum.NormalId.Bottom; sl.Brightness = 1.2; sl.Range = 18; sl.Angle = 70; sl.Color = Color3.fromRGB(255, 240, 210); sl.Parent = l
 	end
 	-- traffic cones on the apron
@@ -157,18 +161,17 @@ do
 		return assert(loadstring(src))()
 	end)
 	if okM and Mach then
-		local plinth = P("Plinth", Vector3.new(12, 0.8, 10), CFrame.new(-17, 0.9, -21), Color3.fromRGB(60, 62, 70), Enum.Material.DiamondPlate)
+		local plinth = P("Plinth", Vector3.new(11, 0.8, 9), CFrame.new(-11, 0.9, -21), Color3.fromRGB(60, 62, 70), Enum.Material.DiamondPlate)
 		local ex, base = Mach.excavator()
 		ex.Name = "ShowExcavator"
 		for _, p in ipairs(ex:GetDescendants()) do if p:IsA("BasePart") then p.Anchored = true; p.CanCollide = true end end
-		ex:ScaleTo(1.7)
-		local _, size = ex:GetBoundingBox()
-		ex:PivotTo(cf * CFrame.new(-17, 1.3 + base * 1.7, -21) * CFrame.Angles(0, math.rad(-35), 0))
+		ex:ScaleTo(1.35)
+		ex:PivotTo(cf * CFrame.new(-11, 1.3 + base * 1.35, -21) * CFrame.Angles(0, math.rad(-145), 0))
 		-- sits on the plinth
 		local bcf, bsz = ex:GetBoundingBox()
 		ex:PivotTo(ex:GetPivot() + Vector3.new(0, (1.3) - (bcf.Position.Y - bsz.Y / 2), 0))
 		ex.Parent = mdl
-		local tag = P("ShowSign", Vector3.new(7, 2, 0.3), CFrame.new(-17, 2.4, -26.3), Color3.fromRGB(28, 32, 44))
+		local tag = P("ShowSign", Vector3.new(7, 1.6, 0.3), CFrame.new(-11, 1.7, -25.7), Color3.fromRGB(28, 32, 44))
 		signText(tag, "MINI EXCAVATOR", YEL, { Enum.NormalId.Back })
 		table.insert(report, "excavator on show")
 	else
