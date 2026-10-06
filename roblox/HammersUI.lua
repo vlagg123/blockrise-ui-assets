@@ -1618,10 +1618,14 @@ function M.Init(ctx)
 	c.spent = K.spent
 	task.spawn(function()
 		HammerAction = c.Remotes:WaitForChild("HammerAction", 60)
-		-- a crate that opened while you were leaving: its hammer comes up once you are in the game
+		-- a crate that opened while you were leaving: its hammer comes up once you are in the game (your data is in, the
+		-- title screen came and went)
 		local pg = c.player:WaitForChild("PlayerGui")
 		local t0 = os.clock()
-		while pg:FindFirstChild("Intro") and os.clock() - t0 < 300 do task.wait(1) end
+		while c.player:GetAttribute("Loaded") ~= true and os.clock() - t0 < 120 do task.wait(0.5) end
+		task.wait(3) -- (the title screen is made a moment after)
+		t0 = os.clock()
+		while pg:FindFirstChild("Intro") and os.clock() - t0 < 600 do task.wait(1) end
 		task.wait(2.5)
 		if not HammerAction then return end
 		fetch()
