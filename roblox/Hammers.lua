@@ -104,7 +104,7 @@ Hammers.Crates = {
 			suburbs = { 30, 38, 22, 8, 2, 0, 0, 0 },
 			downtown = { 0, 30, 40, 24, 6, 0, 0, 0 },
 		} },
-	{ id = "builder", image = "rbxassetid://104449117497713", name = "Builder's Crate", icon = "crate_builder", color = C3(70, 160, 255), gems = 150,
+	{ id = "builder", image = "rbxassetid://104449117497713", name = "Builder's Crate", icon = "crate_builder", color = C3(70, 160, 255), gems = 150, product = "crate_builder",
 		desc = "Uncommon or better, with a real shot at Legendary. 1 in 200 is Mythic.",
 		odds = { 0, 45, 35, 15, 4.5, 0.5, 0, 0 } },
 	{ id = "golden", image = "rbxassetid://108198116543312", name = "Golden Crate", icon = "crate_golden", color = C3(255, 206, 40), gems = 600, product = "crate_golden",
@@ -194,6 +194,44 @@ function Hammers.Roll(crateId, zone, rng, luck, pityMin)
 	pick = pick or best
 	local pool = Hammers.PoolAt(c, pick)
 	return pool[rng:NextInteger(1, #pool)].key, pick
+end
+
+-- Hammer Shop: three hammers of the day (one Epic, one Legendary, one Mythic), the same for everyone, a new set every
+-- day at 00:00 UTC. Bought with lots of Gems or with Robux (a developer product per tier). Only hammers that exist in the
+-- game and drop from the normal crates are sold (never Exclusive, event, pass, Secret or Divine ones: those stay rare).
+Hammers.ShopTiers = {
+	{ r = 4, gems = 1500, product = "hammer_epic", tag = "GREAT DEAL" },
+	{ r = 5, gems = 6000, product = "hammer_legendary", tag = "POPULAR" },
+	{ r = 6, gems = 20000, product = "hammer_mythic", tag = "ULTRA RARE" },
+}
+function Hammers.ShopDay(t) return math.floor((t or os.time()) / 86400) end
+function Hammers.Featured(day)
+	local out = {}
+	for i, tier in ipairs(Hammers.ShopTiers) do
+		local pool = {}
+		for _, h in ipairs(Hammers.List) do
+			if h.r == tier.r and not h.soon and not h.event and not h.pass and not h.exclusive and not h.show and h.key ~= Hammers.DefaultKey then
+				table.insert(pool, h)
+			end
+		end
+		table.sort(pool, function(a, b) return a.key < b.key end)
+		if #pool > 0 then
+			local rng = Random.new(day * 7919 + i * 104729)
+			-- never the same hammer two days in a row (when there is a choice)
+			local prev = Random.new((day - 1) * 7919 + i * 104729):NextInteger(1, #pool)
+			local k = rng:NextInteger(1, #pool)
+			if k == prev and #pool > 1 then k = k % #pool + 1 end
+			out[i] = { key = pool[k].key, tier = i, r = tier.r, gems = tier.gems, product = tier.product, tag = tier.tag }
+		end
+	end
+	return out
+end
+-- the offer for a hammer key today (or in the last minute of yesterday's set), nil if it isn't sold
+function Hammers.ShopOffer(key, t)
+	t = t or os.time()
+	for _, day in ipairs({ Hammers.ShopDay(t), Hammers.ShopDay(t - 120) }) do
+		for _, o in pairs(Hammers.Featured(day)) do if o.key == key then return o end end
+	end
 end
 
 -- a short label for the power ("x1.35")

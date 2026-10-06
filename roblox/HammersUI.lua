@@ -674,11 +674,12 @@ local function crateTiles(data, order, shop)
 		elseif cr.gems then
 			local can = gems() >= cr.gems
 			table.insert(buttons, { "💎 " .. cr.gems, can and GEM or K.LOCK, function()
-				if not can then c.click(); c.toast("💎 Not enough Gems: Store → GEMS", T.red, 2.5) return end
+				if not can then c.click(); M.GemStore("Not enough Gems") return end
 				c.click(); buyCrate(cr.id, 1, have == 0)
 			end, shine = can and have == 0 })
 		end
-		if shop and prod and not cr.gems and not tut then
+		-- Robux next to the Gem price (at most two buttons: with crates in the bag, OPEN + the price)
+		if shop and prod and not tut and (have == 0 or not cr.gems) then
 			if robuxOk then
 				table.insert(buttons, { K.robux(prod.price), K.GREEN, function() c.click(); MarketplaceService:PromptProductPurchase(c.player, prod.id) end, shine = have == 0 })
 			elseif #buttons == 0 then
@@ -699,17 +700,132 @@ local function crateTiles(data, order, shop)
 end
 
 ---------------------------------------------------------------------------------------------------------------------
--- Shop → CRATES
+-- Shop → HAMMERS: the Hammers of the Day (the one you want, no luck: lots of Gems or Robux), the crates, the Thunderclap
 ---------------------------------------------------------------------------------------------------------------------
+-- not enough Gems: straight to the Gem packs (one tap from wanting to having)
+function M.GemStore(why)
+	c.toast("💎 " .. why .. ": Gem packs are in the Store", GEM, 2.5)
+	if _G.__CE_ShowStore then task.delay(0.15, function() _G.__CE_ShowStore("gems") end) end
+end
+
+local function fmtLeft(s)
+	s = math.max(0, math.floor(s))
+	return string.format("%02d:%02d:%02d", s // 3600, (s % 3600) // 60, s % 60)
+end
+
+-- the reveal after a Hammer of the Day is bought
+local function revealBought(key, new)
+	local h = Hammers.ById[key]
+	if not h then return end
+	c.sound2D(c.S.Chime, 0.6, (h.dr or h.r) >= 5 and 0.85 or 1.1)
+	revealHammer(h, { head = "IT'S YOURS!", isNew = new, button = "AWESOME!", onClose = function() if M.Showing() then M.Redraw() end end })
+end
+
+local armedGems = {} -- [hammer key] = until when the Gem button waits for its second tap
+local function dailyHammers(order, data)
+	local offers = Hammers.Featured(Hammers.ShopDay())
+	if #offers == 0 then return end
+	-- the header: a wide gradient card, the title, one line, the time to the next set
+	local head = new("Frame", { Name = "DailyHead", Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = c.content })
+	local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 1, Parent = head })
+	new("UIGradient", { Rotation = 0, Parent = bg, Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(108, 62, 236)),
+		ColorSequenceKeypoint.new(0.55, Color3.fromRGB(214, 62, 176)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 148, 52)) }) })
+	local icon = new("Frame", { Position = UDim2.fromOffset(10, 6), Size = UDim2.fromOffset(66, 66), BackgroundTransparency = 1, ZIndex = 3, Parent = head })
+	K.art(icon, art(Hammers.ById[offers[#offers].key]), UDim2.fromScale(1, 1), 4)
+	local title = K.text({ Position = UDim2.fromOffset(84, 9), Size = UDim2.new(1, -330, 0, 34), Text = "HAMMERS OF THE DAY", Font = T.chunky, TextSize = 30, Max = 30,
+		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 4, Parent = head })
+	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 232, 140)), Parent = title })
+	K.text({ Position = UDim2.fromOffset(85, 44), Size = UDim2.new(1, -330, 0, 22), Text = "No luck needed: pick the hammer you want. New ones every day.", TextSize = 17, Max = 17,
+		TextColor3 = Color3.fromRGB(255, 240, 255), Stroke = 1.6, ZIndex = 4, Parent = head })
+	local pill = UI.slice("pill", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(222, 46), SliceScale = 0.42,
+		ImageColor3 = Color3.fromRGB(32, 24, 62), ZIndex = 3, Parent = head })
+	local timer = K.text({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 21, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = pill })
+	local nextAt = (Hammers.ShopDay() + 1) * 86400
+	task.spawn(function()
+		while timer.Parent do
+			local left = nextAt - os.time()
+			timer.Text = "NEW IN " .. fmtLeft(left)
+			if left <= 0 then
+				task.wait(1.5)
+				if timer.Parent and M.Showing() then M.Redraw() end
+				return
+			end
+			task.wait(1)
+		end
+	end)
+	-- the three hammers: big art in their rarity's look, power, the price in Gems and in Robux
+	local grid = K.grid(c.content, order + 1, 3, 352)
+	for i, o in ipairs(offers) do
+		local h = Hammers.ById[o.key]
+		local r = rar(h)
+		local owned = data.index and data.index[o.key]
+		local prod = product(o.product)
+		local robuxOk = prod and ((prod.id or 0) > 0 or studio)
+		local gemLabel = "💎 " .. Config.FormatNum(o.gems)
+		local can = gems() >= o.gems
+		local buttons = {
+			{ gemLabel, can and GEM or K.LOCK, function(b)
+				c.click()
+				if not can and gems() < o.gems then M.GemStore("You need " .. Config.FormatNum(o.gems) .. " Gems") return end
+				-- a big Gem buy takes two taps (never by accident)
+				local l = b:FindFirstChild("Label", true)
+				if not armedGems[o.key] or os.clock() > armedGems[o.key] then
+					armedGems[o.key] = os.clock() + 3
+					if l then l.Text = "SURE?" end
+					task.delay(3, function() if l and l.Parent and l.Text == "SURE?" then l.Text = gemLabel end end)
+					return
+				end
+				armedGems[o.key] = nil
+				if busy then return end
+				busy = true
+				local ok, res = call("shopbuy", o.key)
+				busy = false
+				if not ok then c.toast("⚠️ " .. tostring(res), T.red) if l and l.Parent then l.Text = gemLabel end return end
+				revealBought(o.key, type(res) == "table" and res.new)
+			end, shine = can },
+		}
+		if robuxOk then
+			table.insert(buttons, { K.robux(prod.price), K.GREEN, function()
+				c.click()
+				call("shopintent", o.key)
+				if (prod.id or 0) > 0 then MarketplaceService:PromptProductPurchase(c.player, prod.id)
+				else c.toast(h.name .. ": Robux coming soon (" .. K.robux(prod.price) .. ")", T.accent, 2.5) end
+			end, shine = true })
+		end
+		local t = K.tile(grid, { order = i, name = h.name, icon = art(h), iconScale = 1.04, color = r.color, artH = 186, spin = true,
+			badge = { string.upper(r.name), r.color }, tag = { o.tag, i == 2 and T.red or K.DARK },
+			stats = { { Hammers.PowerLabel(h.key, 1) .. " POWER", GOLD }, owned and { "OWNED", K.LOCK } or { "NEW!", K.GREEN } }, buttons = buttons })
+		K.rarityFX(t:FindFirstChild("Art"), r.id)
+		local tl = t:FindFirstChild("Title")
+		if tl then K.rarityText(tl, r.id, rarText(r)) end
+		local chip = t:FindFirstChild("Chip")
+		if chip then K.rarityChip(chip, r.id) end
+		-- the middle one (Legendary) is the one most players want: a soft gold glow around it
+		if i == 2 then
+			local glow = new("UIStroke", { Thickness = 4, Color = Color3.fromRGB(255, 200, 60), Transparency = 0.2, Parent = t:FindFirstChild("Bg") or t })
+			task.spawn(function()
+				local t0 = os.clock()
+				while glow.Parent do
+					glow.Transparency = 0.15 + 0.45 * (0.5 + 0.5 * math.sin((os.clock() - t0) * 3))
+					task.wait(0.05)
+				end
+			end)
+		end
+	end
+end
+
 function M.Crates(tok)
 	local data = dataNow()
 	if not c.live(tok) then return end
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
-	K.section(c.content, 1, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
-	crateTiles(data, 2, true)
-	if inTut() then return end -- (the Inventory and the passes open after the tutorial)
-	stormBanner(3)
-	K.row(c.content, 4, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
+	local tut = inTut()
+	if not tut then dailyHammers(1, data) end
+	K.section(c.content, 3, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
+	crateTiles(data, 4, true)
+	if tut then return end -- (the Inventory and the passes open after the tutorial)
+	stormBanner(5)
+	K.row(c.content, 6, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
 		color = Color3.fromRGB(255, 176, 40), height = 92, buttonW = 190, button = { "INVENTORY", Color3.fromRGB(255, 176, 40), function()
 			c.click()
 			if _G.__CE_ShowInventory then _G.__CE_ShowInventory("hammers") end
@@ -1305,6 +1421,11 @@ function M.Init(ctx)
 	end
 	c.R.Feedback.OnClientEvent:Connect(function(kind, d)
 		if kind ~= "Hammer" or type(d) ~= "table" then return end
+		if d.kind == "shop" and d.via == "robux" then
+			-- a Hammer of the Day bought with Robux arrived
+			revealBought(d.key, d.new)
+			return
+		end
 		if d.kind == "crate" and d.reason ~= "silent" then
 			local cr = Hammers.CrateById[d.crate]
 			local n = tonumber(d.n) or 1

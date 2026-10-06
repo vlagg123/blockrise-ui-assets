@@ -113,6 +113,19 @@ function M.Show()
 			color = Color3.fromRGB(235, 70, 130), tint = Color3.fromRGB(255, 214, 120), buttonW = 170,
 			button = { "\u{E002} " .. tostring(pass and pass.price or 39), K.GREEN, function() c.click(); offerTeleporter() end } })
 	end
+	-- the waypoint you have now: one tap takes it away (you know the way, or it's in your way)
+	local wpName = c.waypointName and c.waypointName()
+	if wpName and not tut then
+		local label = wpName
+		for _, p in ipairs(PLACES) do if p.id == wpName then label = p.name end end
+		K.row(c.content, 1, { name = "Waypoint: " .. label, line = "The arrow shows you the way there", icon = PIN_ICON, color = Color3.fromRGB(255, 190, 50), height = 88, buttonW = 170,
+			button = { "REMOVE", T.red, function()
+				c.click()
+				if c.clearWaypoint then c.clearWaypoint() end
+				c.toast("✖ Waypoint removed", T.muted, 1.8)
+				M.Show()
+			end } })
+	end
 	local grid = K.grid(c.content, 2, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 250)
 	for i, p in ipairs(PLACES) do
 		local locked, badge = false, nil
@@ -147,9 +160,16 @@ function M.Show()
 				if p.needs == "contract" and locked then c.toast("📋 Take a contract at the Job Board first", T.muted, 2.5) return end
 				M.Go(p.id)
 			end },
-			{ "", Color3.fromRGB(255, 190, 50), function()
+			-- the pin: sets the waypoint (the window closes, follow the arrow); on the place that has it now (red) it takes it away
+			{ "", (wpName == p.id) and T.red or Color3.fromRGB(255, 190, 50), function()
 				c.click()
 				if tut and not free then c.toast("🔒 After the tutorial. Now tap GO at My Property!", T.muted, 2.5) return end
+				if wpName == p.id then
+					if c.clearWaypoint then c.clearWaypoint() end
+					c.toast("✖ Waypoint removed", T.muted, 1.8)
+					M.Show()
+					return
+				end
 				c.closeModal()
 				if p.id == "site" then c.toast("🏗️ Follow the arrow to your site", T.accent) return end
 				c.setWaypoint(p.id)

@@ -244,8 +244,12 @@ function M.Show(t, keepScroll, at)
 	c.modalSub.Text = fmt(money())
 	local avail = M.Available()
 	local tabs = {}
+	-- the HAMMERS tab shows a golden hammer (the Golden Hammer's picture), not a gift box
+	local hammerPic
+	for _, tl in ipairs(Config.Tools or {}) do if tl.key == "gold" then hammerPic = tl.icon end end
 	for i, t2 in ipairs(TABS) do
 		tabs[i] = table.clone(t2)
+		if t2.id == "hammers" and hammerPic then tabs[i].icon = hammerPic end
 		tabs[i].badge = avail[t2.id] == true and not tutLock -- a red "!" dot where something can be bought (none in the tutorial)
 	end
 	UI.tabs(c.content, tabs, tab, function(id)

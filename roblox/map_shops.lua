@@ -20,13 +20,17 @@ local function part(props)
 	p.Parent = props.Parent
 	return p
 end
-local function signText(p, text, color, faces, font)
+local function signText(p, text, color, faces, font, outline)
 	for _, face in ipairs(faces or { Enum.NormalId.Front, Enum.NormalId.Back }) do
 		local sg = Instance.new("SurfaceGui")
 		sg.Face = face; sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud; sg.PixelsPerStud = 30; sg.LightInfluence = 0; sg.Parent = p
 		local l = Instance.new("TextLabel")
 		l.Name = "Label"; l.Size = UDim2.fromScale(1, 1); l.BackgroundTransparency = 1; l.Font = font or Enum.Font.FredokaOne; l.TextScaled = true
 		l.Text = text; l.TextColor3 = color or Color3.new(1, 1, 1); l.Parent = sg
+		if outline then
+			-- a thick dark outline (white letters on a bright board can't be read without it)
+			local st = Instance.new("UIStroke"); st.Thickness = outline; st.Color = Color3.fromRGB(28, 22, 40); st.LineJoinMode = Enum.LineJoinMode.Round; st.Parent = l
+		end
 		local pad = Instance.new("UIPadding"); pad.PaddingTop = UDim.new(0.1, 0); pad.PaddingBottom = UDim.new(0.1, 0); pad.Parent = l
 	end
 end
@@ -104,7 +108,7 @@ local function building(o)
 	signText(sign, o.text, Color3.fromRGB(255, 214, 90))
 	-- a board on the roof, seen from far away (like the other shops)
 	local rs = P("RoofSign", Vector3.new(math.min(w, 24), 5, 0.8), CFrame.new(0, 0.5 + h + 4.6, -d / 2 + 2), o.accent)
-	signText(rs, o.roof, Color3.new(1, 1, 1))
+	signText(rs, o.roof, Color3.new(1, 1, 1), nil, nil, 7)
 	for _, sx in ipairs({ -1, 1 }) do
 		P("SignLeg", Vector3.new(0.4, 4, 0.4), CFrame.new(sx * (math.min(w, 24) / 2 - 1.5), 0.5 + h + 1.9, -d / 2 + 2), Color3.fromRGB(55, 57, 63), Enum.Material.Metal)
 	end

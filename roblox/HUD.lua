@@ -150,7 +150,8 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 	end
 	local lock
 	local function padlock()
-		local g = new("CanvasGroup", { Name = "Lock", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -8, 0, 8), Size = UDim2.fromOffset(40, 44),
+		-- (lockInside: a button at the screen's edge keeps the padlock inside its top-left corner)
+		local g = new("CanvasGroup", { Name = "Lock", AnchorPoint = Vector2.new(0.5, 0.5), Position = api.lockInside and UDim2.new(0, 20, 0, 22) or UDim2.new(1, -8, 0, 8), Size = UDim2.fromOffset(40, 44),
 			BackgroundTransparency = 1, ZIndex = 7, Parent = b })
 		-- shackle: an ink ring with a steel ring inside; its lower half hides behind the body
 		local sh = new("Frame", { Name = "Shackle", Position = UDim2.fromOffset(9, 3), Size = UDim2.fromOffset(22, 26), BackgroundTransparency = 1, ZIndex = 7, Parent = g })
@@ -356,6 +357,10 @@ function M.Init(ctx)
 		local rs = player:GetAttribute("RoadStep")
 		return rs ~= nil and rs > (Config.TutorialSteps or 6)
 	end
+	-- COMPANY opens at Level 5 (when a company can be founded), or once you have one
+	local function companyOpen()
+		return (player:GetAttribute("Level") or 1) >= (Config.CompanyLevel or 5) or (player:GetAttribute("CompanyName") or "") ~= ""
+	end
 	-- the tutorial's last step (your property): PLACES opens, it's how you get home (GO at My Property is free)
 	local function homeStep()
 		local st = Config.Road[player:GetAttribute("RoadStep") or 1]
@@ -396,6 +401,11 @@ function M.Init(ctx)
 	end
 	function A.company()
 		if not tutorialDone() then lockedToast("company") return end
+		if not companyOpen() then
+			c.toast("🔒 COMPANY opens at Level " .. (Config.CompanyLevel or 5) .. " (you're Level " .. (player:GetAttribute("Level") or 1) .. ")", T.muted, 2.5)
+			if menu and menu.company then menu.company.nudge() end
+			return
+		end
 		toggle("Company", _G.__CE_ShowCompany)
 	end
 	function A.rebirth()
@@ -662,6 +672,7 @@ function M.Init(ctx)
 		toggle("Trade", _G.__CE_ShowTrade)
 	end)
 	tradeB.button.LayoutOrder = 4
+	tradeB.lockInside = true -- (at the screen's edge: its padlock sits inside the corner)
 	local more
 	local moreB = bigButton(right, "more", "MORE", Color3.fromRGB(170, 185, 225), Color3.fromRGB(85, 95, 150), 84, 94, function() openPopup(more) end)
 	moreB.button.LayoutOrder = 5
@@ -1022,21 +1033,30 @@ function M.Init(ctx)
 	-- the lock on every menu on the left: they open one after the other with the padlock animation when the tutorial
 	-- ends during this session, silently for players past the tutorial
 	-- (PLACES opens on its own at the last step: it's how you get home)
-	local wasLocked, sawLocked = {}, false
+	-- COMPANY also waits for Level 5: when it opens it plays the same show and a waypoint takes you to the Registry
+	local wasLocked, sawLocked = {}, {}
 	local placesArrow
 	local function applyLock()
 		local tut = not tutorialDone()
-		-- only a player we actually saw doing the tutorial gets the unlock show
-		if tut and player:GetAttribute("RoadStep") ~= nil and player:GetAttribute("Loaded") == true then sawLocked = true end
+		local loaded = player:GetAttribute("RoadStep") ~= nil and player:GetAttribute("Loaded") == true
 		local k = 0
 		for _, d in ipairs(defs) do
 			local id = d[1]
-			local locked = tut and not (id == "locations" and homeStep())
+			local locked = (tut and not (id == "locations" and homeStep())) or (id == "company" and loaded and not companyOpen())
+			-- only a lock we actually saw in this session gets the unlock show (not a player who joins past it)
+			if locked and loaded then sawLocked[id] = true end
 			if locked ~= wasLocked[id] then
 				local api = menu[id]
-				if (not locked) and sawLocked and wasLocked[id] ~= nil then
+				if (not locked) and sawLocked[id] and wasLocked[id] ~= nil then
 					k += 1
 					task.delay((k - 1) * 0.22, function() api.setLocked(false, true) end)
+					if id == "company" and not tut then
+						-- the Registry is new: show the way (the arrow goes away when you get there)
+						task.delay(1.4, function()
+							c.toast("🏢 COMPANY unlocked! Follow the arrow to the Company Registry", Color3.fromRGB(120, 220, 255), 4.5)
+							if not (c.waypointName and c.waypointName() == "company") then c.setWaypoint("company") end
+						end)
+					end
 				else
 					api.setLocked(locked, false)
 				end
@@ -1071,6 +1091,8 @@ function M.Init(ctx)
 	applyLock()
 	player:GetAttributeChangedSignal("RoadStep"):Connect(applyLock)
 	player:GetAttributeChangedSignal("Loaded"):Connect(applyLock)
+	player:GetAttributeChangedSignal("Level"):Connect(applyLock)
+	player:GetAttributeChangedSignal("CompanyName"):Connect(applyLock)
 	-- TRADE: the padlock until Level 5 (opens with the animation when you reach it)
 	local tradeWas, tradeSaw = nil, false
 	local function applyTradeLock()
