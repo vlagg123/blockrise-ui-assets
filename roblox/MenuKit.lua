@@ -435,7 +435,7 @@ function K.window(parent, size, title, c1, c2, icon, noClose)
 	new("ImageLabel", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Image = UI.PATTERN, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.fromOffset(96, 96),
 		ImageTransparency = 0.3, Parent = hs })
 	UI.slice("gloss", { ZIndex = 3, Parent = hdr })
-	local tl = text({ Name = "Title", Position = UDim2.fromOffset(icon and 80 or 20, 6), Size = UDim2.new(1, icon and -100 or -40, 0, 48), Text = title, Font = T.chunky, TextSize = 38, Max = 38,
+	local tl = text({ Name = "Title", Position = UDim2.fromOffset(icon and 80 or 20, 11), Size = UDim2.new(1, icon and -100 or -40, 0, 48), Text = title, Font = T.chunky, TextSize = 38, Max = 38,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 4, ZIndex = 5, Parent = hdr })
 	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 234, 150)), Rotation = 90, Parent = tl })
 	if icon then

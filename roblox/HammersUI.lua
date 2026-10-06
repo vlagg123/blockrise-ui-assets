@@ -68,6 +68,15 @@ local function fetch()
 	if ok and type(data) == "table" then cache = data end
 	return cache
 end
+-- a redraw right after M.Redraw fetched the new state draws in one go: no spinner, no empty window blinking in between
+local freshUntil = 0
+local function dataNow()
+	if cache and os.clock() < freshUntil then return cache end
+	local loading = K.loading(c.content)
+	local data = fetch()
+	if loading.Parent then loading:Destroy() end
+	return data
+end
 
 local function sortHammers(list, equipId)
 	table.sort(list, function(a, b)
@@ -77,7 +86,8 @@ local function sortHammers(list, equipId)
 		end
 		if (ha.dr or ha.r) ~= (hb.dr or hb.r) then return (ha.dr or ha.r) > (hb.dr or hb.r) end
 		if a.lv ~= b.lv then return a.lv > b.lv end
-		return ha.order < hb.order
+		if ha.order ~= hb.order then return ha.order < hb.order end
+		return tostring(a.id) < tostring(b.id) -- same hammer, same level: always the same order (table.sort is not stable)
 	end)
 end
 
@@ -496,10 +506,8 @@ end
 -- Shop → CRATES
 ---------------------------------------------------------------------------------------------------------------------
 function M.Crates(tok)
-	local loading = K.loading(c.content)
-	local data = fetch()
+	local data = dataNow()
 	if not c.live(tok) then return end
-	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
 	K.section(c.content, 1, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "a hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts")
 	crateTiles(data, 2, true)
@@ -541,11 +549,11 @@ local function miniTile(grid, o)
 		if o.rid and o.badgeRarity then K.rarityChip(b, o.rid) end
 	end
 	if o.tag then small(K.chip(t, o.tag[1], o.tag[2], { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -9, 0, 9), ZIndex = 8 }), 0.66) end
-	local nm = K.text({ Position = UDim2.fromOffset(8, artH + 9), Size = UDim2.new(1, -16, 0, 18), Text = o.name, TextSize = 15, Max = 15, TextXAlignment = Enum.TextXAlignment.Center,
-		TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
+	local nm = K.text({ Position = UDim2.fromOffset(8, artH + 8), Size = UDim2.new(1, -16, 0, 32), Text = o.name, TextSize = 15, Max = 15, TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center, TextWrapped = true, TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
 	if o.rid and not o.dim then K.rarityText(nm, o.rid, o.nameColor) end
 	if o.line then
-		K.text({ Position = UDim2.fromOffset(8, artH + 28), Size = UDim2.new(1, -16, 0, 16), Text = o.line, TextSize = 13, Max = 13, Font = T.chunky,
+		K.text({ Position = UDim2.fromOffset(8, artH + 42), Size = UDim2.new(1, -16, 0, 16), Text = o.line, TextSize = 13, Max = 13, Font = T.chunky,
 			TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.lineColor or K.SUB, ZIndex = 3, Parent = t })
 	end
 	if o.ring then
@@ -693,20 +701,16 @@ local function drawHammers(tok, data)
 end
 
 function M.Hammers(tok)
-	local loading = K.loading(c.content)
-	local data = fetch()
+	local data = dataNow()
 	if not c.live(tok) then return end
-	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
 	drawHammers(tok, data)
 end
 
 -- Inventory → CRATES: the crates you have, one OPEN each ----------------------------------------------------------
 function M.MyCrates(tok)
-	local loading = K.loading(c.content)
-	local data = fetch()
+	local data = dataNow()
 	if not c.live(tok) then return end
-	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load your crates. Open the Inventory again.", "gift") return end
 	local total = 0
 	for _, n in pairs(data.crates) do total += n end
@@ -856,10 +860,8 @@ local function drawTradeUp(tok, data)
 end
 
 function M.TradeUp(tok)
-	local loading = K.loading(c.content)
-	local data = fetch()
+	local data = dataNow()
 	if not c.live(tok) then return end
-	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
 	drawTradeUp(tok, data)
 end
@@ -934,10 +936,8 @@ local function drawIndex(tok, data)
 end
 
 function M.Index(tok)
-	local loading = K.loading(c.content)
-	local data = fetch()
+	local data = dataNow()
 	if not c.live(tok) then return end
-	loading:Destroy()
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
 	drawIndex(tok, data)
 end
@@ -955,13 +955,22 @@ function M.Available()
 	return out
 end
 
+local redrawing = false
 function M.Redraw()
 	closePopup()
-	if c.modalOpen() and c.modalTitle.Text == "Inventory" then
-		if c.redrawInventory then c.redrawInventory() end
-	elseif c.redrawShop then
-		c.redrawShop()
-	end
+	if redrawing then return end
+	redrawing = true
+	task.spawn(function()
+		-- the new state first (the window stays as it is meanwhile), then one redraw with it
+		fetch()
+		freshUntil = os.clock() + 1
+		redrawing = false
+		if c.modalOpen() and c.modalTitle.Text == "Inventory" then
+			if c.redrawInventory then c.redrawInventory() end
+		elseif c.redrawShop then
+			c.redrawShop()
+		end
+	end)
 end
 -- is a hammer view on screen? (the Shop's CRATES tab or the Inventory's hammer tabs): it follows your hammers live
 function M.Showing()
