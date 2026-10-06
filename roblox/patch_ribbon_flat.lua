@@ -8,10 +8,19 @@ local function replaceOnce(src, old, new)
 end
 local Client = game.StarterPlayer.StarterPlayerScripts.Client
 local s = Client.Source
-if s:find('UI.slice("pill", { Name = "Ribbon"', 1, true) then return "already patched" end
+if s:find('UI.slice("pill", { Name = "Ribbon"', 1, true) then
+	-- (first version: the title 4 px too high, LuckiestGuy draws its capitals high in the box)
+	if s:find("modalTitle.Position = UDim2.fromOffset(86, 13) -- centred on the ribbon", 1, true) then
+		s = replaceOnce(s, "modalTitle.Position = UDim2.fromOffset(86, 13) -- centred on the ribbon", "modalTitle.Position = UDim2.fromOffset(86, 17) -- centred on the ribbon")
+		assert(loadstring(s), "Client compile")
+		Client.Source = s
+		return "title moved down"
+	end
+	return "already patched"
+end
 s = replaceOnce(s, 'UI.slice("button", { Name = "Ribbon", ImageColor3 = T.accent', 'UI.slice("pill", { Name = "Ribbon", ImageColor3 = T.accent')
 s = replaceOnce(s, 'Name = "Stripes", Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -16)', 'Name = "Stripes", Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -8)')
-s = replaceOnce(s, "modalTitle.Position = UDim2.fromOffset(86, 13) -- centred on the ribbon's face (above its 3D lip)", "modalTitle.Position = UDim2.fromOffset(86, 13) -- centred on the ribbon")
+s = replaceOnce(s, "modalTitle.Position = UDim2.fromOffset(86, 13) -- centred on the ribbon's face (above its 3D lip)", "modalTitle.Position = UDim2.fromOffset(86, 17) -- centred on the ribbon")
 s = replaceOnce(s, 'Name = "SubPill", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0, 33)', 'Name = "SubPill", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -18, 0, 39)')
 assert(#s < 200000, "Client too long: " .. #s)
 assert(loadstring(s), "Client compile")
