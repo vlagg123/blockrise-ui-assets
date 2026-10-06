@@ -836,7 +836,7 @@ local function drawHammers(tok, data)
 	local counts = {}
 	for _, it in ipairs(data.hammers) do local hh = Hammers.ById[it.k]; local r = hh.dr or hh.r; counts[r] = (counts[r] or 0) + 1 end
 	if filter and not counts[filter] then filter = nil end
-	sortHammers(data.hammers, data.equip)
+	sortHammers(data.hammers) -- the one in your hand keeps its place (it is on top already; a green border marks it)
 	K.section(c.content, 3, "MY HAMMERS", Color3.fromRGB(150, 215, 255), #data.hammers .. " / " .. Hammers.InventoryCap .. "  ·  tap one to see it")
 	filterRow(4, counts, filter, function(r)
 		filter = r
@@ -854,7 +854,7 @@ local function drawHammers(tok, data)
 			local isCur = cur and it.id == cur.id
 			miniTile(grid, { order = n, name = h.name, icon = art(h), color = r.color, badge = { string.upper(r.name), r.color }, tag = { "LV " .. it.lv, K.DARK }, rid = r.id, badgeRarity = true, nameColor = rarText(r),
 				line = it.id == data.equip and "✋ IN HAND" or (Hammers.PowerLabel(it.k, it.lv) .. " power"), lineColor = it.id == data.equip and GREEN_TXT or nil,
-				ring = isCur and GOLD or nil, spin = it.id == data.equip, new = isNew(it),
+				ring = it.id == data.equip and K.GREEN or (isCur and GOLD or nil), spin = it.id == data.equip, new = isNew(it),
 				onClick = function()
 					c.click()
 					seen[it.id] = true
