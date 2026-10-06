@@ -13,6 +13,15 @@ import postnp
 SRC = "https://raw.githubusercontent.com/vlagg123/blockrise-ui-assets/main/hammers/spec.json"
 OUT = os.path.join(I3.OUT, "hammers")
 GALAXY = os.path.join(I3.OUT, "galaxy.png")
+# Poly Haven textures (CC0), 1k: the fine detail of wood, leather and rust (grain bumps, pores, rust flakes); the
+# colours stay the palette's, so the hammers keep the look of the set
+TEX = os.path.join(I3.OUT, "tex")
+PH = {
+    "wood": ("rosewood_veneer_02", 2.2),   # (texture, repeats per stud)
+    "leather": ("leather_red_02", 3.0),
+    "rust": ("rusty_metal_04", 0.9),
+}
+LEATHER = {"leather", "black_lth", "green_lth", "red_lth", "navy_lth", "white_lth", "ice_lth", "storm_lth", "silk_red", "velvet", "tape", "cord"}
 
 # spec space (Y up, -Z = striking face, X sideways) -> Blender (Z up, the head across the picture, X sideways = depth)
 Q = Matrix(((0, 0, 1), (1, 0, 0), (0, 1, 0)))
@@ -46,6 +55,43 @@ def _noise_ramp(nt, scale, detail, c1, c2, pos=(0.35, 0.65), kind="noise"):
     r.color_ramp.elements[1].color = (*c2, 1)
     nt.links.new(n.outputs["Fac"] if "Fac" in n.outputs else n.outputs[0], r.inputs["Fac"])
     return r, n
+
+
+def _ph(nt, name, kind, scale, color=False):
+    """a Poly Haven map on object coordinates (box projection: no UVs needed), `scale` repeats per unit"""
+    path = os.path.join(TEX, "%s_%s_1k.png" % (name, kind))
+    if not os.path.exists(path):
+        return None
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (scale, scale, scale)
+    im = nt.nodes.new("ShaderNodeTexImage")
+    im.image = bpy.data.images.load(path, check_existing=True)
+    im.image.colorspace_settings.name = "sRGB" if color else "Non-Color"
+    im.projection = "BOX"
+    im.projection_blend = 0.25
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    nt.links.new(mp.outputs["Vector"], im.inputs["Vector"])
+    return im
+
+
+def _ph_detail(nt, p, name, scale, rough, rough_span, normal):
+    """the texture's bumps (normal map) and its shine variation around the material's roughness"""
+    nm = _ph(nt, name, "nor_gl", scale)
+    if nm:
+        n = nt.nodes.new("ShaderNodeNormalMap")
+        n.inputs["Strength"].default_value = normal
+        nt.links.new(nm.outputs["Color"], n.inputs["Color"])
+        nt.links.new(n.outputs["Normal"], p.inputs["Normal"])
+        if "Normal" in p.inputs and "Coat Normal" in p.inputs:
+            pass  # (the clear coat stays smooth: the gloss on top of the grain)
+    rm = _ph(nt, name, "Rough", scale)
+    if rm:
+        mr = nt.nodes.new("ShaderNodeMapRange")
+        mr.inputs["To Min"].default_value = max(0.0, rough - rough_span)
+        mr.inputs["To Max"].default_value = min(1.0, rough + rough_span)
+        nt.links.new(rm.outputs["Color"], mr.inputs["Value"])
+        nt.links.new(mr.outputs["Result"], p.inputs["Roughness"])
 
 
 def material(key, pal):
@@ -93,9 +139,35 @@ def material(key, pal):
         nt.links.new(r.outputs["Color"], p.inputs["Emission Color"])
         r2, _ = _noise_ramp(nt, 24, 4, (0.75, 0.75, 0.75), (1, 1, 1), (0.4, 0.6))
         nt.links.new(r2.outputs["Color"], p.inputs["Roughness"])
+        # Poly Haven rust on top: real flakes and pits, its bare-metal patches stay shiny
+        name, sc = PH["rust"]
+        dif = _ph(nt, name, "Diffuse", sc, color=True)
+        if dif:
+            mix = nt.nodes.new("ShaderNodeMix")
+            mix.data_type = "RGBA"
+            mix.blend_type = "MULTIPLY"
+            mix.inputs["Factor"].default_value = 0.75
+            nt.links.new(r.outputs["Color"], mix.inputs[6])
+            nt.links.new(dif.outputs["Color"], mix.inputs[7])
+            bright = nt.nodes.new("ShaderNodeBrightContrast")
+            bright.inputs["Bright"].default_value = 0.08
+            nt.links.new(mix.outputs[2], bright.inputs["Color"])
+            nt.links.new(bright.outputs["Color"], p.inputs["Base Color"])
+            nt.links.new(bright.outputs["Color"], p.inputs["Emission Color"])
+        _ph_detail(nt, p, name, sc, 0.82, 0.15, 0.6)
+        mt = _ph(nt, name, "Metal", sc)
+        if mt:
+            mm = nt.nodes.new("ShaderNodeMapRange")
+            mm.inputs["To Min"].default_value = 0.25
+            mm.inputs["To Max"].default_value = 0.9
+            nt.links.new(mt.outputs["Color"], mm.inputs["Value"])
+            nt.links.new(mm.outputs["Result"], p.inputs["Metallic"])
     elif tex == "wood":
         r, _ = _noise_ramp(nt, 3.0, 3, tuple(c * 0.7), tuple(np.minimum(c * 1.35, 1)), (0.2, 0.85), kind="wave")
         nt.links.new(r.outputs["Color"], p.inputs["Base Color"])
+        # the Poly Haven veneer: open pores and a satin shine that changes along the grain
+        name, sc = PH["wood"]
+        _ph_detail(nt, p, name, sc, b.get("rough", 0.6), 0.12, 0.35)
     elif tex == "rock":
         r, _ = _noise_ramp(nt, 6, 10, tuple(c * 0.5), tuple(np.minimum(c * 2.2, 1)), (0.35, 0.7))
         nt.links.new(r.outputs["Color"], p.inputs["Base Color"])
@@ -115,6 +187,10 @@ def material(key, pal):
         nt.links.new(im.outputs["Color"], p.inputs["Base Color"])
         nt.links.new(im.outputs["Color"], p.inputs["Emission Color"])
         p.inputs["Emission Strength"].default_value = 1.6
+    if key in LEATHER and not tex:
+        # Poly Haven leather: the pebbled grain and its soft shine
+        name, sc = PH["leather"]
+        _ph_detail(nt, p, name, sc, b.get("rough", 0.6), 0.15, 0.55)
     nt.links.new(p.outputs[0], out.inputs[0])
     if b.get("alpha") or tr:
         try:
