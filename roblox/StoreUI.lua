@@ -201,7 +201,8 @@ local function cash(tok)
 		local o = { name = p.name, icon = icon, iconScale = sc, color = CASH_COLS[math.min(i, #CASH_COLS)], stats = { { "+" .. Config.FormatMoney(value(p)), K.GREEN } } }
 		if p.minutes then
 			o.badge = { minLabel(p.minutes), T.blue }
-			if p.key == "cashvault" then o.tag = { "BEST VALUE", T.red }; o.spin = true end
+			-- (BEST VALUE next to the amount: in the picture's corner it covered the "OF INCOME" badge)
+			if p.key == "cashvault" then table.insert(o.stats, { "BEST VALUE", T.red }); o.spin = true end
 		end
 		return o
 	end })
@@ -314,10 +315,14 @@ local function passes(tok)
 		local list = {}
 		for _, key in ipairs(g.keys) do if all[key] and not seen[key] then seen[key] = true; table.insert(list, all[key]) end end
 		if #list > 0 then
-			-- yours last; the rest cheapest first
+			-- the ones you can buy first (cheapest first), then the ones coming soon, yours last
+			local function rank(p)
+				if c.player:GetAttribute("Pass_" .. p.key) == true then return 3 end
+				return (p.id or 0) > 0 and 1 or 2
+			end
 			table.sort(list, function(a, b)
-				local oa, ob = c.player:GetAttribute("Pass_" .. a.key) == true, c.player:GetAttribute("Pass_" .. b.key) == true
-				if oa ~= ob then return ob end
+				local ra, rb = rank(a), rank(b)
+				if ra ~= rb then return ra < rb end
 				return (a.price or 0) < (b.price or 0)
 			end)
 			K.section(c.content, order, g.title, g.color, gi == 1 and (g.note .. "  ·  you own " .. nOwned .. " of " .. nAll) or g.note)
