@@ -88,6 +88,8 @@ end
 
 local studio = RunService:IsStudio()
 local function visible(it) return (it.id or 0) > 0 or studio end
+-- no paid random items in your country (Roblox: PolicyService ArePaidRandomItemsRestricted; the server's word first)
+local function noPaidRandom() return c.player:GetAttribute("PaidRandomRestricted") == true or c.paidRandomRestricted == true end
 local function cols() return (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3 end
 local function find(list, key) for _, p in ipairs(list) do if p.key == key then return p end end end
 
@@ -176,7 +178,8 @@ end
 local function boostTiles(tok, order)
 	local list = {}
 	for _, p in ipairs(Config.Store.products) do
-		if (p.boost or p.key == "rushcrew" or p.key == "spins3") and visible(p) then table.insert(list, p) end
+		-- (Lucky Spins are paid random items: not sold where Roblox doesn't allow them)
+		if (p.boost or p.key == "rushcrew" or (p.key == "spins3" and not noPaidRandom())) and visible(p) then table.insert(list, p) end
 	end
 	itemTiles(tok, list, order, { make = function(p)
 		local left = p.key == "rushcrew" and ((c.player:GetAttribute("RushCrewEnds") or 0) - workspace:GetServerTimeNow())
@@ -214,8 +217,8 @@ end
 local function crates(tok)
 	local Hammers = require(RS.Shared:WaitForChild("Hammers"))
 	K.section(c.content, 2, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "odds shown on each · open them in Inventory → HAMMERS")
-	if c.paidRandomRestricted then
-		K.empty(c.content, 3, "Crates for Robux are not available in your region. Get them with Gems or cash in Shop → HAMMERS.", "gift")
+	if noPaidRandom() then
+		K.empty(c.content, 3, "Crates can't be bought in your country, so they're free here: you get them while you build. Want one hammer for sure? Shop → HAMMERS: the Hammers of the Day.", "gift")
 		return
 	end
 	local list = {}

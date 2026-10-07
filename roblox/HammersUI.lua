@@ -1271,6 +1271,11 @@ local function crateCard(grid, cr, i, data, o)
 	return t
 end
 
+-- no paid crates in your country (Roblox: PolicyService ArePaidRandomItemsRestricted; the server's word first)
+local function noPaidCrates(data)
+	return (data and data.noPaid == true) or c.player:GetAttribute("PaidRandomRestricted") == true or c.paidRandomRestricted == true
+end
+
 -- Inventory → CRATES: one card per crate you have, OPEN (+ AUTO with 2 or more: the Auto Opener pass)
 local function myCrateTile(grid, cr, have, data, i)
 	local buttons = { { "OPEN", K.GREEN, function(b) c.click(); openCrate(cr.id, nil, b) end, shine = true, name = "Open" } }
@@ -1298,17 +1303,34 @@ local function crateTiles(data, order, shop)
 	end
 	local grid = K.grid(c.content, order, cols(), CRATE_ART + 200)
 	local mySupply = data.supplyId or (Hammers.SupplyFor and Hammers.SupplyFor(zone)) or "supply"
+	-- no paid crates in your country (Roblox policy): every crate is free, earned while you build
+	local noPaid = noPaidCrates(data)
 	for i, cr in ipairs(Hammers.Crates) do
 		if cr.family == "supply" and cr.id ~= mySupply then continue end -- (another zone's: in the Inventory only)
 		local have = data.crates[cr.id] or 0
+		-- (a crate only sold for Robux can't be had there at all)
+		if noPaid and not cr.cash and not cr.gems and have == 0 then continue end
 		local prod = cr.product and product(cr.product)
-		local robuxOk = prod and ((prod.id or 0) > 0 or studio) and not c.paidRandomRestricted
+		local robuxOk = prod and ((prod.id or 0) > 0 or studio) and not noPaid
 		local exists = next(Hammers.Odds(cr.id, zone, 1)) ~= nil
 		local o = { count = (not tut) and have or 0, mid = (have > 0 and not tut) and "bag" or "odds", buttons = {} }
 		local buttons = o.buttons
+		if noPaid and not tut then
+			-- how you get it instead of a price
+			local how = cr.cash and ("FREE EVERY " .. (tonumber(data.every) or 3) .. " CONTRACTS") or (cr.id == "golden" and "RARE FREE DROP") or "FREE WHILE YOU BUILD"
+			o.status = { how, cr.cash and K.GREEN or Color3.fromRGB(80, 150, 255) }
+			if not exists and have == 0 then o.status = { "COMING SOON", K.LOCK } end
+			crateCard(grid, cr, i, data, o)
+			continue
+		end
 		if tut then
 			-- the tutorial: one Supply Crate, bought and opened at once; the rest waits
-			if cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
+			if noPaid and cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
+				-- (no paid crates in your country: the tutorial's one is a gift)
+				table.insert(buttons, { "FREE!", K.GREEN, function(b)
+					c.click(); buyCrate(cr.id, 1, true, b)
+				end, shine = true })
+			elseif cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
 				local price = data.supplyPrice or Hammers.SupplyPrice(60)
 				local can = money() >= price
 				table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function(b)
@@ -1519,11 +1541,17 @@ function M.Crates(tok)
 	allPictures(tok)
 	if not c.live(tok) then return end
 	local tut = inTut()
+	local noPaid = noPaidCrates(data)
 	if not tut then dailyHammers(1, data) end
-	K.category(c.content, 3, { title = "HAMMER CRATES", line = "A hammer in every crate  ·  hover the bar for the odds  ·  a free one every 6 contracts",
+	K.category(c.content, 3, { title = "HAMMER CRATES", line = noPaid and ("A hammer in every crate  ·  hover the bar for the odds  ·  free: one every " .. (tonumber(data.every) or 3) .. " contracts")
+		or ("A hammer in every crate  ·  hover the bar for the odds  ·  a free one every " .. (tonumber(data.every) or 6) .. " contracts"),
 		icon = Hammers.CrateById.golden.image, c1 = Color3.fromRGB(255, 184, 40), c2 = Color3.fromRGB(236, 96, 30), first = tut })
 	crateTiles(data, 4, true)
 	if tut then return end -- (the Inventory and the passes open after the tutorial)
+	if noPaid then
+		K.note(c.content, 5, "In your country crates can't be bought, so they're all free here: a Supply Crate every " .. (tonumber(data.every) or 3)
+			.. " contracts, Builder's and Golden Crates drop while you build. Want one hammer for sure? The Hammers of the Day sell the one you pick.")
+	end
 	K.row(c.content, 6, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
 		color = Color3.fromRGB(255, 176, 40), height = 92, buttonW = 190, button = { "INVENTORY", Color3.fromRGB(255, 176, 40), function()
 			c.click()
@@ -1789,17 +1817,22 @@ function M.MyCrates(tok)
 	if not c.live(tok) then return end
 	local total = 0
 	for _, n in pairs(data.crates) do total += n end
-	local left = 6 - (tonumber(data.progress) or 0)
+	-- contracts per free Supply Crate: 6, or 3 where crates can't be bought (Roblox policy: they're all free there)
+	local noPaid = noPaidCrates(data)
+	local every = tonumber(data.every) or (noPaid and 3 or 6)
+	local left = math.max(1, every - (tonumber(data.progress) or 0))
 	if total > 0 then
 		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  next free Supply Crate in " .. left .. (left == 1 and " contract" or " contracts"))
 		crateTiles(data, 2, false)
 	else
-		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts") .. ". More in the Shop (CRATES): cash, Gems or Robux.", icon = "rbxassetid://109896821556277", color = K.LOCK,
-			tint = Color3.fromRGB(220, 222, 240), height = 118, bar = { (6 - left) / 6, GOLD, (6 - left) .. " / 6 contracts" } })
+		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts")
+			.. (noPaid and ". Builder's and Golden Crates drop while you build too." or ". More in the Shop (CRATES): cash, Gems or Robux."), icon = "rbxassetid://109896821556277", color = K.LOCK,
+			tint = Color3.fromRGB(220, 222, 240), height = 118, bar = { (every - left) / every, GOLD, (every - left) .. " / " .. every .. " contracts" } })
 	end
 	-- only when you have none left (the Shop opens once the tutorial is done: no shortcut around its lock)
 	if total == 0 and (c.player:GetAttribute("RoadStep") or 1) > (Config.TutorialSteps or 6) then
-		K.row(c.content, 3, { name = "Need more crates?", line = "Supply Crates for cash, Builder's and Golden Crates for Gems or Robux", icon = "shop", color = Color3.fromRGB(110, 200, 255), height = 92, buttonW = 190,
+		K.row(c.content, 3, { name = noPaid and "Want a hammer for sure?" or "Need more crates?", line = noPaid and "The Hammers of the Day: pick the one you want, no luck"
+			or "Supply Crates for cash, Builder's and Golden Crates for Gems or Robux", icon = "shop", color = Color3.fromRGB(110, 200, 255), height = 92, buttonW = 190,
 			button = { "SHOP", K.GREEN, function() c.click(); if _G.__CE_ShopUI then _G.__CE_ShopUI.Show("hammers") end end, size = 22 } })
 	end
 	K.note(c.content, 4, "The hammers you find go to the HAMMERS tab. 10 hammers of one rarity make 1 of the next in TRADE-UP (MORE menu).")
