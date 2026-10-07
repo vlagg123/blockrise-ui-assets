@@ -1,5 +1,7 @@
--- BlockRise Empire - Store window (Robux and Gems): gem packs, cash packs, boosts, passes and the Gem Shop, as item tiles.
--- The Teleporter offer sits on top of every tab until you own it.
+-- BlockRise Empire - Store window (Robux and Gems), five tabs:
+--   GEM SHOP (spend Gems) · PASSES (buy once, keep forever: the Starter Pack on top, then the passes by what they do, each
+--   with its picture, what it does and its price) · GEMS (gem packs) · CASH & BOOSTS (instant cash, timed boosts, spins) ·
+--   CRATES (hammer crates for Robux)
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -13,11 +15,18 @@ local GEM1, GEM2 = Color3.fromRGB(120, 230, 255), Color3.fromRGB(30, 140, 220)
 -- (the Gem Shop first: the Store always opens on it; the CRATES tab shows a crate, set in M.Init)
 local TABS = {
 	{ id = "gemshop", label = "GEM SHOP", icon = "store", c1 = Color3.fromRGB(255, 150, 200), c2 = Color3.fromRGB(215, 60, 140) },
-	{ id = "gems", label = "GEMS", icon = "gem", c1 = GEM1, c2 = GEM2 },
-	{ id = "cash", label = "CASH", icon = "cash", c1 = Color3.fromRGB(130, 240, 120), c2 = Color3.fromRGB(30, 160, 70) },
-	{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 120, 30) },
-	{ id = "boosts", label = "BOOSTS", icon = "up_power", c1 = Color3.fromRGB(255, 205, 70), c2 = Color3.fromRGB(240, 130, 20) },
 	{ id = "passes", label = "PASSES", icon = "vip", c1 = Color3.fromRGB(205, 150, 255), c2 = Color3.fromRGB(125, 65, 230) },
+	{ id = "gems", label = "GEMS", icon = "gem", c1 = GEM1, c2 = GEM2 },
+	{ id = "cash", label = "CASH & BOOSTS", icon = "cash", c1 = Color3.fromRGB(130, 240, 120), c2 = Color3.fromRGB(30, 160, 70) },
+	{ id = "crates", label = "CRATES", icon = "gift", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 120, 30) },
+}
+-- the passes, by what they do (a pass in none of these goes under MORE)
+local PASS_GROUPS = {
+	{ title = "EARN MORE", color = Color3.fromRGB(150, 245, 140), note = "more cash and Gems from everything you do", keys = { "cash2x", "vip", "gems2x", "offline" } },
+	{ title = "BUILD FASTER", color = Color3.fromRGB(140, 210, 255), note = "less clicking, more building", keys = { "autobuild", "fasttools", "bigcrew", "skipanim" } },
+	{ title = "GET STRONGER", color = Color3.fromRGB(255, 170, 130), note = "Strength opens bigger contracts", keys = { "strength2x", "autotrain" } },
+	{ title = "HAMMERS & CRATES", color = Color3.fromRGB(255, 220, 110), note = "better hammers, opened faster", keys = { "luck", "quickopen", "autoopen", "stormhammer" } },
+	{ title = "RIDES & TRAVEL", color = Color3.fromRGB(255, 160, 200), note = "get around the city", keys = { "teleporter", "goldcar", "monster" } },
 }
 local THEME = {}
 for _, t in ipairs(TABS) do THEME[t.id] = t end
@@ -142,7 +151,10 @@ local function starterBanner(tok, order)
 	local st = find(Config.Store.products, "starter")
 	if not st or not visible(st) or c.player:GetAttribute("StarterBought") then return end
 	local btn, status = robuxButton(st, false, tok)
-	local b = K.banner(c.content, order, { name = "STARTER PACK", line = "500 Gems + " .. Config.FormatMoney(bestReward() * 20) .. " + a Builder's Crate + 30 min of 2x Cash. One time only!",
+	-- what is inside, as chips under the line
+	local b = K.banner(c.content, order, { name = "STARTER PACK", line = "One time only - the best deal in the game:", height = 128,
+		chips = { { "500 💎", GEM2 }, { Config.FormatMoney(bestReward() * 20), Color3.fromRGB(40, 160, 80) }, { "BUILDER'S CRATE", Color3.fromRGB(230, 120, 30) },
+			{ "2x CASH 30 MIN", Color3.fromRGB(120, 90, 230) } },
 		icon = (iconOf("starter", "gift")), color = Color3.fromRGB(255, 110, 140), tint = Color3.fromRGB(255, 190, 210), button = btn, status = status, buttonW = 180 })
 	if btn and btn.fill then task.spawn(function() btn.fill(b:FindFirstChildOfClass("TextButton")) end) end
 end
@@ -161,9 +173,24 @@ local function gems(tok)
 	end })
 end
 
+local function boostTiles(tok, order)
+	local list = {}
+	for _, p in ipairs(Config.Store.products) do
+		if (p.boost or p.key == "rushcrew" or p.key == "spins3") and visible(p) then table.insert(list, p) end
+	end
+	itemTiles(tok, list, order, { make = function(p)
+		local left = p.key == "rushcrew" and ((c.player:GetAttribute("RushCrewEnds") or 0) - workspace:GetServerTimeNow())
+			or (p.boost and (c.player:GetAttribute("Boost_" .. tostring(p.boost)) or 0) or 0)
+		local mins = (p.name or ""):match("(%d+) min")
+		local icon, sc = iconOf(p.key, "up_power")
+		return { name = (p.name or ""):gsub("%s*%(.-%)", ""), icon = icon, iconScale = sc, color = Color3.fromRGB(255, 170, 50),
+			stats = { mins and { mins .. " MIN", T.blue } or { "x" .. tostring(p.spins or 3), T.blue } },
+			badge = left > 0 and { "ON " .. c.fmtTime(left), K.GREEN } or nil, spin = left > 0 }
+	end })
+end
+
 local function cash(tok)
-	starterBanner(tok, 2)
-	K.section(c.content, 3, "CASH PACKS", Color3.fromRGB(150, 245, 140), "they grow with your progress")
+	K.section(c.content, 3, "INSTANT CASH", Color3.fromRGB(150, 245, 140), "worth minutes of YOUR income: the further you get, the more they give")
 	local packs = {}
 	local best = bestReward()
 	local function value(p) return p.minutes and packCash(p) or best * (p.cash or 0) end
@@ -178,7 +205,8 @@ local function cash(tok)
 		end
 		return o
 	end })
-	K.note(c.content, 5, "Cash packs are worth minutes of YOUR income: the further you get, the more they give.")
+	K.section(c.content, 5, "BOOSTS & SPINS", Color3.fromRGB(255, 220, 110), "for a while, on top of your passes")
+	boostTiles(tok, 6)
 end
 
 -- hammer crates for Robux (the Gem and cash crates are in Shop → HAMMERS)
@@ -217,58 +245,88 @@ local function crates(tok)
 	end
 end
 
-local function boosts(tok)
-	K.section(c.content, 2, "BOOSTS", Color3.fromRGB(255, 220, 110), "they stack with passes")
-	local list = {}
-	for _, p in ipairs(Config.Store.products) do
-		if (p.boost or p.key == "rushcrew" or p.key == "spins3") and visible(p) then table.insert(list, p) end
+-- one pass as a wide card: picture, name, what it does, and its price (or OWNED / ON-OFF when it is yours)
+local function passCard(grid, p, order, tok)
+	local owned = c.player:GetAttribute("Pass_" .. p.key) == true
+	local f = c.new("Frame", { Name = "Pass_" .. p.key, BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = grid })
+	c.UI.slice("tile", { Name = "Bg", ImageColor3 = owned and Color3.fromRGB(226, 246, 230) or K.TILE, ZIndex = 1, Parent = f })
+	local icon, sc = iconOf(p.key, p.icon)
+	local box = K.artBox(f, icon, PASS_COL[p.key] or T.purple, { Position = UDim2.fromOffset(8, 8), Size = UDim2.fromOffset(104, 104), Spin = not owned, IconScale = sc })
+	box.ZIndex = 2
+	K.text({ Position = UDim2.fromOffset(124, 10), Size = UDim2.new(1, -136, 0, 26), Text = p.name, Font = T.chunky, TextSize = 21, Max = 21, ZIndex = 3, Parent = f })
+	local desc = (p.desc or ""):gsub("%s*Turn it on.*$", "")
+	K.text({ Position = UDim2.fromOffset(124, 38), Size = UDim2.new(1, -136, 0, 38), Text = desc, TextSize = 14, Max = 14, TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = K.SUB, ZIndex = 3, Parent = f })
+	-- the bottom right: the price, or what you have
+	local bw = 150
+	local pos = { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -10), Size = UDim2.fromOffset(bw, 40) }
+	local toggle = owned and (p.key == "skipanim" and "SkipAnim" or (p.key == "quickopen" and "QuickOpen" or nil))
+	if toggle then
+		-- yours: switch it off / on
+		local on = c.player:GetAttribute(toggle) == true
+		K.button(f, on and "ON" or "OFF", on and K.GREEN or K.LOCK, { AnchorPoint = pos.AnchorPoint, Position = pos.Position, Size = pos.Size, TextSize = 19, ZIndex = 5 }, function()
+			c.click()
+			local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
+			if r then r:FireServer(p.key, not on) end
+		end)
+		K.chip(f, "OWNED", K.GREEN, { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 124, 1, -16), ZIndex = 5 })
+	elseif owned then
+		K.status(f, "✔ OWNED", K.GREEN, { AnchorPoint = pos.AnchorPoint, Position = pos.Position, Size = pos.Size })
+	else
+		local btn, status = robuxButton(p, true, tok)
+		if btn then
+			local b = K.button(f, btn[1], btn[2], { AnchorPoint = pos.AnchorPoint, Position = pos.Position, Size = pos.Size, TextSize = 20, ZIndex = 5, Shine = true }, btn[3])
+			if btn.fill then task.spawn(function() btn.fill(b) end) end
+		else
+			K.status(f, status[1], status[2], { AnchorPoint = pos.AnchorPoint, Position = pos.Position, Size = pos.Size })
+		end
+		K.chip(f, "FOREVER", Color3.fromRGB(125, 65, 230), { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 124, 1, -16), ZIndex = 5 })
 	end
-	itemTiles(tok, list, 3, { make = function(p)
-		local left = p.key == "rushcrew" and ((c.player:GetAttribute("RushCrewEnds") or 0) - workspace:GetServerTimeNow())
-			or (p.boost and (c.player:GetAttribute("Boost_" .. tostring(p.boost)) or 0) or 0)
-		local mins = (p.name or ""):match("(%d+) min")
-		local icon, sc = iconOf(p.key, "up_power")
-		return { name = (p.name or ""):gsub("%s*%(.-%)", ""), icon = icon, iconScale = sc, color = Color3.fromRGB(255, 170, 50),
-			stats = { mins and { mins .. " MIN", T.blue } or { "x" .. tostring(p.spins or 3), T.blue } },
-			badge = left > 0 and { "ON " .. c.fmtTime(left), K.GREEN } or nil, spin = left > 0 }
-	end })
+	return f
 end
 
 local function passes(tok)
-	K.section(c.content, 2, "GAME PASSES", Color3.fromRGB(220, 185, 255), "buy once, keep forever")
-	local list = {}
+	-- the Starter Pack first (one time only), then every pass by what it does
+	starterBanner(tok, 1)
+	local all, seen = {}, {}
 	for _, p in ipairs(Config.Store.passes) do
 		-- the Thunderclap pass isn't sold any more (the hammer is in the Exclusive Crate): only its owners still see it
 		local gone = Config.StormHammer and p.key == Config.StormHammer.pass and c.player:GetAttribute("Pass_" .. p.key) ~= true
-		if visible(p) and not gone then table.insert(list, p) end
+		if visible(p) and not gone then all[p.key] = p end
 	end
-	itemTiles(tok, list, 3, { pass = true, make = function(p)
-		local owned = c.player:GetAttribute("Pass_" .. p.key) == true
-		local icon, sc = iconOf(p.key, p.icon)
-		local o = { name = p.name, icon = icon, iconScale = sc, color = PASS_COL[p.key] or T.purple, status = owned and { "OWNED", K.GREEN } or nil, spin = p.key == "vip" }
-		if owned and p.key == "skipanim" then
-			-- yours: switch the building fly-around off / on
-			local on = c.player:GetAttribute("SkipAnim") == true
-			o.status = nil
-			o.stats = { { on and "NO ANIMATION" or "ANIMATION ON", on and K.GREEN or T.blue } }
-			o.button = { on and "ON" or "OFF", on and K.GREEN or K.LOCK, function()
-				c.click()
-				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
-				if r then r:FireServer("skipanim", not on) end
-			end }
-		elseif owned and p.key == "quickopen" then
-			-- yours: the crate strip off / on
-			local on = c.player:GetAttribute("QuickOpen") == true
-			o.status = nil
-			o.stats = { { on and "HAMMER AT ONCE" or "STRIP ON", on and K.GREEN or T.blue } }
-			o.button = { on and "ON" or "OFF", on and K.GREEN or K.LOCK, function()
-				c.click()
-				local r = RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("SetAuto")
-				if r then r:FireServer("quickopen", not on) end
-			end }
+	local nOwned, nAll = 0, 0
+	for _, p in pairs(all) do
+		nAll += 1
+		if c.player:GetAttribute("Pass_" .. p.key) == true then nOwned += 1 end
+	end
+	local groups = table.clone(PASS_GROUPS)
+	local rest = {}
+	for key in pairs(all) do
+		local inOne = false
+		for _, g in ipairs(PASS_GROUPS) do if table.find(g.keys, key) then inOne = true end end
+		if not inOne then table.insert(rest, key) end
+	end
+	table.sort(rest)
+	if #rest > 0 then table.insert(groups, { title = "MORE", color = Color3.fromRGB(220, 185, 255), note = "", keys = rest }) end
+	local order = 2
+	local twoCols = (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700
+	for gi, g in ipairs(groups) do
+		local list = {}
+		for _, key in ipairs(g.keys) do if all[key] and not seen[key] then seen[key] = true; table.insert(list, all[key]) end end
+		if #list > 0 then
+			-- yours last; the rest cheapest first
+			table.sort(list, function(a, b)
+				local oa, ob = c.player:GetAttribute("Pass_" .. a.key) == true, c.player:GetAttribute("Pass_" .. b.key) == true
+				if oa ~= ob then return ob end
+				return (a.price or 0) < (b.price or 0)
+			end)
+			K.section(c.content, order, g.title, g.color, gi == 1 and (g.note .. "  ·  you own " .. nOwned .. " of " .. nAll) or g.note)
+			local grid = K.grid(c.content, order + 1, twoCols and 2 or 1, 122, 10)
+			for i, p in ipairs(list) do passCard(grid, p, i, tok) end
+			order += 2
 		end
-		return o
-	end })
+	end
+	K.note(c.content, order, "Passes are yours forever: they stay through Rebirths and work in every server.")
 end
 
 local function gemshop(tok)
@@ -325,7 +383,7 @@ end
 function M.Show(t, keepScroll)
 	-- opening the window (not a redraw while it is open) always starts on the first tab: the Gem Shop
 	if t == nil and not (c.modalOpen() and c.modalTitle.Text == "Store") then tab = "gemshop" end
-	if type(t) == "string" then tab = (t == "packs" and "gems") or t end
+	if type(t) == "string" then tab = (t == "packs" and "gems") or (t == "boosts" and "cash") or t end
 	if not THEME[tab] then tab = "gemshop" end
 	local scroll = keepScroll and c.modalOpen() and c.content.CanvasPosition or nil
 	local th = THEME[tab]
@@ -337,8 +395,9 @@ function M.Show(t, keepScroll)
 		c.content.CanvasPosition = Vector2.zero -- a new tab starts at the top
 		M.Show(id)
 	end)
-	if tab ~= "passes" then teleporterBanner(tok, 1) end
-	if tab == "gems" then gems(tok) elseif tab == "cash" then cash(tok) elseif tab == "crates" then crates(tok) elseif tab == "boosts" then boosts(tok)
+	-- (the Teleporter offer: on the first tab only, it is in PASSES with the others)
+	if tab == "gemshop" then teleporterBanner(tok, 1) end
+	if tab == "gems" then gems(tok) elseif tab == "cash" then cash(tok) elseif tab == "crates" then crates(tok)
 	elseif tab == "passes" then passes(tok) else gemshop(tok) end
 end
 
