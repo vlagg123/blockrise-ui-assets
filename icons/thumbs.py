@@ -121,8 +121,9 @@ def i_hunter():
     except Exception:
         pass
     sphere(0.88, lens, loc=(-0.15, -0.2, 0.25), scale=(1, 0.12, 1), outline=False)
-    cyl(0.16, 1.25, candy("#3a2a5a", rough=0.4), loc=(0.85, -0.2, -0.95), rot=(0, 40, 0), bevel=0.05)
-    cyl(0.19, 0.18, g, loc=(0.52, -0.2, -0.6), rot=(0, 40, 0), bevel=0.03)
+    # the handle runs out of the ring towards the bottom right, in line with the lens centre ("\", not "/")
+    cyl(0.16, 1.25, candy("#3a2a5a", rough=0.4), loc=(0.85, -0.2, -0.95), rot=(0, -40, 0), bevel=0.05)
+    cyl(0.19, 0.18, g, loc=(0.52, -0.2, -0.6), rot=(0, -40, 0), bevel=0.03)
     track(badge, "2x", (-1.15, -0.9, -1.0), s=0.66, col="#9a5cff", rot=(-10, 0, 0))
 
 
