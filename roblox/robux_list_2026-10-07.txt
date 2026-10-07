@@ -20,7 +20,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Your character keeps building on your site by itself (toggle on the HUD).
 
 06  Auto Train  -  249 R$  -  existent (ID 2005389593): poza noua
-    Keep training at the Training Yard without clicking.
+    Keep training at the Training Yard without clicking, and every rep gives 2x Strength.
 
 07  2x Gems  -  299 R$  -  existent (ID 2007015623): poza noua
     Find twice as many Gems while you build.
@@ -127,11 +127,11 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
 39  3 Exclusive Crates  -  2699 R$  -  DE CREAT
     Three Exclusive Crates: three EXCLUSIVE hammers (save 10%).
 
-40  Legends Crate  -  299 R$  -  DE CREAT (cand lansezi crate-ul)
+40  Legends Crate  -  999 R$  -  DE CREAT (cand lansezi crate-ul)
     A Legends Crate: Legendary or better (Viking, Pharaoh, Aurora, 1 in ??? the Chrono) and 1 in 5,000 an EXCLUSIVE hammer.
 
-41  3 Legends Crates  -  799 R$  -  DE CREAT (cand lansezi crate-ul)
-    Three Legends Crates (save 11%).
+41  3 Legends Crates  -  2699 R$  -  DE CREAT (cand lansezi crate-ul)
+    Three Legends Crates (save 10%).
 
 42  Pirate Cove Crate  -  199 R$  -  DE CREAT (cand lansezi crate-ul)
     One of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000).
