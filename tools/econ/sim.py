@@ -444,7 +444,9 @@ def buy_round(s, horizon):
         # REB_CASH (test of the owner's idea): the Rebirth wants the cash in hand. A saver stops buying what won't pay
         # back before the Rebirth he is saving for (time left = what's missing / income now)
         save_left = None
-        if s.E.get("reb_cash") and s.E.get("reb_cash_saver"):
+        g = gate_contract(s) if (s.E.get("reb_cash") and s.E.get("reb_cash_saver")) else None
+        if s.E.get("reb_cash") and s.E.get("reb_cash_saver") and (g is None or s.built.get(g["id"])):
+            # (only once the zone's last building is built: before that, saving gets you nowhere)
             inc = max(1e-9, s.income_per_sec())
             save_left = max(0.0, s.E["rebirth_cost"](s.R) - s.money) / inc
         for kind, key, cost in candidates(s):

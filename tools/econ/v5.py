@@ -29,9 +29,27 @@ def player(name, **kw):
     return p
 
 
+# Empire Road steps that give a crate (once per account): they replace the free drops of the first runs, so a new
+# builder still gets better hammers while learning the loop (hammer rarity is x2 build power per step)
+ROAD_CRATES = [("built", "garage", "supply"), ("workers", 2, "builder"), ("built", "shop", "supply"),
+               ("reb", 1, "builder"), ("reb", 2, "golden")]
+
+
+def road_crates(s):
+    done = getattr(s, "road_done", set())
+    s.road_done = done
+    for kind, key, crate in s.E.get("road_crates", []):
+        if (kind, key) in done:
+            continue
+        if (kind == "built" and s.built.get(key)) or (kind == "reb" and s.R >= key) or (kind == "workers" and len(s.workers) >= key):
+            done.add((kind, key))
+            sim.open_crate(s, sim.zone_supply(s) if crate == "supply" else crate, "road")
+
+
 def mission_crates(s, dt, c):
     E = s.E
     M = E["missions"]
+    road_crates(s)
     dh = s.P.get("day_h", 2.0)
     s.mplay = getattr(s, "mplay", 0.0) + dt / 3600
     day = int(s.mplay // dh)
@@ -70,6 +88,7 @@ def build(costs=None, missions=MISSIONS, saver=True):
     E["free_crate_every"] = None
     E["builder_drop"] = 0.0
     E["missions"] = copy.deepcopy(missions)
+    E["road_crates"] = list(ROAD_CRATES)
     E["mission_crates"] = mission_crates
     if costs:
         E["reb_costs"] = list(costs)

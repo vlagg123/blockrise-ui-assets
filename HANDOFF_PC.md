@@ -43,7 +43,7 @@ PC and the old chat could not be linked to it, so a new task continues here. **R
    existing hammer with `import bl_build as B; B.render(tiers=[37])` (the crown), then compare it with the Store picture
    (rbxassetid 126956308355764).
 
-## Step 1 — five things the owner asked for (do these first)
+## Step 1 — six things the owner asked for (do these first)
 
 Order of the work: Step 0, then **3.0 (the data export, right away)**, Step 1 (fixes), Step 2 (new hammers and crates), and Step 3.2 (Economy v5) only when the owner confirms `tools/econ/recipe_v5.md`.
 1. **Tutorial ring at GO (PLACES → My Property)** sits lower and wider than the button.
@@ -88,6 +88,22 @@ Order of the work: Step 0, then **3.0 (the data export, right away)**, Step 1 (f
        the wheel ourselves while Shift is down: `InputChanged` → `MouseWheel` → camera zoom / `CanvasPosition` of the
        ScrollingFrame under the mouse.
    - Fix it so the wheel works the same whether you run or not.
+
+6. **The LUCKY HOUR banner and the bottom-left list** (the owner, 15:03):
+   - The clover must not be an emoji. Use the game's rendered clover (Icons `up_luck`, dark outline) on a white round
+     badge, so it shows on the green.
+   - The banner stays until the player taps it, or 30 s, then disappears.
+   - While it lasts, the Lucky Hour sits in the bottom-left list with its time left. The 2x Luck potion has the clover
+     there too.
+   - Every timed line in that list counts down live, every second, and disappears when it ends.
+   - Patch ready: `roblox/patch_luck_hud.lua` (run in Edit; it finds the HUD module holding `LuckPill`). If a string
+     doesn't match the current HUD, apply the same change by hand.
+   - Test in Play:
+     - Lucky Hour: set `ReplicatedStorage:SetAttribute("LuckyHourEnds", workspace:GetServerTimeNow() + 120)` from the
+       server.
+     - Potion: give the luck boost with CE_Debug.
+     - Check that the banner shows, then hides after 30 s or a tap.
+     - Check that the list line counts down second by second and disappears at 0.
 
 ## Step 2 — the owner's request of 13:35 (verbatim)
 > "Sa mai faci niste ciocane exlcusive si niste crate-uri ceva cu colectii si inca un crate exclusive. Sa le faci in
