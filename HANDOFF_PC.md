@@ -265,7 +265,10 @@ Achievements worth ≤ 10K (divided by 6 in v4) go back to their old values.
 - **Pirate Cove odds:** Kraken King 0.1% → **0.004%**; Treasure Chest 5.9% → 5.996%.
 - **Luck in the set crates** follows the same rules as the other crates: from Legendary up, and on Secret / Divine at most
   ×3, then × Secret Hunter.
-- **Prices:** `crate_pirate` and `crate_temple` 149 → **199 R$** (still 600 Gems).
+- **Prices:**
+  - `crate_pirate` and `crate_temple`: 149 → **199 R$** (still 600 Gems).
+  - **Legends Crate on Gems: 2,500 → 12,000 Gems**; on Robux it stays 299 / 3 for 799. At 2,500 Gems a Mythic would cost
+    ~11K Gems (from Golden ~58K) and the Mythics coming in would double.
   - Pirate Cove description: "One of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000)."
 - **Collection bonus:**
   - owning the 3 lower hammers of a set gives +0.05 luck (like an Index rarity);
@@ -319,8 +322,12 @@ week with a debug offset.
 8. **Suburbs:** the first Villa build takes ~2× the v4 time for the same player.
 9. **Migration** on a copy of a v4 save at 80% of R2: after loading, the bar shows 80% (credit = 0.8 × 600M). Rebirth
    works when cash + credit ≥ cost. Road position mapped, no rewards given twice.
-10. **Set crates** (temporarily un-soon them in Play only): 20,000 Pirate Cove rolls on the server with no luck →
-    Kraken King 0–3 times (expected 0.8). With luck ×3 the Divine stays ≤ ×3. Do not leave them open.
+10. **Set crates** (temporarily un-soon them in Play only):
+    - 20,000 Pirate Cove rolls on the server with no luck → Kraken King 0–3 times (expected 0.8);
+    - with luck ×3 the Divine stays ≤ ×3;
+    - the Legends Crate shows 12,000 Gems and 299 R$.
+
+    Do not leave them open.
 11. **Gem loops:** the Lucky Spin's average Gem prize < its Gem price; nothing turns cash into Gems; Gems can't be
     traded.
 12. **No-paid-random-items policy** switched on: missions give their crates, nothing is sold that shouldn't be.

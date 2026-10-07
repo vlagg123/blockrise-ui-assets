@@ -381,18 +381,30 @@ Cei care au trecut deja de un pas îl primesc bifat, fără premiu, inclusiv fă
 
 ## 9. Pass-urile și produsele pe Robux (lista completă, cu schimbările v5)
 
-Lista întreagă, cu nume, descriere, preț și id, e în `roblox/store_list_2026-10-07.md`. **În v5 se schimbă doar:**
-- Pirate Cove Crate și Jungle Temple Crate: **199 R$** (erau 149). Pe Gems rămân 600.
-- Descrierea Pirate Cove: „one of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000)”.
+Lista întreagă, cu nume, descriere, preț și id, e în `roblox/store_list_2026-10-07.md` (actualizată pe PC după
+EXCLUSIVE_V2). **În v5 se schimbă doar:**
 
-**Restul rămâne la fel:**
+| Ce | Azi | v5 | De ce |
+|---|---|---|---|
+| Pirate Cove / Jungle Temple pe Robux | 149 R$ | **199 R$** (pe Gems tot 600) | pe Gems costă ~211 R$; acum raportul e ca la Golden (0,94) |
+| Descrierea Pirate Cove | „Rare to Divine” | „Rare to Divine (Kraken King 1 in 25,000)” | noile șanse |
+| Legends Crate pe Gems | 2.500 Gems | **12.000 Gems** (pe Robux tot 299 / 3 pentru 799) | vezi mai jos |
+| Exclusive | ×256, 999 R$ garantat + Exclusive of the Day 1.499 R$ | varianta A sau B din 5.3 | 5.3 |
+
+**De ce Legends Crate trece la 12.000 Gems.** Dă „Legendary sau mai bun”: Mythic 22%, Secret 3%.
+- La 2.500 de Gems, un Mythic costă ~11.400 Gems. Din Golden costă ~58.000.
+- Toată lumea ar trece pe Legends, iar Mythic-urile noi s-ar dubla pe piață.
+- La 12.000 de Gems costă cât Hammer of the Day: Legendary. Cine dă atâția Gems pe o cutie „Legendary sau mai bun” nu
+  pierde, iar Mythic-ul ajunge tot în jur de 55.000 de Gems.
+
+**Rămâne la fel:**
 - toate pass-urile;
 - Starter Pack 99;
-- pachetele de bani și Gems;
-- Golden 249 / 699 / 2.199, Builder's 79 / 349, Exclusive 399 / 999 / 2.999, Legends 399 / 999;
+- pachetele de bani și de Gems;
+- Golden 249 / 699 / 2.199, Builder's 79 / 349;
 - 2x Luck 99, mașinile 299 / 599.
 
-Hammer of the Day pe Robux tot nu se creează.
+Hammer of the Day pe Robux (Epic / Legendary / Mythic) tot nu se creează.
 
 ---
 
@@ -404,6 +416,7 @@ Hammer of the Day pe Robux tot nu se creează.
 5. Bara fără cutii (premiile din 2.3).
 6. Suburbs cu muncă ×2.
 7. Kraken King 1 din 25.000, cutiile noi la 199 R$, bonusul de colecție.
-8b. **Exclusive: varianta A (putere de Mythic, recomandată) sau B (rămâne ×256, dar doar din noroc)** — secțiunea 5.3.
-8. Road-ul nou (secțiunea 8).
-9. Migrarea (creditul de Rebirth).
+8. Legends Crate la 12.000 Gems.
+9. **Exclusive: varianta A (putere de Mythic, recomandată) sau B (rămâne ×256, dar doar din noroc)** — secțiunea 5.3.
+10. Road-ul nou (secțiunea 8).
+11. Migrarea (creditul de Rebirth).
