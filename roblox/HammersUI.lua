@@ -1402,7 +1402,7 @@ local function dailyHammers(order, data)
 	for _, o in pairs(offers) do table.insert(list, o) end
 	table.sort(list, function(x, y) return x.r < y.r end)
 	-- compact cards (like the shops of the top games): picture, name, power, and the prices right under them
-	local CELL, GAP, ART = 250, 12, 112
+	local CELL, GAP, ART = 300, 12, 156 -- (about as tall as the crate cards under them)
 	local grid = new("Frame", { Name = "DailyHammers", Size = UDim2.new(1, 0, 0, CELL), BackgroundTransparency = 1, LayoutOrder = order + 1, ZIndex = 2, Parent = c.content })
 	new("UIGridLayout", { CellSize = UDim2.new(0.25, -math.ceil(GAP * 3 / 4), 0, CELL), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = grid })
