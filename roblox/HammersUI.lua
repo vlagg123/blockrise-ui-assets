@@ -157,8 +157,6 @@ refreshSoon = function()
 	refresh()
 	refreshing = false
 end
--- the server learns your country's rules a moment after you join: the crates follow it (X-ray or not) at once
-c.player:GetAttributeChangedSignal("PaidRandomRestricted"):Connect(function() task.spawn(refreshSoon) end)
 local function predict(change, cost)
 	if cache and change then change(cache) end
 	if cost then spend[cost[1]] += cost[2] end
@@ -2178,6 +2176,8 @@ function M.Init(ctx)
 	UI, T, Config, new = c.UI, c.T, c.Config, c.new
 	spend = K.spent -- (one for every menu: the Shop and the Upgrades spend from it too)
 	c.spent = K.spent
+	-- the server learns your country's rules a moment after you join: the crates follow it (X-ray or not) at once
+	c.player:GetAttributeChangedSignal("PaidRandomRestricted"):Connect(function() task.spawn(refreshSoon) end)
 	task.spawn(function()
 		HammerAction = c.Remotes:WaitForChild("HammerAction", 60)
 		-- a crate that opened while you were leaving: its hammer comes up once you are in the game (your data is in, the
