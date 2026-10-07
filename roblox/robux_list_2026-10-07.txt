@@ -113,7 +113,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Five Builder's Crates (save 12%).
 
 35  Golden Crate  -  249 R$  -  creat (ID 3717127707)
-    A Golden Crate: Rare or better, up to Divine, and 1 in 100,000 an EXCLUSIVE hammer.
+    A Golden Crate: Rare or better, Secret 1 in 333, Divine 1 in 25,000.   << DESCRIERE NOUA 2026-10-08
 
 36  3 Golden Crates  -  699 R$  -  creat (ID 3717127744)
     Three Golden Crates (save 6%).
@@ -122,21 +122,21 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Ten Golden Crates (save 12%).
 
 38  Exclusive Crate  -  999 R$  -  creat (ID 3717127814)
-    100% EXCLUSIVE: one of the 4 rarest hammers to collect: Royal Crown, Ghost, Rainbow Prism (Mythic power) or, 1 in ???, the Thunderclap (Secret power).
+    Legendary or better: Mythic 1 in 5, Secret 1 in 22, Divine 1 in 200 and, 1 in 33, an EXCLUSIVE hammer.   << DESCRIERE NOUA 2026-10-08
 
 39  3 Exclusive Crates  -  2699 R$  -  creat (ID 3717127838)
-    Three Exclusive Crates: three EXCLUSIVE hammers (save 10%).
+    Three Exclusive Crates (save 10%).   << DESCRIERE NOUA 2026-10-08
 
-40  Legends Crate  -  999 R$  -  creat (ID 3717127882) (in joc: COMING SOON pana lansezi crate-ul)
-    A Legends Crate: Legendary or better (Viking, Pharaoh, Aurora, 1 in ??? the Chrono) and 1 in 5,000 an EXCLUSIVE hammer.
+40  Legends Crate  -  999 R$  -  creat (ID 3717127882) (in joc: LIVE din 2026-10-08)
+    The Legends collection, Legendary or better: the Viking, the Pharaoh, the Aurora and, 1 in ???, the Chrono.   << DESCRIERE NOUA 2026-10-08
 
-41  3 Legends Crates  -  2699 R$  -  creat (ID 3717127961) (in joc: COMING SOON pana lansezi crate-ul)
+41  3 Legends Crates  -  2699 R$  -  creat (ID 3717127961) (in joc: LIVE din 2026-10-08)
     Three Legends Crates (save 10%).
 
-42  Pirate Cove Crate  -  199 R$  -  creat (ID 3717128033) (in joc: COMING SOON pana lansezi crate-ul)
+42  Pirate Cove Crate  -  199 R$  -  creat (ID 3717128033) (in joc: LIVE din 2026-10-08)
     One of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000).
 
-43  Jungle Temple Crate  -  199 R$  -  creat (ID 3717128071) (in joc: COMING SOON pana lansezi crate-ul)
+43  Jungle Temple Crate  -  199 R$  -  creat (ID 3717128071) (in joc: LIVE din 2026-10-08)
     A Jungle Temple Crate: one of the 4 temple hammers, Rare to Mythic.
 
 44  Exclusive Hammer of the Day  -  1499 R$  -  creat (ID 3717128131)
