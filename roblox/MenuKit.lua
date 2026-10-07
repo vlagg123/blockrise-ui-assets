@@ -71,6 +71,8 @@ K.FALLBACK = {
 	["rbxassetid://81484084637371"] = "rbxassetid://75330431497360", ["rbxassetid://72301801875933"] = "rbxassetid://104449117497713",
 	["rbxassetid://111757044275990"] = "rbxassetid://108198116543312", ["rbxassetid://140362380150130"] = "rbxassetid://117610832518353",
 	["rbxassetid://129859208894290"] = "rbxassetid://99231744226623", ["rbxassetid://90526418216758"] = "rbxassetid://89642781937720",
+	-- the Tsunami Hammer as a barrelling wave (2026-10-07)
+	["rbxassetid://83712304493554"] = "rbxassetid://115884616655947",
 	-- every crate its own object (2026-10-07): the Town, Suburbs and Downtown Supply Crates, Builder's, Golden, Exclusive
 	["rbxassetid://71166572993372"] = "rbxassetid://81484084637371", ["rbxassetid://100342110009702"] = "rbxassetid://81484084637371",
 	["rbxassetid://82076340326872"] = "rbxassetid://81484084637371", ["rbxassetid://139943455261862"] = "rbxassetid://72301801875933",
