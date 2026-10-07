@@ -2,6 +2,14 @@ BlockRise Empire - tot ce se vinde pe Robux (7 octombrie 2026)
 Poza fiecarui item = fisierul cu acelasi numar din folderul asta (512 x 512).
 Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimite-mi ID-ul dupa ce il creezi).
 
+>>> DE SCHIMBAT PE ROBLOX (verificat pe 8 octombrie direct de pe Roblox, restul e deja identic cu jocul) <<<
+    06 Auto Train (pass)     -> descrierea noua de mai jos
+    35 Golden Crate          -> descrierea noua de mai jos
+    38 Exclusive Crate       -> descrierea noua de mai jos
+    39 3 Exclusive Crates    -> descrierea noua de mai jos
+    40 Legends Crate         -> descrierea noua de mai jos
+    (preturile si numele sunt toate corecte; Thunderclap, Monster Truck si Golden Supercar ca pass-uri sunt deja off sale)
+
 ==================== GAME PASSES (Creator Hub > Monetization > Passes) ====================
 
 01  VIP Builder  -  199 R$  -  existent (ID 2005131359): poza noua
@@ -20,7 +28,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Your character keeps building on your site by itself (toggle on the HUD).
 
 06  Auto Train  -  249 R$  -  existent (ID 2005389593): poza noua
-    Keep training at the Training Yard without clicking, and every rep gives 2x Strength.
+    Keep training at the Training Yard without clicking, and every rep gives 2x Strength.   << DESCRIERE NOUA 2026-10-08
 
 07  2x Gems  -  299 R$  -  existent (ID 2007015623): poza noua
     Find twice as many Gems while you build.
@@ -71,7 +79,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     40 minutes of your income as instant cash.
 
 21  Cash Vault  -  199 R$  -  existent (ID 3716763403): poza noua
-    90 minutes of your income as instant cash. Best value per Robux.
+    90 minutes of your income as instant cash. Best value.
 
 22  Cash Empire  -  699 R$  -  existent (ID 3716763439): poza noua
     5 hours of your income as instant cash.
