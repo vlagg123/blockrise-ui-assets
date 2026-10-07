@@ -230,7 +230,8 @@ local function offerCards(o, hamLookup)
 		local h = Hammers.ById[hm.k]
 		if h then
 			local r = Hammers.Rarities[h.dr or h.r]
-			table.insert(list, { key = "ham:" .. hm.id, pic = M.hammerArt(h), title = h.name, amount = "LV " .. (hm.lv or 1), color = r.color, rid = r.id, kind = "ham", id = hm.id,
+			-- (on a small card "Hammer" goes: "Emerald", "Sapphire War", "Titanium Sledge")
+			table.insert(list, { key = "ham:" .. hm.id, pic = M.hammerArt(h), title = (h.name:gsub("%s+Hammer$", "")), amount = "LV " .. (hm.lv or 1), color = r.color, rid = r.id, kind = "ham", id = hm.id,
 				line = r.name .. " · " .. Hammers.PowerLabel(h.key, hm.lv or 1) })
 		end
 	end
@@ -292,7 +293,8 @@ local function drawOffer(list, cards, mine, flashKeys)
 		local box = K.artBox(f, cd.pic, cd.color, { Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 0, 54), IconScale = 0.95 })
 		box.ZIndex = 5
 		if cd.rid and K.rarityFX then pcall(K.rarityFX, box, cd.rid) end
-		K.text({ Position = UDim2.fromOffset(4, 60), Size = UDim2.new(1, -8, 0, 14), Text = cd.title, TextSize = 12, Max = 12, Font = T.chunky, TextXAlignment = Enum.TextXAlignment.Center,
+		K.text({ Position = UDim2.fromOffset(3, 60), Size = UDim2.new(1, -6, 0, 14), Text = cd.title, TextSize = 12, Font = T.chunky, TextXAlignment = Enum.TextXAlignment.Center,
+			TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false,
 			TextColor3 = K.DARK, ZIndex = 6, Parent = f })
 		K.chip(f, cd.amount, cd.kind == "ham" and Color3.fromRGB(60, 56, 110) or (cd.kind == "cash" and Color3.fromRGB(40, 160, 80) or K.DARK),
 			{ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -4), ZIndex = 7 })
@@ -671,7 +673,9 @@ local function openWindow(v)
 			status.Text = name .. " is READY - check and press READY"
 			status.TextColor3 = Color3.fromRGB(30, 140, 60)
 		else
-			status.Text = "Add what you give, then both press READY"
+			local o1, o2 = v.offers[me()], v.offers[themId(v)]
+			local function any(o) return o and (next(o.mats or {}) ~= nil or next(o.bps or {}) ~= nil or (o.cash or 0) > 0 or #(o.hams or {}) > 0) end
+			status.Text = (any(o1) or any(o2)) and "Check the offers, then both press READY" or "Add what you give, then both press READY"
 			status.TextColor3 = K.DARK
 		end
 		if lbl then

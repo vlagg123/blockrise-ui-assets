@@ -1142,7 +1142,7 @@ local function oddsTip(t, odds, pos, size)
 			if odds[r] and odds[r] > 0 then table.insert(rows, r) end
 		end
 		if #rows == 0 then return end
-		local RH, PAD = 24, 10
+		local RH, PAD = 22, 9
 		tip = new("Frame", { Name = "OddsTip", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, pos.Y.Offset - 8), Size = UDim2.fromOffset(196, #rows * RH + PAD * 2),
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 30, Parent = t })
 		new("UICorner", { CornerRadius = UDim.new(0, 12), Parent = tip })
@@ -1175,11 +1175,11 @@ local function oddsTip(t, odds, pos, size)
 	t.AncestryChanged:Connect(function() if not t:IsDescendantOf(game) then hide() end end)
 end
 
--- one crate as a card (the Shop and the Inventory): the whole crate picture in a tall frame (the count on it, "?" for
--- what's inside), the name, a bar of its odds coloured by rarity, the best rarity it gives, then
+-- one crate as a card (the Shop and the Inventory): the whole crate picture in a tall frame (the count on it), the name,
+-- a bar of its odds coloured by rarity (hover / tap it: every chance), the best rarity it gives, then
 --   mid = "bag": a button to your crates in the Inventory (crates open only there) | "odds": the odds in numbers
 --   buttons = { {label, color, fn(b), icon =, shine =, w = share}, ... } along the bottom | status = {label, color}
-local CRATE_ART = 150
+local CRATE_ART = 122 -- (the picture: a little shorter so the cards are not so tall)
 local function crateCard(grid, cr, i, data, o)
 	local zone = data.zone or "town"
 	local luck = data.luck or 1
@@ -1189,13 +1189,7 @@ local function crateCard(grid, cr, i, data, o)
 	local box = K.artBox(t, crateArt(cr), cr.color, { Name = "Art", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, ART), Spin = (o.count or 0) > 0, Dim = o.dim, IconScale = 0.92 })
 	box.ZIndex = 2
 	if (o.count or 0) > 0 then K.chip(t, "x" .. o.count, T.red, { Name = "Count", Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
-	local q = new("TextButton", { Name = "Corner", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), Size = UDim2.fromOffset(28, 28), BackgroundColor3 = EQUIP_BLUE,
-		BorderSizePixel = 0, AutoButtonColor = true, Text = "", ZIndex = 9, Parent = t })
-	new("UICorner", { CornerRadius = UDim.new(0, 8), Parent = q })
-	new("UIStroke", { Thickness = 2, Color = T.ink, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = q })
-	K.text({ Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = "?", Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
-		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10, Parent = q })
-	q.Activated:Connect(function() c.click(); cratePopup(cr, data) end)
+	-- (no "?" corner any more: the odds are in the white box over the bar)
 	K.text({ Name = "Title", Position = UDim2.fromOffset(10, ART + 14), Size = UDim2.new(1, -20, 0, 28), Text = cr.name, Font = T.chunky, TextSize = 22, Max = 22,
 		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
 	-- the odds as one bar, a coloured part per rarity (widths = the chances)
@@ -1386,7 +1380,8 @@ local function dailyHammers(order, data)
 		TextColor3 = Color3.fromRGB(255, 240, 255), Stroke = 1.6, ZIndex = 4, Parent = head })
 	local pill = UI.slice("pill", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(222, 46), SliceScale = 0.42,
 		ImageColor3 = Color3.fromRGB(32, 24, 62), ZIndex = 3, Parent = head })
-	local timer = K.text({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 21, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
+	-- (LuckiestGuy draws its capitals high: 2 px lower is the optical middle of the pill)
+	local timer = K.text({ Position = UDim2.fromOffset(0, 2), Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 21, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
 		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = pill })
 	local nextAt = (Hammers.ShopDay() + 1) * 86400
 	task.spawn(function()
@@ -1503,7 +1498,7 @@ function M.Crates(tok)
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
 	local tut = inTut()
 	if not tut then dailyHammers(1, data) end
-	K.category(c.content, 3, { title = "HAMMER CRATES", line = "A hammer in every crate  ·  ? = what's inside  ·  a free one every 6 contracts",
+	K.category(c.content, 3, { title = "HAMMER CRATES", line = "A hammer in every crate  ·  hover the bar for the odds  ·  a free one every 6 contracts",
 		icon = Hammers.CrateById.golden.image, c1 = Color3.fromRGB(255, 184, 40), c2 = Color3.fromRGB(236, 96, 30), first = tut })
 	crateTiles(data, 4, true)
 	if tut then return end -- (the Inventory and the passes open after the tutorial)
@@ -1770,7 +1765,7 @@ function M.MyCrates(tok)
 	for _, n in pairs(data.crates) do total += n end
 	local left = 6 - (tonumber(data.progress) or 0)
 	if total > 0 then
-		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  ? = what's inside  ·  next free Supply Crate in " .. left .. (left == 1 and " contract" or " contracts"))
+		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  next free Supply Crate in " .. left .. (left == 1 and " contract" or " contracts"))
 		crateTiles(data, 2, false)
 	else
 		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts") .. ". More in the Shop (CRATES): cash, Gems or Robux.", icon = "rbxassetid://109896821556277", color = K.LOCK,

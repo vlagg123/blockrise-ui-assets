@@ -51,7 +51,7 @@ function M.Missions()
 	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 236, 150)), Rotation = 90, Parent = st })
 	local pill = UI.slice("pill", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(250, 40), SliceScale = 0.42,
 		ImageColor3 = Color3.fromRGB(70, 28, 56), ZIndex = 3, Parent = strip })
-	local line = K.text({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
+	local line = K.text({ Position = UDim2.fromOffset(0, 2), Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
 		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = pill })
 	task.spawn(function()
 		while c.live(tok) and line.Parent do
