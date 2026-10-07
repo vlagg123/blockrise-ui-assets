@@ -51,16 +51,16 @@ Thumbnail = fișierul din arhivă (512×512).
 | crate_golden | Golden Crate | A Golden Crate: Rare or better, up to Divine. Pity: Legendary+ every 20. | 249 | 0 | **de creat** | |
 | crate_golden3 | 3 Golden Crates | Three Golden Crates (save 6%). | 699 | 0 | **de creat** | |
 | crate_golden10 | 10 Golden Crates | Ten Golden Crates (save 12%). | 2199 | 0 | **de creat** | |
-| crate_exclusive | Exclusive Crate | 100% EXCLUSIVE: one of the 4 rarest hammers of the game (x256 power): Royal Crown, Ghost, Rainbow Prism or, 1 in ???, the Thunderclap. | 999 | 0 | **de creat** | |
+| crate_exclusive | Exclusive Crate | 100% EXCLUSIVE: one of the 4 rarest hammers to collect: Royal Crown, Ghost, Rainbow Prism (Mythic power) or, 1 in ???, the Thunderclap (Secret power). | 999 | 0 | **de creat** | |
 | crate_exclusive3 | 3 Exclusive Crates | Three Exclusive Crates: three EXCLUSIVE hammers (save 10%). | 2699 | 0 | **de creat** | |
-| hammer_exclusive | Exclusive Hammer of the Day | Today's EXCLUSIVE hammer from the Hammer Shop (x256 power, the rarest rarity), yours at once. | 1499 | 0 | **de creat**, trimite ID-ul | |
+| hammer_exclusive | Exclusive Hammer of the Day | Today's EXCLUSIVE hammer from the Hammer Shop (the rarest rarity to collect; Mythic power, the Thunderclap Secret power), yours at once. | 1499 | 0 | **de creat**, trimite ID-ul | |
 | luckboost | 2x Luck (30 min) | +100% luck in every crate for 30 minutes of play. | 99 | 0 | **de creat** | |
 | car_monster | Monster Truck | Exclusive vehicle: giant wheels, rolls over anything. Yours forever: spawn it from your Garage. | 299 | 0 | **de creat** | |
 | car_goldcar | Golden Supercar | Exclusive vehicle: the fastest car in BlockRise, made of pure gold. Yours forever. | 599 | 0 | **de creat** | |
 | crate_legends | Legends Crate | A Legends Crate: Legendary or better (Viking, Pharaoh, Aurora, 1 in ??? the Chrono) and 1 in 5,000 an EXCLUSIVE hammer. | 299 | 0 | NOU — de creat când lansezi crate-ul | products/crate_legends.png |
 | crate_legends3 | 3 Legends Crates | Three Legends Crates (save 11%). | 799 | 0 | NOU — idem | products/crate_legends.png |
-| crate_pirate | Pirate Cove Crate | A Pirate Cove Crate: one of the 4 pirate hammers, Rare to Divine. | 149 | 0 | NOU — idem | products/crate_pirate.png |
-| crate_temple | Jungle Temple Crate | A Jungle Temple Crate: one of the 4 temple hammers, Rare to Mythic. | 149 | 0 | NOU — idem | products/crate_temple.png |
+| crate_pirate | Pirate Cove Crate | One of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000). | 199 | 0 | NOU — idem | products/crate_pirate.png |
+| crate_temple | Jungle Temple Crate | A Jungle Temple Crate: one of the 4 temple hammers, Rare to Mythic. | 199 | 0 | NOU — idem | products/crate_temple.png |
 | hammer_epic / hammer_legendary / hammer_mythic | Hammers of the Day (Robux) | — | 99 / 249 / 549 | 0 | **NU le crea** (rămân doar pe Gems) | |
 
-Crate-urile noi se vând și pe Gems: Pirate Cove și Jungle Temple câte 600 Gems, Legends 2.500 Gems.
+Crate-urile noi se vând și pe Gems: Pirate Cove și Jungle Temple câte 600 Gems, Legends 12.000 Gems (Economy v5).
