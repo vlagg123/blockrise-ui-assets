@@ -888,6 +888,12 @@ end
 -- open one crate (buyFirst: buy it in the same go, the tutorial's Supply Crate): the opening starts at once
 function openCrate(crateId, buyFirst, fromBtn)
 	if busy then return end
+	-- right before an update restart nothing new opens (it would land in the new server)
+	local updateAt = game:GetService("ReplicatedStorage"):GetAttribute("UpdateAt")
+	if updateAt and workspace:GetServerTimeNow() > updateAt - 12 then
+		c.toast("🔄 An update is starting - open it in the new server", T.accent, 3)
+		return
+	end
 	busy = true
 	noteOpen(fromBtn)
 	local cr = Hammers.CrateById[crateId]

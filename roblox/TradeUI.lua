@@ -277,12 +277,15 @@ end
 
 local function drawOffer(list, cards, mine, flashKeys)
 	for _, ch in ipairs(list:GetChildren()) do if ch:IsA("GuiObject") then ch:Destroy() end end
-	if #cards == 0 then
-		local f = new("Frame", { Name = "Empty", Size = UDim2.fromOffset(380, 100), BackgroundTransparency = 1, Parent = list })
-		K.text({ Size = UDim2.fromScale(1, 1), Text = mine and "Nothing yet - add things from YOUR STUFF below" or "Nothing yet...", TextSize = 16, Max = 16, TextWrapped = true,
-			TextColor3 = K.SUB, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = f })
-		return
+	-- (the "nothing yet" line sits over the whole list, not in one grid cell)
+	local emptyNote = list.Parent:FindFirstChild("EmptyNote")
+	if not emptyNote then
+		emptyNote = K.text({ Name = "EmptyNote", Position = list.Position, Size = list.Size, TextSize = 17, Max = 17, TextWrapped = true, TextColor3 = K.SUB,
+			TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = list.Parent,
+			Text = mine and "Nothing yet - add what you give from YOUR STUFF below" or "Nothing yet..." })
 	end
+	emptyNote.Visible = #cards == 0
+	if #cards == 0 then return end
 	for i, cd in ipairs(cards) do
 		local f = new("TextButton", { Name = "Card", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 4, Parent = list })
 		local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = CARD, SliceScale = 0.3, ZIndex = 4, Parent = f })

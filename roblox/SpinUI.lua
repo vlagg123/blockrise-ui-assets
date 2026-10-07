@@ -14,8 +14,26 @@ local UI, T, new, Config
 local GOLD1, GOLD2 = Color3.fromRGB(255, 210, 70), Color3.fromRGB(235, 130, 20)
 local C3 = Color3.fromRGB
 local SpinRF, CodeRF
-local spinning = false
 local rng = Random.new()
+-- the spin in progress lives here, not in the window: closing the window doesn't stop it (the prize is the server's
+-- anyway) and opening it again shows the reel where it is now, as if you never left.
+--   cur = { idx, data, t0, ends, jitter, items (the reel), done }
+local cur
+local asking = false -- (the server is being asked for a spin)
+local SPIN_T, PAUSE_T, SETTLE_T = 4.4, 0.12, 0.55
+local TARGET = 50 -- the tile the reel lands on
+local function busy() return asking or (cur ~= nil and os.clock() < cur.ends) end
+-- an update restart is about to move everyone: no new spins (it would land in the new server)
+local function updating()
+	local ua = RS:GetAttribute("UpdateAt")
+	return ua ~= nil and workspace:GetServerTimeNow() > ua - 12
+end
+local function quintOut(a) return 1 - (1 - a) ^ 5 end
+local function backOut(a)
+	local s = 1.70158
+	a -= 1
+	return 1 + (s + 1) * a * a * a + s * a * a
+end
 local codeTok, codeMsg
 
 -- rarities: label + colour (the game's own rarity colours)
@@ -101,8 +119,8 @@ end
 
 function M.Show()
 	local tok = c.openModal("Spin", "Lucky Spin", "", GOLD1, GOLD2)
-	pcall(function() SpinRF:InvokeServer("get") end)
-	if not c.live(tok) then return end
+	-- (the window never waits for the server: the timers are already on the player)
+	task.spawn(function() pcall(function() SpinRF:InvokeServer("get") end) end)
 	odds(Config.Spin.prizes[1])
 	local restricted = c.player:GetAttribute("PaidRandomRestricted") == true
 
@@ -134,8 +152,18 @@ function M.Show()
 			BorderSizePixel = 0, ZIndex = 7, Parent = clip })
 		new("UIGradient", { Rotation = side == 0 and 0 or 180, Transparency = NumberSequence.new(0, 1), Parent = fade })
 	end
-	local items = {}
-	for i = 1, 60 do items[i] = weightedRandom() end
+	-- the same reel as before while a spin is on (or just ended): you come back to it where it is
+	local items
+	if cur and os.clock() < cur.ends + 30 then
+		items = cur.items
+		if cur.done and items[TARGET] == cur.idx then
+			-- it already stopped: the prize and its neighbours stand in the middle (tile 4), where the next spin starts
+			for k = -3, 3 do items[4 + k] = items[TARGET + k] end
+		end
+	else
+		items = {}
+		for i = 1, 60 do items[i] = weightedRandom() end
+	end
 	local tiles = {}
 	for i = 1, 60 do tiles[i] = tile(strip, Config.Spin.prizes[items[i]], (i - 1) * (TILE + GAP)) end
 	-- selector: a glowing golden frame with arrows and a soft beam
@@ -188,7 +216,11 @@ function M.Show()
 		local left = freeLeft()
 		local extra = c.player:GetAttribute("SpinExtra") or 0
 		local gems = c.player:GetAttribute("Gems") or 0
-		if left <= 0 then
+		if updating() then
+			mode = "update"
+			stText = "UPDATE IN PROGRESS"
+			if btnLbl then btnLbl.Text = "🔄 UPDATING..." end
+		elseif left <= 0 then
 			mode = "free"
 			stText = "FREE SPIN READY!"
 			if btnLbl then btnLbl.Text = "FREE SPIN!" end
@@ -206,11 +238,12 @@ function M.Show()
 			stText = "SPIN AGAIN?"
 		end
 		btn.Visible = mode ~= "paid"
-		UI.recolor(btn, mode == "wait" and K.LOCK or K.GREEN)
+		UI.recolor(btn, (mode == "wait" or mode == "update") and K.LOCK or K.GREEN)
 		robuxBtn.Visible = mode == "paid"
 		gemBtn.Visible = mode == "paid"
 		UI.recolor(gemBtn, gems >= Config.Spin.gemCost and C3(60, 170, 255) or K.LOCK)
-		sub.Text = (left > 0 and ("Free spin in " .. fmtLong(left)) or "One free spin every 4 hours") .. (restricted and "" or ("   ·   you have " .. Config.FormatNum(gems) .. " 💎"))
+		sub.Text = mode == "update" and "Spin again in the new server - your spins are saved" or
+			((left > 0 and ("Free spin in " .. fmtLong(left)) or "One free spin every 4 hours") .. (restricted and "" or ("   ·   you have " .. Config.FormatNum(gems) .. " 💎")))
 		if os.clock() >= resultUntil then
 			status.Text = stText
 			status.TextColor3 = K.DARK
@@ -222,14 +255,14 @@ function M.Show()
 	local phase = 0
 	conn = RunService.Heartbeat:Connect(function(dt)
 		if not c.live(tok) then conn:Disconnect() return end
-		phase += dt * (spinning and 14 or 4)
+		phase += dt * (busy() and 14 or 4)
 		local k = math.floor(phase) % 3
 		for i, b in ipairs(lights) do
 			b.BackgroundColor3 = (i % 3 == k) and Color3.new(1, 1, 1) or GOLD1
 			b.BackgroundTransparency = (i % 3 == k) and 0 or 0.35
 		end
 		beam.BackgroundTransparency = 0.86 + 0.05 * math.sin(os.clock() * 3)
-		if not spinning then refresh() end
+		if not busy() then refresh() end
 	end)
 	local doSpin
 	local waitingBuy = 0
@@ -237,7 +270,7 @@ function M.Show()
 	-- a Robux spin that was just bought starts by itself
 	local extraConn = c.player:GetAttributeChangedSignal("SpinExtra"):Connect(function()
 		local now = c.player:GetAttribute("SpinExtra") or 0
-		if now > lastExtra and os.clock() - waitingBuy < 90 and c.live(tok) and not spinning then
+		if now > lastExtra and os.clock() - waitingBuy < 90 and c.live(tok) and not busy() then
 			waitingBuy = 0
 			task.defer(doSpin)
 		end
@@ -248,13 +281,14 @@ function M.Show()
 		extraConn:Disconnect()
 	end)
 	btn.Activated:Connect(function()
-		if spinning then return end
+		if busy() then return end
 		c.click()
+		if mode == "update" then c.toast("🔄 An update is starting - spin again in the new server", T.accent, 3) return end
 		if mode == "wait" then c.toast("⏱ Your next free spin isn't ready yet", T.muted, 2.5) return end
 		doSpin()
 	end)
 	gemBtn.Activated:Connect(function()
-		if spinning then return end
+		if busy() then return end
 		c.click()
 		if (c.player:GetAttribute("Gems") or 0) < Config.Spin.gemCost then
 			c.toast("💎 Not enough Gems. Spin with Robux or get Gems in the Store", T.red, 3)
@@ -263,7 +297,7 @@ function M.Show()
 		doSpin()
 	end)
 	robuxBtn.Activated:Connect(function()
-		if spinning then return end
+		if busy() then return end
 		c.click()
 		if p1 and (p1.id or 0) > 0 then
 			waitingBuy = os.clock()
@@ -312,83 +346,121 @@ function M.Show()
 		end
 	end
 
+	-- the reel follows the clock (not a tween you have to wait for): a spin can start in one window and be watched in
+	-- the next, and nothing gets stuck when the window closes in the middle
+	local function landed(sp)
+		local p = Config.Spin.prizes[sp.idx]
+		local text = p.name
+		if p.kind == "cash" and sp.data.cash then text = Config.FormatMoney(sp.data.cash) .. " " .. (p.jackpot and "JACKPOT!" or "cash") end
+		return p, text
+	end
+	local function finish(sp)
+		if sp.done then return end
+		sp.done = true
+		local p, text = landed(sp)
+		celebrate(p, tiles[TARGET])
+		resultUntil = os.clock() + 3.5
+		status.Text = "YOU WON: " .. string.upper(text)
+		status.TextColor3 = rarOf(p)[2]:Lerp(Color3.new(0, 0, 0), 0.2)
+		statusScale.Scale = 1.15
+		UI.tween(statusScale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
+		-- the next spin starts from tile 4: the prize AND its neighbours (all you can see) are copied there, so the
+		-- reset can't be seen (before, the tiles left and right of the prize turned into other prizes)
+		task.delay(1.4, function()
+			if not c.live(tok) or busy() or cur ~= sp then return end
+			for k = -3, 3 do
+				local from, to = TARGET + k, 4 + k
+				items[to] = items[from]
+				local oldBg = tiles[from]:FindFirstChild("Bg")
+				tiles[to]:Destroy()
+				tiles[to] = tile(strip, Config.Spin.prizes[items[to]], (to - 1) * (TILE + GAP))
+				-- the winner keeps its glow and fades back like it would have
+				local bg = tiles[to]:FindFirstChild("Bg")
+				if k == 0 and bg and oldBg then
+					local normal = bg.ImageColor3
+					bg.ImageColor3 = oldBg.ImageColor3
+					UI.tween(bg, 0.8, { ImageColor3 = normal })
+				end
+			end
+			strip.Position = UDim2.fromOffset(centerOn(4), 9)
+		end)
+		refresh()
+	end
+	local function play(sp)
+		local lastTick
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			if not c.live(tok) or not strip.Parent then conn:Disconnect() return end
+			if tiles[1].AbsoluteSize.X <= 0 then return end -- (the window is still opening)
+			local x0, x1, x2 = centerOn(4), centerOn(TARGET, sp.jitter), centerOn(TARGET)
+			local el = os.clock() - sp.t0
+			local x
+			if el < SPIN_T then
+				x = x0 + (x1 - x0) * quintOut(el / SPIN_T)
+			elseif el < SPIN_T + PAUSE_T then
+				x = x1
+			elseif el < SPIN_T + PAUSE_T + SETTLE_T then
+				x = x1 + (x2 - x1) * backOut((el - SPIN_T - PAUSE_T) / SETTLE_T)
+			else
+				x = x2
+			end
+			strip.Position = UDim2.fromOffset(x, 9)
+			local n = math.floor(-x / (TILE + GAP))
+			if n ~= lastTick then
+				if lastTick then
+					c.sound2D(c.S.Click, 0.18, 1.4)
+					markScale.Scale = 1.06
+					UI.tween(markScale, 0.1, { Scale = 1 })
+				end
+				lastTick = n
+			end
+			if el >= SPIN_T + PAUSE_T + SETTLE_T then
+				conn:Disconnect()
+				finish(sp)
+			end
+		end)
+	end
+
 	doSpin = function()
-		if spinning then return end
-		spinning = true
+		if busy() then return end
+		if updating() then c.toast("🔄 An update is starting - spin again in the new server", T.accent, 3) return end
+		asking = true
 		local ok, res, data = pcall(function() return SpinRF:InvokeServer("spin") end)
+		asking = false
 		if not (ok and res) then
-			spinning = false
 			c.toast("⚠️ " .. tostring(data or "Can't spin right now"), T.red, 3)
 			return
 		end
-		local idx = data.index
-		local p = Config.Spin.prizes[idx]
-		shoutScale.Scale = 0
-		-- rebuild the tile the reel will land on (tile 50)
-		local target = 50
-		items[target] = idx
-		tiles[target]:Destroy()
-		tiles[target] = tile(strip, p, (target - 1) * (TILE + GAP))
-		-- lands anywhere on the prize (near its left edge, its right edge, or the middle: a new spot every spin),
-		-- then glides exactly onto the frame
-		local jitter = (rng:NextNumber() * 2 - 1) * TILE * 0.44
-		strip.Position = UDim2.fromOffset(centerOn(4), 9)
-		local tw = TweenService:Create(strip, TweenInfo.new(4.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(centerOn(target, jitter), 9) })
-		local lastTick = -1
-		local tickConn = RunService.RenderStepped:Connect(function()
-			local x = -strip.Position.X.Offset
-			local n = math.floor(x / (TILE + GAP))
-			if n ~= lastTick then
-				lastTick = n
-				c.sound2D(c.S.Click, 0.18, 1.4)
-				markScale.Scale = 1.06
-				UI.tween(markScale, 0.1, { Scale = 1 })
-			end
+		local sp = { idx = data.index, data = data, t0 = os.clock(), items = items,
+			-- lands anywhere on the prize (near its left edge, its right edge, or the middle: a new spot every spin),
+			-- then glides exactly onto the frame
+			jitter = (rng:NextNumber() * 2 - 1) * TILE * 0.44 }
+		sp.ends = sp.t0 + SPIN_T + PAUSE_T + SETTLE_T
+		cur = sp
+		items[TARGET] = sp.idx
+		if c.live(tok) then
+			shoutScale.Scale = 0
+			-- the tile the reel will land on shows the prize
+			tiles[TARGET]:Destroy()
+			tiles[TARGET] = tile(strip, Config.Spin.prizes[sp.idx], (TARGET - 1) * (TILE + GAP))
+			play(sp)
+		end
+		-- the window was closed before the reel stopped: the win is announced anyway
+		task.delay(sp.ends - os.clock() + 0.15, function()
+			if sp.done then return end
+			sp.done = true
+			local p, text = landed(sp)
+			c.banner(RANK[p.rarity or "common"] >= 5 and "🤑 " .. rarOf(p)[1] .. "!" or "🎰 YOU WON!", (p.icon or "") .. " " .. text, GOLD1)
 		end)
-		tw:Play()
-		tw.Completed:Wait()
-		task.wait(0.12)
-		local settle = TweenService:Create(strip, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(centerOn(target), 9) })
-		settle:Play()
-		settle.Completed:Wait()
-		strip.Position = UDim2.fromOffset(centerOn(target), 9)
-		tickConn:Disconnect()
-		spinning = false
-		if c.live(tok) then
-			celebrate(p, tiles[target])
-			-- the next spin starts from tile 4: the prize AND its neighbours (all you can see) are copied there, so the
-			-- reset can't be seen (before, the tiles left and right of the prize turned into other prizes)
-			task.delay(1.4, function()
-				if not c.live(tok) or spinning then return end
-				for k = -3, 3 do
-					local from, to = target + k, 4 + k
-					items[to] = items[from]
-					local oldBg = tiles[from]:FindFirstChild("Bg")
-					tiles[to]:Destroy()
-					tiles[to] = tile(strip, Config.Spin.prizes[items[to]], (to - 1) * (TILE + GAP))
-					-- the winner keeps its glow and fades back like it would have
-					local bg = tiles[to]:FindFirstChild("Bg")
-					if k == 0 and bg and oldBg then
-						local normal = bg.ImageColor3
-						bg.ImageColor3 = oldBg.ImageColor3
-						UI.tween(bg, 0.8, { ImageColor3 = normal })
-					end
-				end
-				strip.Position = UDim2.fromOffset(centerOn(4), 9)
-			end)
-		end
-		local text = p.name
-		if p.kind == "cash" and data.cash then text = Config.FormatMoney(data.cash) .. " " .. (p.jackpot and "JACKPOT!" or "cash") end
-		if c.live(tok) then
-			resultUntil = os.clock() + 3.5
-			status.Text = "YOU WON: " .. string.upper(text)
-			status.TextColor3 = rarOf(p)[2]:Lerp(Color3.new(0, 0, 0), 0.2)
-			statusScale.Scale = 1.15
-			UI.tween(statusScale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
-		else
-			c.banner(RANK[p.rarity or "common"] >= 5 and "🤑 " .. rarOf(p)[1] .. "!" or "🎰 YOU WON!", p.icon .. " " .. text, GOLD1)
-		end
-		refresh()
+	end
+	-- coming back: a spin still turning goes on from where it is; one that just stopped shows what it won
+	if cur and os.clock() < cur.ends then
+		play(cur)
+	elseif cur and os.clock() < cur.ends + 3.5 then
+		local p, text = landed(cur)
+		resultUntil = cur.ends + 3.5
+		status.Text = "YOU WON: " .. string.upper(text)
+		status.TextColor3 = rarOf(p)[2]:Lerp(Color3.new(0, 0, 0), 0.2)
 	end
 
 	-- spin packs (Robux)
