@@ -407,8 +407,8 @@ PALETTE = {
     "lapis":     dict(rbx=["SmoothPlastic", [32, 64, 178], 0, 0.05], bl=dict(color=[0.02, 0.06, 0.48], metal=0.1, rough=0.25)),
     "turquoise": dict(rbx=["SmoothPlastic", [40, 206, 196], 0, 0.1], bl=dict(color=[0.03, 0.62, 0.56], metal=0, rough=0.18)),
     "aurora_ice": dict(rbx=["Glass", [52, 84, 190], 0.12, 0.2], core=[150, 255, 210, 0.5], bl=dict(color=[0.025, 0.05, 0.22], metal=0.1, rough=0.12)),
-    "aurora_green": dict(rbx=["Neon", [80, 255, 170], 0, 0], bl=dict(color=[0.08, 1.0, 0.45], metal=0, rough=0.4, emit=9.0)),
-    "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=9.0)),
+    "aurora_green": dict(rbx=["Neon", [80, 255, 170], 0, 0], bl=dict(color=[0.08, 1.0, 0.45], metal=0, rough=0.4, emit=3.5)),
+    "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=3.5)),
     "sand_glow": dict(rbx=["Neon", [255, 206, 96], 0, 0], bl=dict(color=[1.0, 0.62, 0.12], metal=0, rough=0.5, emit=7.0)),
     "sea_iron":  dict(rbx=["Metal", [78, 92, 108], 0, 0.05], bl=dict(color=[0.1, 0.13, 0.17], metal=1, rough=0.45)),
     "kraken":    dict(rbx=["SmoothPlastic", [150, 60, 206], 0, 0.05], bl=dict(color=[0.3, 0.04, 0.55], metal=0, rough=0.3)),
@@ -1700,7 +1700,7 @@ def build_sets(H):
     # the lights: two ribbons waving along each side, green over violet
     for i, sx in enumerate((-1, 1)):
         x = sx * (w / 2 + 0.004)
-        for rb, (m, y0, ph, th) in enumerate((("aurora_green", 0.12, 0.0, 0.09), ("aurora_violet", -0.02, 1.3, 0.08), ("aurora_green", -0.15, 2.6, 0.06))):
+        for rb, (m, y0, ph, th) in enumerate((("aurora_green", 0.11, 0.0, 0.045), ("aurora_violet", -0.07, 1.6, 0.04))):
             for k in range(10):
                 z = -0.45 + k * 0.1
                 y = y0 + 0.06 * math.sin(z * 6.5 + ph)
