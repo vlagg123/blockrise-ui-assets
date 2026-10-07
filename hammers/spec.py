@@ -399,6 +399,33 @@ PALETTE = {
     "rb_violet": dict(rbx=["Neon", [170, 80, 255], 0, 0], bl=dict(color=[0.4, 0.08, 1.0], metal=0, rough=0.4, emit=8.0)),
     "beam_white": dict(rbx=["Neon", [255, 255, 255], 0, 0], bl=dict(color=[1.0, 1.0, 1.0], metal=0, rough=0.4, emit=12.0)),
     "navy":      dict(rbx=["SmoothPlastic", [26, 36, 92], 0, 0.1], bl=dict(color=[0.01, 0.018, 0.1], metal=0.3, rough=0.3)),
+    # ---- the 12 hammers of the Legends Crate and the two collections (Pirate Cove, Jungle Temple) ----
+    "runestone": dict(rbx=["Slate", [112, 120, 134], 0, 0], bl=dict(color=[0.17, 0.18, 0.21], metal=0, rough=0.7, tex="rock")),
+    "rune_blue": dict(rbx=["Neon", [90, 200, 255], 0, 0], bl=dict(color=[0.12, 0.6, 1.0], metal=0, rough=0.4, emit=9.0)),
+    "fur":       dict(rbx=["Fabric", [150, 108, 72], 0, 0], bl=dict(color=[0.33, 0.2, 0.1], metal=0, rough=0.95)),
+    "fur_lt":    dict(rbx=["Fabric", [214, 196, 168], 0, 0], bl=dict(color=[0.66, 0.58, 0.46], metal=0, rough=0.95)),
+    "lapis":     dict(rbx=["SmoothPlastic", [32, 64, 178], 0, 0.05], bl=dict(color=[0.02, 0.06, 0.48], metal=0.1, rough=0.25)),
+    "turquoise": dict(rbx=["SmoothPlastic", [40, 206, 196], 0, 0.1], bl=dict(color=[0.03, 0.62, 0.56], metal=0, rough=0.18)),
+    "aurora_ice": dict(rbx=["Glass", [214, 240, 255], 0.3, 0.25], core=[170, 255, 220, 0.6], bl=dict(color=[0.82, 0.94, 1.0], metal=0, rough=0.02, trans=1.0, ior=1.45, emit=0.12)),
+    "aurora_green": dict(rbx=["Neon", [80, 255, 170], 0, 0], bl=dict(color=[0.08, 1.0, 0.45], metal=0, rough=0.4, emit=9.0)),
+    "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=9.0)),
+    "sand_glow": dict(rbx=["Neon", [255, 206, 96], 0, 0], bl=dict(color=[1.0, 0.62, 0.12], metal=0, rough=0.5, emit=7.0)),
+    "sea_iron":  dict(rbx=["Metal", [78, 92, 108], 0, 0.05], bl=dict(color=[0.1, 0.13, 0.17], metal=1, rough=0.45)),
+    "kraken":    dict(rbx=["SmoothPlastic", [150, 60, 206], 0, 0.05], bl=dict(color=[0.3, 0.04, 0.55], metal=0, rough=0.3)),
+    "kraken_lt": dict(rbx=["SmoothPlastic", [238, 160, 246], 0, 0.05], bl=dict(color=[0.85, 0.36, 0.9], metal=0, rough=0.3)),
+    "kraken_eye": dict(rbx=["Neon", [255, 228, 60], 0, 0], bl=dict(color=[1.0, 0.8, 0.05], metal=0, rough=0.4, emit=8.0)),
+    "tiki_wood": dict(rbx=["Wood", [178, 112, 62], 0, 0], bl=dict(color=[0.45, 0.22, 0.08], metal=0, rough=0.6, tex="wood")),
+    "bamboo":    dict(rbx=["Wood", [216, 196, 120], 0, 0], bl=dict(color=[0.62, 0.5, 0.2], metal=0, rough=0.45, tex="wood")),
+    "bamboo_dk": dict(rbx=["Wood", [156, 140, 76], 0, 0], bl=dict(color=[0.36, 0.3, 0.1], metal=0, rough=0.5, tex="wood")),
+    "leaf":      dict(rbx=["SmoothPlastic", [64, 190, 82], 0, 0], bl=dict(color=[0.06, 0.52, 0.1], metal=0, rough=0.35)),
+    "leaf_dk":   dict(rbx=["SmoothPlastic", [36, 130, 60], 0, 0], bl=dict(color=[0.02, 0.26, 0.05], metal=0, rough=0.4)),
+    "mossy":     dict(rbx=["Slate", [128, 136, 116], 0, 0], bl=dict(color=[0.22, 0.24, 0.18], metal=0, rough=0.8, tex="rock")),
+    "moss":      dict(rbx=["Grass", [86, 156, 62], 0, 0], bl=dict(color=[0.1, 0.36, 0.05], metal=0, rough=0.95)),
+    "vine":      dict(rbx=["SmoothPlastic", [52, 140, 62], 0, 0], bl=dict(color=[0.04, 0.3, 0.06], metal=0, rough=0.5)),
+    "plume_red": dict(rbx=["SmoothPlastic", [232, 52, 62], 0, 0], bl=dict(color=[0.8, 0.03, 0.04], metal=0, rough=0.35)),
+    "plume_green": dict(rbx=["SmoothPlastic", [40, 204, 124], 0, 0], bl=dict(color=[0.02, 0.62, 0.22], metal=0, rough=0.35)),
+    "temple":    dict(rbx=["Sandstone", [222, 190, 132], 0, 0], bl=dict(color=[0.66, 0.5, 0.26], metal=0, rough=0.8, tex="rock")),
+    "temple_dk": dict(rbx=["Sandstone", [176, 140, 90], 0, 0], bl=dict(color=[0.42, 0.29, 0.13], metal=0, rough=0.85, tex="rock")),
 }
 
 # ------------------------------------------------------------------------------------------------ the hammers
@@ -870,6 +897,7 @@ def build():
     H.append(h)
 
     build_new(H)
+    build_sets(H)
     return [separate(x.d) for x in H]
 
 
@@ -1571,6 +1599,395 @@ def build_new(H):
     h.fx("stars", hp, [[255, 220, 120], [255, 255, 255]], 3, [0.08, 0.16], area=(0.7, 0.7, 1.2))
     h.light(hp, [255, 210, 110], 1.6, 9)
     h.trail(hp + [0, 0.34, -0.68], hp + [0, -0.34, -0.68], [[255, 226, 130], [30, 40, 110]])
+    H.append(h)
+
+
+def build_sets(H):
+    """the 12 hammers added on 2026-10-07 (tiers 41..52), COMING SOON in the game:
+      41-44  the Legends Crate (the second Exclusive Crate, Robux): Viking, Pharaoh, Aurora, Chrono
+      45-48  the Pirate Cove collection (its own crate): Anchor, Cannon, Treasure Chest, Kraken
+      49-52  the Jungle Temple collection (its own crate): Tiki, Stone Idol, Feathered Serpent, Sun Temple"""
+    def new(key, name, desc):
+        h = Hammer(len(H) + 1, key, name, desc)
+        h.d["bykey"] = True
+        return h
+
+    def rf(v):
+        return [round(float(x), 4) for x in v]
+
+    # 41 ---------------------------------------------------------------------------------- VIKING WARHAMMER (exclusive, legendary)
+    h = new("viking", "Viking Warhammer", "A runestone head bound in iron, a fur-wrapped grip. The runes wake up when it hits. Exclusive.")
+    hy = 2.14
+    h.shaft(-0.5, hy - 0.2, 0.11, "dark_wood")
+    h.grip(-0.42, 0.34, 0.134, "fur", rings=3, ring_mat="leather", ring_r=0.137)
+    h.band("FurCuff", 0.4, 0.15, 0.1, "fur_lt")
+    for i, y in enumerate((0.9, 1.4)):
+        h.band("Bind%d" % i, y, 0.118, 0.05, "steel_dk")
+    h.band("Socket", hy - 0.3, 0.16, 0.18, "steel_dk")
+    h.add("Pommel", "box", (0.2, 0.3, 0.2), (0, -0.62, 0), R=Rx(180), mat="steel_dk", planes=spike(0.2, 0.3))
+    hp = np.array([0.0, hy, 0.0])
+    hs = (0.6, 0.6, 1.02)
+    h.add("Head", "box", hs, hp, mat="runestone", planes=chamfer(*hs, 0.09))
+    for i, e in enumerate((-1, 1)):
+        h.add("Cap%d" % i, "box", (0.68, 0.68, 0.16), hp + [0, 0, e * 0.5], mat="steel_dk", planes=chamfer(0.68, 0.68, 0.16, 0.06))
+        h.add("Face%d" % i, "box", (0.56, 0.56, 0.08), hp + [0, 0, e * 0.6], mat="steel", planes=chamfer(0.56, 0.56, 0.08, 0.05, edges="z"))
+        for k in range(4):
+            a = math.radians(45 + 90 * k)
+            h.add("Rivet%d%d" % (i, k), "ball", (0.07,), hp + [math.cos(a) * 0.3, math.sin(a) * 0.3, e * 0.5], mat="steel", cast=False)
+    h.add("Belt", "box", (0.66, 0.66, 0.1), hp, mat="steel_dk", planes=chamfer(0.66, 0.66, 0.1, 0.06))
+    # glowing runes on both sides: a staff and two strokes, in front of and behind the belt
+    for i, sx in enumerate((-1, 1)):
+        x = sx * 0.302
+        for j, z in enumerate((-0.24, 0.24)):
+            h.add("Rune%d%dA" % (i, j), "box", (0.02, 0.28, 0.04), hp + [x, 0, z], mat="rune_blue", cast=False)
+            h.add("Rune%d%dB" % (i, j), "box", (0.02, 0.15, 0.035), hp + [x, 0.06, z + 0.055 * (1 if j else -1)], R=Rx(40 if j else -40), mat="rune_blue", cast=False)
+            h.add("Rune%d%dC" % (i, j), "box", (0.02, 0.12, 0.035), hp + [x, -0.07, z - 0.05 * (1 if j else -1)], R=Rx(-40 if j else 40), mat="rune_blue", cast=False)
+    h.headbox(hp, (0.7, 0.7, 1.3))
+    h.fx("snow", hp, [[220, 245, 255], [150, 210, 255]], 3, [0.05, 0.1], area=(0.7, 0.6, 1.2))
+    h.fx("sparks", hp, [[160, 230, 255], [80, 180, 255]], 3, [0.04, 0.08], area=(0.7, 0.6, 1.2))
+    h.light(hp, [90, 190, 255], 1.4, 8)
+    h.trail(hp + [0, 0.34, -0.66], hp + [0, -0.34, -0.66], [[200, 240, 255], [60, 150, 255]])
+    H.append(h)
+
+    # 42 ---------------------------------------------------------------------------------- PHARAOH'S HAMMER (exclusive, mythic)
+    h = new("pharaoh", "Pharaoh's Hammer", "Gold and lapis from a pharaoh's tomb, a cobra on its crown. Exclusive.")
+    hy = 2.22
+    h.shaft(-0.5, hy - 0.2, 0.11, "gold")
+    h.grip(-0.42, 0.34, 0.13, "lapis", rings=3, ring_mat="gold", ring_r=0.133)
+    for i in range(5):
+        h.band("Stripe%d" % i, 0.56 + i * 0.24, 0.116, 0.09, "lapis")
+    h.band("Socket", hy - 0.3, 0.16, 0.18, "gold_dk")
+    h.add("PommelGem", "box", (0.17, 0.17, 0.17), (0, -0.6, 0), R=Rx(45) @ Rz(35), mat="turquoise")
+    hp = np.array([0.0, hy, 0.0])
+    hs = (0.6, 0.62, 1.12)
+    h.add("Head", "box", hs, hp, mat="gold", planes=chamfer(*hs, 0.07))
+    for k, z in enumerate((-0.36, -0.2, 0.2, 0.36)):
+        h.add("Band%d" % k, "box", (0.64, 0.66, 0.07), hp + [0, 0, z], mat="lapis", planes=chamfer(0.64, 0.66, 0.07, 0.07, edges="z"), cast=False)
+    for i, e in enumerate((-1, 1)):
+        h.add("Face%d" % i, "box", (0.5, 0.52, 0.06), hp + [0, 0, e * 0.585], mat="gold_lt", planes=chamfer(0.5, 0.52, 0.06, 0.06, edges="z"))
+        h.add("FaceGem%d" % i, "box", (0.14, 0.14, 0.14), hp + [0, 0, e * 0.62], R=Rx(45) @ Rz(35), mat="turquoise", cast=False)
+    # a scarab on each side: a turquoise shell, golden wings
+    for i, sx in enumerate((-1, 1)):
+        h.add("Scarab%d" % i, "ball", (0.24,), hp + [sx * 0.27, 0.02, 0], mat="turquoise")
+        for j, e in enumerate((-1, 1)):
+            h.add("Wing%d%d" % (i, j), "box", (0.03, 0.12, 0.2), hp + [sx * 0.31, 0.03, e * 0.14], R=Rx(e * 28), mat="gold_lt",
+                  planes=chamfer(0.03, 0.12, 0.2, 0.04, edges="x"), cast=False)
+    # the cobra rising from the crown, hood forward
+    chain(h, "Cobra", hp + [0, 0.3, 0.14], (0, 1, -0.25), (1, 0, 0), [(0.2, 0.11, 34), (0.16, 0.1, 40), (0.14, 0.12, 0)], "gold", tip_frac=0.5)
+    h.add("Hood", "box", (0.2, 0.18, 0.05), hp + [0, 0.55, -0.02], R=Rx(-20), mat="lapis", planes=chamfer(0.2, 0.18, 0.05, 0.05, edges="z"), cast=False)
+    h.headbox(hp, (0.7, 0.9, 1.3))
+    h.fx("glint", hp, [[255, 230, 140], [255, 255, 255]], 3, [0.12, 0.24], area=(0.7, 0.6, 1.2))
+    h.fx("sparkle", hp, [[60, 220, 210], [80, 120, 255]], 3, [0.1, 0.2], area=(0.6, 0.5, 1.2))
+    h.light(hp, [255, 210, 110], 1.6, 9)
+    h.trail(hp + [0, 0.34, -0.66], hp + [0, -0.34, -0.66], [[255, 226, 120], [40, 70, 200]])
+    H.append(h)
+
+    # 43 ---------------------------------------------------------------------------------- AURORA HAMMER (exclusive, secret)
+    h = new("aurora", "Aurora Hammer", "Polar ice with the northern lights dancing inside. Exclusive.")
+    hy = 2.3
+    h.shaft(-0.5, hy - 0.26, 0.11, "silver")
+    h.grip(-0.42, 0.34, 0.13, "white_lth", rings=3, ring_mat="aurora_green", ring_r=0.133)
+    for i, (y, m) in enumerate(((0.62, "aurora_violet"), (0.9, "aurora_green"), (1.18, "aurora_violet"), (1.46, "aurora_green"))):
+        h.band("Glow%d" % i, y, 0.116, 0.035, m)
+    h.band("Socket", hy - 0.33, 0.16, 0.18, "silver")
+    h.add("PommelIce", "box", (0.17, 0.3, 0.17), (0, -0.62, 0), R=Rx(180), mat="aurora_ice", planes=octagon(0.17, "y") + _shard_tip(0.17, 0.3, tip_frac=0.55))
+    hp = np.array([0.0, hy, 0.0])
+    w, L = 0.64, 1.24
+    h.add("Crystal", "box", (w, w, L), hp, mat="aurora_ice", planes=octagon(w, "z") + chamfer(w, w, L, 0.08, edges="xy"))
+    for i, e in enumerate((-1, 1)):
+        h.add("Collar%d" % i, "box", (w + 0.04, w + 0.04, 0.1), hp + [0, 0, e * (L / 2 - 0.05)], mat="silver", planes=octagon(w + 0.04, "z"))
+        h.add("FaceRing%d" % i, "ring", (0.03, 0.22, 0.16), hp + [0, 0, e * (L / 2 + 0.008)], R=ALONG_Z, mat="aurora_green", smooth=40, cast=False)
+    # the lights: two ribbons waving along each side, green over violet
+    for i, sx in enumerate((-1, 1)):
+        x = sx * (w / 2 + 0.004)
+        for rb, (m, y0, ph) in enumerate((("aurora_green", 0.07, 0.0), ("aurora_violet", -0.1, 1.4))):
+            for k in range(9):
+                z = -0.42 + k * 0.105
+                y = y0 + 0.07 * math.sin(z * 7 + ph)
+                slope = 0.07 * 7 * math.cos(z * 7 + ph)
+                h.add("Light%d%d%d" % (i, rb, k), "box", (0.02, 0.06, 0.12), hp + [x, y, z], R=Rx(-math.degrees(math.atan(slope))), mat=m, cast=False)
+    h.add("Core", "ball", (0.3,), hp, mat="aurora_green", cast=False)
+    h.headbox(hp, (0.7, 0.7, 1.4))
+    h.fx("rise", hp, [[120, 255, 190], [190, 120, 255]], 4, [0.06, 0.12], area=(0.7, 0.4, 1.2))
+    h.fx("stars", hp, [[255, 255, 255], [200, 255, 230]], 4, [0.08, 0.16], area=(0.8, 0.6, 1.3))
+    h.light(hp, [120, 255, 200], 2.0, 10)
+    h.trail(hp + [0, 0.36, -0.68], hp + [0, -0.36, -0.68], [[120, 255, 180], [190, 110, 255]])
+    H.append(h)
+
+    # 44 ---------------------------------------------------------------------------------- CHRONO HAMMER (exclusive, secret, the 1 in ???)
+    h = new("chrono", "Chrono Hammer", "An hourglass of living gold sand. Time slows down when it hits. The rarest hammer of the Legends Crate.")
+    hy = 2.3
+    h.shaft(-0.5, hy - 0.28, 0.11, "walnut")
+    h.grip(-0.42, 0.34, 0.13, "leather", rings=3, ring_mat="brass", ring_r=0.133)
+    for i, y in enumerate((0.7, 1.1, 1.5)):
+        h.band("Ring%d" % i, y, 0.118, 0.04, "brass")
+    h.band("Socket", hy - 0.36, 0.17, 0.2, "brass")
+    h.add("Pommel", "ball", (0.22,), (0, -0.6, 0), mat="brass")
+    hp = np.array([0.0, hy, 0.0])
+    for i, e in enumerate((-1, 1)):
+        c = hp + [0, 0, e * 0.3]
+        h.add("Bulb%d" % i, "ball", (0.52,), c, mat="glass_dome", cast=False)
+        # the sand: the lower part of each bulb, glowing
+        h.add("Sand%d" % i, "ball", (0.44,), c, mat="sand_glow", planes=[plane((0, 1, 0), -0.04 if e < 0 else 0.06)], cast=False)
+        h.add("Cap%d" % i, "cyl", (0.12, 0.3), hp + [0, 0, e * 0.6], R=ALONG_Z, mat="brass", planes=cyl_bevel(0.12, 0.3, 0.035), smooth=40)
+        h.add("CapRing%d" % i, "ring", (0.03, 0.22, 0.16), hp + [0, 0, e * 0.665], R=ALONG_Z, mat="sand_glow", smooth=40, cast=False)
+    h.add("Neck", "cyl", (0.2, 0.07), hp, R=ALONG_Z, mat="glass_dome", smooth=40, cast=False)
+    h.add("Stream", "cyl", (0.22, 0.025), hp, R=ALONG_Z, mat="sand_glow", smooth=40, cast=False)
+    h.add("Waist", "ring", (0.06, 0.12, 0.075), hp, R=ALONG_Z, mat="brass", smooth=40, cast=False)
+    # three brass rods between the caps
+    for k in range(3):
+        a = math.radians(90 + 120 * k)
+        h.add("Rod%d" % k, "cyl", (1.08, 0.035), hp + [math.cos(a) * 0.3, math.sin(a) * 0.3, 0], R=ALONG_Z, mat="brass", smooth=40, cast=False)
+    h.headbox(hp, (0.7, 0.7, 1.4))
+    h.fx("rise", hp, [[255, 214, 110]], 4, [0.04, 0.08], area=(0.6, 0.4, 1.2))
+    h.fx("sparkle", hp, [[255, 240, 190], [255, 190, 60]], 4, [0.1, 0.2], area=(0.7, 0.6, 1.3))
+    h.light(hp, [255, 200, 100], 2.2, 10)
+    h.trail(hp + [0, 0.36, -0.68], hp + [0, -0.36, -0.68], [[255, 236, 170], [200, 130, 30]])
+    H.append(h)
+
+    # 45 ---------------------------------------------------------------------------------- ANCHOR HAMMER (pirate, rare)
+    h = new("anchor", "Anchor Hammer", "A ship's anchor with its rope still on. Drops like one, too.")
+    hy = 1.92
+    h.shaft(-0.5, hy - 0.06, 0.1, "sea_iron")
+    h.grip(-0.42, 0.3, 0.126, "cord", rings=4, ring_mat="leather", ring_r=0.129)
+    h.add("PommelRing", "ring", (0.06, 0.15, 0.09), (0, -0.62, 0), R=ALONG_X, mat="sea_iron", smooth=40)
+    h.band("Stock", 1.2, 0.13, 0.08, "sea_iron")
+    hp = np.array([0.0, hy, 0.0])
+    h.add("Crown", "cyl", (1.0, 0.15), hp, R=ALONG_Z, mat="sea_iron", planes=cyl_bevel(1.0, 0.15, 0.03), smooth=40)
+    h.add("CrownBall", "ball", (0.34,), hp, mat="sea_iron")
+    for i, e in enumerate((-1, 1)):
+        # the arms curl up from the ends of the crown; each ends in a fluke (an arrowhead)
+        tip = chain(h, "Arm%d" % i, hp + [0, 0.02, e * 0.42], (0, 0.5, e * 1), (1, 0, 0), [(0.22, 0.17, -e * 40), (0.2, 0.15, -e * 30), (0.14, 0.13, 0)], "sea_iron", tip=False)
+        h.add("Fluke%d" % i, "box", (0.07, 0.3, 0.3), tip + [0, -0.02, 0], R=Rx(e * 45 - 90 * (e > 0)) @ Rx(0), mat="iron_lt", planes=chamfer(0.07, 0.3, 0.3, 0.13, edges="x"), cast=False)
+    h.add("Shackle", "ring", (0.07, 0.18, 0.11), hp + [0, 0.24, 0], R=ALONG_X, mat="sea_iron", smooth=40)
+    # rope wound round the crown, its end hanging down
+    for k, z in enumerate((-0.2, -0.12, 0.12, 0.2)):
+        h.add("Rope%d" % k, "ring", (0.06, 0.2, 0.14), hp + [0, 0, z], R=ALONG_Z, mat="cord", smooth=40, cast=False)
+    h.headbox(hp + [0, 0.15, 0], (0.5, 0.8, 1.5))
+    h.fx("mist", hp, [[200, 240, 255]], 1.5, [0.2, 0.4], area=(0.5, 0.4, 1.0))
+    H.append(h)
+
+    # 46 ---------------------------------------------------------------------------------- CANNON HAMMER (pirate, epic)
+    h = new("cannon", "Cannon Hammer", "A bronze ship's cannon with the fuse lit. Every hit goes BOOM.")
+    hy = 2.04
+    h.shaft(-0.5, hy - 0.22, 0.106, "wood")
+    h.grip(-0.42, 0.32, 0.128, "leather", rings=3, ring_mat="brass", ring_r=0.131)
+    h.band("Socket", hy - 0.3, 0.15, 0.16, "bronze_dk")
+    h.add("Pommel", "ball", (0.2,), (0, -0.58, 0), mat="bronze")
+    hp = np.array([0.0, hy, 0.0])
+    h.add("Barrel", "cyl", (1.1, 0.24), hp + [0, 0, -0.04], R=ALONG_Z, mat="bronze", smooth=40)
+    h.add("Breech", "cyl", (0.3, 0.27), hp + [0, 0, 0.36], R=ALONG_Z, mat="bronze", planes=cyl_bevel(0.3, 0.27, 0.05), smooth=40)
+    h.add("Cascabel", "ball", (0.2,), hp + [0, 0, 0.6], mat="bronze_dk")
+    for k, z in enumerate((-0.32, 0.0, 0.2)):
+        h.add("Reinforce%d" % k, "cyl", (0.06, 0.262), hp + [0, 0, z], R=ALONG_Z, mat="bronze_dk", smooth=40, cast=False)
+    h.add("Muzzle", "ring", (0.12, 0.3, 0.15), hp + [0, 0, -0.6], R=ALONG_Z, mat="bronze", smooth=40)
+    h.add("Bore", "cyl", (0.04, 0.155), hp + [0, 0, -0.57], R=ALONG_Z, mat="hole", smooth=40, cast=False)
+    h.add("Trunnion", "cyl", (0.66, 0.07), hp + [0, 0, 0.06], R=ALONG_X, mat="bronze_dk", smooth=40)
+    for i, sx in enumerate((-1, 1)):
+        h.add("Wheel%d" % i, "cyl", (0.07, 0.19), hp + [sx * 0.37, -0.06, 0.06], R=ALONG_X, mat="dark_wood", planes=cyl_bevel(0.07, 0.19, 0.02), smooth=40)
+        h.add("Hub%d" % i, "cyl", (0.09, 0.06), hp + [sx * 0.38, -0.06, 0.06], R=ALONG_X, mat="iron", smooth=40, cast=False)
+    h.add("Fuse", "cyl", (0.14, 0.025), hp + [0, 0.32, 0.4], R=Rx(-25), mat="cord", smooth=40, cast=False)
+    h.add("Spark", "ball", (0.08,), hp + [0, 0.39, 0.43], mat="ember", cast=False)
+    h.headbox(hp, (0.6, 0.6, 1.4))
+    h.fx("smoke", hp + [0, 0, -0.66], [[120, 110, 100]], 1.5, [0.15, 0.35], area=(0.2, 0.2, 0.1))
+    h.fx("embers", hp + [0, 0.39, 0.43], [[255, 200, 80], [255, 90, 20]], 4, [0.03, 0.06], area=(0.08, 0.08, 0.08))
+    h.light(hp + [0, 0.39, 0.43], [255, 140, 40], 0.9, 5)
+    H.append(h)
+
+    # 47 ---------------------------------------------------------------------------------- TREASURE CHEST HAMMER (pirate, legendary)
+    h = new("treasure", "Treasure Chest Hammer", "A pirate's chest full of gold, nailed onto a handle. Rich hits only.")
+    hy = 2.12
+    h.shaft(-0.5, hy - 0.22, 0.108, "dark_wood")
+    h.grip(-0.42, 0.34, 0.13, "red_lth", rings=3, ring_mat="gold", ring_r=0.133)
+    h.band("Socket", hy - 0.3, 0.16, 0.18, "gold")
+    h.add("PommelCoin", "cyl", (0.06, 0.15), (0, -0.56, 0), R=ALONG_X, mat="gold_lt", planes=cyl_bevel(0.06, 0.15, 0.02), smooth=40)
+    hp = np.array([0.0, hy, 0.0])
+    bs = (0.62, 0.46, 1.06)
+    h.add("Chest", "box", bs, hp + [0, -0.05, 0], mat="wood", planes=chamfer(*bs, 0.04))
+    # the domed lid (half a log lying along the chest)
+    h.add("Lid", "cyl", (1.06, 0.31), hp + [0, 0.18, 0], R=ALONG_Z, mat="wood", planes=[plane((0, 0, 1), 0.0)], smooth=40)
+    for k, z in enumerate((-0.32, 0.32)):
+        h.add("Band%d" % k, "box", (0.66, 0.5, 0.09), hp + [0, -0.05, z], mat="gold", planes=chamfer(0.66, 0.5, 0.09, 0.03), cast=False)
+        h.add("LidBand%d" % k, "cyl", (0.09, 0.33), hp + [0, 0.18, z], R=ALONG_Z, mat="gold", planes=[plane((0, 0, 1), 0.0)], smooth=40, cast=False)
+    for i, e in enumerate((-1, 1)):
+        h.add("End%d" % i, "box", (0.66, 0.5, 0.05), hp + [0, -0.05, e * 0.545], mat="gold_lt", planes=chamfer(0.66, 0.5, 0.05, 0.04, edges="z"))
+        h.add("EndArch%d" % i, "cyl", (0.05, 0.33), hp + [0, 0.18, e * 0.545], R=ALONG_Z, mat="gold_lt", planes=[plane((0, 0, 1), 0.0)], smooth=40)
+        h.add("EndGem%d" % i, "box", (0.12, 0.12, 0.12), hp + [0, 0.02, e * 0.585], R=Rx(45) @ Rz(35), mat="ruby" if e < 0 else "sapphire", cast=False)
+    for i, sx in enumerate((-1, 1)):
+        h.add("Lock%d" % i, "box", (0.04, 0.18, 0.16), hp + [sx * 0.32, 0.12, 0], mat="gold", planes=chamfer(0.04, 0.18, 0.16, 0.03, edges="x"), cast=False)
+        h.add("Keyhole%d" % i, "box", (0.02, 0.07, 0.03), hp + [sx * 0.342, 0.11, 0], mat="hole", cast=False)
+    # coins piled on the lid, a gem on top
+    for k, (z, r, a) in enumerate(((-0.14, 0.11, 18), (0.05, 0.12, -14), (0.2, 0.1, 22), (-0.02, 0.1, 40))):
+        h.add("Coin%d" % k, "cyl", (0.04, r), hp + [0.04 * (k % 2 * 2 - 1), 0.5 + 0.02 * k, z], R=Rz(a) @ Rx(10), mat="gold_lt", planes=cyl_bevel(0.04, r, 0.012), smooth=40, cast=False)
+    h.add("TopGem", "box", (0.13, 0.13, 0.13), hp + [0, 0.57, 0.02], R=Rx(45) @ Rz(35), mat="emerald", cast=False)
+    h.headbox(hp, (0.7, 0.9, 1.3))
+    h.fx("glint", hp, [[255, 236, 150], [255, 255, 255]], 4, [0.12, 0.24], area=(0.7, 0.6, 1.2))
+    h.fx("sparkle", hp + [0, 0.4, 0], [[255, 210, 80], [255, 120, 120]], 3, [0.1, 0.2], area=(0.5, 0.2, 0.6))
+    h.light(hp, [255, 200, 90], 1.4, 8)
+    h.trail(hp + [0, 0.34, -0.64], hp + [0, -0.34, -0.64], [[255, 230, 130], [150, 80, 20]])
+    H.append(h)
+
+    # 48 ---------------------------------------------------------------------------------- KRAKEN HAMMER (pirate, mythic)
+    h = new("kraken", "Kraken Hammer", "The terror of the seven seas, tentacles and all. It looks back at you.")
+    hy = 2.24
+    h.shaft(-0.5, hy - 0.2, 0.11, "sea_iron")
+    h.grip(-0.42, 0.34, 0.13, "kraken", rings=3, ring_mat="kraken_lt", ring_r=0.133)
+    h.band("Socket", hy - 0.3, 0.16, 0.16, "sea_iron")
+    chain(h, "PommelTip", (0, -0.52, 0), (0, -1, 0.15), (1, 0, 0), [(0.14, 0.12, 40), (0.12, 0.08, 0)], "kraken")
+    hp = np.array([0.0, hy, 0.0])
+    h.add("Mantle", "ball", (0.62,), hp + [0, 0.04, 0.06], mat="kraken")
+    h.add("MantleBack", "ball", (0.5,), hp + [0, 0.14, 0.3], mat="kraken")
+    h.add("Spot0", "ball", (0.12,), hp + [0.14, 0.33, 0.22], mat="kraken_lt", cast=False)
+    h.add("Spot1", "ball", (0.1,), hp + [-0.12, 0.3, 0.36], mat="kraken_lt", cast=False)
+    for i, sx in enumerate((-1, 1)):
+        h.add("Eye%d" % i, "ball", (0.16,), hp + [sx * 0.24, 0.1, -0.16], mat="kraken_eye", cast=False)
+        h.add("Pupil%d" % i, "box", (0.03, 0.12, 0.04), hp + [sx * 0.315, 0.1, -0.17], mat="ghost_eye", cast=False)
+    # tentacles: two reach forward and curl under (the striking end), two sweep back and curl up
+    for i, sx in enumerate((-1, 1)):
+        chain(h, "Front%d" % i, hp + [sx * 0.12, -0.12, -0.2], (sx * 0.15, -0.25, -1), (1, 0, 0),
+              [(0.26, 0.17, -25), (0.22, 0.14, -40), (0.2, 0.11, -55), (0.18, 0.08, 0)], "kraken")
+        chain(h, "Back%d" % i, hp + [sx * 0.14, -0.1, 0.3], (sx * 0.2, -0.3, 1), (1, 0, 0),
+              [(0.24, 0.15, 30), (0.22, 0.12, 45), (0.18, 0.09, 50), (0.16, 0.06, 0)], "kraken")
+    for k, z in enumerate((-0.42, -0.6)):
+        for i, sx in enumerate((-1, 1)):
+            h.add("Sucker%d%d" % (k, i), "ball", (0.07,), hp + [sx * 0.2, -0.2 - 0.04 * k, z], mat="kraken_lt", cast=False)
+    h.headbox(hp, (0.7, 0.8, 1.5))
+    h.fx("rise", hp, [[160, 230, 255]], 4, [0.04, 0.09], area=(0.6, 0.4, 1.2))
+    h.fx("sparkle", hp, [[220, 150, 255], [255, 230, 90]], 3, [0.1, 0.2], area=(0.7, 0.6, 1.3))
+    h.light(hp, [190, 100, 255], 1.6, 9)
+    h.trail(hp + [0, 0.36, -0.68], hp + [0, -0.36, -0.68], [[230, 160, 255], [80, 20, 140]])
+    H.append(h)
+
+    # 49 ---------------------------------------------------------------------------------- TIKI HAMMER (temple, rare)
+    h = new("tiki", "Tiki Hammer", "A grinning tiki head with a crown of leaves, on a bamboo handle.")
+    hy = 1.88
+    h.shaft(-0.5, hy - 0.1, 0.1, "bamboo")
+    for i, y in enumerate((-0.2, 0.3, 0.8, 1.3)):
+        h.band("Node%d" % i, y, 0.112, 0.05, "bamboo_dk")
+    h.grip(-0.42, 0.2, 0.128, "cord", rings=2, ring_mat="leaf_dk", ring_r=0.131)
+    h.add("Pommel", "cyl", (0.08, 0.12), (0, -0.54, 0), mat="bamboo_dk", planes=cyl_bevel(0.08, 0.12, 0.03), smooth=40)
+    hp = np.array([0.0, hy, 0.0])
+    hs = (0.6, 0.66, 0.96)
+    h.add("Head", "box", hs, hp, mat="tiki_wood", planes=chamfer(*hs, 0.07))
+    for i, e in enumerate((-1, 1)):
+        h.add("Face%d" % i, "box", (0.5, 0.56, 0.06), hp + [0, 0, e * 0.5], mat="dark_wood", planes=chamfer(0.5, 0.56, 0.06, 0.06, edges="z"))
+    # the carved face on both sides: brow, two eyes, a wide mouth with teeth
+    for i, sx in enumerate((-1, 1)):
+        x = sx * 0.302
+        h.add("Brow%d" % i, "box", (0.04, 0.07, 0.6), hp + [x, 0.2, 0], mat="dark_wood", planes=chamfer(0.04, 0.07, 0.6, 0.02, edges="x"), cast=False)
+        for j, z in enumerate((-0.16, 0.16)):
+            h.add("Eye%d%d" % (i, j), "box", (0.035, 0.12, 0.14), hp + [x, 0.07, z], mat="hole", planes=chamfer(0.035, 0.12, 0.14, 0.03, edges="x"), cast=False)
+            h.add("Glint%d%d" % (i, j), "box", (0.04, 0.04, 0.04), hp + [x, 0.09, z - 0.02], mat="neon_lime", cast=False)
+        h.add("Mouth%d" % i, "box", (0.035, 0.14, 0.42), hp + [x, -0.15, 0], mat="hole", planes=chamfer(0.035, 0.14, 0.42, 0.05, edges="x"), cast=False)
+        for k in range(4):
+            h.add("Tooth%d%d" % (i, k), "box", (0.045, 0.06, 0.07), hp + [x, -0.11, -0.15 + k * 0.1], mat="bone", cast=False)
+    # the crown of leaves
+    for k in range(5):
+        z = -0.3 + k * 0.15
+        feather(h, "Leaf%d" % k, hp + [0, 0.3, z], (0, 1, z * 0.9), 0.36 - abs(k - 2) * 0.05, 0.13, 0.04, "leaf" if k % 2 == 0 else "leaf_dk")
+    h.headbox(hp, (0.66, 0.9, 1.1))
+    h.fx("sparkle", hp, [[150, 255, 120], [255, 230, 120]], 2, [0.08, 0.16], area=(0.6, 0.5, 1.0))
+    H.append(h)
+
+    # 50 ---------------------------------------------------------------------------------- STONE IDOL HAMMER (temple, epic)
+    h = new("idol", "Stone Idol Hammer", "An idol from a lost temple, grown over with moss. Its eyes are still watching.")
+    hy = 2.04
+    h.shaft(-0.5, hy - 0.16, 0.108, "dark_wood")
+    h.grip(-0.42, 0.32, 0.13, "vine", rings=3, ring_mat="moss", ring_r=0.133)
+    h.band("Socket", hy - 0.26, 0.16, 0.16, "mossy")
+    h.add("Pommel", "box", (0.2, 0.2, 0.2), (0, -0.6, 0), mat="mossy", planes=chamfer(0.2, 0.2, 0.2, 0.05))
+    hp = np.array([0.0, hy, 0.0])
+    w, L = 0.64, 1.1
+    h.add("Head", "box", (w, w, L), hp, mat="mossy", planes=octagon(w, "z") + chamfer(w, w, L, 0.06, edges="xy"))
+    h.add("Moss", "box", (0.5, 0.05, 0.7), hp + [0, w / 2 + 0.008, -0.08], mat="moss", planes=chamfer(0.5, 0.05, 0.7, 0.04, edges="y"), cast=False)
+    h.add("Moss2", "box", (0.3, 0.05, 0.3), hp + [0.12, w / 2 + 0.008, 0.38], mat="moss", planes=chamfer(0.3, 0.05, 0.3, 0.05, edges="y"), cast=False)
+    for i, (z, tilt) in enumerate(((-0.3, 12), (0.24, -16))):
+        h.add("Vine%d" % i, "ring", (0.05, 0.37, 0.33), hp + [0, 0, z], R=Rx(tilt) @ ALONG_Z, mat="vine", smooth=40, cast=False)
+    for i, e in enumerate((-1, 1)):
+        h.add("Face%d" % i, "box", (0.54, 0.54, 0.05), hp + [0, 0, e * 0.565], mat="temple_dk", planes=octagon(0.54, "z"))
+        h.add("Glyph%d" % i, "ring", (0.02, 0.17, 0.12), hp + [0, 0, e * 0.595], R=ALONG_Z, mat="neon_lime", smooth=40, cast=False)
+    # the idol's face on both sides: deep eyes with green gems, a stern mouth
+    for i, sx in enumerate((-1, 1)):
+        x = sx * 0.322
+        h.add("Brow%d" % i, "box", (0.03, 0.06, 0.5), hp + [x, 0.17, 0], mat="temple_dk", cast=False)
+        for j, z in enumerate((-0.13, 0.13)):
+            h.add("Eye%d%d" % (i, j), "box", (0.09, 0.09, 0.09), hp + [x - sx * 0.02, 0.06, z], R=Rx(45) @ Rz(35), mat="neon_lime", cast=False)
+        h.add("Mouth%d" % i, "box", (0.03, 0.05, 0.3), hp + [x, -0.15, 0], mat="hole", cast=False)
+    h.headbox(hp, (0.7, 0.7, 1.3))
+    h.fx("rise", hp, [[140, 255, 120]], 3, [0.04, 0.08], area=(0.6, 0.4, 1.1))
+    h.fx("flakes", hp, [[150, 160, 130], [90, 160, 70]], 1.2, [0.03, 0.06], area=(0.6, 0.3, 1.0))
+    h.light(hp, [120, 255, 100], 1.0, 6)
+    H.append(h)
+
+    # 51 ---------------------------------------------------------------------------------- FEATHERED SERPENT HAMMER (temple, legendary)
+    h = new("serpent", "Feathered Serpent Hammer", "The jade serpent god with a ruff of feathers. It bites when it hits.")
+    hy = 2.14
+    h.shaft(-0.5, hy - 0.2, 0.108, "gold")
+    h.grip(-0.42, 0.34, 0.13, "green_lth", rings=3, ring_mat="gold", ring_r=0.133)
+    for i, y in enumerate((0.6, 0.9, 1.2, 1.5)):
+        h.band("Scale%d" % i, y, 0.115, 0.06, "jade")
+    h.band("Socket", hy - 0.3, 0.16, 0.16, "gold_dk")
+    h.add("PommelGem", "box", (0.16, 0.16, 0.16), (0, -0.6, 0), R=Rx(45) @ Rz(35), mat="jade")
+    hp = np.array([0.0, hy, 0.0])
+    h.add("Body", "cyl", (0.86, 0.26), hp + [0, 0, 0.08], R=ALONG_Z, mat="jade", planes=cyl_bevel(0.86, 0.26, 0.06), smooth=40)
+    for k, z in enumerate((-0.12, 0.1, 0.32)):
+        h.add("Ring%d" % k, "cyl", (0.05, 0.272), hp + [0, 0, z], R=ALONG_Z, mat="gold", smooth=40, cast=False)
+    # the serpent's head is the striking face: a jade wedge, gold brow, glowing eyes, two fangs
+    hs = (0.5, 0.44, 0.42)
+    h.add("Snout", "box", hs, hp + [0, 0.01, -0.5], R=Rx(-90), mat="jade", planes=taper(0.5, 0.42, 0.44, top_scale_x=0.78, top_scale_z=0.7) + chamfer(0.5, 0.42, 0.44, 0.06))
+    h.add("Brow", "box", (0.54, 0.08, 0.26), hp + [0, 0.2, -0.46], mat="gold", planes=chamfer(0.54, 0.08, 0.26, 0.03), cast=False)
+    for i, sx in enumerate((-1, 1)):
+        h.add("Eye%d" % i, "ball", (0.11,), hp + [sx * 0.21, 0.1, -0.52], mat="kraken_eye", cast=False)
+        h.add("Fang%d" % i, "box", (0.06, 0.16, 0.06), hp + [sx * 0.1, -0.24, -0.62], R=Rx(180), mat="bone", planes=spike(0.06, 0.16), cast=False)
+    # the ruff of feathers round the neck, red and green
+    for k in range(10):
+        a = math.radians(k * 36 + 18)
+        d = np.array([0, math.sin(a), math.cos(a) * 0.0]) + np.array([math.cos(a), 0, 0])
+        d = np.array([math.cos(a), math.sin(a), 0.35])
+        feather(h, "Plume%d" % k, hp + [math.cos(a) * 0.2, math.sin(a) * 0.2, -0.24], d, 0.34, 0.12, 0.03, "plume_red" if k % 2 == 0 else "plume_green")
+    # the tail: three feathers fanning back
+    for k, t in enumerate((-30, 0, 30)):
+        feather(h, "Tail%d" % k, hp + [0, 0.02, 0.48], (0, math.sin(math.radians(t)) + 0.3, 1), 0.36, 0.13, 0.03, "plume_green" if k == 1 else "plume_red")
+    h.headbox(hp, (0.8, 0.8, 1.4))
+    h.fx("sparkle", hp, [[120, 255, 160], [255, 220, 100]], 3, [0.1, 0.2], area=(0.7, 0.6, 1.2))
+    h.fx("glint", hp, [[255, 240, 170]], 2, [0.12, 0.24], area=(0.7, 0.6, 1.2))
+    h.light(hp, [90, 255, 150], 1.4, 8)
+    h.trail(hp + [0, 0.34, -0.66], hp + [0, -0.34, -0.66], [[120, 255, 170], [230, 50, 60]])
+    H.append(h)
+
+    # 52 ---------------------------------------------------------------------------------- SUN TEMPLE HAMMER (temple, mythic)
+    h = new("suntemple", "Sun Temple Hammer", "A golden step pyramid with the sun itself on top. The lost temple's treasure.")
+    hy = 2.24
+    h.shaft(-0.5, hy - 0.26, 0.11, "temple")
+    for i, y in enumerate((0.6, 1.0, 1.4)):
+        h.band("Gold%d" % i, y, 0.116, 0.05, "gold")
+    h.grip(-0.42, 0.34, 0.13, "red_lth", rings=3, ring_mat="gold", ring_r=0.133)
+    h.band("Socket", hy - 0.34, 0.17, 0.18, "gold")
+    h.add("PommelSun", "ball", (0.2,), (0, -0.58, 0), mat="sun")
+    hp = np.array([0.0, hy, 0.0])
+    # the stepped head: wide in the middle, three steps down to each striking face, gold edges between them
+    steps = ((0.66, 0.6, 0.46, "temple"), (0.58, 0.52, 0.76, "temple_dk"), (0.5, 0.44, 1.04, "temple"), (0.4, 0.34, 1.26, "gold"))
+    for k, (sx_, sy_, sz_, m) in enumerate(steps):
+        h.add("Step%d" % k, "box", (sx_, sy_, sz_), hp + [0, -0.03 * k, 0], mat=m, planes=chamfer(sx_, sy_, sz_, 0.03))
+    for k, (sx_, sy_, sz_, _) in enumerate(steps[:3]):
+        for i, e in enumerate((-1, 1)):
+            h.add("Edge%d%d" % (k, i), "box", (sx_ + 0.02, 0.03, 0.03), hp + [0, sy_ / 2 - 0.03 * k, e * (sz_ / 2 - 0.015)], mat="gold", cast=False)
+    for i, e in enumerate((-1, 1)):
+        h.add("FaceSun%d" % i, "ball", (0.16,), hp + [0, -0.09, e * 0.63], mat="sun_hot", cast=False)
+    # the shrine on top: a gold sun disc standing sideways, rays round it, a burning core
+    top = hp + [0, 0.3 + 0.24, 0]
+    h.add("Plinth", "box", (0.3, 0.1, 0.3), hp + [0, 0.34, 0], mat="gold", planes=chamfer(0.3, 0.1, 0.3, 0.03))
+    h.add("Disc", "ring", (0.06, 0.2, 0.13), top, R=ALONG_X, mat="gold", smooth=40)
+    h.add("SunCore", "ball", (0.22,), top, mat="sun_hot", cast=False)
+    for k in range(8):
+        a = math.radians(k * 45)
+        d = np.array([0, math.sin(a), math.cos(a)])
+        h.add("Ray%d" % k, "box", (0.05, 0.12, 0.05), top + d * 0.26, R=toward(d), mat="gold_lt", planes=spike(0.05, 0.12), cast=False)
+    h.headbox(hp, (0.7, 1.0, 1.4))
+    h.fx("stars", top, [[255, 240, 180], [255, 180, 60]], 4, [0.08, 0.16], area=(0.5, 0.5, 0.5))
+    h.fx("embers", hp, [[255, 220, 120], [255, 150, 40]], 4, [0.04, 0.08], area=(0.6, 0.5, 1.2))
+    h.light(top, [255, 190, 80], 2.2, 10)
+    h.trail(hp + [0, 0.36, -0.66], hp + [0, -0.36, -0.66], [[255, 236, 150], [230, 120, 30]])
     H.append(h)
 
 
