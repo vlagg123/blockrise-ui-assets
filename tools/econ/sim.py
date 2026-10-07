@@ -505,10 +505,16 @@ def got_hammer(s, r):
         s.inv[r] += 1
 
 
-def open_crate(s, crate):
+def open_crate(s, crate, src="other"):
     if not hasattr(s, "got"): s.got = {}
     r = roll(s, crate)
     s.crates_opened = getattr(s, "crates_opened", 0) + 1
+    # where crates come from (free while playing / missions / cash / gems / Robux) and what they give, for the market
+    s.crate_src = getattr(s, "crate_src", {})
+    k = (src, crate.split("_")[0])
+    s.crate_src[k] = s.crate_src.get(k, 0) + 1
+    s.got_src = getattr(s, "got_src", {})
+    s.got_src[(src, r)] = s.got_src.get((src, r), 0) + 1
     got_hammer(s, r)
     # trade-ups: 10 spares of a rarity -> 1 of the next
     E = s.E
@@ -587,14 +593,15 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
     s = State(E, P, seed)
     s.contract_log = []
     s.got = {}
-    open_crate(s, "supply_town")
+    open_crate(s, "supply_town", "tutorial")
     s.money -= 150
     s.gear = 1; s.money -= E["gear"][1][0]
     s.machines["excavator"] = 1; s.money -= E["machines"]["excavator"]["price"]
     s.workers.append("laborer"); s.money -= E["workers"]["laborer"]["price"]
     s.money = max(s.money, 0)
     end = hours * 3600
-    gems_per_sec_daily = E["gems_day"] / 3600.0   # the daily rewards, spread over an hour a day
+    # the daily rewards (missions, streak, gifts), spread over the hours played in a day (day_h; 1 h when not given)
+    gems_per_sec_daily = E["gems_day"] / (3600.0 * P.get("day_h", 1.0))
     sess = P.get("session_min")
     next_end = sess * 60 if sess else None
     s.day = 1
@@ -692,11 +699,14 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
         s.gems_total = getattr(s, "gems_total", 0.0) + g_now
         # free crates
         s.crate_progress += 1
-        if s.crate_progress >= E["free_crate_every"]:
+        if E.get("free_crate_every") and s.crate_progress >= E["free_crate_every"]:
             s.crate_progress = 0
-            open_crate(s, zone_supply(s))
-        elif s.rng.random() < E["builder_drop"] * (2 if "luck" in P["passes"] else 1):
-            open_crate(s, "builder")
+            open_crate(s, zone_supply(s), "free_play")
+        elif s.rng.random() < E.get("builder_drop", 0) * (2 if "luck" in P["passes"] else 1):
+            open_crate(s, "builder", "free_play")
+        # ECONOMY_V5: crates only from missions (mission_crates(s, dt) hands them out by play time / contracts)
+        if E.get("mission_crates"):
+            E["mission_crates"](s, dt, c)
         # buying: cash crates with a share of the pay, gem crates when affordable, then the best paybacks
         sp = zone_supply(s)
         bestc = max((cc for cc in E["contracts"] if s.unlocked(cc)), key=lambda cc: cc["reward"])
@@ -712,14 +722,14 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
         open_t = 0.6 if ("quickopen" in P["passes"] or "autoopen" in P["passes"]) else 4.5
         while s.crate_budget >= price and n < E.get("crates_per_cycle", 4):
             s.crate_budget -= price
-            open_crate(s, sp)
+            open_crate(s, sp, "cash")
             s.t += open_t
             n += 1
         need_ham = any(s.R >= cc["reqReb"] and s.best_hammer()[0] + 1 < cc["reqHam"] for cc in E["contracts"]
                        if cc["reqReb"] <= s.R)
         if need_ham and s.money > price * 3:
             s.money -= price
-            open_crate(s, sp)
+            open_crate(s, sp, "cash")
         # the game's IncomePerMin (Config.IncomePerMin): best unlocked contract, its target time + 20 s
         ipm = bestc["reward"] * s.pay_mult() * 1.1 / ((bestc["target"] + 20) / 60.0)
         s.ipm = ipm
@@ -732,7 +742,7 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
                 s.cash_from_packs = getattr(s, "cash_from_packs", 0.0) + v
         elif s.gems >= E["crates"]["golden"]["gems"]:
             s.gems -= E["crates"]["golden"]["gems"]
-            open_crate(s, "golden")
+            open_crate(s, "golden", "gems")
         # Robux cash packs (Contractor's Bonus 99 R$ = 40 min of IncomePerMin), packs_h per hour of play
         s.robux_pack = getattr(s, "robux_pack", 0.0) + P.get("packs_h", 0) * dt / 3600
         while s.robux_pack >= 1:
@@ -745,7 +755,7 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
         s.robux_golden = getattr(s, "robux_golden", 0.0) + P.get("robux_golden_h", 0) * dt / 3600
         while s.robux_golden >= 1:
             s.robux_golden -= 1
-            open_crate(s, "golden")
+            open_crate(s, "golden", "robux")
             s.robux_spent = getattr(s, "robux_spent", 0) + 149
         buy_round(s, horizon=E.get("horizon", 1200))
         # rebirth
