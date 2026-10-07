@@ -294,9 +294,12 @@ local function hammerPopup(h, it, data, still)
 		else
 			K.button(holder, "EQUIP", EQUIP_BLUE, { Size = UDim2.fromOffset(160, 54), TextSize = 22, LayoutOrder = 2, Shine = true }, function()
 				equipItem(it, h)
-				local now = it
-				for _, x in ipairs(cache and cache.hammers or {}) do if x.id == it.id then now = x end end
-				hammerPopup(h, now, cache or data, true)
+				-- the card closes and the list goes back up, to the hammer in your hand (it is shown first)
+				closePopup()
+				local function top() if c.content and c.content.Parent then c.content.CanvasPosition = Vector2.zero end end
+				top()
+				task.delay(0.1, top)
+				task.delay(0.9, top)
 			end)
 		end
 	end

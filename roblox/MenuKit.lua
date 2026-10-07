@@ -71,6 +71,10 @@ K.FALLBACK = {
 	["rbxassetid://81484084637371"] = "rbxassetid://75330431497360", ["rbxassetid://72301801875933"] = "rbxassetid://104449117497713",
 	["rbxassetid://111757044275990"] = "rbxassetid://108198116543312", ["rbxassetid://140362380150130"] = "rbxassetid://117610832518353",
 	["rbxassetid://129859208894290"] = "rbxassetid://99231744226623", ["rbxassetid://90526418216758"] = "rbxassetid://89642781937720",
+	-- every crate its own object (2026-10-07): the Town, Suburbs and Downtown Supply Crates, Builder's, Golden, Exclusive
+	["rbxassetid://71166572993372"] = "rbxassetid://81484084637371", ["rbxassetid://100342110009702"] = "rbxassetid://81484084637371",
+	["rbxassetid://82076340326872"] = "rbxassetid://81484084637371", ["rbxassetid://139943455261862"] = "rbxassetid://72301801875933",
+	["rbxassetid://139225612607562"] = "rbxassetid://111757044275990", ["rbxassetid://106463104658382"] = "rbxassetid://140362380150130",
 	-- the hammers, the Store pictures and four training-gear pictures without sparkles (2026-10-07)
 	["rbxassetid://79621144422162"] = "rbxassetid://140017267585797", ["rbxassetid://136293287602945"] = "rbxassetid://107313245584623", ["rbxassetid://115250332513646"] = "rbxassetid://92464271681130",
 	["rbxassetid://96534178685358"] = "rbxassetid://74547073866110", ["rbxassetid://122092536358702"] = "rbxassetid://120829940524720", ["rbxassetid://117994941043100"] = "rbxassetid://129882943403564",
