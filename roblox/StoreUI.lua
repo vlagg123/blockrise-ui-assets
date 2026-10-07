@@ -327,6 +327,9 @@ local function passes(tok)
 			end)
 			K.section(c.content, order, g.title, g.color, gi == 1 and (g.note .. "  ·  you own " .. nOwned .. " of " .. nAll) or g.note)
 			local grid = K.grid(c.content, order + 1, twoCols and 2 or 1, 122, 10)
+			-- (a lone pass sits on the left, under its title, not in the middle)
+			local gl = grid:FindFirstChildOfClass("UIGridLayout")
+			if gl then gl.HorizontalAlignment = Enum.HorizontalAlignment.Left end
 			for i, p in ipairs(list) do passCard(grid, p, i, tok) end
 			order += 2
 		end
