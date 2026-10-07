@@ -1141,10 +1141,11 @@ local function oddsTip(t, odds, pos, size)
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 30, Parent = t })
 		new("UICorner", { CornerRadius = UDim.new(0, 12), Parent = tip })
 		new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = tip })
-		-- a little arrow down to the bar
-		local nib = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 1, 0), Size = UDim2.fromOffset(12, 12), Rotation = 45,
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 29, Parent = tip })
+		-- a little arrow down to the bar (beside the box, under it: the box hides its top half)
+		local nib = new("Frame", { Name = "OddsNib", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, pos.Y.Offset - 8), Size = UDim2.fromOffset(12, 12),
+			Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 29, Parent = t })
 		new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = nib })
+		tip.Destroying:Connect(function() nib:Destroy() end)
 		for i, r in ipairs(rows) do
 			local rr = Hammers.Rarities[r]
 			local y = PAD + (i - 1) * RH
