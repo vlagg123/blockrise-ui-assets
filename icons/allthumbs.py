@@ -39,7 +39,8 @@ def _pack(kind, n, label, col):
     for (x, y, z, r) in back:
         track(loot_chest, loc=(x, y, z), rot=(0, 0, r), s=0.66 if n == 5 else 0.74, kind=kind, open_=False)
     track(loot_chest, loc=(0.0, -1.0, 0), rot=(0, 0, 22), s=0.8, kind=kind)
-    track(badge, label, (1.75, -2.2, 0.35), s=0.62, col=col, rot=(-12, 0, 0))
+    # (a big count badge: x3 / x5 / x10 must read at a glance, even small in the store)
+    track(badge, label, (1.85, -2.4, -0.05), s=1.0, col=col, rot=(-12, 0, 0))
 
 
 def i_crate_builder5():
