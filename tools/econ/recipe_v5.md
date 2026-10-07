@@ -230,6 +230,44 @@ Builder's pe zi × șansele lor.)
   - Cu tot setul primește un titlu: „Pirate King”, „Temple Guardian”, „Legend”.
   - Așa ciocanele din seturi au cerere la trade: lumea caută bucata care îi lipsește.
 
+### 5.3 EXCLUSIVE_V2 (făcut între timp pe PC): problema și cele două variante
+- **Ce s-a făcut pe PC:**
+  - Exclusive e acum cea mai mare raritate, cu putere ×256 (peste Divine ×128).
+  - Exclusive Crate dă 100% Exclusive, la 999 R$.
+  - Exclusive of the Day se vinde direct, la 1.499 R$.
+- **De ce strică piața.** Puterea crește cu raritatea, iar prețul trebuie să crească la fel. Prin Golden Crate (249 R$),
+  în medie (`v5_exclusive.py`):
+
+  | Raritate | Putere | Șansă | Cost mediu |
+  |---|---|---|---|
+  | Legendary | ×16 | 1 din 11 | ~2.600 R$ |
+  | Mythic | ×32 | 1 din 77 | ~19.000 R$ |
+  | Secret | ×64 | 1 din 333 | ~83.000 R$ |
+  | Divine | ×128 | 1 din 25.000 | ~6,2 milioane R$ |
+  | **Exclusive** | **×256** | **garantat** | **999 R$** |
+
+  - Cel mai puternic ciocan din joc ar fi de ~6.000 de ori mai ieftin decât al doilea.
+  - Divine-urile și Secret-urile nu mai valorează nimic la trade, pentru că oricine cumpără ceva mai bun cu 999 R$.
+- **Ritmul**, cu un Exclusive cumpărat de la început:
+
+  | Jucător | Rebirth 5 fără | Rebirth 5 cu Exclusive | Rebirth 3 fără | Rebirth 3 cu Exclusive |
+  |---|---|---|---|---|
+  | plătitor | 5 h 44 | **2 h 07** | | |
+  | casual | | | 4 h 22 | 2 h 03 |
+
+  Nu e o prăbușire (porțile de Strength și crew țin), dar e un pay-to-win mare.
+- **Varianta A (recomandată):**
+  - Exclusive rămâne cea mai rară raritate *de colecție*: insignă, secțiunea de sus din Index, efecte proprii, doar pe
+    Robux.
+  - Puterea e de Mythic (×32); Thunderclap, „1 în ???”, are puterea Secret (×64).
+  - Divine rămâne cel mai puternic și se obține doar cu noroc.
+  - Exclusive Crate 999 R$ și Exclusive of the Day 1.499 R$ rămân.
+- **Varianta B:**
+  - Exclusive rămâne ×256, dar nu se mai vinde garantat. Exclusive Crate revine la șanse: 75% Legendary / 22% Mythic /
+    2,9% Secret / 0,1% Exclusive.
+  - Exclusive of the Day se scoate.
+- Alegi tu. Chatul de pe PC aplică varianta aleasă (`HANDOFF_PC.md`, 3.6).
+
 ---
 
 ## 6. Banii ($): de unde vin, unde se duc
@@ -366,5 +404,6 @@ Hammer of the Day pe Robux tot nu se creează.
 5. Bara fără cutii (premiile din 2.3).
 6. Suburbs cu muncă ×2.
 7. Kraken King 1 din 25.000, cutiile noi la 199 R$, bonusul de colecție.
+8b. **Exclusive: varianta A (putere de Mythic, recomandată) sau B (rămâne ×256, dar doar din noroc)** — secțiunea 5.3.
 8. Road-ul nou (secțiunea 8).
 9. Migrarea (creditul de Rebirth).

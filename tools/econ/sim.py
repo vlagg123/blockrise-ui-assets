@@ -38,7 +38,7 @@ ZONE_OF = {k: ("town" if i < 5 else "suburbs" if i < 10 else "downtown") for i, 
 MACHINE_VERBS = {"excavator": {"dig", "clear"}, "mixer": {"pour"}, "crane": {"metal", "glass"}}
 
 RARITY = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "secret", "divine"]
-COOLDOWN = [0.42, 0.38, 0.34, 0.30, 0.27, 0.25, 0.23, 0.21]
+COOLDOWN = [0.42, 0.38, 0.34, 0.30, 0.27, 0.25, 0.23, 0.21, 0.19]  # (+ Exclusive, EXCLUSIVE_V2)
 MATS = ["steel", "copper", "marble", "gold", "diamond"]
 # FIDELITY_V2 (read from Studio, Company.StarPerks): max levels; level n -> n+1 costs n+1 Stars
 PERK_MAX = {"tycoon": 10, "genes": 10, "lawyer": 10, "lucky": 10, "headstart": 10, "crew": 5}
@@ -607,6 +607,9 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
     s.got = {}
     open_crate(s, "supply_town", "tutorial")
     s.money -= 150
+    # a hammer bought before playing (e.g. an EXCLUSIVE for Robux): (rarity index, level); 8 = x256 with RarityStep 2
+    if P.get("start_best"):
+        s.best = tuple(P["start_best"])
     s.gear = 1; s.money -= E["gear"][1][0]
     s.machines["excavator"] = 1; s.money -= E["machines"]["excavator"]["price"]
     s.workers.append("laborer"); s.money -= E["workers"]["laborer"]["price"]

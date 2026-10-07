@@ -1,0 +1,15 @@
+== power and price of each rarity (Golden Crate 249 R$, no luck)
+  Rare      x4     1 in 2        ~445 R$
+  Epic      x8     1 in 3        ~755 R$
+  Legendary x16    1 in 11       ~2,649 R$
+  Mythic    x32    1 in 77       ~19,154 R$
+  Secret    x64    1 in 333      ~83,000 R$
+  Divine    x128   1 in 25000    ~6,225,000 R$
+  Exclusive x256   Exclusive Crate 999 R$ (100%) / Exclusive of the Day 1499 R$
+== pacing (v5), minutes to R1..R5: no purchase vs an Exclusive (x256) from the start
+  casual as today     ['34 min', '1 h 46', '4 h 22', '7 h 46', '15 h 27']
+  casual + Exclusive  ['19 min', '1 h 03', '2 h 03', '6 h 08', '13 h 13']
+  casual + Legendary  ['24 min', '1 h 20', '3 h 02', '5 h 42', '12 h 18']
+  payer  as today     ['14 min', '51 min', '1 h 46', '2 h 56', '5 h 44']
+  payer  + Exclusive  ['7 min', '28 min', '53 min', '1 h 22', '2 h 07']
+  payer  + Legendary  ['8 min', '28 min', '1 h 05', '1 h 55', '4 h 12']

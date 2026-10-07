@@ -273,6 +273,27 @@ Achievements worth ≤ 10K (divided by 6 in v4) go back to their old values.
   - show it in the Index.
 - They stay "coming soon" until the owner opens them.
 
+### 3.6b EXCLUSIVE_V2 — apply the option the owner picks (recipe_v5.md §5.3)
+EXCLUSIVE_V2 made Exclusive the top power (×256), sold guaranteed: the Exclusive Crate at 999 R$ and the Exclusive of the
+Day at 1499 R$. The strongest hammer of the game would be ~6,000× cheaper than a Divine (~6.2M R$ through Golden Crates),
+which kills the Divine / Secret market. A payer with one reaches Rebirth 5 in 2 h 07 instead of 5 h 44.
+- **Option A (recommended):**
+  - Exclusive stays the rarest *collectible*: badge, the top Index section, its own effects, Robux only.
+  - Its power is its ladder power: Royal Crown / Ghost / Rainbow Prism = Mythic (×32); Thunderclap = Secret (×64).
+  - `Hammers.Power` uses the ladder rarity for `ExclusiveR` hammers. The cooldown and the level costs follow too.
+  - Divine stays the strongest.
+  - Prices stay: Exclusive Crate 999 / 3 for 2699, Exclusive of the Day 1499.
+  - Texts: replace "x256" with "Mythic power" / "Secret power".
+- **Option B:**
+  - Exclusive stays ×256 but is never sold guaranteed.
+  - The Exclusive Crate odds become 75 Legendary / 22 Mythic / 2.9 Secret / 0.1 Exclusive, at 399 / 3 for 999.
+  - Remove the Exclusive of the Day (`hammer_exclusive`).
+  - Golden 1 in 100,000, Legends 1 in 5,000 and the Lucky Spin 1 in 10,000 stay.
+- **Verify:**
+  - Power in the Inventory card equals the chosen rule.
+  - Option A: a new Royal Crown builds exactly like a Mythic of the same level.
+  - Option B: 10,000 server rolls of the Exclusive Crate give ~10 Exclusives.
+
 ### 3.7 Nothing else changes
 - The passes, the other products and their prices stay the same.
 - The Gem prices stay the same.
