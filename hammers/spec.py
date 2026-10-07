@@ -1903,10 +1903,10 @@ def build_sets(H):
     # two thick tentacles reach forward and curl under (the striking end), two sweep back and up: well apart
     for i, sx in enumerate((-1, 1)):
         root = hp + [sx * 0.2, -0.14, -0.16]
-        tentacle("Front%d" % i, root, (sx * 0.38, -0.3, -1), -230, 1.0, 0.16, 0.035)
+        tentacle("Front%d" % i, root, (sx * 0.3, -0.1, -1), -140, 1.15, 0.16, 0.035)
         h.add("FrontBand%d" % i, "ring", (0.06, 0.175, 0.12), root + unit((sx * 0.38, -0.3, -1)) * 0.06, R=toward(unit((sx * 0.38, -0.3, -1))), mat="gold", smooth=40, cast=False)
         root = hp + [sx * 0.2, -0.08, 0.32]
-        tentacle("Back%d" % i, root, (sx * 0.45, -0.4, 1), 260, 0.85, 0.14, 0.03)
+        tentacle("Back%d" % i, root, (sx * 0.4, -0.15, 1), 160, 1.0, 0.14, 0.03)
     # two thin ones hug the handle: they spiral down the shaft
     for i, ph in enumerate((0.0, math.pi)):
         n = 40
