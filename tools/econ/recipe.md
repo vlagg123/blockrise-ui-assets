@@ -1,4 +1,6 @@
-# BlockRise Empire — rețeta economiei, versiunea 2 (propunere, NIMIC implementat încă)
+# BlockRise Empire — rețeta economiei, versiunea 2 (confirmată și implementată în Studio pe 7 octombrie; așteaptă Publish)
+
+Ce s-a schimbat exact, script cu script: `roblox/ECON_V4_STUDIO.md`.
 
 Lucrat în noaptea de 7 octombrie 2026, verificat și corectat a doua zi (secțiunea 12). Toate cifrele „azi” sunt citite din Studio (Config, Company, Hammers, Main, Crew,
 Machines, CompanyService, RebirthService). Cifrele „propus” vin dintr-un simulator al jocului (`tools/econ/sim.py`) care
