@@ -43,7 +43,7 @@ PC and the old chat could not be linked to it, so a new task continues here. **R
    existing hammer with `import bl_build as B; B.render(tiers=[37])` (the crown), then compare it with the Store picture
    (rbxassetid 126956308355764).
 
-## Step 1 — three bug fixes the owner asked for (do these first)
+## Step 1 — five things the owner asked for (do these first)
 1. **Tutorial ring at GO (PLACES → My Property)** sits lower and wider than the button.
    - Cause: `LocationsUI` takes the window's scale from `go.AbsoluteSize.Y / 50`, but the tile buttons are 47 px tall
      now.
@@ -64,6 +64,28 @@ PC and the old chat could not be linked to it, so a new task continues here. **R
    - Make the tip narrower: Size 268 → ~236, text box 150 → ~110.
    - Keep it above the neighbouring card: raise the card's ZIndex while the tip is open, or parent the tip higher.
    - The % stays in the crate's big window (Roblox's paid-random-items rule: the odds are shown before buying).
+
+4. **"Two crew members appeared that I don't remember buying"** — reported after the tutorial, the playtime gifts and
+   the daily missions.
+   - Probable cause (from the repo's `patch_tutorial_v4.lua`): the tutorial itself buys both, and tops up exactly the
+     money for them.
+     - Step 5 "Your first machine" buys the Mini Excavator, which builds on its own.
+     - Step 6 "Hire a worker" buys one Laborer. In the tutorial `Hire` refuses a second worker.
+   - Confirm it in the CURRENT Studio code. Look for every code path that adds to `d.Workers` (Main `Hire`, the
+     tutorial, `PlaytimeGifts`, `DailyMissions`, Road rewards, the Starter Pack, Rush Crew, Big Crew, the Economy v4
+     migration). Also confirm that no gift or mission gives a worker.
+   - Tell the owner which two they are. If it is TWO workers (people) rather than a worker and the excavator, it's a bug:
+     find it and fix it.
+5. **Holding Shift to run kills the mouse wheel**: no camera zoom in or out, no scrolling in the menus while sprinting.
+   - Find the sprint code (`script_grep` for `LeftShift` / `Sprint`, look at ContextActionService binds, and at what
+     changes the camera zoom limits or the MouseBehavior while running).
+   - Likely causes:
+     - a bind that sinks input;
+     - the zoom limits locked while sprinting;
+     - Roblox turning Shift+wheel into a sideways scroll. If so, sprint on a key the wheel doesn't care about, or read
+       the wheel ourselves while Shift is down: `InputChanged` → `MouseWheel` → camera zoom / `CanvasPosition` of the
+       ScrollingFrame under the mouse.
+   - Fix it so the wheel works the same whether you run or not.
 
 ## Step 2 — the owner's request of 13:35 (verbatim)
 > "Sa mai faci niste ciocane exlcusive si niste crate-uri ceva cu colectii si inca un crate exclusive. Sa le faci in
