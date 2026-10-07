@@ -128,6 +128,50 @@ BOLT = [
 
 
 # ------------------------------------------------------------------------------------------------ pieces
+GAP = 0.012  # the least distance between two surfaces of different pieces that face the same way (no flicker in Roblox)
+
+
+def separate(d):
+    """two boxes turned the same way with a face in the same plane (a plate on a head, a frame round its end) flicker
+    against each other in Roblox: the thinner one (along that axis) moves out by GAP"""
+    P = d["pieces"]
+    for _ in range(3):
+        moved = False
+        for a in P:
+            for b in P:
+                if a is b or a["shape"] != "box" or b["shape"] != "box" or a["mat"] == b["mat"]:
+                    continue
+                if a.get("union") and a.get("union") == b.get("union"):
+                    continue
+                Ra, Rb = np.array(a["R"]), np.array(b["R"])
+                if not np.allclose(Ra, Rb, atol=1e-4):
+                    continue
+                sa, sb = np.array(a["size"]) / 2, np.array(b["size"]) / 2
+                rel = Ra.T @ (np.array(b["pos"]) - np.array(a["pos"]))
+                for k in range(3):
+                    o = [j for j in range(3) if j != k]
+                    if not all(min(sa[j], rel[j] + sb[j]) - max(-sa[j], rel[j] - sb[j]) > 0.01 for j in o):
+                        continue
+                    for sg in (-1, 1):
+                        fa, fb = sg * sa[k], rel[k] + sg * sb[k]
+                        if abs(fa - fb) < GAP - 1e-6:
+                            # the thinner piece moves out (b if it is thinner, else a moves the other way)
+                            if sb[k] <= sa[k]:
+                                step = sg * (GAP - (fb - fa) * sg)
+                                b["pos"] = [round(float(v), 4) for v in np.array(b["pos"]) + Ra[:, k] * step]
+                            else:
+                                step = sg * (GAP - (fa - fb) * sg)
+                                a["pos"] = [round(float(v), 4) for v in np.array(a["pos"]) + Ra[:, k] * step]
+                            moved = True
+                            break
+                    else:
+                        continue
+                    break
+        if not moved:
+            break
+    return d
+
+
 class Hammer:
     def __init__(self, tier, key, name, desc):
         self.d = dict(tier=tier, key=key, name=name, desc=desc, pieces=[], fx=[], light=None, trail=None, head=None)
@@ -177,6 +221,25 @@ class Hammer:
         self.add("Shaft", "cyl", (L, r), (0, (y0 + y1) / 2, 0), mat=mat, planes=cyl_bevel(L, r, bevel), smooth=40)
 
     def band(self, name, y, r, length, mat, R=I3, bevel=0.012):
+        # a ring sitting a hair above the shaft / grip flickers against it in Roblox (the two surfaces fight for the same
+        # pixels): it stands at least GAP proud of any cylinder on the same axis it overlaps
+        R = np.array(R, dtype=float)
+        ax = R[:, 1]
+        for p in self.d["pieces"]:
+            if p["shape"] != "cyl":
+                continue
+            Rp = np.array(p["R"])
+            if abs(abs(Rp[:, 1] @ ax) - 1) > 1e-3:
+                continue
+            off = np.array(p["pos"]) - np.array([0.0, y, 0.0])
+            if np.linalg.norm(off - (off @ ax) * ax) > 1e-3:
+                continue
+            L2, r2 = p["size"]
+            t = off @ ax
+            if min(length / 2, t + L2 / 2) - max(-length / 2, t - L2 / 2) <= 0:
+                continue
+            if r2 - 0.001 <= r < r2 + GAP:
+                r = r2 + GAP
         self.add(name, "cyl", (length, r), (0, y, 0), R=R, mat=mat, planes=cyl_bevel(length, r, bevel), smooth=40, cast=False)
 
     def grip(self, y0, y1, r, mat, rings=0, ring_mat=None, ring_r=None):
@@ -807,7 +870,7 @@ def build():
     H.append(h)
 
     build_new(H)
-    return [x.d for x in H]
+    return [separate(x.d) for x in H]
 
 
 def build_new(H):
