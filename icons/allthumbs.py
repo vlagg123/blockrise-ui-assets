@@ -64,8 +64,16 @@ def i_crate_legends3():
 
 
 def i_hammer_exclusive():
-    """the Exclusive of the Day: two Exclusive hammers crossed, an EXCLUSIVE plate, a star"""
-    R._hammer_day(("crown", "prism"), "EXCLUSIVE", "#14b6aa")
+    """the Exclusive of the Day (v3, 2026-10-07): the Royal Crown hammer standing up like a trophy on a round teal and
+    gold pedestal. Clean: no plate, no crossed hammers."""
+    teal = R.candy("#14b6aa", rough=0.25, emit=0.12)
+    deep = R.candy("#0b6f6a", rough=0.3, emit=0.08)
+    g = R.gold()
+    R.cyl(1.55, 0.42, deep, loc=(0, 0.4, -2.05), bevel=0.08)
+    R.torus(1.55, 0.07, g, loc=(0, 0.4, -1.84), outline=False)
+    R.cyl(1.15, 0.3, teal, loc=(0, 0.4, -1.7), bevel=0.07)
+    R.torus(1.15, 0.06, g, loc=(0, 0.4, -1.55), outline=False)
+    track(R.spec_hammer, "crown", rot=40, loc=(0, 0.4, 0.3), size=3.9)
 
 
 def i_luckboost():
@@ -96,7 +104,7 @@ TH.LOOK.update({
 })
 for k in ("crate_builder5", "crate_golden3", "crate_golden10", "crate_exclusive3", "crate_legends3"):
     TH.VIEW[k] = (-0.22, -1, 0.38)
-TH.VIEW["hammer_exclusive"] = (0, -1, 0.12)
+TH.VIEW["hammer_exclusive"] = (0, -1, 0.18)
 TH.VIEW["luckboost"] = (-0.2, -1, 0.6)
 TH.VIEW["car_monster"] = R.VIEW.get("monster", (-0.3, -1, 0.3))
 TH.VIEW["car_goldcar"] = R.VIEW.get("goldcar", (-0.45, -1, 0.5))
