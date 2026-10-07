@@ -44,6 +44,8 @@ PC and the old chat could not be linked to it, so a new task continues here. **R
    (rbxassetid 126956308355764).
 
 ## Step 1 — five things the owner asked for (do these first)
+
+Order of the work: Step 1 (fixes), Step 2 (new hammers and crates), Step 3 (Economy v5: a proposal first, implemented only after the owner confirms it).
 1. **Tutorial ring at GO (PLACES → My Property)** sits lower and wider than the button.
    - Cause: `LocationsUI` takes the window's scale from `go.AbsoluteSize.Y / 50`, but the tile buttons are 47 px tall
      now.
@@ -122,6 +124,80 @@ Plan:
    "Left for the owner", and `Config.Store`).
 6. **New premium pass thumbnails** for the Roblox game page: rendered in Blender, sharp, rich colours, no stars or
    sparkles, not washed out. 512×512 for passes. Deliver them as a zip (SendUserFile) together with the list.
+
+## Step 3 — Economy v5: Rebirth on cash, free crates only from missions, rethink the Road and the loop
+
+The owner's words (14:06 – 14:22):
+> "nu crezi ca la rebirth ar trebui facut ca banii aia care se incarca acolo sa nu fie toti banii facut in total, ci sa
+> fie banii cash pe care ii ai" · "pai sa cumpere mereu acele upgrade-uri la fiecare rebirth ca sa faca acei bani. cred
+> ca ai pus cam putini bani acuma pentru ribirth si cred ca o sa fie prea usor nu? ia si verifica my toll farm" ·
+> "am observat ca imi da cutii gratis uneori si e prea OP ... ar trebui cutiile gratis sa fie la ceva misiuni nu sa dai
+> cutii asa la orice om random ca se joaca random... fa sa fie doar din misiuni" · "sa regandesti putin road ul si loop
+> ul sa aiba sens si sa refaci economia si tot daca e nevoie."
+
+**How to work (same as Economy v4):**
+- First a written recipe in Romanian: `tools/econ/recipe_v5.md`, in the style of `recipe.md`.
+- Every number comes from the simulator, with several seeds and players active / casual / payer / whale.
+- Show it to the owner and implement NOTHING until he confirms. The game is live.
+- Read the current Road, Daily Missions, achievements, Playtime gifts and every crate source from Studio first. The
+  simulator only models the Road as one-time cash.
+
+**What we already know:**
+1. **Rebirth on cash in hand — check 11** (`tools/econ/check11_cash.py`; `sim.py` has `reb_cash` / `reb_cash_saver`,
+   off by default).
+
+   Same Economy v4 costs (25K, 250M, 20B, 150B, 800B). "saver" is a player who stops buying what won't pay back before
+   his Rebirth. Minutes of play to each Rebirth, mean of 5 seeds:
+
+   | Player | Rule | R1 | R2 | R3 | R4 | R5 |
+   |---|---|---|---|---|---|---|
+   | active | earned this run (v4) | 17 min | 49 min | 2 h 17 | 4 h 42 | 8 h 49 |
+   | active | cash, keeps buying | 34 min | 1 h 11 | 2 h 53 | 5 h 30 | 10 h 11 |
+   | active | cash, saver | 21 min | 59 min | 2 h 44 | 5 h 29 | 10 h 18 |
+   | casual | earned | 22 min | 60 min | 2 h 52 | 5 h 52 | 11 h 06 |
+   | casual | cash, saver | 27 min | 1 h 11 | 3 h 04 | 5 h 56 | 11 h 04 |
+   | payer | earned | 8 min | 25 min | 1 h 05 | 2 h 03 | 3 h 57 |
+   | payer | cash, saver | 10 min | 30 min | 1 h 19 | 2 h 28 | 5 h 18 |
+   | whale | earned | 6 min | 17 min | 40 min | 1 h 11 | 2 h 17 |
+   | whale | cash, saver | 7 min | 19 min | 49 min | 1 h 27 | 2 h 50 |
+
+   - The owner is right that players keep buying upgrades every run. Runs get ~15–25% longer; the saving happens at the
+     end.
+   - Multiplying every cost (cash, saver) barely moves R1 but stretches the late game. R1 / R5 for active, and R5 for
+     payer:
+
+     | Costs | Active R1 | Active R5 | Payer R5 |
+     |---|---|---|---|
+     | ×1.5 | 24 min | 13 h 34 | 6 h 17 |
+     | ×2 | 26 min | 16 h 45 | 7 h 39 |
+     | ×3 | 29 min | 23 h 52 | 9 h 50 |
+
+     R1 is bound by the Town's contract ladder and the "Corner Shop built" gate. A slower R1 needs the first run's
+     content and costs retuned, not just a bigger number.
+   - Benchmarks: the first Rebirth comes after 30–60 min in most Roblox simulators (recipe.md §1); ours is 17 min. The
+     owner finds v4 too easy.
+   - **My Toll Farm**: the Rebirth needs cash and wipes ONLY the cash. Cars and upgrades stay. The first Rebirth costs
+     15,000 cash and gives ×2, then ×3, ×5 … up to ×50 at Rebirth 10 (the cap). Guides say to rebirth as soon as you can
+     afford it. Sources: earnaldo.com/blog/my-toll-farm-beginner-guide, allthings.how. In BlockRise a Rebirth resets
+     nearly everything, so copying the cash rule also means rethinking what a Rebirth keeps.
+   - The UI must change with the rule. The bar shows cash in hand / cost. The prize steps are paid on the highest % ever
+     reached in the run (the bar can go down). The "≈ X min" estimate comes from income.
+2. **Free crates only from missions.** Today crates fall to anyone who just plays:
+   - the free Supply Crate every N contracts;
+   - the Builder's Crate dropping on ~3% of contracts;
+   - the Rebirth-bar prizes (Supply at 1% / 10%, Builder's at 50%).
+
+   Check Studio for any other source: tutorial, playtime gifts, spin, codes.
+   - The owner wants free crates ONLY as mission rewards: Daily Missions, the Empire Road, maybe weekly missions or the
+     Index. Design which mission gives which crate and how often, keeping the crate market (trading) valuable.
+   - Keep the countries where Roblox doesn't allow paid random items working. Today every crate is free there (Supply
+     every 3 contracts, Builder's 6%, Golden 0.5%). They need a free path that still feels fair, and missions can be
+     that path.
+3. **Rethink the Empire Road and the core loop so it makes sense end to end:** contracts → money → upgrades / crew /
+   machines / properties → Rebirth, with hammers / crates / missions around it. The Road should guide that loop and
+   reward real milestones, including the crates from point 2. Redo the economy where needed: costs, Rebirth (cash rule +
+   harder), what a Rebirth keeps, the Star Shop, the Helmet. Then rerun the checks of recipe.md §12: bar, jumps, days,
+   naive players, exploits, passes, migration of current saves.
 
 ## Where things are
 | What | Where |

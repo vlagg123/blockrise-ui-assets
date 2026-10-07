@@ -441,12 +441,20 @@ def buy_round(s, horizon):
             k, kk, c = s.rng.choice(opts) if pol == "random" else min(opts, key=lambda o: o[2])
             s.money -= c; apply(s, k, kk); s.purchases.append((s.t, k, kk, c)); bought += 1
             continue
+        # REB_CASH (test of the owner's idea): the Rebirth wants the cash in hand. A saver stops buying what won't pay
+        # back before the Rebirth he is saving for (time left = what's missing / income now)
+        save_left = None
+        if s.E.get("reb_cash") and s.E.get("reb_cash_saver"):
+            inc = max(1e-9, s.income_per_sec())
+            save_left = max(0.0, s.E["rebirth_cost"](s.R) - s.money) / inc
         for kind, key, cost in candidates(s):
             if cost > s.money: continue
             if kind in skip: continue
             gain = value_of(s, kind, key)
             if gain <= 0: continue
             pb = cost / gain
+            if save_left is not None and pb > save_left + cost / max(1e-9, s.income_per_sec()) * s.E.get("reb_cash_slack", 1.0):
+                continue
             lim = horizon * (s.E.get("prop_horizon_x", 2.25) if kind in ("prop", "company") else 1.0)
             if pb < lim and (best is None or pb / lim < best):
                 best, bk = pb / lim, (kind, key, cost)
@@ -747,7 +755,8 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
             s.run_log.append((s.t, s.R, s.earned_run, bool(g is None or s.built.get(g["id"])), s.strength))
         if hold_at is not None and s.R >= hold_at:
             continue
-        if s.earned_run >= E["rebirth_cost"](s.R) and (not E["rebirth_gate_last_contract"] or g is None or s.built.get(g["id"])):
+        have = s.money if E.get("reb_cash") else s.earned_run
+        if have >= E["rebirth_cost"](s.R) and (not E["rebirth_gate_last_contract"] or g is None or s.built.get(g["id"])):
             do_rebirth(s)
     return s
 
