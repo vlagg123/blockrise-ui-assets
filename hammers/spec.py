@@ -225,14 +225,14 @@ PALETTE = {
     "plate":     dict(rbx=["DiamondPlate", [150, 156, 172], 0, 0.05], bl=dict(color=[0.40, 0.42, 0.47], metal=1, rough=0.3, tex="plate")),
     "orange":    dict(rbx=["SmoothPlastic", [255, 124, 26], 0, 0], bl=dict(color=[1.0, 0.25, 0.01], metal=0, rough=0.3)),
     "carbon":    dict(rbx=["SmoothPlastic", [34, 36, 44], 0, 0.05], bl=dict(color=[0.015, 0.016, 0.02], metal=0.3, rough=0.25)),
-    "emerald":   dict(rbx=["Glass", [16, 186, 96], 0, 0.25], bl=dict(color=[0.02, 0.75, 0.25], metal=0, rough=0.02, trans=1.0, ior=1.58, emit=0.15)),
+    "emerald":   dict(rbx=["Glass", [0, 170, 75], 0.38, 0.2], core=[40, 255, 140, 0.55], bl=dict(color=[0.02, 0.75, 0.25], metal=0, rough=0.02, trans=1.0, ior=1.58, emit=0.15)),
     "green_lth": dict(rbx=["Fabric", [20, 82, 52], 0, 0], bl=dict(color=[0.01, 0.10, 0.04], metal=0, rough=0.6)),
     "platinum":  dict(rbx=["Metal", [200, 206, 222], 0, 0.22], bl=dict(color=[0.80, 0.82, 0.86], metal=1, rough=0.12)),
-    "ruby":      dict(rbx=["Glass", [214, 16, 52], 0, 0.25], bl=dict(color=[0.85, 0.01, 0.06], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
+    "ruby":      dict(rbx=["Glass", [205, 0, 40], 0.35, 0.2], core=[255, 70, 100, 0.55], bl=dict(color=[0.85, 0.01, 0.06], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
     "red_lth":   dict(rbx=["Fabric", [120, 18, 32], 0, 0], bl=dict(color=[0.22, 0.005, 0.02], metal=0, rough=0.6)),
-    "sapphire":  dict(rbx=["Glass", [28, 78, 240], 0, 0.25], bl=dict(color=[0.02, 0.10, 0.95], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
+    "sapphire":  dict(rbx=["Glass", [10, 60, 230], 0.35, 0.2], core=[80, 150, 255, 0.55], bl=dict(color=[0.02, 0.10, 0.95], metal=0, rough=0.02, trans=1.0, ior=1.76, emit=0.18)),
     "navy_lth":  dict(rbx=["Fabric", [26, 36, 96], 0, 0], bl=dict(color=[0.01, 0.02, 0.12], metal=0, rough=0.6)),
-    "amethyst":  dict(rbx=["Glass", [146, 66, 240], 0, 0.25], bl=dict(color=[0.45, 0.10, 0.95], metal=0, rough=0.03, trans=1.0, ior=1.55, emit=0.22)),
+    "amethyst":  dict(rbx=["Glass", [125, 40, 230], 0.35, 0.2], core=[195, 120, 255, 0.55], bl=dict(color=[0.45, 0.10, 0.95], metal=0, rough=0.03, trans=1.0, ior=1.55, emit=0.22)),
     "obsidian":  dict(rbx=["Slate", [40, 30, 56], 0, 0.05], bl=dict(color=[0.03, 0.02, 0.05], metal=0.2, rough=0.35)),
     "neon_purple": dict(rbx=["Neon", [176, 90, 255], 0, 0], bl=dict(color=[0.45, 0.12, 1.0], metal=0, rough=0.4, emit=6.0)),
     "basalt":    dict(rbx=["Basalt", [36, 30, 30], 0, 0], bl=dict(color=[0.018, 0.014, 0.014], metal=0, rough=0.8, tex="rock")),
@@ -243,7 +243,7 @@ PALETTE = {
     "frost_neon": dict(rbx=["Neon", [120, 230, 255], 0, 0], bl=dict(color=[0.25, 0.85, 1.0], metal=0, rough=0.4, emit=6.0)),
     "silver":    dict(rbx=["Metal", [214, 230, 244], 0, 0.22], bl=dict(color=[0.72, 0.80, 0.88], metal=1, rough=0.15)),
     "ice_lth":   dict(rbx=["Fabric", [120, 186, 250], 0, 0], bl=dict(color=[0.18, 0.48, 0.95], metal=0, rough=0.6)),
-    "diamond":   dict(rbx=["Glass", [170, 232, 255], 0.08, 0.45], bl=dict(color=[0.92, 0.98, 1.0], metal=0, rough=0.0, trans=1.0, ior=2.42, emit=0.05, disp=0.08)),
+    "diamond":   dict(rbx=["Glass", [185, 236, 255], 0.35, 0.45], core=[230, 250, 255, 0.7], bl=dict(color=[0.92, 0.98, 1.0], metal=0, rough=0.0, trans=1.0, ior=2.42, emit=0.05, disp=0.08)),
     "white_lth": dict(rbx=["Fabric", [236, 238, 246], 0, 0], bl=dict(color=[0.80, 0.82, 0.88], metal=0, rough=0.6)),
     "gunmetal":  dict(rbx=["Metal", [52, 56, 70], 0, 0.15], bl=dict(color=[0.05, 0.055, 0.07], metal=1, rough=0.25)),
     "plasma":    dict(rbx=["Glass", [40, 190, 255], 0.35, 0.2], bl=dict(color=[0.1, 0.8, 1.0], metal=0, rough=0.2, trans=0.6, emit=2.5)),
@@ -259,7 +259,7 @@ PALETTE = {
     "stormwood": dict(rbx=["Wood", [70, 62, 72], 0, 0], bl=dict(color=[0.09, 0.07, 0.08], metal=0, rough=0.6, tex="wood")),
     "storm_lth": dict(rbx=["Fabric", [64, 78, 104], 0, 0], bl=dict(color=[0.06, 0.08, 0.14], metal=0, rough=0.6)),
     "storm_neon": dict(rbx=["Neon", [80, 176, 255], 0, 0], bl=dict(color=[0.15, 0.55, 1.0], metal=0, rough=0.4, emit=8.0)),
-    "storm_crystal": dict(rbx=["Glass", [130, 205, 255], 0.05, 0.35], bl=dict(color=[0.5, 0.8, 1.0], metal=0, rough=0.02, trans=1.0, ior=1.5, emit=0.4)),
+    "storm_crystal": dict(rbx=["Glass", [100, 185, 255], 0.3, 0.3], core=[160, 220, 255, 0.6], bl=dict(color=[0.5, 0.8, 1.0], metal=0, rough=0.02, trans=1.0, ior=1.5, emit=0.4)),
     "void":      dict(rbx=["SmoothPlastic", [26, 18, 44], 0, 0.05], bl=dict(color=[0.015, 0.008, 0.035], metal=0.2, rough=0.3)),
     "star":      dict(rbx=["Neon", [255, 250, 230], 0, 0], bl=dict(color=[1.0, 0.98, 0.9], metal=0, rough=0.4, emit=12.0)),
     # ---- the 24 hammers added in October 2026 ----
@@ -284,7 +284,7 @@ PALETTE = {
     "obsid_glass": dict(rbx=["Glass", [34, 24, 44], 0, 0.3], bl=dict(color=[0.012, 0.008, 0.016], metal=0.2, rough=0.06)),
     "ember":     dict(rbx=["Neon", [255, 54, 30], 0, 0], bl=dict(color=[1.0, 0.06, 0.02], metal=0, rough=0.4, emit=9.0)),
     "charcoal":  dict(rbx=["SmoothPlastic", [52, 50, 56], 0, 0], bl=dict(color=[0.03, 0.028, 0.034], metal=0, rough=0.6)),
-    "jade":      dict(rbx=["Glass", [62, 186, 118], 0.12, 0.15], bl=dict(color=[0.05, 0.5, 0.2], metal=0, rough=0.12, trans=0.45, ior=1.6, emit=0.12)),
+    "jade":      dict(rbx=["Glass", [30, 160, 90], 0.22, 0.15], core=[90, 230, 150, 0.65], bl=dict(color=[0.05, 0.5, 0.2], metal=0, rough=0.12, trans=0.45, ior=1.6, emit=0.12)),
     "lacquer":   dict(rbx=["SmoothPlastic", [32, 22, 24], 0, 0.15], bl=dict(color=[0.015, 0.008, 0.009], metal=0, rough=0.15)),
     "silk_red":  dict(rbx=["Fabric", [200, 30, 40], 0, 0], bl=dict(color=[0.6, 0.01, 0.02], metal=0, rough=0.6)),
     "candy_pink": dict(rbx=["SmoothPlastic", [255, 112, 182], 0, 0.05], bl=dict(color=[1.0, 0.17, 0.48], metal=0, rough=0.2)),
@@ -1206,8 +1206,8 @@ def build_new(H):
     for k in range(N):
         (i0, o0), (i1, o1) = arc[k], arc[k + 1]
         h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], W, hp, I3, "water", union="Wave")
-    # the barrel inside the curl is filled with deep water (no hole through the wave): the hull of the inner edge of the
-    # curl and the top of the swell under it, a little narrower so it reads as the inside of the wave
+    # the barrel inside the curl is filled with water, one piece with the wave (no hole through it): the hull of the inner
+    # edge of the curl and the top of the swell under it
     def swell_v(u):
         return -0.14 + 0.26 * max(0.0, min(1.0, (u + 0.62) / 1.18)) ** 1.7
     pts = [tuple(a[0]) for a in arc]
@@ -1229,7 +1229,7 @@ def build_new(H):
                 up.pop()
             up.append(q)
         return lo[:-1] + up[:-1]
-    h.poly("Barrel", hull2(pts), W - 0.06, hp, I3, "water_deep")
+    h.poly("Barrel", hull2(pts), W, hp, I3, "water", union="Wave")
     # white foam: on the top of the crest, along the falling lip, and spray in front of it
     for i, k in enumerate((4, 5, 6, 7, 8, 9, 10, 11)):
         i0, o0 = arc[k]

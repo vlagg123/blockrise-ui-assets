@@ -114,6 +114,20 @@ local function buildPiece(piece, origin, parent, palette)
 	if part:IsA("UnionOperation") and (piece.smooth or 0) > 0 then part.SmoothingAngle = piece.smooth end
 	part.CastShadow = piece.cast ~= false
 	part.Parent = parent
+	-- a gem: see-through glass with a softly glowing core inside (the same shape, smaller)
+	local core = palette[piece.mat] and palette[piece.mat].core
+	if core then
+		local cp = part:Clone()
+		cp.Name = piece.name .. "Core"
+		cp.Size = part.Size * 0.62
+		cp.CFrame = part.CFrame
+		cp.Material = Enum.Material.Neon
+		cp.Color = Color3.fromRGB(core[1], core[2], core[3])
+		cp.Transparency = core[4] or 0.55
+		cp.Reflectance = 0
+		cp.CastShadow = false
+		cp.Parent = parent
+	end
 	return part
 end
 
