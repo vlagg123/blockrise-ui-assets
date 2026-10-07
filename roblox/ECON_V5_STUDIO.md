@@ -115,3 +115,26 @@ in the new run): the counters are set first now; the crate cards with crates in 
 
 Note for the owner: the Suburbs contracts keep their target times, so their speed bonus is harder to get with twice the
 work (the recipe didn't change the times).
+
+## Full game test — 2026-10-07 (after v5)
+
+Everything tested in Play with the real remotes; no script errors in the console (only Studio's DataStore notices). No code changed.
+
+- Tutorial: crate, fence, gloves, Tire Flip reps, excavator, laborer, home visit → Road 8 ✅
+- Crew hire/fire (refund), contracts town + Suburbs (villa, needs 15k Strength + crew 4), machines + Mk upgrades, gear, house + extension, build hits with crew ✅
+- Company: found, properties, 6 departments, sell materials (doesn't move the Rebirth bar), Helmet I refused before R1, bought after R1 (model on the character) ✅
+- Vehicles: get, buy kart, spawn, despawn ✅
+- Crates: supply (cash), builder/golden (Gems), Exclusive refused for Gems ("only in the Store"), open ×4, equip, level up ✅
+- Hammers of the Day: Epic for Gems ✅, Exclusive refused for Gems ("Robux only") ✅
+- Trade-up: Common→Uncommon ✅, Epic→Legendary ✅, Legendary and Exclusive refused ✅
+- Gem Shop: 4 boosts, cash bag, cash safe, crew slot, instant finish (on a live contract) ✅
+- Lucky Spin: free + 2 Gem spins, prizes land after the reel ✅
+- Codes: BLOCKRISE, BUILDER, RELEASE ✅, reuse and unknown refused ✅
+- Daily missions ×3 claimed (+ Daily Crate), double claim refused; 6 Playtime gifts, double claim refused ✅
+- Trade with the Studio test bot: hammer + $1,000 for steel + hammer, Rusty refused, crates blocked while trading, trade log ✅
+- Auto Build (pass owner) finishes a contract; off again ✅
+- Rebirth: refused under the cost, done at the cost (stars, run reset), Star Shop perk ✅
+- Windows: Company, Contracts, Garage, Crew, Inventory, Places, Missions, Trophies, Property, Rebirth, Shop (hammers/gear/machines), Store, Trade, Upgrades, Index, Trade-Up, Lucky Spin, Codes ✅
+
+After the test: Play stopped, Workspace = Map / Terrain / Camera, HttpEnabled = false.
+Still waiting on the owner: product IDs for hammer_exclusive, crate_exclusive, crate_exclusive3.
