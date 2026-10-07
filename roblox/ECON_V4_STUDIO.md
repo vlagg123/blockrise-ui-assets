@@ -139,10 +139,35 @@ The `ECONOMY_V4` block at the end of the file holds:
 
 After the tests: Play stopped, Workspace = Map / Terrain / Camera, HttpEnabled = false.
 
+## The two Robux cars become developer products (CAR_PRODUCTS, 2026-10-07)
+Monster Truck and Golden Supercar are no longer game passes. As products they don't show on the Roblox game page
+(Passes) and are sold only in the game.
+- **Config:** new products `car_monster` (299) and `car_goldcar` (599), each with a `vehicle` field.
+  `Config.CarSale(v)` returns what sells the car right now: the product once it has an id, else the old pass.
+- **VehicleService:**
+  - you own the car if you have the old pass OR it is saved in `Vehicles` (bought as a product);
+  - the dealer prompt opens the product purchase.
+- **Main:**
+  - the receipt for a car product saves the car in `Vehicles`;
+  - after a progress reset the purchase ledger gives it back (`led.products`);
+  - `Car_<id>` attributes for the clients.
+- **VehicleUI, DealerUI, StoreUI** (the RIDES & TRAVEL card): they sell the product and show OWNED for pass and product
+  owners alike.
+- **Copies from before:** `ServerStorage.Backup_pre_carproducts`.
+- **Tested in Play:**
+
+  | What | Result |
+  |---|---|
+  | Receipt for car_monster | the car is saved; the same purchase again is not given twice |
+  | Without the passes, after car_goldcar | Golden Supercar owned, Monster Truck still for sale (Garage window) |
+  | Old pass owners | still own the cars |
+
 ## Left for the owner
 - Publish + Restart servers.
 - Create on Roblox and send the ids (they are hidden in the live game until then):
   - passes: Lucky Builder (299), Ultra Lucky (899), Secret Hunter (1,499), Night Shift (199), Quick Open (99), Auto Opener (199);
   - products: Golden 249 / 3 for 699 / 10 for 2,199; Builder's 79 / 5 for 349; Exclusive 399 / 3 for 999 / 10 for 2,999; 2x Luck 99.
 - Set the Thunderclap Hammer pass off sale on Roblox.
+- Create the developer products Monster Truck (299) and Golden Supercar (599), send the ids; once they are in the game, set
+  the two car game passes off sale (they then disappear from the game page; whoever bought them keeps the car).
 - Do NOT create the Hammer-of-the-Day Robux products (99 / 249 / 549).
