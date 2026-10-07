@@ -7,7 +7,7 @@ Pornește de la economia v4 (`recipe.md`, implementată). Schimbările sunt cele
 - **ciocanele și cutiile noi** puse în calcul;
 - piața de ciocane, banii și Gems-urile verificate **fiecare separat**.
 
-Implementarea o face chatul de pe PC, după ce confirmi, conform `HANDOFF_PC.md`, pasul 3.
+Implementarea o face chatul de pe PC, după `ECONOMY_V5_PC.md` (lista exactă de lucru și verificările).
 
 Tot ce e mai jos e măsurat în simulator (`tools/econ/`: `v5.py`, `v5_checks.py`, `v5_value.py`, `v5_market.py`,
 `v5_gems.py`), cu 3–5 rulări pentru fiecare tip de jucător:
@@ -417,6 +417,6 @@ Hammer of the Day pe Robux (Epic / Legendary / Mythic) tot nu se creează.
 6. Suburbs cu muncă ×2.
 7. Kraken King 1 din 25.000, cutiile noi la 199 R$, bonusul de colecție.
 8. Legends Crate la 12.000 Gems.
-9. **Exclusive: varianta A (putere de Mythic, recomandată) sau B (rămâne ×256, dar doar din noroc)** — secțiunea 5.3.
+9. **Exclusive: varianta A** (putere de Mythic; Thunderclap Secret) — aleasă, secțiunea 5.3.
 10. Road-ul nou (secțiunea 8).
 11. Migrarea (creditul de Rebirth).
