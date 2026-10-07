@@ -89,11 +89,19 @@ function M.Missions()
 				if l then l.Text = "..." end
 				local ok2, res = pcall(function() return c.R.ClaimMission:InvokeServer(m.index) end)
 				if ok2 and res then
-					c.sound2D(c.S.Chime, 0.5, 1)
-					local char = c.player.Character
-					if char and char:FindFirstChild("HumanoidRootPart") then c.emit(char.HumanoidRootPart.Position, "confetti", nil, 40) end
-					c.toast("🎁 +" .. Config.FormatMoney(m.reward) .. "  ·  +" .. m.xp .. " XP", T.green, 2.5)
-					if c.live(tok) then M.Missions() end
+					if l then l.Text = "✔ CLAIMED" end
+					-- the celebration (like a playtime gift): the mission's picture pops, confetti, the reward pops up and
+					-- the cash flies into the counter on the HUD; the list shows CLAIMED once it is done
+					local row = btn:FindFirstAncestor("Row")
+					local art = row and row:FindFirstChild("Art")
+					if c.playtime and c.playtime.RewardFX then
+						c.playtime.RewardFX(art or row, { cash = m.reward, xp = m.xp }, { PINK, Color3.fromRGB(255, 200, 60), Color3.fromRGB(80, 200, 110),
+							Color3.fromRGB(90, 170, 255), Color3.fromRGB(165, 110, 255) }, PINK)
+					else
+						c.sound2D(c.S.Chime, 0.5, 1)
+						c.toast("🎁 +" .. Config.FormatMoney(m.reward) .. "  ·  +" .. m.xp .. " XP", T.green, 2.5)
+					end
+					task.delay(1.6, function() if c.live(tok) then M.Missions() end end)
 				else
 					if l then l.Text = "CLAIM" end
 					c.toast("⚠️ Couldn't claim right now, try again", T.red)

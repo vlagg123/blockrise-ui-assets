@@ -79,7 +79,8 @@ local function hudPill(kind)
 	return nil
 end
 
-local function giftFX(src, d)
+local function giftFX(src, d, cols, ringCol)
+	cols = cols or GIFT_COLS
 	local pg = c.player:FindFirstChild("PlayerGui")
 	if not pg then return end
 	-- (a ScreenGui that keeps the top-bar inset: positions here are the same as every window's AbsolutePosition)
@@ -114,11 +115,11 @@ local function giftFX(src, d)
 	local ring = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = at(center), Size = UDim2.fromOffset(20, 20), BackgroundColor3 = Color3.new(1, 1, 1),
 		BackgroundTransparency = 0.25, ZIndex = 5, Parent = gui })
 	new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ring })
-	local rs = new("UIStroke", { Thickness = 6, Color = PINK1, Parent = ring })
+	local rs = new("UIStroke", { Thickness = 6, Color = ringCol or PINK1, Parent = ring })
 	UI.tween(ring, 0.45, { Size = UDim2.fromOffset(280 * k, 280 * k), BackgroundTransparency = 1 })
 	UI.tween(rs, 0.45, { Transparency = 1, Thickness = 1 })
 	for i = 1, 22 do
-		local col = (i % 4 == 0) and Color3.new(1, 1, 1) or GIFT_COLS[(i - 1) % #GIFT_COLS + 1]
+		local col = (i % 4 == 0) and Color3.new(1, 1, 1) or cols[(i - 1) % #cols + 1]
 		local sz = math.random(8, 14) * k
 		local p = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = at(center), Size = UDim2.fromOffset(sz, sz * (i % 2 == 0 and 1 or 0.55)),
 			BackgroundColor3 = col, BorderSizePixel = 0, Rotation = math.random(0, 360), ZIndex = 6, Parent = gui })
@@ -139,6 +140,7 @@ local function giftFX(src, d)
 		table.insert(lines, { string.upper(b and b.name or d.boost) .. " " .. math.floor((d.secs or 300) / 60) .. " MIN", Color3.fromRGB(255, 190, 80) })
 	end
 	if d.bp then table.insert(lines, { "+1 " .. string.upper(d.bp) .. " BLUEPRINT", Color3.fromRGB(150, 190, 255) }) end
+	if d.xp and d.xp > 0 then table.insert(lines, { "+" .. Config.FormatNum(d.xp) .. " XP", Color3.fromRGB(150, 200, 255) }) end
 	for li, ln in ipairs(lines) do
 		local y0 = center.Y - 10 * k + (li - 1) * 40 * k
 		local lbl = UI.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(center.X, y0), Size = UDim2.fromOffset(420 * k, 44 * k), Text = ln[1],
@@ -187,6 +189,9 @@ local function giftFX(src, d)
 	if d.cash and d.cash > 0 then fly("cash", "cash", 8) end
 	if d.gems and d.gems > 0 then fly("gems", "gem", 6) end
 end
+
+-- the same celebration for other rewards (Daily Missions...): src = the picture it starts from, d = { cash, gems, xp, ... }
+M.RewardFX = function(src, d, cols, ringCol) task.spawn(giftFX, src, d, cols, ringCol) end
 
 -- used by the HUD gift button
 M.Next = function() if not c then return nil end return nextGift() end
