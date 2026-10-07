@@ -40,15 +40,28 @@ function M.Missions()
 	-- streak + countdown to the next missions: one slim strip, so the three missions fit without scrolling
 	local new = UI.new
 	local resetAt = os.clock() + data.resetIn
-	local strip = new("Frame", { Name = "Streak", Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, LayoutOrder = 0, ZIndex = 2, Parent = c.content })
+	local strip = new("Frame", { Name = "Streak", Size = UDim2.new(1, 0, 0, 84), BackgroundTransparency = 1, LayoutOrder = 0, ZIndex = 2, Parent = c.content })
 	local sbg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 1, Parent = strip })
 	local tint = Color3.fromRGB(255, 190, 210)
 	new("UIGradient", { Color = ColorSequence.new(tint:Lerp(Color3.new(1, 1, 1), 0.55), tint), Rotation = 90, Parent = sbg })
-	local pic = new("Frame", { Position = UDim2.fromOffset(10, 5), Size = UDim2.fromOffset(50, 50), BackgroundTransparency = 1, ZIndex = 3, Parent = strip })
+	local pic = new("Frame", { Position = UDim2.fromOffset(10, 8), Size = UDim2.fromOffset(68, 68), BackgroundTransparency = 1, ZIndex = 3, Parent = strip })
 	K.art(pic, "daily", UDim2.fromScale(1, 1), 4)
-	local st = K.text({ Position = UDim2.fromOffset(70, 0), Size = UDim2.new(1, -330, 1, 0), Text = "DAY " .. data.streak .. " STREAK", Font = T.chunky, TextSize = 28, Max = 28,
+	local st = K.text({ Position = UDim2.fromOffset(88, 8), Size = UDim2.new(1, -370, 0, 32), Text = "DAY " .. data.streak .. " STREAK", Font = T.chunky, TextSize = 28, Max = 28,
 		TextColor3 = Color3.new(1, 1, 1), Stroke = 3, ZIndex = 4, Parent = strip })
 	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 236, 150)), Rotation = 90, Parent = st })
+	-- the week: a dot per day, lit up to today's streak (the bonus grows for 7 days)
+	local week = new("Frame", { Position = UDim2.fromOffset(88, 46), Size = UDim2.fromOffset(7 * 34, 28), BackgroundTransparency = 1, ZIndex = 4, Parent = strip })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center,
+		Parent = week })
+	for d = 1, 7 do
+		local on = d <= (data.streak or 0)
+		local dot = new("Frame", { Size = UDim2.fromOffset(28, 28), BackgroundColor3 = on and Color3.fromRGB(255, 200, 60) or Color3.fromRGB(255, 236, 244), BorderSizePixel = 0,
+			LayoutOrder = d, ZIndex = 5, Parent = week })
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = dot })
+		new("UIStroke", { Thickness = 2.5, Color = on and T.ink or Color3.fromRGB(210, 120, 160), Parent = dot })
+		K.text({ Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = tostring(d), Font = T.chunky, TextSize = 15, Max = 15,
+			TextColor3 = on and Color3.new(1, 1, 1) or Color3.fromRGB(210, 120, 160), Stroke = on and 1.8 or nil, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = dot })
+	end
 	local pill = UI.slice("pill", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(250, 40), SliceScale = 0.42,
 		ImageColor3 = Color3.fromRGB(70, 28, 56), ZIndex = 3, Parent = strip })
 	local line = K.text({ Position = UDim2.fromOffset(0, 2), Size = UDim2.fromScale(1, 1), Text = "", Font = T.chunky, TextSize = 18, Max = 18, TextColor3 = Color3.fromRGB(255, 226, 120), Stroke = 2,
@@ -87,42 +100,120 @@ function M.Missions()
 				end
 			end, shine = true, size = 24 }
 		else
-			o.status = { math.floor(m.p / m.target * 100) .. "%", K.LOCK }
+			-- (the progress is on the bar: the button waits, locked, until the mission is done)
+			o.status = { "🔒 CLAIM", K.LOCK }
 		end
 		K.row(c.content, 1 + i, o)
 	end
 	K.note(c.content, 20, "New missions every day. Your streak bonus grows for 7 days.")
 end
 
--- Portfolio -------------------------------------------------------------------------------------------------------
+-- Trophies (the Portfolio): what you have done, in two tabs ---------------------------------------------------------
 local BLUE1, BLUE2 = Color3.fromRGB(110, 170, 255), Color3.fromRGB(50, 100, 220)
-function M.Portfolio()
-	local tok = c.openModal("Portfolio", "Portfolio", "", BLUE1, BLUE2)
+local trophyTab = "achievements"
+
+-- one achievement: its picture, name, what to do, a progress bar, and the reward (or DONE) on the right
+local function achRow(order, a)
+	local new = UI.new
+	local H = 100
+	local f = new("Frame", { Name = "Ach", Size = UDim2.new(1, 0, 0, H), BackgroundTransparency = 1, LayoutOrder = order, ZIndex = 2, Parent = c.content })
+	UI.slice("tile", { Name = "Bg", ImageColor3 = a.done and Color3.fromRGB(232, 250, 236) or K.TILE, ZIndex = 1, Parent = f })
+	K.artBox(f, a.icon, a.done and Color3.fromRGB(255, 196, 46) or Color3.fromRGB(150, 156, 196), { Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(H - 20, H - 20),
+		Spin = a.done }).ZIndex = 2
+	local RIGHT = 186 -- the reward column
+	local x = H + 6
+	K.text({ Position = UDim2.fromOffset(x, 12), Size = UDim2.new(1, -x - RIGHT, 0, 26), Text = a.name, Font = T.chunky, TextSize = 22, Max = 22,
+		TextColor3 = a.done and Color3.fromRGB(30, 130, 60) or K.DARK, ZIndex = 3, Parent = f })
+	K.text({ Position = UDim2.fromOffset(x, 40), Size = UDim2.new(1, -x - RIGHT, 0, 18), Text = a.desc, TextSize = 15, Max = 15, TextColor3 = K.SUB, ZIndex = 3, Parent = f })
+	local frac = math.clamp(a.value / math.max(1, a.target), 0, 1)
+	local prog = a.target >= 1000 and (Config.FormatMoney(math.min(a.value, a.target)) .. " / " .. Config.FormatMoney(a.target)) or (math.min(a.value, a.target) .. " / " .. a.target)
+	local bar, fill = UI.bar({ Position = UDim2.fromOffset(x, 66), Size = UDim2.new(1, -x - RIGHT, 0, 20), ZIndex = 3 }, a.done and K.GREEN or K.GOLD)
+	bar.Parent = f
+	fill.Size = UDim2.fromScale(math.max(frac, 0.05), 1)
+	K.text({ Position = UDim2.fromOffset(0, 1), Size = UDim2.fromScale(1, 1), Text = prog, Font = T.chunky, TextSize = 14, Max = 14, TextColor3 = Color3.new(1, 1, 1), Stroke = 2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = bar })
+	-- right: DONE, or the reward you get (a label, not a button)
+	local col = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(RIGHT - 30, H - 24), BackgroundTransparency = 1, ZIndex = 3,
+		Parent = f })
+	if a.done then
+		K.status(col, "✔ DONE", K.GREEN, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 0, 0, 44) })
+	else
+		K.text({ Position = UDim2.fromOffset(0, 6), Size = UDim2.new(1, 0, 0, 16), Text = "REWARD", Font = T.chunky, TextSize = 14, Max = 14, TextColor3 = K.SUB,
+			TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = col })
+		local row = new("Frame", { Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, ZIndex = 4, Parent = col })
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 4), Parent = row })
+		local pic = new("Frame", { Size = UDim2.fromOffset(34, 34), BackgroundTransparency = 1, LayoutOrder = 1, ZIndex = 4, Parent = row })
+		K.art(pic, "cash", UDim2.fromScale(1.1, 1.1), 5)
+		K.text({ Size = UDim2.fromOffset(0, 40), AutomaticSize = Enum.AutomaticSize.X, Text = Config.FormatMoney(a.reward), Font = T.chunky, TextSize = 24,
+			TextColor3 = Color3.fromRGB(60, 190, 90), Stroke = 2.4, LayoutOrder = 2, ZIndex = 5, Parent = row })
+	end
+	return f
+end
+
+function M.Portfolio(tabId)
+	if type(tabId) == "string" then trophyTab = tabId end
+	local tok = c.openModal("Portfolio", "Trophies", "", BLUE1, BLUE2)
 	local loading = K.loading(c.content)
 	local ok, data = pcall(function() return c.R.GetProfile:InvokeServer() end)
 	if not c.live(tok) then return end
 	loading:Destroy()
-	if not ok or not data then K.empty(c.content, 1, "Your portfolio didn't load. Try again.", "portfolio") return end
+	if not ok or not data then K.empty(c.content, 1, "Your trophies didn't load. Try again.", "portfolio") return end
 	local doneCount, builtCount = 0, 0
 	for _, a in ipairs(data.achievements) do if a.done then doneCount += 1 end end
 	for _, b in ipairs(data.built) do if b.count > 0 then builtCount += 1 end end
 	c.modalSub.Text = Config.FormatMoney(data.earned) .. " earned"
-	K.section(c.content, 1, "BUILDINGS", Color3.fromRGB(160, 205, 255), builtCount .. " / " .. #data.built .. " built · " .. data.completed .. " contracts")
-	local grid = K.grid(c.content, 2, cols(), 196)
-	for i, b in ipairs(data.built) do
-		local id
-		for _, cc in ipairs(Config.Contracts) do if cc.name == b.name then id = cc.id end end
-		local rk = K.rarityOf(i, #data.built)
-		K.tile(grid, { order = i, name = b.name, icon = (id and K.BUILDING[id]) or b.icon, color = K.RAR[rk], artH = 112, dim = b.count == 0,
-			stats = { b.count > 0 and { "x" .. b.count .. " BUILT", K.GREEN } or { "NOT YET", K.LOCK } }, spin = b.count >= 10 })
+	UI.tabs(c.content, {
+		{ id = "achievements", label = "ACHIEVEMENTS " .. doneCount .. "/" .. #data.achievements, icon = "portfolio", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 145, 25) },
+		{ id = "buildings", label = "BUILDINGS " .. builtCount .. "/" .. #data.built, icon = "company", c1 = Color3.fromRGB(150, 200, 255), c2 = Color3.fromRGB(60, 120, 230) },
+	}, trophyTab, function(id)
+		c.click()
+		trophyTab = id
+		c.content.CanvasPosition = Vector2.zero
+		M.Portfolio()
+	end)
+	-- your numbers at a glance
+	local stats = K.grid(c.content, 1, 4, 84, 10)
+	local function stat(i, icon, value, label, color)
+		local f = UI.new("Frame", { BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 2, Parent = stats })
+		UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = f })
+		local pic = UI.new("Frame", { Position = UDim2.fromOffset(8, 12), Size = UDim2.fromOffset(60, 60), BackgroundTransparency = 1, ZIndex = 3, Parent = f })
+		K.art(pic, icon, UDim2.fromScale(1, 1), 4)
+		K.text({ Position = UDim2.fromOffset(74, 12), Size = UDim2.new(1, -84, 0, 32), Text = value, Font = T.chunky, TextSize = 28, Max = 28, TextColor3 = color, Stroke = 2.4,
+			ZIndex = 4, Parent = f })
+		K.text({ Position = UDim2.fromOffset(74, 46), Size = UDim2.new(1, -84, 0, 20), Text = label, Font = T.chunky, TextSize = 14, Max = 14, TextColor3 = K.SUB, ZIndex = 4, Parent = f })
 	end
-	K.section(c.content, 3, "ACHIEVEMENTS", Color3.fromRGB(255, 220, 110), doneCount .. " / " .. #data.achievements .. " done")
-	for i, a in ipairs(data.achievements) do
-		local frac = math.clamp(a.value / math.max(1, a.target), 0, 1)
-		local prog = a.target >= 1000 and (Config.FormatMoney(a.value) .. " / " .. Config.FormatMoney(a.target)) or (math.min(a.value, a.target) .. " / " .. a.target)
-		K.row(c.content, 3 + i, { name = a.name, line = a.desc, icon = a.icon, color = a.done and Color3.fromRGB(255, 196, 46) or Color3.fromRGB(150, 156, 196),
-			bar = { frac, a.done and K.GREEN or K.GOLD, prog }, height = 112, buttonW = 150,
-			status = a.done and { "✔ DONE", K.GREEN } or { Config.FormatMoney(a.reward), Color3.fromRGB(240, 160, 30) }, spin = a.done })
+	stat(1, "portfolio", doneCount .. "/" .. #data.achievements, "ACHIEVEMENTS", Color3.fromRGB(255, 190, 40))
+	stat(2, "company", builtCount .. "/" .. #data.built, "BUILDINGS", Color3.fromRGB(90, 160, 255))
+	stat(3, "jobs", Config.FormatNum(data.completed), "CONTRACTS", Color3.fromRGB(255, 150, 60))
+	stat(4, "cash", Config.Short and ("$" .. Config.Short(data.earned)) or Config.FormatMoney(data.earned), "EARNED", Color3.fromRGB(70, 200, 100))
+	if trophyTab == "buildings" then
+		K.section(c.content, 2, "BUILDINGS", Color3.fromRGB(160, 205, 255), "every kind you finished, and how many times")
+		local five = (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700
+		local grid = K.grid(c.content, 3, five and 5 or 3, 178, 10)
+		for i, b in ipairs(data.built) do
+			local id
+			for _, cc in ipairs(Config.Contracts) do if cc.name == b.name then id = cc.id end end
+			local rk = K.rarityOf(i, #data.built)
+			local t = K.tile(grid, { order = i, name = b.name, icon = (id and K.BUILDING[id]) or b.icon, color = K.RAR[rk], artH = 96, dim = b.count == 0,
+				stats = { b.count > 0 and { "x" .. b.count .. " BUILT", K.GREEN } or { "NOT YET", K.LOCK } }, spin = b.count >= 10 })
+			local tl = t:FindFirstChild("Title")
+			if tl then
+				local cons = tl:FindFirstChildOfClass("UITextSizeConstraint")
+				if cons then cons.MaxTextSize = 17 end
+			end
+		end
+	else
+		K.section(c.content, 2, "ACHIEVEMENTS", Color3.fromRGB(255, 220, 110), "the closest ones first · finished ones at the bottom")
+		local list = {}
+		for i, a in ipairs(data.achievements) do list[i] = { a = a, i = i } end
+		table.sort(list, function(x, y)
+			if x.a.done ~= y.a.done then return y.a.done end
+			local fx, fy = x.a.value / math.max(1, x.a.target), y.a.value / math.max(1, y.a.target)
+			if not x.a.done and math.abs(fx - fy) > 1e-6 then return fx > fy end
+			return x.i < y.i
+		end)
+		for n, e in ipairs(list) do achRow(2 + n, e.a) end
 	end
 end
 

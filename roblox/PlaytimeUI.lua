@@ -194,20 +194,68 @@ M.Claim = function(i) return claim(i) end
 
 function M.Show()
 	local tok = c.openModal("Gifts", "Playtime Gifts", "", PINK1, PINK2)
-	c.modalSub.Text = "⏱ " .. math.floor(playSecs() / 60) .. " min today"
-	K.section(c.content, 1, "TODAY'S GIFTS", Color3.fromRGB(255, 190, 225), "play to open them all")
 	local done = claimed()
-	local grid = K.grid(c.content, 2, (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700 and 4 or 3, 268)
+	local nDone, nReady = 0, 0
+	for i, g in ipairs(Config.PlaytimeGifts) do
+		if done[i] then nDone += 1 elseif g.mins * 60 - playSecs() <= 0 then nReady += 1 end
+	end
+	c.modalSub.Text = nDone .. " / " .. #Config.PlaytimeGifts .. " opened"
+	-- the day as a track: how long you played, and a stop for every gift on it (opened ones are ticked)
+	local last = Config.PlaytimeGifts[#Config.PlaytimeGifts]
+	local maxMins = last and last.mins or 60
+	local strip = new("Frame", { Name = "Today", Size = UDim2.new(1, 0, 0, 104), BackgroundTransparency = 1, LayoutOrder = 1, ZIndex = 2, Parent = c.content })
+	local sbg = UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.new(1, 1, 1), ZIndex = 1, Parent = strip })
+	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 232, 244), Color3.fromRGB(255, 190, 222)), Rotation = 90, Parent = sbg })
+	K.artBox(strip, "gift", PINK2, { Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(84, 84), Spin = nReady > 0 }).ZIndex = 2
+	local title = K.text({ Position = UDim2.fromOffset(108, 10), Size = UDim2.new(1, -124, 0, 30), Text = "", Font = T.chunky, TextSize = 26, Max = 26, TextColor3 = Color3.new(1, 1, 1),
+		Stroke = 3, ZIndex = 4, Parent = strip })
+	new("UIGradient", { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(255, 236, 150)), Rotation = 90, Parent = title })
+	-- the track (room on both ends for the first and last stop)
+	local track = new("Frame", { Name = "Track", Position = UDim2.fromOffset(122, 56), Size = UDim2.new(1, -152, 0, 14), BackgroundColor3 = Color3.fromRGB(70, 40, 90), BorderSizePixel = 0,
+		ZIndex = 3, Parent = strip })
+	new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = track })
+	new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = track })
+	local fill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 4, Parent = track })
+	new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = fill })
+	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 160, 210), PINK2), Parent = fill })
+	local stops = {}
+	for i, g in ipairs(Config.PlaytimeGifts) do
+		local x = g.mins / maxMins
+		local dot = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(x, 0, 0.5, 0), Size = UDim2.fromOffset(24, 24), BackgroundColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0, ZIndex = 6, Parent = track })
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = dot })
+		new("UIStroke", { Thickness = 2.5, Color = T.ink, Parent = dot })
+		local mark = K.text({ Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 1), Text = "", Font = T.chunky, TextSize = 13, Max = 13, TextColor3 = Color3.new(1, 1, 1),
+			Stroke = 1.6, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 7, Parent = dot })
+		K.text({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(x, 0, 1, 8), Size = UDim2.fromOffset(52, 16), Text = g.mins .. "m", Font = T.chunky, TextSize = 13, Max = 13,
+			TextColor3 = Color3.fromRGB(120, 50, 100), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 4, Parent = track })
+		stops[i] = { dot = dot, mark = mark, g = g }
+	end
+	local function paintTrack()
+		local m = playSecs() / 60
+		title.Text = math.floor(m) .. " MIN PLAYED TODAY"
+		fill.Size = UDim2.fromScale(math.clamp(m / maxMins, 0, 1), 1)
+		local d2 = claimed()
+		for i, st in ipairs(stops) do
+			local reached = m >= st.g.mins
+			st.dot.BackgroundColor3 = d2[i] and K.GREEN or (reached and Color3.fromRGB(255, 200, 60) or Color3.fromRGB(150, 140, 180))
+			st.mark.Text = d2[i] and "✓" or (reached and "!" or "")
+		end
+	end
+	paintTrack()
+
+	-- the gifts: 3 a row (two even rows), ready ones first glow
+	local grid = K.grid(c.content, 2, 3, 258, 12)
 	local timers = {}
 	for i, g in ipairs(Config.PlaytimeGifts) do
 		local left = g.mins * 60 - playSecs()
-		local o = { order = i, name = g.mins .. " minutes", icon = "gift", color = GIFT_COLS[(i - 1) % #GIFT_COLS + 1],
-			stats = rewardChips(g) }
+		local o = { order = i, name = g.mins .. " MIN GIFT", icon = "gift", color = GIFT_COLS[(i - 1) % #GIFT_COLS + 1], artH = 116, stats = rewardChips(g) }
 		if done[i] then
 			o.dim = true
 			o.status = { "✔ OPENED", K.GREEN }
 		elseif left <= 0 then
 			o.spin = true
+			o.tag = { "READY!", K.GREEN }
 			o.button = { "OPEN!", K.GREEN, function(b)
 				c.click()
 				-- the celebration starts at this gift (the window shows OPENED once it is done)
@@ -223,6 +271,8 @@ function M.Show()
 			o.status = { "⏱ " .. fmt(left), K.LOCK }
 		end
 		local t = K.tile(grid, o)
+		local tl = t:FindFirstChild("Title")
+		if tl then tl.Font = T.chunky end
 		if not done[i] and left > 0 then
 			local st = t:FindFirstChild("Status")
 			local l = st and st:FindFirstChildOfClass("TextLabel")
@@ -234,6 +284,7 @@ function M.Show()
 	task.spawn(function()
 		while c.live(tok) do
 			task.wait(1)
+			paintTrack()
 			for i, e in pairs(timers) do
 				local left = e[2].mins * 60 - playSecs()
 				if left <= 0 then
