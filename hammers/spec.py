@@ -406,7 +406,7 @@ PALETTE = {
     "fur_lt":    dict(rbx=["Fabric", [214, 196, 168], 0, 0], bl=dict(color=[0.66, 0.58, 0.46], metal=0, rough=0.95)),
     "lapis":     dict(rbx=["SmoothPlastic", [32, 64, 178], 0, 0.05], bl=dict(color=[0.02, 0.06, 0.48], metal=0.1, rough=0.25)),
     "turquoise": dict(rbx=["SmoothPlastic", [40, 206, 196], 0, 0.1], bl=dict(color=[0.03, 0.62, 0.56], metal=0, rough=0.18)),
-    "aurora_ice": dict(rbx=["Glass", [150, 220, 255], 0.25, 0.25], core=[150, 255, 210, 0.55], bl=dict(color=[0.38, 0.72, 1.0], metal=0, rough=0.04, trans=0.75, ior=1.45, emit=0.35)),
+    "aurora_ice": dict(rbx=["Glass", [96, 150, 236], 0.18, 0.2], core=[150, 255, 210, 0.55], bl=dict(color=[0.06, 0.16, 0.55], metal=0, rough=0.06, trans=0.35, ior=1.45, emit=0.6)),
     "aurora_green": dict(rbx=["Neon", [80, 255, 170], 0, 0], bl=dict(color=[0.08, 1.0, 0.45], metal=0, rough=0.4, emit=9.0)),
     "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=9.0)),
     "sand_glow": dict(rbx=["Neon", [255, 206, 96], 0, 0], bl=dict(color=[1.0, 0.62, 0.12], metal=0, rough=0.5, emit=7.0)),
