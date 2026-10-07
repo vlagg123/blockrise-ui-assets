@@ -14,11 +14,15 @@ DAY_H = {"active": 2.0, "casual": 0.75, "payer": 2.0, "whale": 3.0}
 # pacing target, minutes of play from the first join (v4 was 17 / 52 / 135 / 270 / 520 / 900 / 1500)
 TARGET = {1: 30, 2: 90, 3: 220, 4: 430, 5: 780, 6: 1250, 7: 1950}
 
+# the crate missions cost ~1.5x the play it takes to farm the crate's Gems (v5_value.py: 200 Gems = 66 / 50 / 35
+# contracts in Town / Suburbs / Downtown, 750 Gems = 246 / 187 / 132), so they never beat buying with Gems
 MISSIONS = dict(
     daily_contracts=8,                                           # the 3 daily missions ~ this many contracts of play
-    builder_n={"town": 70, "suburbs": 45, "downtown": 30},       # Builder's Order: N contracts in a day -> Builder's (1/day)
-    golden_n={"town": 260, "suburbs": 170, "downtown": 110},     # Golden Order: N contracts in a week ...
-    golden_days=4,                                               # ... and the daily set on 4 days -> Golden (1/week)
+    builder_n={"town": 100, "suburbs": 75, "downtown": 55},      # Builder's Order: N contracts in a day -> Builder's (1/day)
+    # Golden Crates are where Mythic / Secret / Divine come from: the Golden Order is ~2x the farming, so the Golden
+    # Crates coming into the game stay close to v4's (v5_market.py)
+    golden_n={"town": 480, "suburbs": 365, "downtown": 260},     # Golden Order: N contracts in a week ...
+    golden_days=6,                                               # ... and the daily set on 6 of the 7 days -> Golden (1/week)
 )
 
 
@@ -80,13 +84,24 @@ def costs_fn(L):
     return lambda n, L=L: L[n] if n < len(L) else L[-1] * 3 ** (n - len(L) + 1)
 
 
-def build(costs=None, missions=MISSIONS, saver=True):
+# Suburbs buildings x this much work: run 2 is twice as long as in v4, and with v4's work the player outgrew Suburbs
+# halfway (average build 9 s); the extra work keeps every building a real job
+SUBURBS_WORK = 2.0
+
+
+def build(costs=None, missions=MISSIONS, saver=True, suburbs_work=None):
     E = final_v2.load()
+    sw = SUBURBS_WORK if suburbs_work is None else suburbs_work
+    for c in E["contracts"]:
+        if c["zone"] == "suburbs":
+            c["workMult"] *= sw
     E["name"] = "V5"
     E["reb_cash"] = True
     E["reb_cash_saver"] = saver
     E["free_crate_every"] = None
     E["builder_drop"] = 0.0
+    # REB_CASH_WARN: the v5 UI warns before a purchase that sets the Rebirth back (naive players listen 3 times in 4)
+    E["reb_cash_warn"] = 0.75
     E["missions"] = copy.deepcopy(missions)
     E["road_crates"] = list(ROAD_CRATES)
     E["mission_crates"] = mission_crates
@@ -96,17 +111,40 @@ def build(costs=None, missions=MISSIONS, saver=True):
     return E
 
 
+# SETS_V1 (made in the PC session, "coming soon"): two set crates for 600 Gems (or 149 R$) and the Legends Crate (Robux).
+# Odds in % Common..Divine. The Pirate Cove's Kraken King (Divine) was 0.1% = 1 in 1,000: a Divine 31x cheaper in Gems
+# than from the Golden Crate (1 in 25,000 for 750); v5 puts it at the Golden's 0.004% (the rest to the Legendary).
+SET_CRATES = {
+    "pirate": dict(gems=600, odds=[0, 0, 70, 24, 5.996, 0, 0, 0.004]),
+    "temple": dict(gems=600, odds=[0, 0, 70, 24, 5.5, 0.5, 0, 0]),
+    "legends": dict(odds=[0, 0, 0, 0, 75, 22, 3, 0]),
+}
+PIRATE_TODAY = [0, 0, 70, 24, 5.9, 0, 0, 0.1]
+
+
+def with_sets(E, set_share=0.4, kraken_fix=True):
+    """the set crates open: `set_share` of the Gem crates bought are set crates (half Pirate, half Temple)"""
+    E = copy.copy(E)
+    E["crates"] = dict(E["crates"])
+    for k, v in SET_CRATES.items():
+        E["crates"][k] = copy.deepcopy(v)
+    if not kraken_fix:
+        E["crates"]["pirate"]["odds"] = list(PIRATE_TODAY)
+    E["gem_crates"] = [("golden", E["crates"]["golden"]["gems"], 1 - set_share), ("pirate", 600, set_share / 2), ("temple", 600, set_share / 2)]
+    return E
+
+
 def v4_with_days():
     E = final_v2.load()
     E["name"] = "V4"
     return E
 
 
-def calibrate(E, upto=7, name="active", seeds=(1,), target=TARGET):
+def calibrate(E, upto=7, name="active", seeds=(1,), target=TARGET, start=0):
     """each Rebirth's cost so that the reference player's run lasts what the target says (bisection on the cost, one
     Rebirth at a time; the earlier ones are already fixed)"""
     L = E["reb_costs"]
-    for n in range(upto):
+    for n in range(start, upto):
         want = (target[n + 1] - (target[n] if n > 0 else 0))
         lo, hi = math.log(L[n] / 30), math.log(L[n] * 30)
         for _ in range(8):
@@ -153,9 +191,10 @@ def hm(m):
 
 if __name__ == "__main__":
     if "calibrate" in sys.argv:
-        E = build()
-        calibrate(E)
-        json.dump(dict(reb_costs=E["reb_costs"], target=TARGET, missions=MISSIONS), open("final_econ_v5.json", "w"), indent=1)
+        start = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+        E = build(json.load(open("final_econ_v5.json"))["reb_costs"] if start else None)
+        calibrate(E, start=start)
+        json.dump(dict(reb_costs=E["reb_costs"], target=TARGET, missions=MISSIONS, suburbs_work=SUBURBS_WORK), open("final_econ_v5.json", "w"), indent=1)
     else:
         d = json.load(open("final_econ_v5.json"))
         E = build(d["reb_costs"])

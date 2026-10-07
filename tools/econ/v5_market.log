@@ -1,0 +1,23 @@
+== first 20 h of play of each player
+v4 hammers/day per 1,000 players: {'Common': '354', 'Uncommon': '6619', 'Rare': '4336', 'Epic': '1584', 'Legendary': '139', 'Mythic': '2.7', 'Secret': '0.90', 'Divine': '0.00'}
+   of which free: {'Common': '352', 'Uncommon': '4439', 'Rare': '2903', 'Epic': '976', 'Legendary': '60', 'Mythic': '0.00', 'Secret': '0.00', 'Divine': '0.00'}
+   crates/day: {'cash/supply': '3764', 'free_play/builder': '1204', 'free_play/supply': '7468', 'gems/golden': '393', 'robux/golden': '149', 'tutorial/supply': '57'}
+   casual gems/h 305  Legendary+/h 0.070 (free 0.020)  hours per Legendary+ 14.3
+   active gems/h 248  Legendary+/h 0.100 (free 0.070)  hours per Legendary+ 10.0
+   payer  gems/h 226  Legendary+/h 0.170 (free 0.060)  hours per Legendary+ 5.9
+   whale  gems/h 405  Legendary+/h 1.410 (free 0.310)  hours per Legendary+ 0.7
+v5 hammers/day per 1,000 players: {'Common': '262', 'Uncommon': '2793', 'Rare': '2068', 'Epic': '760', 'Legendary': '121', 'Mythic': '7.9', 'Secret': '0.60', 'Divine': '0.00'}
+   of which free: {'Common': '174', 'Uncommon': '753', 'Rare': '520', 'Epic': '198', 'Legendary': '25', 'Mythic': '5.3', 'Secret': '0.00', 'Divine': '0.00'}
+   crates/day: {'cash/supply': '3774', 'gems/golden': '415', 'mission/builder': '312', 'mission/golden': '62', 'mission/supply': '961', 'road/builder': '113', 'road/golden': '57', 'road/supply': '113', 'robux/golden': '149', 'tutorial/supply': '57'}
+   casual gems/h 321  Legendary+/h 0.070 (free 0.020)  hours per Legendary+ 14.3
+   active gems/h 262  Legendary+/h 0.100 (free 0.030)  hours per Legendary+ 10.0
+   payer  gems/h 248  Legendary+/h 0.160 (free 0.050)  hours per Legendary+ 6.3
+   whale  gems/h 389  Legendary+/h 1.000 (free 0.030)  hours per Legendary+ 1.0
+v5+sets hammers/day per 1,000 players: {'Common': '323', 'Uncommon': '2791', 'Rare': '2043', 'Epic': '809', 'Legendary': '114', 'Mythic': '8.8', 'Secret': '0.30', 'Divine': '0.00'}
+   of which free: {'Common': '196', 'Uncommon': '700', 'Rare': '493', 'Epic': '239', 'Legendary': '24', 'Mythic': '0.30', 'Secret': '0.00', 'Divine': '0.00'}
+   crates/day: {'cash/supply': '3845', 'gems/golden': '233', 'gems/pirate': '118', 'gems/temple': '94', 'mission/builder': '299', 'mission/golden': '57', 'mission/supply': '956', 'road/builder': '113', 'road/golden': '57', 'road/supply': '113', 'robux/golden': '149', 'tutorial/supply': '57'}
+   set hammers/day per 1,000 players: {'pirate Rare': '86', 'pirate Epic': '22', 'pirate Legendary': '10', 'temple Rare': '55', 'temple Epic': '39', 'temple Legendary': '0.30'}
+   casual gems/h 312  Legendary+/h 0.070 (free 0.010)  hours per Legendary+ 14.3
+   active gems/h 258  Legendary+/h 0.090 (free 0.030)  hours per Legendary+ 11.1
+   payer  gems/h 228  Legendary+/h 0.160 (free 0.030)  hours per Legendary+ 6.3
+   whale  gems/h 379  Legendary+/h 0.970 (free 0.050)  hours per Legendary+ 1.0

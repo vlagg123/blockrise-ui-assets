@@ -1,0 +1,26 @@
+== pacing v5 (5 seeds)
+  active ['30 min', '1 h 30', '3 h 29', '6 h 34', '12 h 40', '19 h 39', '31 h 24']
+  casual ['37 min', '1 h 51', '4 h 19', '7 h 34', '15 h 16', '23 h 60', '—']
+  payer ['15 min', '49 min', '1 h 37', '2 h 40', '5 h 16', '8 h 43', '14 h 06']
+  whale ['9 min', '27 min', '58 min', '1 h 35', '2 h 58', '4 h 40', '7 h 18']
+== the loop in each run (active, v5 then v4)
+  v5 run 1: {'minutes': 28.87, 'contracts': 30.33, 'avg_build': 28.63, 'player_share': 0.75, 'rent_share': 0.0, 'buys_min': 0.82, 'saving_min': 4.77, 'saving_pct': 17.33}
+  v5 run 2: {'minutes': 59.0, 'contracts': 80.67, 'avg_build': 18.8, 'player_share': 0.37, 'rent_share': 0.04, 'buys_min': 3.38, 'saving_min': 23.33, 'saving_pct': 40}
+  v5 run 3: {'minutes': 111.37, 'contracts': 120.67, 'avg_build': 30.43, 'player_share': 0.33, 'rent_share': 0.11, 'buys_min': 2.68, 'saving_min': 92.67, 'saving_pct': 82.67}
+  v5 run 4: {'minutes': 172.53, 'contracts': 155.33, 'avg_build': 43.97, 'player_share': 0.24, 'rent_share': 0.11, 'buys_min': 1.93, 'saving_min': 133.3, 'saving_pct': 72.33}
+  v5 run 5: {'minutes': 347.7, 'contracts': 202.33, 'avg_build': 82.97, 'player_share': 0.23, 'rent_share': 0.19, 'buys_min': 1.02, 'saving_min': 212.67, 'saving_pct': 64}
+  v5 run 6: {'minutes': 402.3, 'contracts': 236.33, 'avg_build': 80.23, 'player_share': 0.22, 'rent_share': 0.17, 'buys_min': 0.87, 'saving_min': 293.67, 'saving_pct': 72}
+  v4 run 1: {'minutes': 16.07, 'contracts': 14.67, 'avg_build': 34.87, 'player_share': 0.75, 'rent_share': 0.0, 'buys_min': 0.79, 'saving_min': 1.67, 'saving_pct': 10.33}
+  v4 run 2: {'minutes': 32.27, 'contracts': 35.33, 'avg_build': 26.17, 'player_share': 0.49, 'rent_share': 0.03, 'buys_min': 6.18, 'saving_min': 8.3, 'saving_pct': 26}
+  v4 run 3: {'minutes': 91.37, 'contracts': 87.33, 'avg_build': 35.47, 'player_share': 0.32, 'rent_share': 0.12, 'buys_min': 3.22, 'saving_min': 66.33, 'saving_pct': 72.67}
+  v4 run 4: {'minutes': 137.53, 'contracts': 138.33, 'avg_build': 35.4, 'player_share': 0.25, 'rent_share': 0.1, 'buys_min': 2.31, 'saving_min': 72.4, 'saving_pct': 56.67}
+  v4 run 5: {'minutes': 262.77, 'contracts': 158, 'avg_build': 75.2, 'player_share': 0.23, 'rent_share': 0.19, 'buys_min': 1.24, 'saving_min': 157.5, 'saving_pct': 60}
+  v4 run 6: {'minutes': 507.07, 'contracts': 249, 'avg_build': 97.9, 'player_share': 0.22, 'rent_share': 0.2, 'buys_min': 0.67, 'saving_min': 400.7, 'saving_pct': 79}
+== naive players (casual), minutes to R1..R3
+  random   v4 [20.0, 159.0, 376.0]  v5 [47.0, 214.0, 459.0]
+  cheapest v4 [21.0, 65.0, 156.0]  v5 [46.0, 160.0, 297.0]
+== days (one session a day, offline at night): day of R1..R5
+  casual 20 min/day: v4 [1, 3, 6.5, 12, 18.5]  v5 [2, 5.5, 8.5, 13.5, 24]
+  casual 45 min/day: v4 [1, 2, 3, 6.5, 11]  v5 [1, 3, 4.5, 7.5, 12.5]
+  active 45 min/day: v4 [1, 2, 3, 6, 9.5]  v5 [1, 2.5, 5, 7.5, 11.5]
+  active 90 min/day: v4 [1, 1, 2, 3.5, 6]  v5 [1, 1.5, 3, 4, 8]

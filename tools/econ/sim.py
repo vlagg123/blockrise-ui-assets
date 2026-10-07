@@ -436,6 +436,14 @@ def buy_round(s, horizon):
         if pol in ("random", "cheapest"):
             # a kid who doesn't compare paybacks: buys whatever is affordable (random) or the cheapest thing first
             opts = [(k, kk, c) for (k, kk, c) in candidates(s) if c <= s.money and k not in skip and value_of(s, k, kk) > 0]
+            # REB_CASH_WARN (v5 UI): once the zone's last building is built, the game says "saving for Rebirth: this sets
+            # it back by X min"; the kid listens `warn` of the time and then buys only what pays back before the Rebirth
+            if s.E.get("reb_cash") and s.E.get("reb_cash_warn") and s.rng.random() < s.E["reb_cash_warn"]:
+                g = gate_contract(s)
+                if g is None or s.built.get(g["id"]):
+                    inc = max(1e-9, s.income_per_sec())
+                    left = max(0.0, s.E["rebirth_cost"](s.R) - s.money) / inc
+                    opts = [(k, kk, c) for (k, kk, c) in opts if c / max(1e-9, value_of(s, k, kk)) <= left + c / inc]
             if not opts: break
             if pol == "random" and s.rng.random() < 0.5: break      # and doesn't spend everything at once
             k, kk, c = s.rng.choice(opts) if pol == "random" else min(opts, key=lambda o: o[2])
@@ -517,6 +525,8 @@ def open_crate(s, crate, src="other"):
     s.crate_src[k] = s.crate_src.get(k, 0) + 1
     s.got_src = getattr(s, "got_src", {})
     s.got_src[(src, r)] = s.got_src.get((src, r), 0) + 1
+    s.got_crate = getattr(s, "got_crate", {})
+    s.got_crate[(crate.split("_")[0], r)] = s.got_crate.get((crate.split("_")[0], r), 0) + 1
     got_hammer(s, r)
     # trade-ups: 10 spares of a rarity -> 1 of the next
     E = s.E
@@ -742,6 +752,21 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
                 v = 60 * ipm * E.get("cash_pack_mult", 1.0)
                 s.money += v; s.earned_run += v
                 s.cash_from_packs = getattr(s, "cash_from_packs", 0.0) + v
+        elif E.get("gem_crates"):
+            # SETS_V1: Gems go to the Golden Crate or the set crates (Pirate Cove / Jungle Temple), by the players' taste
+            if not getattr(s, "gem_pick", None):
+                tot = sum(w for (_, _, w) in E["gem_crates"])
+                x = s.rng.random() * tot
+                for (cr, cost, w) in E["gem_crates"]:
+                    x -= w
+                    if x <= 0:
+                        s.gem_pick = (cr, cost)
+                        break
+            cr, cost = s.gem_pick
+            if s.gems >= cost:
+                s.gems -= cost
+                open_crate(s, cr, "gems")
+                s.gem_pick = None
         elif s.gems >= E["crates"]["golden"]["gems"]:
             s.gems -= E["crates"]["golden"]["gems"]
             open_crate(s, "golden", "gems")

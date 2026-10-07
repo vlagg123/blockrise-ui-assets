@@ -14,8 +14,10 @@ FREE = ("free_play", "road", "mission", "tutorial")
 
 
 def rates(E, name, hours, seeds=range(1, 6)):
-    """per hour of play: hammers by (source, rarity), crates by (source, crate), Gems"""
+    """per hour of play: hammers by (source, rarity), crates by (source, crate), Gems; and by (crate, rarity) in
+    rates.by_crate"""
     got, crates, gems = {}, {}, []
+    rates.by_crate = getattr(rates, "by_crate", {})
     for seed in seeds:
         p = v5.player(name, robux_golden_h=ROBUX_GOLDEN_H.get(name, 0))
         s = sim.simulate(E, p, hours=hours, seed=seed, max_rebirths=12)
@@ -24,6 +26,9 @@ def rates(E, name, hours, seeds=range(1, 6)):
             got[k] = got.get(k, 0) + v / h / len(seeds)
         for k, v in getattr(s, "crate_src", {}).items():
             crates[k] = crates.get(k, 0) + v / h / len(seeds)
+        for k, v in getattr(s, "got_crate", {}).items():
+            key = (name,) + k
+            rates.by_crate[key] = rates.by_crate.get(key, 0) + v / h / len(seeds)
         gems.append(getattr(s, "gems_total", 0.0) / h)
     return got, crates, st.mean(gems)
 
@@ -52,9 +57,10 @@ def fmt(v):
 
 if __name__ == "__main__":
     d = json.load(open("final_econ_v5.json"))
-    versions = {"v4": v5.v4_with_days(), "v5": v5.build(d["reb_costs"])}
+    E5 = v5.build(d["reb_costs"])
+    versions = {"v4": v5.v4_with_days(), "v5": E5, "v5+sets": v5.with_sets(E5)}
     out = {}
-    for hours in (6, 20):
+    for hours in (20,):
         print("== first %d h of play of each player" % hours)
         for lab, E in versions.items():
             allr, freer, crates, detail = per_day(E, hours)
@@ -62,8 +68,15 @@ if __name__ == "__main__":
             print(lab, "hammers/day per 1,000 players:", {RAR[i]: fmt(allr[i]) for i in range(8)})
             print("   of which free:", {RAR[i]: fmt(freer[i]) for i in range(8)})
             print("   crates/day:", {"%s/%s" % k: fmt(v) for k, v in sorted(crates.items())})
+            if "sets" in lab:
+                per = {}
+                for (name, crate, r), v in rates.by_crate.items():
+                    if crate in ("pirate", "temple"):
+                        per[(crate, r)] = per.get((crate, r), 0) + v * 1000 * MIX[name] * v5.DAY_H[name]
+                print("   set hammers/day per 1,000 players:", {"%s %s" % (c, RAR[r]): fmt(v) for (c, r), v in sorted(per.items())})
+            rates.by_crate = {}
             for name, (got, cr, g) in detail.items():
                 hi = sum(v for (src, r), v in got.items() if r >= 4)
                 hif = sum(v for (src, r), v in got.items() if r >= 4 and src in FREE)
                 print("   %-6s gems/h %.0f  Legendary+/h %.3f (free %.3f)  hours per Legendary+ %.1f" % (name, g, hi, hif, 1 / max(1e-9, hi)))
-    json.dump({"%s_%d" % k: v for k, v in out.items()}, open("v5_market.json", "w"), default=str, indent=1)
+    json.dump({"%s_%d" % k: [v[0], v[1], {"%s/%s" % kk: vv for kk, vv in v[2].items()}] for k, v in out.items()}, open("v5_market.json", "w"), indent=1)

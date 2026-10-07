@@ -45,7 +45,7 @@ PC and the old chat could not be linked to it, so a new task continues here. **R
 
 ## Step 1 — five things the owner asked for (do these first)
 
-Order of the work: Step 0, then **3.0 (the data export, right away)**, Step 1 (fixes), Step 2 (new hammers and crates), and Step 3.2 (Economy v5) only when the owner confirms `tools/econ/recipe_v5.md`.
+Order of the work: Step 0, then **3.0 (the data export, right away)**, Step 1 (fixes), Step 2 (new hammers and crates), and Step 3 (Economy v5) only when the owner confirms `tools/econ/recipe_v5.md`.
 1. **Tutorial ring at GO (PLACES → My Property)** sits lower and wider than the button.
    - Cause: `LocationsUI` takes the window's scale from `go.AbsoluteSize.Y / 50`, but the tile buttons are 47 px tall
      now.
@@ -125,103 +125,200 @@ Plan:
 6. **New premium pass thumbnails** for the Roblox game page: rendered in Blender, sharp, rich colours, no stars or
    sparkles, not washed out. 512×512 for passes. Deliver them as a zip (SendUserFile) together with the list.
 
-## Step 3 — Economy v5 (the owner's decisions of 14:06 – 14:29)
+## Step 3 — Economy v5 (designed and simulated by the Mac chat; you implement it when the owner says so)
 
-**Who does what:**
-- **The Mac chat:** designs Economy v5 and proves it with the simulator (`tools/econ/`). It writes everything, number by
-  number, into `tools/econ/recipe_v5.md` (Romanian, in the style of `recipe.md`).
-- **You (PC chat):**
-  1. right away, the data export in 3.0;
-  2. after Steps 1 and 2, when the owner says "start Economy v5", implement `recipe_v5.md` exactly as written (3.2).
-     Do not invent other numbers. The game is live: nothing changes without the owner's explicit confirmation.
+The design, every number and the reasoning are in **`tools/econ/recipe_v5.md`** (Romanian). This step is the exact work
+list. Order:
+1. 3.0, if not done yet.
+2. Implement 3.1 – 3.7 when the owner confirms.
+3. Run EVERY check in 3.8 and report each one to the owner (in Romanian) with its result.
 
-### 3.0 Right away (after Step 0, ~10 min): export the live game's data for the simulator
-Write `tools/econ/game_dump_v4.md` with exact values, and next to each the script and line where it lives. Push it.
-1. `Config.Road`: every step in order. Give its title, stat, target, cash, gems, any other reward, its place and which
-   steps are the tutorial (`Config.TutorialSteps`).
-2. `Config.DailyMissions`: how many a day, how they are picked, every target and reward (cash / XP / gems / other).
-   Also streak rewards, `PlaytimeGifts`, Achievements (target + reward), Index rewards and codes.
-3. **Every place a crate is given without paying.** Search Main, HammerService, RebirthService, CompanyService and
-   SpinUI / Spin for `addCrate`, `Crates[`, `open_crate`, `crate =`, `RunChests`, `free`, and for the tutorial.
-   - For each: which crate, how often (every N contracts, % per contract, per bar step…), and for whom.
-   - Include the special rules for countries where paid random items are not allowed.
-4. Gems: every source (per hit, per contract, missions, streak, gifts, achievements, Index…) and every Gem Shop item
-   with its price.
-5. The Rebirth: what it resets and what it keeps (money, gear, Strength, workers, machines, departments, properties,
-   helmet, hammers, Stars, materials, blueprints…). Also the current costs and the bar's prize steps.
+Do not change any number on your own. If something in the live code makes a rule impossible, stop and tell the owner.
+**Backups first:** `ServerStorage.Backup_pre_econ5` with every script you touch. Mark every edit `ECONOMY_V5`, and write
+the change log in `roblox/ECON_V5_STUDIO.md` (the same style as `ECON_V4_STUDIO.md`).
 
-### 3.1 The owner's decisions (fixed; `recipe_v5.md` gives the numbers)
-1. **The Rebirth needs CASH IN HAND, not the money earned this run.**
-   - You can rebirth when your cash ≥ the cost (and the zone's last building is built, as today). The cash is spent:
-     you start the new run with the head start, as today.
-   - The Rebirth bar shows cash in hand / cost.
-   - The prize steps (1/5/10/25/50/75%) are paid on the HIGHEST % reached this run. The bar can go down when you buy;
-     a prize is never paid twice.
-   - The "≈ X min" estimate comes from the current income.
-   - Text on the bar: "Rebirth needs $X in cash. Upgrades that pay back still win — then save up!"
-2. **The Rebirth gets harder.** The owner finds Economy v4 too easy (Rebirth 1 after ~17 min; most Roblox simulators:
-   30–60 min). The new costs and the first run's retuned content are in `recipe_v5.md`.
-3. **No more free crates while just playing. Free crates come ONLY as rewards of specific missions.**
-   - Remove:
-     - the free Supply Crate every N contracts;
-     - the Builder's Crate that drops on contracts (~3%, ×2 with Lucky Builder);
-     - the crates on the Rebirth bar's prize steps (they become Gems / cash; numbers in the recipe);
-     - any other free crate the export in 3.0 finds.
-   - The tutorial's first Supply Crate stays (it is bought, with the tutorial's money).
-   - **The Gem crates** (Builder's 200 Gems, Golden 750 Gems) are given ONLY by specific missions. Each such mission
-     takes about as much play as farming the crate's Gems would. There are daily / weekly limits, so free players can't
-     flood the hammer market.
-   - The exact missions, targets, rewards and limits are in `recipe_v5.md`. The paid crates (Gems / Robux / Lucky Spin)
-     don't change.
-   - **Countries where paid random items are not allowed:** today every crate is free there. They get the same
-     missions (a free path), plus what the recipe says. Check it with the policy switch, as before.
-4. **The Empire Road and the core loop are rethought** so they make sense from the tutorial to the late game:
-   contracts → money → upgrades / crew / machines / properties → save cash → Rebirth, with missions, crates, hammers and
-   trading around it. The new Road (every step, target and reward) is in `recipe_v5.md`.
+### 3.0 Export the live game's data (if not done yet): `tools/econ/game_dump_v4.md`, pushed
+1. `Config.Road`: every step with its title, stat, target, cash, gems, other rewards and place, plus
+   `Config.TutorialSteps`.
+2. Daily missions:
+   - `Config.DailyMissions`: how many a day, how they are picked, every target and reward;
+   - streak rewards;
+   - `PlaytimeGifts`;
+   - Achievements;
+   - Index rewards;
+   - codes.
+3. Every place a crate is given without paying: which crate, how often, for whom. Include the
+   no-paid-random-items countries.
+4. Gems:
+   - every source;
+   - every Gem Shop item with its price;
+   - the Lucky Spin prizes and the spin's price.
+5. What a Rebirth resets and keeps, the current costs, and the bar's prize steps.
 
-### 3.2 When the owner confirms `recipe_v5.md`: how to implement
-- Backups first: `ServerStorage.Backup_pre_econ5` with every script you change.
-- Implement exactly the recipe. Mark every edit `ECONOMY_V5`. Keep `ECON_V4_STUDIO.md`'s style of change log as
-  `roblox/ECON_V5_STUDIO.md`.
-- **Migration of current saves:** follow the recipe's migration section. Players in the middle of a run must not lose
-  progress, and Road indexes must map to the new Road.
-- **UI:**
-  - the Rebirth window (cash bar, texts, prize steps on the highest %);
-  - the missions windows (daily / weekly, with the crate rewards);
-  - crate cards: "how you get it" says "Missions" for the free path;
-  - the Road panel.
-- **Test in Play** (CE_Debug):
-  - Rebirth refused under the cost, accepted at it, cash spent;
-  - bar prizes paid once, on the highest %;
-  - no crate from contracts in 30+ contracts;
-  - every mission crate given once per its period;
-  - the Road from step 1 to the first Rebirth;
-  - migration of a v4 save;
-  - the restricted-country path.
-- Then the usual: stop Play, Workspace = Map / Terrain / Camera, HttpEnabled = false, and tell the owner he can publish.
+### 3.1 Rebirth on cash in hand
+- **Costs** (`Company` FRANCHISE / `FranchiseCost`): 150K, 600M, 25B, 150B, 1T, 4T, 10T, then ×3 per Rebirth (30T, 90T…).
+  - Update the Rebirth step texts in Config.
+  - `FranchiseCostOld` stays for history.
+- **Condition (server, RebirthService `franchise`).** All three must hold:
+  1. `Money ≥ cost`;
+  2. `RunEarned ≥ cost`;
+  3. the zone's last building is built (as today).
+  - **`RunEarned` counts:**
+    - contract pay;
+    - rent, online and offline;
+    - Road and achievement cash;
+    - mission cash;
+    - Robux cash packs;
+    - Gem Shop Cash Bag / Cash Safe;
+    - the head start.
+  - **It does NOT count:**
+    - cash received in a trade (`TradeService`: `toSt.data.Money +=` must not touch `RunEarned`);
+    - money from selling materials (they still give cash).
+  - Check every `addMoney` call site and decide which side it is on. List them in the change log.
+- **On Rebirth:**
+  - spend the cost: the new run starts as today, with start money + 1% of the cost paid + the Head Start perk;
+  - Stars = 3 + 2·n + 1 per doubling, where the doubling is counted on `min(Money, RunEarned) / cost`;
+  - reset `RunBest` and `RebCredit`.
+- **The bar.**
+  - progress = `min(Money + RebCredit, RunEarned + RebCredit) / cost`, clamped to 0..1;
+  - store `RunBest` = the highest progress reached this run.
+  - The prize steps are paid when `RunBest` passes them, once per run. The new prizes have no crates:
 
-### 3.3 Data so far (check 11, `tools/econ/check11_cash.py`)
-Economy v4 costs (25K, 250M, 20B, 150B, 800B). "saver" = a player who stops buying what won't pay back before his
-Rebirth. Minutes of play to each Rebirth, mean of 5 seeds:
+    | Step | Prize |
+    |---|---|
+    | 1% | 3 min of IncomePerMin in cash |
+    | 5% | 10 Gems |
+    | 10% | 15 Gems |
+    | 25% | 20 Gems |
+    | 50% | 40 Gems |
+    | 75% | 30 Gems |
 
-| Player | Rule | R1 | R2 | R3 | R4 | R5 |
-|---|---|---|---|---|---|---|
-| active | earned this run (v4) | 17 min | 49 min | 2 h 17 | 4 h 42 | 8 h 49 |
-| active | cash, keeps buying | 34 min | 1 h 11 | 2 h 53 | 5 h 30 | 10 h 11 |
-| active | cash, saver | 21 min | 59 min | 2 h 44 | 5 h 29 | 10 h 18 |
-| casual | earned | 22 min | 60 min | 2 h 52 | 5 h 52 | 11 h 06 |
-| casual | cash, saver | 27 min | 1 h 11 | 3 h 04 | 5 h 56 | 11 h 04 |
-| payer | earned | 8 min | 25 min | 1 h 05 | 2 h 03 | 3 h 57 |
-| payer | cash, saver | 10 min | 30 min | 1 h 19 | 2 h 28 | 5 h 18 |
-| whale | earned | 6 min | 17 min | 40 min | 1 h 11 | 2 h 17 |
-| whale | cash, saver | 7 min | 19 min | 49 min | 1 h 27 | 2 h 50 |
+  - Text: "Rebirth needs $X in cash — you have $Y". The ETA "≈ N min" comes from the current income per minute.
+  - The HUD REBIRTH dot uses the same condition.
+- **Saving warning (client, every buy button).**
+  - When: once the zone's last building is built, a purchase costing ≥ 5% of the current Rebirth cost.
+  - It asks: "Saving for Rebirth: this sets it back by ≈ N min. Buy anyway?" N = price / income per minute. Add a
+    "don't ask again this run" checkbox.
+  - AUTO BUY BEST pauses in this state ("PAUSED — saving for Rebirth", tap to resume).
+- **Migration (EconV < 4 → 4).** Players in the middle of a run get `RebCredit = min(0.95, old bar %) × v5 cost` of their
+  next Rebirth.
+  - The credit counts in both sums, and is shown on the bar as "saved before the update".
+  - It is consumed by the Rebirth and can't be spent on anything else.
+  - Built-ever buildings stay open (as in v4).
 
-- Players keep buying upgrades every run, as the owner said. Runs get ~15–35% longer; the saving happens at the end.
-- Multiplying every cost barely moves Rebirth 1 but stretches the late game (×2: active R1 26 min, R5 16 h 45).
-  Rebirth 1 is bound by the Town's contracts and the Corner Shop gate.
-- **My Toll Farm**: the Rebirth needs cash and wipes ONLY the cash; cars and upgrades stay. The first one costs 15,000
-  cash and gives ×2, then ×3, ×5 … up to ×50 at Rebirth 10. Sources: earnaldo.com/blog/my-toll-farm-beginner-guide,
-  allthings.how.
+### 3.2 Free crates ONLY from missions
+- **Remove:**
+  - the free Supply Crate every 6 contracts;
+  - the Builder's Crate drop on contracts (~3%, ×2 with Lucky Builder);
+  - the crates on the Rebirth bar (now the prizes in 3.1);
+  - every other free crate the export finds.
+- **Keep** the tutorial's first Supply Crate (bought with the tutorial's money).
+- **Daily Crate:** all 3 daily missions claimed → 1 Supply Crate of the player's zone, once a day.
+- **Builder's Order:** a 4th card in Daily Missions with a progress bar. Build N contracts today → 1 Builder's Crate,
+  once a day.
+  - N = 100 (Town) / 75 (Suburbs) / 55 (Downtown).
+  - The zone is the one of the best contract unlocked; N is fixed when the day starts.
+- **Golden Order:** a weekly card that resets Monday 00:00 UTC. Build N contracts this week AND claim the daily set on 6
+  of the 7 days → 1 Golden Crate, once a week.
+  - N = 480 / 365 / 260, taken from the zone at the start of the week.
+- **Road crates, once per account:**
+
+  | Road step | Crate |
+  |---|---|
+  | Hire 2 workers | Builder's |
+  | Build the Garage | Supply |
+  | Build the Corner Shop | Supply |
+  | Rebirth 1 | Builder's |
+  | Rebirth 2 | Golden |
+
+- **Crate cards, "How you get it":**
+  - Supply: "Cash · the Daily Crate";
+  - Builder's: "200 Gems · Builder's Order (daily)";
+  - Golden: "750 Gems · Golden Order (weekly)".
+- **No-paid-random-items countries:** the same missions. Bought crates work there as today (X-ray).
+
+### 3.3 Suburbs ×2 work
+Multiply the work of the 5 Suburbs contracts (Villa, Warehouse, Apartments, Luxury Villa, Distribution Center) by 2.
+Their rewards stay the same.
+
+### 3.4 Road and achievement cash
+Scale every Road step's cash so that each run's total stays ~8% of its Rebirth:
+
+| Zone | v4 cash × |
+|---|---|
+| Town | 6 |
+| Suburbs | 2.4 |
+| Downtown run 3 | 1.25 |
+| later | 1 |
+
+Achievements worth ≤ 10K (divided by 6 in v4) go back to their old values.
+
+### 3.5 The new Empire Road
+- Build it as written in `recipe_v5.md` §8: the tutorial unchanged, Chapter 1 Town, Chapter 2 Suburbs, Chapter 3
+  Downtown, then the per-Rebirth steps.
+- Map every step to an existing stat, or add the stat.
+- Cash per step: the chapter's total split over its steps. Gems 5–25 per step.
+- **Migration:** players are placed at the first step they haven't done yet. Steps already done are ticked WITHOUT any
+  reward (no crate twice).
+
+### 3.6 The new hammers and crates (SETS_V1)
+- **Pirate Cove odds:** Kraken King 0.1% → **0.004%**; Treasure Chest 5.9% → 5.996%.
+- **Luck in the set crates** follows the same rules as the other crates: from Legendary up, and on Secret / Divine at most
+  ×3, then × Secret Hunter.
+- **Prices:** `crate_pirate` and `crate_temple` 149 → **199 R$** (still 600 Gems).
+  - Pirate Cove description: "One of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000)."
+- **Collection bonus:**
+  - owning the 3 lower hammers of a set gives +0.05 luck (like an Index rarity);
+  - owning all 4 gives a title: "Pirate King" / "Temple Guardian" / "Legend";
+  - show it in the Index.
+- They stay "coming soon" until the owner opens them.
+
+### 3.7 Nothing else changes
+- The passes, the other products and their prices stay the same.
+- The Gem prices stay the same.
+- The Hammers of the Day stay on Gems only.
+
+### 3.8 VERIFY after implementing (all of them; tell the owner each result)
+Use Studio Play with CE_Debug: give cash / Gems / contracts, set the Rebirth, jump time. For the weekly checks, fake the
+week with a debug offset.
+1. **Rebirth refused** with Money = cost − 1, and with Money = cost but RunEarned < cost (cash received through the
+   Studio test trade partner). **Accepted** at both ≥ cost. Money after = start + 1% of the cost (+ Head Start). Next cost
+   = the table's.
+2. **Trades and materials don't move the bar:** receiving 1B cash in a trade and selling 100 Diamonds leaves the bar %
+   unchanged.
+3. **Bar prizes:**
+   - go to 52% → the 1/5/10/25/50% prizes are paid;
+   - spend to 20%, climb back to 52% → nothing paid twice;
+   - reach 75% → 30 Gems.
+4. **No crate from playing:** 50 contracts in a row → the crate inventory unchanged (only mission crates).
+5. **Daily Crate** once a day; **Builder's Order** at exactly N contracts (Town 100) and not again that day;
+   **Golden Order** needs both the contracts and 6 daily sets, once per week, and resets Monday.
+6. **Road crates** given once. Replaying the condition (hire again, a new Garage after a Rebirth) gives nothing.
+7. **Saving warning** appears only after the zone's top building, and only for buys ≥ 5% of the cost. AUTO BUY BEST pauses.
+8. **Suburbs:** the first Villa build takes ~2× the v4 time for the same player.
+9. **Migration** on a copy of a v4 save at 80% of R2: after loading, the bar shows 80% (credit = 0.8 × 600M). Rebirth
+   works when cash + credit ≥ cost. Road position mapped, no rewards given twice.
+10. **Set crates** (temporarily un-soon them in Play only): 20,000 Pirate Cove rolls on the server with no luck →
+    Kraken King 0–3 times (expected 0.8). With luck ×3 the Divine stays ≤ ×3. Do not leave them open.
+11. **Gem loops:** the Lucky Spin's average Gem prize < its Gem price; nothing turns cash into Gems; Gems can't be
+    traded.
+12. **No-paid-random-items policy** switched on: missions give their crates, nothing is sold that shouldn't be.
+13. **The whole game still works:**
+    - the tutorial from a fresh profile to Rebirth 1;
+    - every window opens with a clean console;
+    - after stopping: Workspace = Map / Terrain / Camera, and HttpEnabled = false.
+14. Write the results in `ECON_V5_STUDIO.md`, push, and tell the owner he can publish.
+
+### 3.9 Simulator data behind the numbers
+`tools/econ/`:
+- `check11_cash.py`: cash vs earned;
+- `v5.py`: costs, missions, Road crates;
+- `v5_checks.py`: pacing, loop per run, naive players, days;
+- `v5_value.py`: missions vs Gems;
+- `v5_market.py`: the hammer market;
+- `v5_gems.py`: the Gem economy.
+
+Results are in `recipe_v5.md`.
 
 ## Where things are
 | What | Where |

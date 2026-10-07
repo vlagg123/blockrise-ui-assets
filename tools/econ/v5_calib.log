@@ -1,0 +1,11 @@
+R2 cost 600M (run 59 min wanted 60)
+R3 cost 25B (run 128 min wanted 130)
+R4 cost 150B (run 209 min wanted 210)
+R5 cost 1T (run 354 min wanted 350)
+R6 cost 4T (run 475 min wanted 470)
+R7 cost 10T (run 700 min wanted 700)
+costs ['150K', '600M', '25B', '150B', '1T', '4T', '10T', '30T']
+active ['30 min', '1 h 30', '3 h 29', '6 h 34', '12 h 40', '19 h 39', '31 h 24']
+casual ['37 min', '1 h 51', '4 h 19', '7 h 34', '15 h 16', '23 h 60', '—']
+payer ['15 min', '49 min', '1 h 37', '2 h 40', '5 h 16', '8 h 43', '14 h 06']
+whale ['9 min', '27 min', '58 min', '1 h 35', '2 h 58', '4 h 40', '7 h 18']
