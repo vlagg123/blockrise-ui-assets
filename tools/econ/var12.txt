@@ -1,0 +1,7 @@
+price_scale 12.0 score 12.894 costs ['2.5e+04', '1e+12', '1e+12', '1e+12', '1e+12', '1e+12', '6e+12']
+  active [17.1] got {'common': 110, 'uncommon': 122, 'rare': 53, 'epic': 16, 'legendary': 4}
+  casual [21.9] got {'common': 116, 'uncommon': 89, 'rare': 43, 'epic': 23, 'legendary': 5}
+  payer [11.3] got {'common': 161, 'uncommon': 151, 'rare': 72, 'epic': 23, 'legendary': 5, 'mythic': 1}
+  whale [6.7] got {'common': 167, 'uncommon': 195, 'rare': 88, 'epic': 27, 'legendary': 12, 'mythic': 1}
+     {'run': 0, 'minutes': 17.1, 'contracts': 11, 'avg_build': 32.8, 'afk_x': 4.31, 'clicks_min': 51.1, 'player_share': 0.77, 'rent_share': 0.0, 'buys_min': 0.82}
+     {'run': 1, 'minutes': 703.1, 'contracts': 1176, 'avg_build': 15.4, 'afk_x': 2.01, 'clicks_min': 85.7, 'player_share': 0.5, 'rent_share': 0.03, 'buys_min': 0.22}

@@ -1,0 +1,11 @@
+price_scale 1.0 score 1.142 costs ['2.5e+04', '1.5e+08', '7.5e+09', '5e+10', '4e+11', '2e+12', '1.5e+13']
+  active [17.1, 52.6, 130.3, 257.5, 511.5] got {'common': 7, 'uncommon': 71, 'rare': 51, 'epic': 23, 'legendary': 3}
+  casual [21.9, 66.0, 154.9, 300.3, 609.3] got {'common': 7, 'uncommon': 60, 'rare': 50, 'epic': 20, 'legendary': 2}
+  payer [11.3, 28.4, 71.6, 129.2, 298.4, 507.4] got {'common': 3, 'uncommon': 72, 'rare': 39, 'epic': 20, 'legendary': 4}
+  whale [6.7, 21.6, 39.0, 66.3, 131.5, 225.1, 697.8] got {'common': 2, 'uncommon': 116, 'rare': 74, 'epic': 28, 'legendary': 6}
+     {'run': 0, 'minutes': 17.1, 'contracts': 11, 'avg_build': 32.8, 'afk_x': 4.31, 'clicks_min': 51.1, 'player_share': 0.77, 'rent_share': 0.0, 'buys_min': 0.82}
+     {'run': 1, 'minutes': 35.5, 'contracts': 29, 'avg_build': 34.8, 'afk_x': 1.87, 'clicks_min': 78.3, 'player_share': 0.46, 'rent_share': 0.04, 'buys_min': 5.16}
+     {'run': 2, 'minutes': 77.7, 'contracts': 59, 'avg_build': 43.4, 'afk_x': 1.53, 'clicks_min': 102.8, 'player_share': 0.35, 'rent_share': 0.19, 'buys_min': 3.35}
+     {'run': 3, 'minutes': 127.2, 'contracts': 76, 'avg_build': 64.9, 'afk_x': 1.33, 'clicks_min': 121.1, 'player_share': 0.25, 'rent_share': 0.23, 'buys_min': 2.2}
+     {'run': 4, 'minutes': 254.0, 'contracts': 136, 'avg_build': 84.3, 'afk_x': 1.31, 'clicks_min': 156.5, 'player_share': 0.24, 'rent_share': 0.26, 'buys_min': 1.24}
+     {'run': 5, 'minutes': 209.1, 'contracts': 101, 'avg_build': 92.6, 'afk_x': 1.29, 'clicks_min': 155.2, 'player_share': 0.22, 'rent_share': 0.27, 'buys_min': 1.56}
