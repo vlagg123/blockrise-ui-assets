@@ -411,7 +411,10 @@ PALETTE = {
     "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=3.5)),
     "sand_glow": dict(rbx=["Neon", [255, 206, 96], 0, 0], bl=dict(color=[1.0, 0.62, 0.12], metal=0, rough=0.5, emit=7.0)),
     "sea_iron":  dict(rbx=["Metal", [78, 92, 108], 0, 0.05], bl=dict(color=[0.1, 0.13, 0.17], metal=1, rough=0.45)),
-    "kraken":    dict(rbx=["SmoothPlastic", [150, 60, 206], 0, 0.05], bl=dict(color=[0.3, 0.04, 0.55], metal=0, rough=0.3)),
+    "kraken":    dict(rbx=["SmoothPlastic", [158, 62, 220], 0, 0.08], bl=dict(color=[0.34, 0.05, 0.62], metal=0, rough=0.12)),
+    "kraken_dk": dict(rbx=["Fabric", [70, 26, 110], 0, 0], bl=dict(color=[0.07, 0.01, 0.14], metal=0, rough=0.55)),
+    "sucker":    dict(rbx=["Neon", [255, 140, 220], 0, 0], bl=dict(color=[1.0, 0.36, 0.78], metal=0, rough=0.3, emit=2.2)),
+    "pearl":     dict(rbx=["SmoothPlastic", [252, 246, 240], 0, 0.3], bl=dict(color=[0.95, 0.9, 0.86], metal=0.2, rough=0.08)),
     "kraken_lt": dict(rbx=["SmoothPlastic", [238, 160, 246], 0, 0.05], bl=dict(color=[0.85, 0.36, 0.9], metal=0, rough=0.3)),
     "kraken_eye": dict(rbx=["Neon", [255, 228, 60], 0, 0], bl=dict(color=[1.0, 0.8, 0.05], metal=0, rough=0.4, emit=8.0)),
     "tiki_wood": dict(rbx=["Wood", [178, 112, 62], 0, 0], bl=dict(color=[0.45, 0.22, 0.08], metal=0, rough=0.6, tex="wood")),
@@ -1852,62 +1855,76 @@ def build_sets(H):
     h = new("kraken", "Kraken King Hammer", "The king of the deep, crowned in gold. Its tentacles hold the handle and never let go.")
     hy = 2.3
     h.shaft(-0.5, hy - 0.2, 0.112, "sea_iron")
-    h.grip(-0.42, 0.3, 0.132, "kraken", rings=3, ring_mat="gold", ring_r=0.135)
-    h.band("Socket", hy - 0.3, 0.17, 0.16, "gold")
-    h.add("PommelPearl", "ball", (0.22,), (0, -0.6, 0), mat="white_gold")
+    h.grip(-0.42, 0.3, 0.132, "kraken_dk", rings=3, ring_mat="gold", ring_r=0.135)
+    h.band("Socket", hy - 0.3, 0.17, 0.14, "gold")
+    h.add("PommelPearl", "ball", (0.24,), (0, -0.6, 0), mat="pearl")
+    h.add("PommelCup", "cyl", (0.06, 0.12), (0, -0.5, 0), mat="gold", smooth=40)
     hp = np.array([0.0, hy, 0.0])
 
-    def tentacle(name, start, d, curl, n=11, r0=0.19, r1=0.055, step=0.09, suckers=True, axis=(1, 0, 0)):
-        """a round tentacle: balls that get smaller and curl more and more (curl: degrees per ball about axis)"""
+    def tentacle(name, start, d, curl, length, r0, r1, axis=(1, 0, 0), suckers=True, tip_gold=True):
+        """a smooth tentacle: overlapping balls (no beads) that thin out and curl tighter towards the tip; glowing
+        suckers along the inside of the curl, a gold ring at the root"""
         p = np.array(start, dtype=float)
         d = unit(d)
-        for k in range(n):
-            t = k / (n - 1)
+        walked, k = 0.0, 0
+        while walked < length:
+            t = walked / length
             r = r0 + (r1 - r0) * t
             h.add("%s%d" % (name, k), "ball", (r * 2,), p, mat="kraken", union=name)
-            if suckers and k % 2 == 1 and k < n - 2:
+            if suckers and k % 3 == 2 and t < 0.85:
                 inside = rot_axis(axis, 90 if curl > 0 else -90) @ d
-                h.add("%sS%d" % (name, k), "ball", (r * 0.85,), p + inside * r * 0.75, mat="kraken_lt", cast=False)
-            p = p + d * step * (1.25 - 0.5 * t)
-            d = rot_axis(axis, curl * (0.5 + t)) @ d
+                h.add("%sS%d" % (name, k), "ball", (r * 0.7,), p + inside * r * 0.8, mat="sucker", cast=False)
+            step = r * 0.45
+            p = p + d * step
+            d = rot_axis(axis, curl * step * (0.6 + 1.6 * t)) @ d
+            walked += step
+            k += 1
 
-    # the head: a round mantle and the back of the head, golden crown, big glowing eyes
-    h.add("Mantle", "ball", (0.6,), hp + [0, 0.06, 0.02], mat="kraken")
-    h.add("MantleBack", "ball", (0.48,), hp + [0, 0.2, 0.3], mat="kraken")
-    h.add("Spot0", "ball", (0.11,), hp + [0.15, 0.36, 0.24], mat="kraken_lt", cast=False)
-    h.add("Spot1", "ball", (0.09,), hp + [-0.13, 0.33, 0.38], mat="kraken_lt", cast=False)
+
+    # the head: a big glossy mantle, the back of the head, two-tone spots, huge glowing eyes
+    h.add("Mantle", "ball", (0.64,), hp + [0, 0.06, 0.02], mat="kraken")
+    h.add("MantleBack", "ball", (0.5,), hp + [0, 0.22, 0.3], mat="kraken")
+    h.add("MantleTop", "ball", (0.34,), hp + [0, 0.36, 0.44], mat="kraken")
+    for k, (x, y, z, r) in enumerate(((0.16, 0.38, 0.22, 0.1), (-0.14, 0.34, 0.36, 0.08), (0.12, 0.44, 0.44, 0.07), (-0.2, 0.2, 0.1, 0.07))):
+        h.add("Spot%d" % k, "ball", (r,), hp + [x, y, z], mat="kraken_lt", cast=False)
     for i, sx in enumerate((-1, 1)):
-        h.add("Eye%d" % i, "ball", (0.18,), hp + [sx * 0.23, 0.1, -0.15], mat="kraken_eye", cast=False)
-        h.add("Pupil%d" % i, "box", (0.03, 0.13, 0.035), hp + [sx * 0.318, 0.1, -0.165], mat="ghost_eye", cast=False)
-    h.add("Crown", "ring", (0.1, 0.17, 0.13), hp + [0, 0.36, 0.08], mat="gold", smooth=40)
+        h.add("EyeRim%d" % i, "ball", (0.22,), hp + [sx * 0.22, 0.1, -0.14], mat="gold")
+        h.add("Eye%d" % i, "ball", (0.19,), hp + [sx * 0.24, 0.1, -0.15], mat="kraken_eye", cast=False)
+        h.add("Pupil%d" % i, "box", (0.03, 0.13, 0.035), hp + [sx * 0.33, 0.1, -0.17], mat="ghost_eye", cast=False)
+    # the crown: a gold band, five points with pearls, a sapphire in front
+    ctr = hp + [0, 0.4, 0.06]
+    h.add("Crown", "ring", (0.13, 0.2, 0.15), ctr, R=Rx(-12), mat="gold", smooth=40)
     for k in range(5):
         a = math.radians(k * 72 + 18)
-        h.add("CrownPt%d" % k, "box", (0.07, 0.13, 0.07), hp + [math.cos(a) * 0.15, 0.47, 0.08 + math.sin(a) * 0.15], mat="gold", planes=spike(0.07, 0.13), cast=False)
-    h.add("CrownGem", "box", (0.08, 0.08, 0.08), hp + [0, 0.37, -0.09], R=Rx(45) @ Rz(35), mat="sapphire", cast=False)
-    # three tentacles fan out forward and curl under (the striking end), well apart from each other
-    for i, (sx, spread) in enumerate(((-1, 0.45), (0, 0.0), (1, 0.45))):
-        tentacle("Front%d" % i, hp + [sx * 0.15, -0.12, -0.2], (sx * spread, -0.18, -1), -24, n=11)
-    # two sweep back and curl up
+        q = ctr + [math.cos(a) * 0.18, 0.12, math.sin(a) * 0.18]
+        h.add("CrownPt%d" % k, "box", (0.08, 0.16, 0.08), q, mat="gold", planes=spike(0.08, 0.16), cast=False)
+        h.add("Pearl%d" % k, "ball", (0.06,), q + [0, 0.1, 0], mat="pearl", cast=False)
+    h.add("CrownGem", "box", (0.1, 0.1, 0.1), ctr + [0, 0.0, -0.2], R=Rx(45) @ Rz(35), mat="sapphire", cast=False)
+    # two thick tentacles reach forward and curl under (the striking end), two sweep back and up: well apart
     for i, sx in enumerate((-1, 1)):
-        tentacle("Back%d" % i, hp + [sx * 0.17, -0.1, 0.3], (sx * 0.4, -0.3, 1), 26, n=10, r0=0.16)
-    # two hug the handle: they spiral down the shaft, getting thinner
+        root = hp + [sx * 0.2, -0.14, -0.16]
+        tentacle("Front%d" % i, root, (sx * 0.5, -0.25, -1), -2.6, 0.95, 0.16, 0.035)
+        h.add("FrontBand%d" % i, "ring", (0.06, 0.175, 0.12), root + unit((sx * 0.5, -0.25, -1)) * 0.06, R=toward(unit((sx * 0.5, -0.25, -1))), mat="gold", smooth=40, cast=False)
+        root = hp + [sx * 0.2, -0.08, 0.32]
+        tentacle("Back%d" % i, root, (sx * 0.55, -0.35, 1), 2.8, 0.8, 0.14, 0.03)
+    # two thin ones hug the handle: they spiral down the shaft
     for i, ph in enumerate((0.0, math.pi)):
-        n = 22
+        n = 40
         for k in range(n):
             t = k / (n - 1)
-            ang = ph + t * math.pi * 3.2
-            y = hy - 0.32 - t * 1.25
-            rr = 0.15 + 0.02 * (1 - t)
-            r = 0.085 - 0.04 * t
+            ang = ph + t * math.pi * 3.0
+            y = hy - 0.34 - t * 1.2
+            rr = 0.15 + 0.015 * (1 - t)
+            r = 0.07 - 0.035 * t
             h.add("Hold%d_%d" % (i, k), "ball", (r * 2,), (math.cos(ang) * rr, y, math.sin(ang) * rr), mat="kraken", union="Hold%d" % i, cast=False)
-            if k % 4 == 2:
-                h.add("HoldS%d_%d" % (i, k), "ball", (r * 0.9,), (math.cos(ang) * (rr + r * 0.7), y, math.sin(ang) * (rr + r * 0.7)), mat="kraken_lt", cast=False)
+            if k % 6 == 3:
+                h.add("HoldS%d_%d" % (i, k), "ball", (r * 0.8,), (math.cos(ang) * (rr + r * 0.75), y, math.sin(ang) * (rr + r * 0.75)), mat="sucker", cast=False)
     h.headbox(hp, (0.8, 0.9, 1.6))
     h.fx("rise", hp, [[160, 230, 255], [220, 255, 255]], 6, [0.04, 0.09], area=(0.7, 0.5, 1.3))
-    h.fx("sparkle", hp, [[255, 226, 120], [220, 150, 255]], 4, [0.1, 0.2], area=(0.7, 0.6, 1.4))
-    h.fx("stars", hp + [0, 0.45, 0.08], [[255, 240, 180], [255, 255, 255]], 3, [0.08, 0.16], area=(0.4, 0.2, 0.4))
-    h.light(hp, [190, 100, 255], 2.4, 11)
-    h.trail(hp + [0, 0.38, -0.7], hp + [0, -0.38, -0.7], [[255, 226, 140], [200, 120, 255], [40, 10, 90]])
+    h.fx("sparkle", hp, [[255, 226, 120], [255, 140, 220]], 4, [0.1, 0.2], area=(0.7, 0.6, 1.4))
+    h.fx("stars", ctr, [[255, 240, 180], [255, 255, 255]], 3, [0.08, 0.16], area=(0.4, 0.2, 0.4))
+    h.light(hp, [200, 110, 255], 2.4, 11)
+    h.trail(hp + [0, 0.38, -0.7], hp + [0, -0.38, -0.7], [[255, 226, 140], [220, 120, 255], [40, 10, 90]])
     H.append(h)
 
     # 49 ---------------------------------------------------------------------------------- TIKI HAMMER (temple, rare)
