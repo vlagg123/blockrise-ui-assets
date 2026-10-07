@@ -136,7 +136,7 @@ end
 ---------------------------------------------------------------------------
 local win -- the open trade window: { gui, ... }
 local lastView
-local W, H = 900, 620
+local W, H = 900, 704
 local ORANGE = Color3.fromRGB(255, 170, 40)
 local CARD = Color3.fromRGB(236, 238, 252)
 local FLASH = Color3.fromRGB(255, 200, 40)
@@ -289,13 +289,13 @@ local function drawOffer(list, cards, mine, flashKeys)
 	for i, cd in ipairs(cards) do
 		local f = new("TextButton", { Name = "Card", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 4, Parent = list })
 		local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = CARD, SliceScale = 0.3, ZIndex = 4, Parent = f })
-		local box = K.artBox(f, cd.pic, cd.color, { Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 0, 66), IconScale = 0.95 })
+		local box = K.artBox(f, cd.pic, cd.color, { Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 0, 54), IconScale = 0.95 })
 		box.ZIndex = 5
 		if cd.rid and K.rarityFX then pcall(K.rarityFX, box, cd.rid) end
-		K.text({ Position = UDim2.fromOffset(4, 72), Size = UDim2.new(1, -8, 0, 16), Text = cd.title, TextSize = 12, Max = 12, Font = T.chunky, TextXAlignment = Enum.TextXAlignment.Center,
+		K.text({ Position = UDim2.fromOffset(4, 60), Size = UDim2.new(1, -8, 0, 14), Text = cd.title, TextSize = 12, Max = 12, Font = T.chunky, TextXAlignment = Enum.TextXAlignment.Center,
 			TextColor3 = K.DARK, ZIndex = 6, Parent = f })
 		K.chip(f, cd.amount, cd.kind == "ham" and Color3.fromRGB(60, 56, 110) or (cd.kind == "cash" and Color3.fromRGB(40, 160, 80) or K.DARK),
-			{ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 88), ZIndex = 7 })
+			{ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -4), ZIndex = 7 })
 		if mine then
 			-- tap to take it out
 			local x = new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -2, 0, 2), Size = UDim2.fromOffset(22, 22), BackgroundColor3 = T.red, BorderSizePixel = 0, ZIndex = 9, Parent = f })
@@ -339,20 +339,23 @@ local function stepRow(parent, order, it)
 	K.art(pic, it.icon, UDim2.fromScale(1.05, 1.05), 6)
 	K.text({ Position = UDim2.fromOffset(62, 6), Size = UDim2.new(1, -420, 0, 24), Text = it.name, TextSize = 18, Max = 18, Font = T.chunky, ZIndex = 5, Parent = f })
 	local haveL = K.text({ Position = UDim2.fromOffset(62, 30), Size = UDim2.new(1, -420, 0, 18), Text = "", TextSize = 14, Max = 14, TextColor3 = K.SUB, ZIndex = 5, Parent = f })
-	-- right side: - [n] + +10 ALL
-	local x0 = -344
-	local function btn(label, color, x, w, fn)
-		local b = UI.button(label, color, nil, { Position = UDim2.new(1, x, 0, 8), Size = UDim2.fromOffset(w, 40), TextSize = label:len() > 2 and 15 or 22, ZIndex = 6, Parent = f })
+	-- (tap the row's picture or name: nothing; the buttons do it all)
+	-- right side: [-] n [+] [+10] [ALL], laid out with even gaps (no two buttons ever touch)
+	local holder = new("Frame", { Name = "Steps", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(330, 44), BackgroundTransparency = 1,
+		ZIndex = 5, Parent = f })
+	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
+	local function btn(order, label, color, w, fn)
+		local b = UI.button(label, color, nil, { Name = "B" .. order, Size = UDim2.fromOffset(w, 40), TextSize = label:len() > 2 and 16 or 24, LayoutOrder = order, ZIndex = 6, Parent = holder })
 		b.Activated:Connect(function() c.click(); fn() end)
 		return b
 	end
-	btn("-", K.LOCK, x0, 40, function() setQty(it.kind, it.id, shown(it.kind, it.id) - 1) end)
-	local count = K.text({ Position = UDim2.new(1, x0 + 44, 0, 0), Size = UDim2.fromOffset(74, 56), Text = "0", Font = T.chunky, TextSize = 22, Max = 22,
-		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = f })
-	btn("+", K.GREEN, x0 + 122, 40, function() setQty(it.kind, it.id, math.min(have(it.kind, it.id), shown(it.kind, it.id) + 1)) end)
-	btn("+10", K.GREEN, x0 + 168, 54, function() setQty(it.kind, it.id, math.min(have(it.kind, it.id), shown(it.kind, it.id) + 10)) end)
-	btn("ALL", Color3.fromRGB(255, 176, 40), x0 + 228, 60, function() setQty(it.kind, it.id, have(it.kind, it.id)) end)
-	btn("0", K.LOCK, x0 + 294, 44, function() setQty(it.kind, it.id, 0) end)
+	btn(1, "-", K.LOCK, 44, function() setQty(it.kind, it.id, shown(it.kind, it.id) - 1) end)
+	local count = K.text({ Name = "Count", Size = UDim2.fromOffset(64, 40), Text = "0", Font = T.chunky, TextSize = 22, Max = 22, LayoutOrder = 2,
+		TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = holder })
+	btn(3, "+", K.GREEN, 44, function() setQty(it.kind, it.id, math.min(have(it.kind, it.id), shown(it.kind, it.id) + 1)) end)
+	btn(4, "+10", K.GREEN, 58, function() setQty(it.kind, it.id, math.min(have(it.kind, it.id), shown(it.kind, it.id) + 10)) end)
+	btn(5, "ALL", Color3.fromRGB(255, 176, 40), 64, function() setQty(it.kind, it.id, have(it.kind, it.id)) end)
 	return { frame = f, count = count, have = haveL, it = it }
 end
 
@@ -382,15 +385,15 @@ local function drawStuff()
 			local r = Hammers.Rarities[e.h.dr or e.h.r]
 			local f = new("TextButton", { Name = "Ham", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 4, Parent = list })
 			local bg = UI.slice("tile", { Name = "Bg", ImageColor3 = CARD, SliceScale = 0.3, ZIndex = 4, Parent = f })
-			local box = K.artBox(f, M.hammerArt(e.h), r.color, { Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 0, 78), IconScale = 0.95 })
+			local box = K.artBox(f, M.hammerArt(e.h), r.color, { Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 0, 96), IconScale = 0.95 })
 			box.ZIndex = 5
 			if K.rarityFX then pcall(K.rarityFX, box, r.id) end
-			local nm = K.text({ Position = UDim2.fromOffset(4, 84), Size = UDim2.new(1, -8, 0, 16), Text = e.h.name, TextSize = 13, Max = 13, Font = T.chunky,
+			local nm = K.text({ Position = UDim2.fromOffset(4, 103), Size = UDim2.new(1, -8, 0, 16), Text = e.h.name, TextSize = 13, Max = 13, Font = T.chunky,
 				TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6, Parent = f })
 			K.rarityText(nm, r.id)
-			K.text({ Position = UDim2.fromOffset(4, 100), Size = UDim2.new(1, -8, 0, 14), Text = "LV " .. (e.it.lv or 1) .. " · " .. Hammers.PowerLabel(e.h.key, e.it.lv or 1),
+			K.text({ Position = UDim2.fromOffset(4, 120), Size = UDim2.new(1, -8, 0, 14), Text = "LV " .. (e.it.lv or 1) .. " · " .. Hammers.PowerLabel(e.h.key, e.it.lv or 1),
 				TextSize = 12, Max = 12, Font = T.chunky, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.SUB, ZIndex = 6, Parent = f })
-			local b = UI.button("ADD", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -5), Size = UDim2.new(1, -12, 0, 30), TextSize = 15, ZIndex = 7, Parent = f })
+			local b = UI.button("ADD", K.GREEN, nil, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -7), Size = UDim2.new(1, -14, 0, 32), TextSize = 16, ZIndex = 7, Parent = f })
 			if e.it.id == win.equipId then
 				K.chip(f, "IN HAND", Color3.fromRGB(40, 170, 80), { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), ZIndex = 8 })
 			end
@@ -553,14 +556,15 @@ local function openWindow(v)
 	local gui = new("ScreenGui", { Name = "TradeWindow", ResetOnSpawn = false, DisplayOrder = 40, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = pg })
 	local dim = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.5, Active = true, Parent = gui })
 	local panel, x, title = K.window(dim, UDim2.fromOffset(W, H), "Trade", GREEN1, GREEN2, "trade")
-	local fit = math.clamp(math.min(c.camera.ViewportSize.X / (W + 40), (c.camera.ViewportSize.Y - 60) / (H + 60)), 0.5, 1.15)
+	-- (the whole window always fits the screen, a phone too)
+	local fit = math.clamp(math.min(c.camera.ViewportSize.X / (W + 40), (c.camera.ViewportSize.Y - 50) / (H + 50)), 0.35, 1.15)
 	new("UIScale", { Scale = fit, Parent = panel })
 	x.Activated:Connect(function() c.click(); invoke("cancel") end)
 	title.Text = "Trade with " .. themName(v)
 
 	-- the two offers
 	local function column(xpos, label)
-		local col = new("Frame", { Position = UDim2.new(xpos, xpos == 0 and 18 or 6, 0, 62), Size = UDim2.new(0.5, -24, 0, 208), BackgroundTransparency = 1, ZIndex = 5, Parent = panel })
+		local col = new("Frame", { Position = UDim2.new(xpos, xpos == 0 and 18 or 6, 0, 62), Size = UDim2.new(0.5, -24, 0, 276), BackgroundTransparency = 1, ZIndex = 5, Parent = panel })
 		UI.slice("tile", { Name = "Bg", ImageColor3 = K.TILE, ZIndex = 1, Parent = col })
 		K.text({ Position = UDim2.fromOffset(14, 6), Size = UDim2.new(1, -170, 0, 34), Text = label, Font = T.chunky, TextSize = 22, Max = 22, TextColor3 = K.DARK, ZIndex = 3, Parent = col })
 		local ready = UI.button("NOT READY", K.LOCK, nil, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 6), Size = UDim2.fromOffset(136, 34), TextSize = 15, ZIndex = 4, Parent = col })
@@ -569,7 +573,8 @@ local function openWindow(v)
 		local list = new("ScrollingFrame", { Position = UDim2.fromOffset(8, 46), Size = UDim2.new(1, -16, 1, -52), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 5,
 			ScrollBarImageColor3 = Color3.fromRGB(150, 150, 200), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y,
 			ZIndex = 3, Parent = col })
-		new("UIGridLayout", { CellSize = UDim2.fromOffset(92, 116), CellPadding = UDim2.fromOffset(6, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+		-- (two rows of cards fit exactly; more scroll)
+		new("UIGridLayout", { CellSize = UDim2.fromOffset(92, 106), CellPadding = UDim2.fromOffset(6, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 		new("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingLeft = UDim.new(0, 2), Parent = list })
 		return list, ready
 	end
@@ -577,13 +582,13 @@ local function openWindow(v)
 	local theirList, theirReady = column(0.5, "YOU GET")
 
 	-- YOUR STUFF: tabs + what you have
-	local stuffBox = new("Frame", { Position = UDim2.fromOffset(18, 280), Size = UDim2.new(1, -36, 0, 236), BackgroundTransparency = 1, ZIndex = 5, Parent = panel })
+	local stuffBox = new("Frame", { Position = UDim2.fromOffset(18, 348), Size = UDim2.new(1, -36, 0, 252), BackgroundTransparency = 1, ZIndex = 5, Parent = panel })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = Color3.fromRGB(60, 56, 150), ZIndex = 1, Parent = stuffBox })
 	local tabBar = new("Frame", { Name = "TabBar", Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 0, 54), BackgroundTransparency = 1, ZIndex = 6, Parent = stuffBox })
 	local stuff = new("ScrollingFrame", { Position = UDim2.fromOffset(10, 62), Size = UDim2.new(1, -20, 1, -68), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 5,
 		ScrollBarImageColor3 = Color3.fromRGB(200, 200, 240), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y,
 		ZIndex = 3, Parent = stuffBox })
-	local grid = new("UIGridLayout", { CellSize = UDim2.fromOffset(128, 150), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder })
+	local grid = new("UIGridLayout", { CellSize = UDim2.fromOffset(128, 176), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder })
 	local lst = new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder })
 	new("UIPadding", { PaddingTop = UDim.new(0, 2), PaddingLeft = UDim.new(0, 2), Parent = stuff })
 

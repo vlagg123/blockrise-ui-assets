@@ -476,9 +476,16 @@ function M.Init(c)
 				local st = ctx.S[plr]
 				st.data.Items.mats[a] = math.max(0, (st.data.Items.mats[a] or 0) - b)
 				return "spent"
+			elseif cmd == "hams" then
+				local ids = {}
+				for _, it in ipairs(bst.data.Hammers) do table.insert(ids, it.id .. "=" .. it.k) end
+				return table.concat(ids, ",")
 			elseif cmd == "cancel" then
 				close(s, "Test Bot cancelled the trade")
 				return "closed"
+			elseif cmd == "leave" then
+				close(s, "Test Bot left the game")
+				return "left"
 			end
 			return "?"
 		end

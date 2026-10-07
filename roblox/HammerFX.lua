@@ -978,27 +978,23 @@ local function reveal(o)
 	end
 	task.delay(0.75, function()
 		if c.closing then return end
-		-- anti autoclicker (crates): the KEEP goes under the row of OPEN buttons, in the middle, a little lower than
-		-- usual, so it never touches the OPEN you pressed (nor the others of that row): a clicker left on one spot opens
-		-- one crate and stops. The card is at its full size now.
+		-- anti autoclicker (crates): the KEEP always sits in the same spot, in the middle, just under the row of OPEN
+		-- buttons (whichever crate you opened, left, middle or right), so it never touches the OPEN you pressed (nor the
+		-- others of that row): a clicker left on one spot opens one crate and stops. The card is at its full size now.
 		local av = o.avoid
 		if av and not again and btn.AbsoluteSize.X > 0 then
 			local k = btn.AbsoluteSize.Y / btn.Size.Y.Offset
 			local p0, sz = btn.AbsolutePosition, btn.AbsoluteSize
 			local m = 18 * k -- a small gap: their edges never touch, not even when one grows under the mouse
 			local top, bottom = av[1].Y, av[1].Y + av[2].Y
-			local overlapsY = p0.Y < bottom + m and p0.Y + sz.Y > top - m
-			local overlapsX = p0.X < av[1].X + av[2].X + m and p0.X + sz.X > av[1].X - m
-			if overlapsY and overlapsX then
-				local screenBottom = gui.AbsolutePosition.Y + gui.AbsoluteSize.Y -- (this ScreenGui starts at y = -inset)
-				local dy
-				if bottom + m + sz.Y < screenBottom - 8 then
-					dy = bottom + m - p0.Y -- under the OPEN row
-				else
-					dy = (top - m - sz.Y) - p0.Y -- (no room under it: above it)
-				end
-				btn.Position = UDim2.fromOffset(280, 418 + dy / k)
+			local screenBottom = gui.AbsolutePosition.Y + gui.AbsoluteSize.Y -- (this ScreenGui starts at y = -inset)
+			local dy
+			if bottom + m + sz.Y < screenBottom - 8 then
+				dy = bottom + m - p0.Y -- under the OPEN row
+			else
+				dy = (top - m - sz.Y) - p0.Y -- (no room under it: above it)
 			end
+			btn.Position = UDim2.fromOffset(280, 418 + dy / k)
 		end
 		-- the buttons pop in
 		for _, b in ipairs({ btn, again }) do
