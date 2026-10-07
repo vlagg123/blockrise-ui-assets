@@ -1183,64 +1183,46 @@ def build_new(H):
     h.add("PommelShell", "ball", (0.2,), (0, -0.56, 0), mat="foam")
     h.add("Knot", "ball", (0.26,), (0, hy - 0.3, 0), mat="driftwood")
     hp = np.array([0.0, hy, 0.0])
-    # a breaking wave seen from the side (u = Z, v = Y): a swell low at the front (the striking face) rising to the back,
-    # and the crest that rises from the back, rolls over the top and falls forward, leaving the tube open under it.
+    # a barrelling wave seen from the side (u = Z, v = Y), like a surfer's wave: the sea low at the front (the striking face)
+    # rising to the back; the face of the wave grows out of the sea and goes up concave, over the top, and the lip throws
+    # forward and down, the barrel open under it. The face starts on the water (no gap where the wave begins).
     W = 0.46
     NS = 6
+    U0, U1 = -0.62, 0.48
+    def swell_v(u):
+        return -0.14 + 0.24 * max(0.0, min(1.0, (u - U0) / (U1 - U0))) ** 1.7
     for k in range(NS):
-        u0, u1 = -0.62 + 1.18 * k / NS, -0.62 + 1.18 * (k + 1) / NS
-        t0, t1 = (u0 + 0.62) / 1.18, (u1 + 0.62) / 1.18
-        v0, v1 = -0.14 + 0.26 * t0 ** 1.7, -0.14 + 0.26 * t1 ** 1.7
-        h.poly("Swell%d" % k, [(u0, -0.3), (u1, -0.3), (u1, v1), (u0, v0)], W, hp, I3, "water", union="Wave")
-    C = np.array([0.02, 0.2])
+        u0, u1 = U0 + (U1 - U0) * k / NS, U0 + (U1 - U0) * (k + 1) / NS
+        h.poly("Swell%d" % k, [(u0, -0.3), (u1, -0.3), (u1, swell_v(u1)), (u0, swell_v(u0))], W, hp, I3, "water", union="Wave")
+    RI = 0.22                                           # the barrel (inner radius)
+    cu = 0.04
+    C = np.array([cu, swell_v(cu) - 0.012 + RI])         # its bottom sits on the sea: the face starts on the water
+    A0, A1 = -90.0, 212.0
     arc = []
-    N = 12
-    A0, A1 = -55.0, 255.0
+    N = 16
     for k in range(N + 1):
         t = k / N
-        th = math.radians(A0 + (A1 - A0) * t)          # from inside the swell at the back, over the top, down onto the swell
-        rm = 0.28 - 0.02 * t                            # the curl tightens a little (a spiral)
-        tk = 0.24 * (1 - t) ** 0.9 + 0.04               # and gets thinner towards its lip
+        th = math.radians(A0 + (A1 - A0) * t)
+        ri = RI - 0.03 * t                              # the lip curls in a little
+        tk = 0.26 * (1 - t) ** 0.85 + 0.035            # thick at the base, thin at the lip
         d = np.array([math.cos(th), math.sin(th)])
-        arc.append((C + d * (rm - tk / 2), C + d * (rm + tk / 2)))
+        o = C + d * (ri + tk)
+        o[1] = max(o[1], -0.28)                         # (the base stays inside the sea: nothing pokes out under it)
+        arc.append((C + d * ri, o))
     for k in range(N):
         (i0, o0), (i1, o1) = arc[k], arc[k + 1]
         h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], W, hp, I3, "water", union="Wave")
-    # the barrel inside the curl is filled with water, one piece with the wave (no hole through it): the hull of the inner
-    # edge of the curl and the top of the swell under it
-    def swell_v(u):
-        return -0.14 + 0.26 * max(0.0, min(1.0, (u + 0.62) / 1.18)) ** 1.7
-    pts = [tuple(a[0]) for a in arc]
-    u_lip, u_start = arc[N][0][0], arc[0][0][0]
-    for j in range(9):
-        u = u_lip + (u_start - u_lip) * j / 8
-        pts.append((u, swell_v(u) - 0.02))
-    def hull2(ps):
-        ps = sorted(set((round(a, 5), round(b, 5)) for a, b in ps))
-        def cross(o, a, b):
-            return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-        lo, up = [], []
-        for q in ps:
-            while len(lo) >= 2 and cross(lo[-2], lo[-1], q) <= 0:
-                lo.pop()
-            lo.append(q)
-        for q in reversed(ps):
-            while len(up) >= 2 and cross(up[-2], up[-1], q) <= 0:
-                up.pop()
-            up.append(q)
-        return lo[:-1] + up[:-1]
-    h.poly("Barrel", hull2(pts), W, hp, I3, "water", union="Wave")
-    # white foam: on the top of the crest, along the falling lip, and spray in front of it
-    for i, k in enumerate((4, 5, 6, 7, 8, 9, 10, 11)):
+    # white foam along the top of the wave and the falling lip, spray thrown off the lip
+    for i, k in enumerate((7, 8, 9, 10, 11, 12, 13, 14, 15)):
         i0, o0 = arc[k]
-        q = o0 * 0.75 + i0 * 0.25
+        q = o0 * 0.72 + i0 * 0.28
         r = 0.15 - 0.008 * i
         for j, sx in enumerate((-1, 1)):
             h.add("Foam%d%d" % (i, j), "ball", (r,), hp + [sx * 0.12, q[1], q[0]], mat="foam", cast=False)
     lip = (arc[N][0] + arc[N][1]) / 2
-    h.add("LipFoam", "ball", (0.12,), hp + [0, lip[1] - 0.02, lip[0]], mat="foam", cast=False)
-    for i, (z, y, d) in enumerate(((-0.48, 0.2, 0.08), (-0.56, 0.08, 0.06), (-0.4, 0.32, 0.05))):
-        h.add("Spray%d" % i, "ball", (d,), hp + [0.05 * (i - 1), y, z], mat="foam", cast=False)
+    h.add("LipFoam", "ball", (0.11,), hp + [0, lip[1] - 0.02, lip[0]], mat="foam", cast=False)
+    for i, (du, dv, d) in enumerate(((-0.1, 0.08, 0.08), (-0.18, -0.02, 0.06), (-0.05, 0.18, 0.05))):
+        h.add("Spray%d" % i, "ball", (d,), hp + [0.05 * (i - 1), lip[1] + dv, lip[0] + du], mat="foam", cast=False)
     h.headbox(hp + [0, 0.05, 0], (0.56, 0.85, 1.25))
     h.fx("snow", hp + [0, 0.2, 0], [[255, 255, 255], [150, 210, 255]], 4, [0.05, 0.1], area=(0.5, 0.3, 1.0))
     h.fx("mist", hp, [[170, 220, 255]], 1.5, [0.3, 0.5], area=(0.5, 0.4, 1.0))
