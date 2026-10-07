@@ -340,6 +340,10 @@ for _, tier in ipairs(args.tiers or {}) do
 	local old = folder:FindFirstChild((h.special or h.bykey) and ("Hammer_" .. h.key) or ("Hammer_" .. tier))
 	local ok, tool = pcall(buildHammer, h)
 	if ok then
+		-- the hotbar picture: the hammer's own picture (Hammers h.img), else the one the old tool had
+		local okH, HM = pcall(require, game:GetService("ReplicatedStorage").Shared.Hammers)
+		local hd = okH and HM.ById and HM.ById[h.key]
+		tool.TextureId = (hd and hd.img) or (old and old.TextureId) or ""
 		if old and not args.preview then old:Destroy() end
 		if args.preview then
 			tool:PivotTo(CFrame.new(args.preview + Vector3.new((tier - 1) * 3.2, 0, 0)) * CFrame.Angles(0, math.rad(args.yaw or 0), 0))
