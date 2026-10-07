@@ -88,7 +88,14 @@ function M.Show()
 				if ok2 and res then
 					-- bought: the window closes and the new car is parked right next to you
 					c.closeModal()
-					local ok3, res3, msg3 = pcall(function() return c.R.VehicleAction:InvokeServer("spawn", v.id) end)
+					-- (the server takes one car action at a time, a quarter of a second apart)
+					local ok3, res3, msg3
+					for _ = 1, 4 do
+						task.wait(0.35)
+						ok3, res3, msg3 = pcall(function() return c.R.VehicleAction:InvokeServer("spawn", v.id) end)
+						if ok3 and res3 then break end
+						if msg3 ~= "Slow down!" and msg3 ~= "One moment..." then break end
+					end
 					if not (ok3 and res3) then c.toast("⚠️ " .. tostring(msg3 or "Can't park it here: press DRIVE in the Garage"), T.red, 3) end
 				else
 					c.toast("⚠️ " .. tostring(msg or "Can't buy that"), T.red)
