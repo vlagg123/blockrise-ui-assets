@@ -1,7 +1,11 @@
 -- one-off patch (run in Edit): every hammer in ServerStorage.Hammers gets its picture back in the hotbar
 -- (rebuilding the hammers made new Tools without a TextureId: the hotbar showed only the name). The picture is the
 -- hammer's own (Hammers h.img); hammer_build.lua now sets it on every rebuild.
-local HM = require(game.ReplicatedStorage.Shared.Hammers)
+-- (the module's current Source: in Edit, require hands back the copy from the first require)
+local mod = game.ReplicatedStorage.Shared.Hammers
+local f = loadstring(mod.Source)
+setfenv(f, setmetatable({ script = mod }, { __index = getfenv() }))
+local HM = f()
 local done, missing = 0, {}
 for _, t in ipairs(game.ServerStorage.Hammers:GetChildren()) do
 	if t:IsA("Tool") then

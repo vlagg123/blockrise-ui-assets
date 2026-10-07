@@ -341,8 +341,14 @@ for _, tier in ipairs(args.tiers or {}) do
 	local ok, tool = pcall(buildHammer, h)
 	if ok then
 		-- the hotbar picture: the hammer's own picture (Hammers h.img), else the one the old tool had
-		local okH, HM = pcall(require, game:GetService("ReplicatedStorage").Shared.Hammers)
-		local hd = okH and HM.ById and HM.ById[h.key]
+		-- (read from the module's current Source: in Edit, require hands back the copy from the first require)
+		local okH, HM = pcall(function()
+			local mod = game:GetService("ReplicatedStorage").Shared.Hammers
+			local f = loadstring(mod.Source)
+			setfenv(f, setmetatable({ script = mod }, { __index = getfenv() }))
+			return f()
+		end)
+		local hd = okH and type(HM) == "table" and HM.ById and HM.ById[h.key]
 		tool.TextureId = (hd and hd.img) or (old and old.TextureId) or ""
 		if old and not args.preview then old:Destroy() end
 		if args.preview then
