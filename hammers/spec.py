@@ -1178,10 +1178,19 @@ def build_new(H):
     # 31 ---------------------------------------------------------------------------------- TSUNAMI HAMMER (legendary)
     h = new("tsunami", "Tsunami Hammer", "A frozen wave of deep blue water, white foam on the crest.")
     hy = 2.16
+    # a legendary handle: driftwood with bands of sea water and foam, a cord grip ringed with water, a pearl on a gold
+    # cup for a pommel, and a splash of foam where the wave meets the wood
     h.shaft(-0.5, hy - 0.14, 0.112, "driftwood")
-    h.grip(-0.42, 0.30, 0.13, "cord", rings=4, ring_mat="driftwood", ring_r=0.133)
-    h.add("PommelShell", "ball", (0.2,), (0, -0.56, 0), mat="foam")
-    h.add("Knot", "ball", (0.26,), (0, hy - 0.3, 0), mat="driftwood")
+    h.grip(-0.42, 0.30, 0.13, "cord", rings=4, ring_mat="water", ring_r=0.136)
+    for i, y in enumerate((0.62, 1.02, 1.42)):
+        h.band("Sea%d" % i, y, 0.124, 0.07, "water")
+        h.band("SeaFoam%d" % i, y + 0.05, 0.119, 0.025, "foam")
+    h.band("PommelCup", -0.47, 0.135, 0.07, "gold")
+    h.add("Pearl", "ball", (0.21,), (0, -0.58, 0), mat="foam")
+    h.band("Collar", hy - 0.3, 0.15, 0.1, "water")
+    for i in range(8):
+        a = 2 * math.pi * i / 8
+        h.add("Splash%d" % i, "ball", (0.075,), (0.15 * math.cos(a), hy - 0.24, 0.15 * math.sin(a)), mat="foam", cast=False)
     hp = np.array([0.0, hy, 0.0])
     # a barrelling wave seen from the side (u = Z, v = Y), like a surfer's wave: the sea low at the front (the striking face)
     # rising to the back; the face of the wave grows out of the sea and goes up concave, over the top, and the lip throws
