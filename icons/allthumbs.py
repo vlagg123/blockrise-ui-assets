@@ -73,7 +73,20 @@ def i_hammer_exclusive():
     R.torus(1.55, 0.07, g, loc=(0, 0.4, -1.84), outline=False)
     R.cyl(1.15, 0.3, teal, loc=(0, 0.4, -1.7), bevel=0.07)
     R.torus(1.15, 0.06, g, loc=(0, 0.4, -1.55), outline=False)
-    track(R.spec_hammer, "crown", rot=40, loc=(0, 0.4, 0.3), size=3.9)
+    parts = track(R.spec_hammer, "crown", rot=40, loc=(0, 0.4, 0.3), size=3.9)
+    # centred on the pedestal: the handle's foot (its lowest part) right over the middle, not the box of the whole hammer
+    from mathutils import Vector, Matrix
+    import bpy
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(v.co) for o in parts if o.type == "MESH" for v in o.data.vertices]
+    zmin = min(p.z for p in pts)
+    foot = [p for p in pts if p.z < zmin + 0.35]
+    fx = sum(p.x for p in foot) / len(foot)
+    fy = sum(p.y for p in foot) / len(foot)
+    move = Matrix.Translation((-fx, 0.4 - fy, 0))
+    for o in parts:
+        if o.parent is None:
+            o.matrix_world = move @ o.matrix_world
 
 
 def i_luckboost():
