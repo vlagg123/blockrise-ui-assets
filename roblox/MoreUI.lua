@@ -95,9 +95,11 @@ function M.Missions()
 				if l then l.Text = "..." end
 				local ok2, res = pcall(function() return c.R.ClaimMission:InvokeServer(m.index) end)
 				if ok2 and res then
-					if l then l.Text = "✔ CLAIMED" end
 					m.claimed = true
 					count()
+					-- the button turns into CLAIMED at once, in the very spot and look it keeps (no raised button in between)
+					btn.Visible = false
+					K.status(btn.Parent, "✔ CLAIMED", K.GREEN, { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(btn.Size.X.Offset, 46) })
 					-- the celebration (like a playtime gift): the mission's picture pops, confetti, the reward pops up and
 					-- the cash flies into the counter on the HUD; the list shows CLAIMED once it is done
 					local row = btn:FindFirstAncestor("Row")

@@ -252,7 +252,9 @@ function M.Show()
 	-- the gifts: 3 a row (two even rows), ready ones first glow
 	local grid = K.grid(c.content, 2, 3, 258, 12)
 	local timers = {}
-	for i, g in ipairs(Config.PlaytimeGifts) do
+	local makeTile
+	makeTile = function(i, g)
+		local done = claimed()
 		local left = g.mins * 60 - playSecs()
 		local o = { order = i, name = g.mins .. " MIN GIFT", icon = "gift", color = GIFT_COLS[(i - 1) % #GIFT_COLS + 1], artH = 116, stats = rewardChips(g) }
 		if done[i] then
@@ -267,9 +269,22 @@ function M.Show()
 				local tile = b and b:FindFirstAncestor("Tile")
 				lastSource, lastSourceAt = tile and tile:FindFirstChild("Art") or tile, os.clock()
 				if claim(i) then
-					local l = b and b:FindFirstChild("Label")
-					if l then l.Text = "✔ OPENED" end
-					task.delay(1.6, function() if c.live(tok) then M.Show() end end)
+					-- the button turns into OPENED at once, in the very spot and look it keeps (no raised button in between)
+					if b then b.Visible = false end
+					if tile then
+						K.status(tile, "✔ OPENED", K.GREEN, { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -13), Size = UDim2.new(1, -20, 0, 44) })
+					end
+					local set, n = claimed(), 0
+					set[i] = true
+					for _ in pairs(set) do n += 1 end
+					c.modalSub.Text = n .. " / " .. #Config.PlaytimeGifts .. " opened"
+					paintTrack()
+					-- once the gift has flown, only this gift goes grey (the rest of the window stays as it is)
+					task.delay(1.6, function()
+						if not c.live(tok) or not tile or not tile.Parent then return end
+						makeTile(i, g)
+						tile:Destroy()
+					end)
 				end
 			end, shine = true }
 		else
@@ -283,7 +298,9 @@ function M.Show()
 			local l = st and st:FindFirstChildOfClass("TextLabel")
 			if l then timers[i] = { l, g } end
 		end
+		return t
 	end
+	for i, g in ipairs(Config.PlaytimeGifts) do makeTile(i, g) end
 	K.note(c.content, 3, "New gifts every day. The timer keeps counting if you rejoin.")
 	-- live countdowns; when one hits zero the window redraws with an OPEN button
 	task.spawn(function()
