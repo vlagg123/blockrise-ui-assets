@@ -2,13 +2,7 @@ BlockRise Empire - tot ce se vinde pe Robux (7 octombrie 2026)
 Poza fiecarui item = fisierul cu acelasi numar din folderul asta (512 x 512).
 Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimite-mi ID-ul dupa ce il creezi).
 
->>> DE SCHIMBAT PE ROBLOX (verificat pe 8 octombrie direct de pe Roblox, restul e deja identic cu jocul) <<<
-    06 Auto Train (pass)     -> descrierea noua de mai jos
-    35 Golden Crate          -> descrierea noua de mai jos
-    38 Exclusive Crate       -> descrierea noua de mai jos
-    39 3 Exclusive Crates    -> descrierea noua de mai jos
-    40 Legends Crate         -> descrierea noua de mai jos
-    (preturile si numele sunt toate corecte; Thunderclap, Monster Truck si Golden Supercar ca pass-uri sunt deja off sale)
+>>> VERIFICAT 8 octombrie, 01:35: toate 46 de iteme sunt pe Roblox exact ca in joc (nume, pret, descriere, de vanzare / off sale). <<<
 
 ==================== GAME PASSES (Creator Hub > Monetization > Passes) ====================
 
@@ -28,7 +22,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Your character keeps building on your site by itself (toggle on the HUD).
 
 06  Auto Train  -  249 R$  -  existent (ID 2005389593): poza noua
-    Keep training at the Training Yard without clicking, and every rep gives 2x Strength.   << DESCRIERE NOUA 2026-10-08
+    Keep training at the Training Yard without clicking, and every rep gives 2x Strength.
 
 07  2x Gems  -  299 R$  -  existent (ID 2007015623): poza noua
     Find twice as many Gems while you build.
@@ -121,7 +115,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Five Builder's Crates (save 12%).
 
 35  Golden Crate  -  249 R$  -  creat (ID 3717127707)
-    A Golden Crate: Rare or better, Secret 1 in 333, Divine 1 in 25,000.   << DESCRIERE NOUA 2026-10-08
+    A Golden Crate: Rare or better, Secret 1 in 333, Divine 1 in 25,000.
 
 36  3 Golden Crates  -  699 R$  -  creat (ID 3717127744)
     Three Golden Crates (save 6%).
@@ -130,13 +124,13 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Ten Golden Crates (save 12%).
 
 38  Exclusive Crate  -  999 R$  -  creat (ID 3717127814)
-    Legendary or better: Mythic 1 in 5, Secret 1 in 22, Divine 1 in 200 and, 1 in 33, an EXCLUSIVE hammer.   << DESCRIERE NOUA 2026-10-08
+    Legendary or better: Mythic 1 in 5, Secret 1 in 22, Divine 1 in 200 and, 1 in 33, an EXCLUSIVE hammer.
 
 39  3 Exclusive Crates  -  2699 R$  -  creat (ID 3717127838)
-    Three Exclusive Crates (save 10%).   << DESCRIERE NOUA 2026-10-08
+    Three Exclusive Crates (save 10%).
 
 40  Legends Crate  -  999 R$  -  creat (ID 3717127882) (in joc: LIVE din 2026-10-08)
-    The Legends collection, Legendary or better: the Viking, the Pharaoh, the Aurora and, 1 in ???, the Chrono.   << DESCRIERE NOUA 2026-10-08
+    The Legends collection, Legendary or better: the Viking, the Pharaoh, the Aurora and, 1 in ???, the Chrono.
 
 41  3 Legends Crates  -  2699 R$  -  creat (ID 3717127961) (in joc: LIVE din 2026-10-08)
     Three Legends Crates (save 10%).
