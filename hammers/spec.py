@@ -1194,19 +1194,44 @@ def build_new(H):
         h.poly("Swell%d" % k, [(u0, -0.3), (u1, -0.3), (u1, v1), (u0, v0)], W, hp, I3, "water", union="Wave")
     C = np.array([0.02, 0.2])
     arc = []
-    N = 11
+    N = 12
+    A0, A1 = -55.0, 255.0
     for k in range(N + 1):
         t = k / N
-        th = math.radians(-18 + 243 * t)                # from the back, over the top, down at the front
-        rm = 0.28 - 0.06 * t                            # the curl tightens a little (a spiral)
-        tk = 0.24 * (1 - t) ** 0.9 + 0.02               # and gets thinner towards its lip
+        th = math.radians(A0 + (A1 - A0) * t)          # from inside the swell at the back, over the top, down onto the swell
+        rm = 0.28 - 0.02 * t                            # the curl tightens a little (a spiral)
+        tk = 0.24 * (1 - t) ** 0.9 + 0.04               # and gets thinner towards its lip
         d = np.array([math.cos(th), math.sin(th)])
         arc.append((C + d * (rm - tk / 2), C + d * (rm + tk / 2)))
     for k in range(N):
         (i0, o0), (i1, o1) = arc[k], arc[k + 1]
         h.poly("Crest%d" % k, [tuple(i0), tuple(i1), tuple(o1), tuple(o0)], W, hp, I3, "water", union="Wave")
+    # the barrel inside the curl is filled with deep water (no hole through the wave): the hull of the inner edge of the
+    # curl and the top of the swell under it, a little narrower so it reads as the inside of the wave
+    def swell_v(u):
+        return -0.14 + 0.26 * max(0.0, min(1.0, (u + 0.62) / 1.18)) ** 1.7
+    pts = [tuple(a[0]) for a in arc]
+    u_lip, u_start = arc[N][0][0], arc[0][0][0]
+    for j in range(9):
+        u = u_lip + (u_start - u_lip) * j / 8
+        pts.append((u, swell_v(u) - 0.02))
+    def hull2(ps):
+        ps = sorted(set((round(a, 5), round(b, 5)) for a, b in ps))
+        def cross(o, a, b):
+            return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+        lo, up = [], []
+        for q in ps:
+            while len(lo) >= 2 and cross(lo[-2], lo[-1], q) <= 0:
+                lo.pop()
+            lo.append(q)
+        for q in reversed(ps):
+            while len(up) >= 2 and cross(up[-2], up[-1], q) <= 0:
+                up.pop()
+            up.append(q)
+        return lo[:-1] + up[:-1]
+    h.poly("Barrel", hull2(pts), W - 0.06, hp, I3, "water_deep")
     # white foam: on the top of the crest, along the falling lip, and spray in front of it
-    for i, k in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
+    for i, k in enumerate((4, 5, 6, 7, 8, 9, 10, 11)):
         i0, o0 = arc[k]
         q = o0 * 0.75 + i0 * 0.25
         r = 0.15 - 0.008 * i
