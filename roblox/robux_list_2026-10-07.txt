@@ -65,16 +65,16 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Your whole crew works 2x faster for 15 minutes.
 
 19  Cash Stack  -  49 R$  -  existent (ID 3716763367): poza noua
-    Instant cash: 20 minutes of your income, right now.
+    20 minutes of your income as instant cash.
 
 20  Contractor's Bonus  -  99 R$  -  existent (ID 3716559383): poza noua
-    Instant cash: 40 minutes of your income, right now.
+    40 minutes of your income as instant cash.
 
 21  Cash Vault  -  199 R$  -  existent (ID 3716763403): poza noua
-    Instant cash: 1 hour 30 of your income. Best value per Robux.
+    90 minutes of your income as instant cash. Best value per Robux.
 
 22  Cash Empire  -  699 R$  -  existent (ID 3716763439): poza noua
-    Instant cash: 5 hours of your income. Skip a whole evening of grinding.
+    5 hours of your income as instant cash.
 
 23  2x Cash (30 min)  -  79 R$  -  existent (ID 3716763463): poza noua
     Double cash for 30 minutes of play.
