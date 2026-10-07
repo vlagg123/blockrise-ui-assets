@@ -87,6 +87,17 @@ K.FALLBACK = {
 	["rbxassetid://91011730465115"] = "rbxassetid://101924819275060", ["rbxassetid://89630917528998"] = "rbxassetid://108541104556016",
 }
 local loaded = {} -- [picture] = true (shows) / false (still waiting: use the older one)
+-- (a picture is fetched through a label that shows it: ContentProvider can't fetch an image from its id alone, it
+-- reports a failure for every rbxassetid string)
+local function probes(ids)
+	local list = {}
+	for _, id in ipairs(ids) do
+		local l = Instance.new("ImageLabel")
+		l.Image = id
+		table.insert(list, l)
+	end
+	return list
+end
 local function guard(img)
 	local id = img.Image
 	local old = K.FALLBACK[id]
@@ -94,12 +105,12 @@ local function guard(img)
 	if loaded[id] == false then img.Image = old return end
 	if loaded[id] then return end
 	task.spawn(function()
-		local ok = true
+		local failed = false
 		pcall(function()
-			game:GetService("ContentProvider"):PreloadAsync({ id }, function(_, st) if st ~= Enum.AssetFetchStatus.Success then ok = false end end)
+			game:GetService("ContentProvider"):PreloadAsync(probes({ id }), function(_, st) if st == Enum.AssetFetchStatus.Failure then failed = true end end)
 		end)
-		loaded[id] = ok
-		if not ok and img.Parent and img.Image == id then img.Image = old end
+		loaded[id] = not failed
+		if failed and img.Parent and img.Image == id then img.Image = old end
 	end)
 end
 K.guardImage = guard
@@ -118,7 +129,11 @@ function K.preload(ids, wait)
 	if #need > 0 then
 		task.spawn(function()
 			pcall(function()
-				game:GetService("ContentProvider"):PreloadAsync(need, function(id) fetched[id] = true end)
+				game:GetService("ContentProvider"):PreloadAsync(probes(need), function(id, st)
+					fetched[id] = true
+					-- (a new picture Roblox hasn't reviewed yet: its older version stands in from the start)
+					if K.FALLBACK[id] and loaded[id] == nil then loaded[id] = st ~= Enum.AssetFetchStatus.Failure end
+				end)
 			end)
 			for _, id in ipairs(need) do fetched[id] = true end
 		end)
@@ -132,14 +147,19 @@ function K.preload(ids, wait)
 		task.wait()
 	end
 end
--- all of them: the hammers and crates first (the Index, the Inventory, the Shop), then everything else the menus show
-function K.preloadAll()
+-- every picture the menus show, in groups: the hammers and crates first (the Index, the Inventory, the Shop), then the
+-- materials, then everything else (the title screen fetches them all before PLAY: K.allPictures())
+local groups
+local function pictureGroups()
+	if groups then return groups end
 	local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 	local old = {}
 	for _, o in pairs(K.FALLBACK) do old[o] = true end -- (the stand-ins: only fetched if a new picture fails)
+	local seen = { [K.FALLBACK] = true }
+	groups = {}
 	for _, name in ipairs({ "Hammers", "Company", "Config", "Icons", "UIKit" }) do
 		local okR, mod = pcall(function() return require(Shared:WaitForChild(name, 20)) end)
-		local list, seen = {}, { [K.FALLBACK] = true }
+		local list = {}
 		local function walk(t, depth)
 			if seen[t] or depth > 8 then return end
 			seen[t] = true
@@ -154,7 +174,18 @@ function K.preloadAll()
 		end
 		if okR and type(mod) == "table" then walk(mod, 0) end
 		if name == "UIKit" then walk(K, 0) end
-		K.preload(list, name == "Hammers" and 6 or (name == "Company" and 3 or nil))
+		table.insert(groups, { name = name, list = list })
+	end
+	return groups
+end
+function K.allPictures()
+	local out = {}
+	for _, g in ipairs(pictureGroups()) do for _, id in ipairs(g.list) do table.insert(out, id) end end
+	return out
+end
+function K.preloadAll()
+	for _, g in ipairs(pictureGroups()) do
+		K.preload(g.list, g.name == "Hammers" and 6 or (g.name == "Company" and 3 or nil))
 	end
 end
 if game:GetService("RunService"):IsClient() then
