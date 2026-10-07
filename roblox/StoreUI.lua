@@ -218,7 +218,7 @@ local function crates(tok)
 	local Hammers = require(RS.Shared:WaitForChild("Hammers"))
 	K.section(c.content, 2, "HAMMER CRATES", Color3.fromRGB(255, 220, 110), "odds shown on each · open them in Inventory → HAMMERS")
 	if noPaidRandom() then
-		K.empty(c.content, 3, "Crates can't be bought in your country, so they're free here: you get them while you build. Want one hammer for sure? Shop → HAMMERS: the Hammers of the Day.", "gift")
+		K.empty(c.content, 3, "In your country crates show the hammer inside before you buy them (X-Ray): they're in Shop → HAMMERS, for cash or Gems.", "gift")
 		return
 	end
 	local list = {}

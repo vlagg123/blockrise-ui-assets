@@ -962,6 +962,42 @@ local function buyCrate(crateId, n, thenOpen, fromBtn)
 	end)
 end
 
+-- X-RAY (no paid random items in your country): buy the hammer the crate shows; its reveal comes up at once and the
+-- crate shows the next one (if the X-ray changed in between, nothing is bought and the new one shows)
+local function xrayBuy(cr, hx, fromBtn)
+	if busy then return end
+	local updateAt = game:GetService("ReplicatedStorage"):GetAttribute("UpdateAt")
+	if updateAt and workspace:GetServerTimeNow() > updateAt - 12 then
+		c.toast("🔄 An update is starting - buy it in the new server", T.accent, 3)
+		return
+	end
+	busy = true
+	noteOpen(fromBtn)
+	c.sound2D(c.S.Coins, 0.4, 1)
+	later(function()
+		local ok, res = call("buy", cr.id, { n = 1, expect = hx.key })
+		busy = false
+		if not ok then
+			if res == "xray" then c.toast("🔎 This crate shows another hammer now", T.accent, 2.5)
+			else c.toast("⚠️ " .. tostring(res), T.red) end
+			refresh()
+			return
+		end
+		-- the next X-ray, on the card at once
+		if cache and type(res) == "table" then
+			cache.xray = cache.xray or {}
+			cache.xray[cr.id] = res.next
+		end
+		local h = Hammers.ById[res.key]
+		if h then
+			c.sound2D(c.S.Chime, 0.6, h.r >= 5 and 0.85 or 1.15)
+			revealOpened(cr, h, res)
+		else
+			M.Redraw()
+		end
+	end)
+end
+
 -- the crate passes, side by side: what each does and its price
 function cratePassPopup()
 	local body = openPopup(UDim2.fromOffset(640, 380), "Crate passes", Color3.fromRGB(255, 214, 90), Color3.fromRGB(226, 130, 30), nil)
@@ -1200,8 +1236,17 @@ local function crateCard(grid, cr, i, data, o)
 	local t = new("Frame", { Name = "Crate_" .. cr.id, BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 2, Parent = grid })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
 	local ART = CRATE_ART
-	local box = K.artBox(t, crateArt(cr), cr.color, { Name = "Art", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, ART), Spin = (o.count or 0) > 0, Dim = o.dim, IconScale = 0.92 })
+	-- X-RAY: the hammer inside takes the picture's place (its rarity's colours), the crate small in the corner
+	local xr = o.xray and rar(o.xray)
+	local box = K.artBox(t, xr and art(o.xray) or crateArt(cr), xr and xr.color or cr.color, { Name = "Art", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, ART),
+		Spin = (o.count or 0) > 0 or xr ~= nil, Dim = o.dim, IconScale = xr and 1.04 or 0.92 })
 	box.ZIndex = 2
+	if xr then
+		K.rarityFX(box, xr.id)
+		local mini = new("Frame", { Name = "CrateMini", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 0, 8 + ART - 6), Size = UDim2.fromOffset(54, 54), BackgroundTransparency = 1, ZIndex = 8, Parent = t })
+		K.art(mini, crateArt(cr), UDim2.fromScale(1, 1), 9)
+		K.chip(t, "X-RAY", Color3.fromRGB(20, 190, 230), { Name = "XRay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 8 + ART - 5), ZIndex = 9 })
+	end
 	if (o.count or 0) > 0 then K.chip(t, "x" .. o.count, T.red, { Name = "Count", Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
 	-- (every zone has its own Supply Crate: whose it is, on the picture)
 	if cr.family == "supply" and Hammers.ZoneLabel then
@@ -1239,6 +1284,8 @@ local function crateCard(grid, cr, i, data, o)
 		table.insert(parts, '<font color="#E0344F">EXCLUSIVE HAMMERS</font>')
 	end
 	if luck > 1 and not cr.exclusiveOnly and top then table.insert(parts, '<font color="#2E9E4F">2x LUCK</font>') end
+	-- X-RAY: what is inside, by name, in its rarity's colour
+	if xr then parts = { string.format('INSIDE: <font color="#%s">%s</font>', rarText(xr):ToHex(), string.upper(o.xray.name)) } end
 	K.text({ Name = "Best", Position = UDim2.fromOffset(10, ART + 64), Size = UDim2.new(1, -20, 0, 20), Text = table.concat(parts, "  ·  "), TextSize = 15, Max = 15, Font = T.chunky,
 		RichText = true, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 	-- the middle: your crates of this kind (they open in the Inventory) or the odds in numbers
@@ -1248,6 +1295,9 @@ local function crateCard(grid, cr, i, data, o)
 			c.click()
 			if c.showInventory then c.showInventory("crates") end
 		end)
+	elseif o.mid == "xray" then
+		K.text({ Name = "XRayHint", Position = UDim2.fromOffset(12, ART + 92), Size = UDim2.new(1, -24, 0, 34), TextSize = 14, Max = 14, TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Center, Text = "You get exactly this hammer. The next one shows after.", TextColor3 = K.SUB, ZIndex = 3, Parent = t })
 	elseif o.mid == "odds" then
 		-- (the odds themselves are in the white box over the bar: hover it, or tap it on a phone)
 		local uis = game:GetService("UserInputService")
@@ -1308,29 +1358,47 @@ local function crateTiles(data, order, shop)
 	for i, cr in ipairs(Hammers.Crates) do
 		if cr.family == "supply" and cr.id ~= mySupply then continue end -- (another zone's: in the Inventory only)
 		local have = data.crates[cr.id] or 0
-		-- (a crate only sold for Robux can't be had there at all)
+		-- (a crate only sold for Robux isn't sold there: no X-ray for Robux)
 		if noPaid and not cr.cash and not cr.gems and have == 0 then continue end
 		local prod = cr.product and product(cr.product)
 		local robuxOk = prod and ((prod.id or 0) > 0 or studio) and not noPaid
 		local exists = next(Hammers.Odds(cr.id, zone, 1)) ~= nil
 		local o = { count = (not tut) and have or 0, mid = (have > 0 and not tut) and "bag" or "odds", buttons = {} }
 		local buttons = o.buttons
-		if noPaid and not tut then
-			-- how you get it instead of a price
-			local how = cr.cash and ("FREE EVERY " .. (tonumber(data.every) or 3) .. " CONTRACTS") or (cr.id == "golden" and "RARE FREE DROP") or "FREE WHILE YOU BUILD"
-			o.status = { how, cr.cash and K.GREEN or Color3.fromRGB(80, 150, 255) }
-			if not exists and have == 0 then o.status = { "COMING SOON", K.LOCK } end
+		if noPaid then
+			-- X-RAY (no paid random items in your country): the hammer inside shows before you pay, and you get exactly it
+			local tutCrate = tut and cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1
+			local x = data.xray and data.xray[cr.id]
+			local hx = x and Hammers.ById[x.key]
+			if tut and not tutCrate then
+				o.dim = true
+				o.status = { "AFTER TUTORIAL", K.LOCK }
+			elseif not hx then
+				o.status = { "COMING SOON", K.LOCK }
+			else
+				o.xray = hx
+				if have == 0 then o.mid = "xray" end
+				if cr.cash then
+					local price = data.supplyPrice or Hammers.SupplyPrice(60)
+					local can = money() >= price
+					table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function(b)
+						if not can then c.click(); c.toast("💸 Not enough cash yet", T.red, 2) return end
+						c.click(); xrayBuy(cr, hx, b)
+					end, icon = "cash", shine = can })
+				elseif cr.gems then
+					local can = gems() >= cr.gems
+					table.insert(buttons, { Config.FormatNum(cr.gems), can and GEM or K.LOCK, function(b)
+						if not can then c.click(); M.GemStore("Not enough Gems") return end
+						c.click(); xrayBuy(cr, hx, b)
+					end, shine = can, icon = "gem" })
+				end
+			end
 			crateCard(grid, cr, i, data, o)
 			continue
 		end
 		if tut then
 			-- the tutorial: one Supply Crate, bought and opened at once; the rest waits
-			if noPaid and cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
-				-- (no paid crates in your country: the tutorial's one is a gift)
-				table.insert(buttons, { "FREE!", K.GREEN, function(b)
-					c.click(); buyCrate(cr.id, 1, true, b)
-				end, shine = true })
-			elseif cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
+			if cr.cash and have == 0 and (c.player:GetAttribute("RoadStep") or 1) == 1 then
 				local price = data.supplyPrice or Hammers.SupplyPrice(60)
 				local can = money() >= price
 				table.insert(buttons, { fmt(price), can and GOLD or K.LOCK, function(b)
@@ -1543,14 +1611,14 @@ function M.Crates(tok)
 	local tut = inTut()
 	local noPaid = noPaidCrates(data)
 	if not tut then dailyHammers(1, data) end
-	K.category(c.content, 3, { title = "HAMMER CRATES", line = noPaid and ("A hammer in every crate  ·  hover the bar for the odds  ·  free: one every " .. (tonumber(data.every) or 3) .. " contracts")
+	K.category(c.content, 3, { title = "HAMMER CRATES", line = noPaid and ("X-RAY: you see the hammer inside before you pay  ·  a free crate every " .. (tonumber(data.every) or 6) .. " contracts")
 		or ("A hammer in every crate  ·  hover the bar for the odds  ·  a free one every " .. (tonumber(data.every) or 6) .. " contracts"),
 		icon = Hammers.CrateById.golden.image, c1 = Color3.fromRGB(255, 184, 40), c2 = Color3.fromRGB(236, 96, 30), first = tut })
 	crateTiles(data, 4, true)
 	if tut then return end -- (the Inventory and the passes open after the tutorial)
 	if noPaid then
-		K.note(c.content, 5, "In your country crates can't be bought, so they're all free here: a Supply Crate every " .. (tonumber(data.every) or 3)
-			.. " contracts, Builder's and Golden Crates drop while you build. Want one hammer for sure? The Hammers of the Day sell the one you pick.")
+		K.note(c.content, 5, "X-Ray crates: in your country every crate shows the hammer inside before you pay, and that's exactly the one you get. "
+			.. "The next one shows once you've taken it. Same prices and odds as everywhere.")
 	end
 	K.row(c.content, 6, { name = "Your hammers live in your INVENTORY", line = #data.hammers .. " hammers  ·  equip, level up, trade up, the Index", icon = "backpack",
 		color = Color3.fromRGB(255, 176, 40), height = 92, buttonW = 190, button = { "INVENTORY", Color3.fromRGB(255, 176, 40), function()
@@ -1817,21 +1885,21 @@ function M.MyCrates(tok)
 	if not c.live(tok) then return end
 	local total = 0
 	for _, n in pairs(data.crates) do total += n end
-	-- contracts per free Supply Crate: 6, or 3 where crates can't be bought (Roblox policy: they're all free there)
+	-- contracts per free Supply Crate (the server's number)
 	local noPaid = noPaidCrates(data)
-	local every = tonumber(data.every) or (noPaid and 3 or 6)
+	local every = tonumber(data.every) or 6
 	local left = math.max(1, every - (tonumber(data.progress) or 0))
 	if total > 0 then
 		K.section(c.content, 1, "YOUR CRATES", Color3.fromRGB(255, 220, 110), total .. " to open  ·  next free Supply Crate in " .. left .. (left == 1 and " contract" or " contracts"))
 		crateTiles(data, 2, false)
 	else
 		K.banner(c.content, 1, { name = "NO CRATES RIGHT NOW", line = "Your next free Supply Crate comes in " .. left .. (left == 1 and " contract" or " contracts")
-			.. (noPaid and ". Builder's and Golden Crates drop while you build too." or ". More in the Shop (CRATES): cash, Gems or Robux."), icon = "rbxassetid://109896821556277", color = K.LOCK,
+			.. (noPaid and ". In the Shop each crate shows its hammer before you pay (X-Ray)." or ". More in the Shop (CRATES): cash, Gems or Robux."), icon = "rbxassetid://109896821556277", color = K.LOCK,
 			tint = Color3.fromRGB(220, 222, 240), height = 118, bar = { (every - left) / every, GOLD, (every - left) .. " / " .. every .. " contracts" } })
 	end
 	-- only when you have none left (the Shop opens once the tutorial is done: no shortcut around its lock)
 	if total == 0 and (c.player:GetAttribute("RoadStep") or 1) > (Config.TutorialSteps or 6) then
-		K.row(c.content, 3, { name = noPaid and "Want a hammer for sure?" or "Need more crates?", line = noPaid and "The Hammers of the Day: pick the one you want, no luck"
+		K.row(c.content, 3, { name = "Need more crates?", line = noPaid and "X-Ray crates: see the hammer inside, then buy it (cash or Gems)"
 			or "Supply Crates for cash, Builder's and Golden Crates for Gems or Robux", icon = "shop", color = Color3.fromRGB(110, 200, 255), height = 92, buttonW = 190,
 			button = { "SHOP", K.GREEN, function() c.click(); if _G.__CE_ShopUI then _G.__CE_ShopUI.Show("hammers") end end, size = 22 } })
 	end
