@@ -56,9 +56,29 @@ local function base(shape, size, cf)
 	return p
 end
 
+-- the custom materials made after the Blender renders (MaterialService, patch_materials.lua): polished and brushed
+-- metal instead of Roblox's scratched Metal, the renders' wood grain, a wound leather strip instead of cloth, glossy
+-- paint (the renders have a clear coat)
+local MS = game:GetService("MaterialService")
+local function variantOf(mat, pal)
+	local m, bl = pal.rbx[1], pal.bl or {}
+	local v
+	if m == "Metal" and (bl.metal or 0) >= 0.5 then
+		v = (bl.rough or 0.3) < 0.22 and "BR_Polished" or "BR_Brushed"
+	elseif m == "Wood" then
+		v = "BR_Wood"
+	elseif m == "Fabric" and (mat:find("lth") or mat:find("leather") or mat == "cord" or mat == "tape") then
+		v = "BR_Wrap"
+	elseif m == "SmoothPlastic" and (bl.rough or 0.5) <= 0.35 then
+		v = "BR_Gloss"
+	end
+	return v and MS:FindFirstChild(v) and v or nil
+end
+
 local function finishPart(p, mat, pal)
 	local m = pal.rbx
 	p.Material = Enum.Material[m[1]]
+	p.MaterialVariant = variantOf(mat, pal) or ""
 	p.Color = Color3.fromRGB(m[2][1], m[2][2], m[2][3])
 	p.Transparency = m[3] or 0
 	p.Reflectance = m[4] or 0
