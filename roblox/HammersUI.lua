@@ -157,6 +157,8 @@ refreshSoon = function()
 	refresh()
 	refreshing = false
 end
+-- the server learns your country's rules a moment after you join: the crates follow it (X-ray or not) at once
+c.player:GetAttributeChangedSignal("PaidRandomRestricted"):Connect(function() task.spawn(refreshSoon) end)
 local function predict(change, cost)
 	if cache and change then change(cache) end
 	if cost then spend[cost[1]] += cost[2] end
@@ -1323,7 +1325,9 @@ end
 
 -- no paid crates in your country (Roblox: PolicyService ArePaidRandomItemsRestricted; the server's word first)
 local function noPaidCrates(data)
-	return (data and data.noPaid == true) or c.player:GetAttribute("PaidRandomRestricted") == true or c.paidRandomRestricted == true
+	-- (the server's answer decides: it is what the X-ray and the buying follow)
+	if data and data.noPaid ~= nil then return data.noPaid == true end
+	return c.player:GetAttribute("PaidRandomRestricted") == true
 end
 
 -- Inventory → CRATES: one card per crate you have, OPEN (+ AUTO with 2 or more: the Auto Opener pass)
