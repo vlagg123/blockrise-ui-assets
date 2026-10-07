@@ -160,6 +160,11 @@ local PE = {
 	scorch = emitter("Scorch", SMOKE, { Lifetime = NumberRange.new(1.2, 1.8), Speed = NumberRange.new(1, 3), Drag = 1.5, LightEmission = 0, SpreadAngle = Vector2.new(60, 60),
 		EmissionDirection = Enum.NormalId.Top, Acceleration = Vector3.new(0, 2, 0), Size = NumberSequence.new({ NSK(0, 1.2), NSK(1, 3.2) }),
 		Transparency = NumberSequence.new({ NSK(0, 0.35), NSK(1, 1) }), Rotation = NumberRange.new(0, 360) }),
+	-- a firework bursting (the Founder's), and glitter drifting down (the Celestial's light, the coins)
+	firework = emitter("Firework", SPARK, { Lifetime = NumberRange.new(0.7, 1.1), Speed = NumberRange.new(16, 26), Drag = 3.5, Acceleration = Vector3.new(0, -7, 0),
+		Size = NumberSequence.new({ NSK(0, 0.75), NSK(0.6, 0.45), NSK(1, 0) }), Transparency = NumberSequence.new({ NSK(0, 0), NSK(0.7, 0.2), NSK(1, 1) }), Rotation = NumberRange.new(0, 360) }),
+	glitter = emitter("Glitter", SPARK, { Lifetime = NumberRange.new(1.0, 1.5), Speed = NumberRange.new(2, 5), Drag = 1.2, Acceleration = Vector3.new(0, -4, 0),
+		Size = NumberSequence.new({ NSK(0, 0.4), NSK(1, 0) }), Transparency = NumberSequence.new(0, 1), Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-120, 120) }),
 }
 local function seq(a, b) return ColorSequence.new(a, b or a) end
 local function emitAt(pos, kind, color, n)
@@ -169,7 +174,8 @@ local function emitAt(pos, kind, color, n)
 	pe:Emit(n)
 end
 
--- little things thrown through the air (diamond shards, meteors): one loop moves them all
+-- little things thrown through the air (diamond shards, meteors) or following a path of their own (spirals, wisps,
+-- rockets): one loop moves them all. kids = parts riding along (a gear's teeth), at a fixed offset
 local flying = {}
 RunService.Heartbeat:Connect(function()
 	local now = os.clock()
@@ -181,16 +187,28 @@ RunService.Heartbeat:Connect(function()
 			if f.land then f.land(f.part.Position) end
 			if f.part.Parent then f.part:Destroy() end
 		else
-			local p = f.p0 + f.v * t + Vector3.new(0, -0.5 * (f.g or 0) * t * t, 0)
-			f.part.CFrame = CFrame.new(p) * CFrame.Angles(t * (f.spin or 0), t * (f.spin or 0) * 1.3, 0)
+			if f.fn then
+				local u = t / f.life
+				f.part.CFrame = f.fn(u)
+				if f.fade and u > f.fade then f.part.Transparency = f.t1 + (1 - f.t1) * (u - f.fade) / (1 - f.fade) end
+			else
+				local p = f.p0 + f.v * t + Vector3.new(0, -0.5 * (f.g or 0) * t * t, 0)
+				f.part.CFrame = CFrame.new(p) * CFrame.Angles(t * (f.spin or 0), t * (f.spin or 0) * 1.3, 0)
+			end
+			if f.kids then for _, k in ipairs(f.kids) do k[1].CFrame = f.part.CFrame * k[2] end end
 		end
 	end
 end)
-local function throw(part, p0, p1, life, arc, land, spin)
+local function throw(part, p0, p1, life, arc, land, spin, kids)
 	-- reach p1 after `life` seconds, `arc` studs over the straight line at the top
 	local g = arc > 0 and 8 * arc / (life * life) or 0
 	local v = (p1 - p0) / life + Vector3.new(0, 0.5 * g * life, 0)
-	table.insert(flying, { part = part, p0 = p0, v = v, g = g, t0 = os.clock(), life = life, land = land, spin = spin })
+	table.insert(flying, { part = part, p0 = p0, v = v, g = g, t0 = os.clock(), life = life, land = land, spin = spin, kids = kids })
+end
+-- follow fn(u) -> CFrame for u = 0..1 over `life` seconds; fade = from which u on it fades out
+local function glide(part, life, fn, land, fade)
+	part.CFrame = fn(0)
+	table.insert(flying, { part = part, t0 = os.clock(), life = life, fn = fn, land = land, fade = fade, t1 = part.Transparency })
 end
 
 ---------------------------------------------------------------------------
@@ -605,6 +623,22 @@ local BURST = {
 	galaxy = { "glint", ColorSequence.new({ ColorSequenceKeypoint.new(0, C3(255, 150, 240)), ColorSequenceKeypoint.new(0.5, C3(160, 110, 255)),
 		ColorSequenceKeypoint.new(1, C3(90, 180, 255)) }), 18, C3(170, 120, 255) },
 	thunder = { "sparks", seq(C3(230, 245, 255), C3(90, 170, 255)), 18, C3(140, 200, 255) },
+	-- the newer hammers, in their own colours (epic: no bloom; legendary+: a bloom of light)
+	dragon = { "fire", seq(C3(255, 190, 90), C3(200, 50, 15)), 10 },
+	clockwork = { "sparks", seq(C3(255, 225, 150), C3(200, 150, 60)), 10 },
+	robo = { "sparks", seq(C3(210, 250, 255), C3(60, 180, 255)), 10 },
+	phoenix = { "fire", seq(C3(255, 235, 130), C3(255, 90, 20)), 12, C3(255, 160, 50) },
+	tsunami = { "glint", seq(C3(225, 245, 255), C3(40, 140, 255)), 12, C3(90, 170, 255) },
+	cyber = { "sparks", seq(C3(190, 255, 255), C3(0, 220, 255)), 12, C3(0, 220, 255) },
+	crown = { "glint", seq(C3(255, 240, 170), C3(255, 190, 40)), 12, C3(255, 210, 90) },
+	void = { "glint", seq(C3(205, 150, 255), C3(70, 20, 130)), 14, C3(140, 70, 255) },
+	ghost = { "glint", seq(C3(235, 255, 255), C3(140, 220, 255)), 14, C3(180, 240, 255) },
+	blackhole = { "sparks", seq(C3(255, 205, 130), C3(255, 90, 20)), 16, C3(255, 140, 60) },
+	demon = { "fire", seq(C3(255, 130, 60), C3(160, 10, 10)), 16, C3(255, 60, 30) },
+	prism = { "glint", ColorSequence.new({ ColorSequenceKeypoint.new(0, C3(255, 80, 80)), ColorSequenceKeypoint.new(0.25, C3(255, 230, 70)),
+		ColorSequenceKeypoint.new(0.5, C3(80, 230, 110)), ColorSequenceKeypoint.new(0.75, C3(70, 160, 255)), ColorSequenceKeypoint.new(1, C3(200, 100, 255)) }), 16, C3(255, 245, 255) },
+	founder = { "glint", seq(C3(255, 248, 210), C3(255, 190, 50)), 16, C3(255, 215, 100) },
+	celestial = { "glint", seq(C3(255, 255, 255), C3(255, 220, 130)), 18, C3(255, 240, 190) },
 }
 -- hits of hammers without their own burst: by rarity (Tool attribute Rarity)
 local RARITY_BURST = {
