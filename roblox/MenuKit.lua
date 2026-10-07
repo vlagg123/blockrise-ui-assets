@@ -104,6 +104,63 @@ local function guard(img)
 end
 K.guardImage = guard
 
+-- every picture of the menus is fetched once, early (while the title screen is up), so no window ever shows an empty
+-- frame that fills in a moment later. K.preload(list, wait): fetch these (and wait up to `wait` seconds for them)
+local fetched = {} -- [picture] = true (in the cache), false (on its way)
+function K.preload(ids, wait)
+	local need = {}
+	for _, id in ipairs(ids) do
+		if type(id) == "string" and id:find("^rbxassetid://%d+$") and fetched[id] == nil then
+			fetched[id] = false
+			table.insert(need, id)
+		end
+	end
+	if #need > 0 then
+		task.spawn(function()
+			pcall(function()
+				game:GetService("ContentProvider"):PreloadAsync(need, function(id) fetched[id] = true end)
+			end)
+			for _, id in ipairs(need) do fetched[id] = true end
+		end)
+	end
+	if not wait then return end
+	local t0 = os.clock()
+	while os.clock() - t0 < wait do
+		local waiting = false
+		for _, id in ipairs(ids) do if fetched[id] == false then waiting = true break end end
+		if not waiting then return end
+		task.wait()
+	end
+end
+-- all of them: the hammers and crates first (the Index, the Inventory, the Shop), then everything else the menus show
+function K.preloadAll()
+	local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+	local old = {}
+	for _, o in pairs(K.FALLBACK) do old[o] = true end -- (the stand-ins: only fetched if a new picture fails)
+	for _, name in ipairs({ "Hammers", "Company", "Config", "Icons", "UIKit" }) do
+		local okR, mod = pcall(function() return require(Shared:WaitForChild(name, 20)) end)
+		local list, seen = {}, { [K.FALLBACK] = true }
+		local function walk(t, depth)
+			if seen[t] or depth > 8 then return end
+			seen[t] = true
+			for _, v in pairs(t) do
+				if type(v) == "string" then
+					local id = v:match("^rbxassetid://%d+$")
+					if id and not old[id] and not seen[id] then seen[id] = true; table.insert(list, id) end
+				elseif type(v) == "table" then
+					walk(v, depth + 1)
+				end
+			end
+		end
+		if okR and type(mod) == "table" then walk(mod, 0) end
+		if name == "UIKit" then walk(K, 0) end
+		K.preload(list, name == "Hammers" and 6 or (name == "Company" and 3 or nil))
+	end
+end
+if game:GetService("RunService"):IsClient() then
+	task.defer(function() pcall(K.preloadAll) end)
+end
+
 -- art: an atlas icon, or an emoji when the item has no icon yet
 function K.art(parent, icon, size, z)
 	if type(icon) == "string" and icon:find("^rbxassetid://") then

@@ -49,6 +49,17 @@ local function art(h)
 end
 M.art = art
 local function crateArt(cr) return cr.image or "gift" end
+-- the pictures of every hammer and crate are in before a hammer view shows (a new player's first look: no empty frames
+-- that fill in a moment later). Already fetched: no wait at all
+local PICS
+local function allPictures(tok)
+	if not PICS then
+		PICS = {}
+		for _, h in ipairs(Hammers.List) do table.insert(PICS, art(h)) end
+		for _, cr in ipairs(Hammers.Crates) do table.insert(PICS, crateArt(cr)) end
+	end
+	K.preload(PICS, 3)
+end
 local function product(key)
 	for _, p in ipairs(Config.Store.products) do if p.key == key then return p end end
 end
@@ -293,7 +304,7 @@ end
 
 -- what's inside a crate: every rarity it can drop, the odds and the hammers at that rarity
 local function cratePopup(cr, data)
-	local zone = data and data.zone or "town"
+	local zone = cr.zone or (data and data.zone) or "town"
 	local luck = data and data.luck or 1
 	local body = openPopup(UDim2.fromOffset(700, 520), cr.name, cr.color:Lerp(Color3.new(1, 1, 1), 0.25), cr.color, nil)
 	K.text({ Position = UDim2.fromOffset(0, 4), Size = UDim2.new(1, 0, 0, 44), Text = cr.desc, TextSize = 16, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Color3.new(1, 1, 1), Stroke = 2, ZIndex = 6, Parent = body })
@@ -331,7 +342,7 @@ local function cratePopup(cr, data)
 	end
 	if n == 0 then K.text({ Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 30), Text = "Its hammers are still being made: coming soon!", TextSize = 18, TextColor3 = K.NOTE, ZIndex = 6, Parent = body }) end
 	local foot = { "Pure luck: every crate is a new roll" }
-	if cr.pools then table.insert(foot, "Better odds once you take Suburbs, then Downtown contracts (now: " .. zone:sub(1, 1):upper() .. zone:sub(2) .. ")") end
+	if cr.family == "supply" then table.insert(foot, "Every zone has its own Supply Crate: the Suburbs and Downtown ones hold better hammers") end
 	if luck > 1 then table.insert(foot, "🍀 Lucky Builder: Rare+ twice as often (already counted)") end
 	K.text({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 26), Text = table.concat(foot, "  ·  "), TextSize = 14, Max = 14, TextColor3 = K.NOTE, ZIndex = 6, Parent = body })
 end
@@ -360,7 +371,7 @@ end
 
 -- a random hammer the crate could drop (for the strip), weighted like the real odds
 local function rollFake(cr, zone, luck)
-	local odds = Hammers.Odds(cr.id, zone, luck)
+	local odds = Hammers.Odds(cr.id, cr.zone or zone, luck)
 	local total = 0
 	for _, v in pairs(odds) do total += v end
 	local x = rng:NextNumber() * total
@@ -1181,7 +1192,7 @@ end
 --   buttons = { {label, color, fn(b), icon =, shine =, w = share}, ... } along the bottom | status = {label, color}
 local CRATE_ART = 122 -- (the picture: a little shorter so the cards are not so tall)
 local function crateCard(grid, cr, i, data, o)
-	local zone = data.zone or "town"
+	local zone = cr.zone or data.zone or "town"
 	local luck = data.luck or 1
 	local t = new("Frame", { Name = "Crate_" .. cr.id, BackgroundTransparency = 1, LayoutOrder = i, ZIndex = 2, Parent = grid })
 	UI.slice("tile", { Name = "Bg", ImageColor3 = o.dim and K.DIM or K.TILE, ZIndex = 1, Parent = t })
@@ -1189,6 +1200,10 @@ local function crateCard(grid, cr, i, data, o)
 	local box = K.artBox(t, crateArt(cr), cr.color, { Name = "Art", Position = UDim2.fromOffset(8, 8), Size = UDim2.new(1, -16, 0, ART), Spin = (o.count or 0) > 0, Dim = o.dim, IconScale = 0.92 })
 	box.ZIndex = 2
 	if (o.count or 0) > 0 then K.chip(t, "x" .. o.count, T.red, { Name = "Count", Position = UDim2.fromOffset(16, 16), ZIndex = 8 }) end
+	-- (every zone has its own Supply Crate: whose it is, on the picture)
+	if cr.family == "supply" and Hammers.ZoneLabel then
+		K.chip(t, Hammers.ZoneLabel[cr.zone] or string.upper(cr.zone or ""), cr.color:Lerp(Color3.new(0, 0, 0), 0.1), { Name = "Zone", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), ZIndex = 8 })
+	end
 	-- (no "?" corner any more: the odds are in the white box over the bar)
 	K.text({ Name = "Title", Position = UDim2.fromOffset(10, ART + 14), Size = UDim2.new(1, -20, 0, 28), Text = cr.name, Font = T.chunky, TextSize = 22, Max = 22,
 		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = o.dim and K.SUB or K.DARK, ZIndex = 3, Parent = t })
@@ -1213,7 +1228,7 @@ local function crateCard(grid, cr, i, data, o)
 	end
 	-- the best it can give (and where, for the Supply Crate; the luck boost when it is on)
 	local parts = {}
-	if cr.cash then table.insert(parts, string.upper(zone)) end
+	if cr.cash and not cr.family then table.insert(parts, string.upper(zone)) end
 	if top then
 		local rr = Hammers.Rarities[top]
 		table.insert(parts, string.format('up to <font color="#%s">%s</font>', rarText(rr):ToHex(), string.upper(rr.name)))
@@ -1279,7 +1294,9 @@ local function crateTiles(data, order, shop)
 		return grid
 	end
 	local grid = K.grid(c.content, order, cols(), CRATE_ART + 200)
+	local mySupply = data.supplyId or (Hammers.SupplyFor and Hammers.SupplyFor(zone)) or "supply"
 	for i, cr in ipairs(Hammers.Crates) do
+		if cr.family == "supply" and cr.id ~= mySupply then continue end -- (another zone's: in the Inventory only)
 		local have = data.crates[cr.id] or 0
 		local prod = cr.product and product(cr.product)
 		local robuxOk = prod and ((prod.id or 0) > 0 or studio) and not c.paidRandomRestricted
@@ -1496,6 +1513,8 @@ function M.Crates(tok)
 	local data = dataNow()
 	if not c.live(tok) then return end
 	if not data then K.empty(c.content, 1, "Couldn't load the crates. Open the Shop again.", "gift") return end
+	allPictures(tok)
+	if not c.live(tok) then return end
 	local tut = inTut()
 	if not tut then dailyHammers(1, data) end
 	K.category(c.content, 3, { title = "HAMMER CRATES", line = "A hammer in every crate  ·  hover the bar for the odds  ·  a free one every 6 contracts",
@@ -1753,6 +1772,8 @@ function M.Hammers(tok)
 	local data = dataNow()
 	if not c.live(tok) then return end
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
+	allPictures(tok)
+	if not c.live(tok) then return end
 	drawHammers(tok, data)
 end
 
@@ -1761,6 +1782,8 @@ function M.MyCrates(tok)
 	local data = dataNow()
 	if not c.live(tok) then return end
 	if not data then K.empty(c.content, 1, "Couldn't load your crates. Open the Inventory again.", "gift") return end
+	allPictures(tok)
+	if not c.live(tok) then return end
 	local total = 0
 	for _, n in pairs(data.crates) do total += n end
 	local left = 6 - (tonumber(data.progress) or 0)
@@ -1912,6 +1935,8 @@ function M.TradeUp(tok)
 	local data = dataNow()
 	if not c.live(tok) then return end
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
+	allPictures(tok)
+	if not c.live(tok) then return end
 	drawTradeUp(tok, data)
 end
 
@@ -1990,6 +2015,8 @@ function M.Index(tok)
 	local data = dataNow()
 	if not c.live(tok) then return end
 	if not data then K.empty(c.content, 1, "Couldn't load your hammers. Open the Inventory again.", "shop") return end
+	allPictures(tok)
+	if not c.live(tok) then return end
 	drawIndex(tok, data)
 end
 

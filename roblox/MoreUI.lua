@@ -72,7 +72,13 @@ function M.Missions()
 			task.wait(20)
 		end
 	end)
-	for i, m in ipairs(data.list) do
+	local function count()
+		local n = 0
+		for _, x in ipairs(data.list) do if x.claimed then n += 1 end end
+		c.modalSub.Text = n .. " / " .. #data.list .. " done"
+	end
+	local makeRow
+	makeRow = function(i, m)
 		local done = m.p >= m.target
 		local icon, col = missionIcon(m.text)
 		local o = { name = m.text, icon = icon, color = col, height = 112, buttonW = 160,
@@ -90,6 +96,8 @@ function M.Missions()
 				local ok2, res = pcall(function() return c.R.ClaimMission:InvokeServer(m.index) end)
 				if ok2 and res then
 					if l then l.Text = "✔ CLAIMED" end
+					m.claimed = true
+					count()
 					-- the celebration (like a playtime gift): the mission's picture pops, confetti, the reward pops up and
 					-- the cash flies into the counter on the HUD; the list shows CLAIMED once it is done
 					local row = btn:FindFirstAncestor("Row")
@@ -101,7 +109,12 @@ function M.Missions()
 						c.sound2D(c.S.Chime, 0.5, 1)
 						c.toast("🎁 +" .. Config.FormatMoney(m.reward) .. "  ·  +" .. m.xp .. " XP", T.green, 2.5)
 					end
-					task.delay(1.6, function() if c.live(tok) then M.Missions() end end)
+					-- once the cash has flown, only this mission turns into CLAIMED (the rest of the window stays as it is)
+					task.delay(1.6, function()
+						if not c.live(tok) or not row or not row.Parent then return end
+						makeRow(i, m)
+						row:Destroy()
+					end)
 				else
 					if l then l.Text = "CLAIM" end
 					c.toast("⚠️ Couldn't claim right now, try again", T.red)
@@ -111,8 +124,9 @@ function M.Missions()
 			-- (the progress is on the bar: the button waits, locked, until the mission is done)
 			o.status = { "🔒 CLAIM", K.LOCK }
 		end
-		K.row(c.content, 1 + i, o)
+		return K.row(c.content, 1 + i, o)
 	end
+	for i, m in ipairs(data.list) do makeRow(i, m) end
 	K.note(c.content, 20, "New missions every day. Your streak bonus grows for 7 days.")
 end
 
@@ -171,15 +185,22 @@ function M.Portfolio(tabId)
 	for _, a in ipairs(data.achievements) do if a.done then doneCount += 1 end end
 	for _, b in ipairs(data.built) do if b.count > 0 then builtCount += 1 end end
 	c.modalSub.Text = Config.FormatMoney(data.earned) .. " earned"
-	UI.tabs(c.content, {
-		{ id = "achievements", label = "ACHIEVEMENTS " .. doneCount .. "/" .. #data.achievements, icon = "portfolio", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 145, 25) },
-		{ id = "buildings", label = "BUILDINGS " .. builtCount .. "/" .. #data.built, icon = "company", c1 = Color3.fromRGB(150, 200, 255), c2 = Color3.fromRGB(60, 120, 230) },
-	}, trophyTab, function(id)
-		c.click()
-		trophyTab = id
-		c.content.CanvasPosition = Vector2.zero
-		M.Portfolio()
-	end)
+	-- switching tabs redraws only the part under the numbers (same data: nothing else moves)
+	local drawBody
+	local function drawTabs()
+		UI.tabs(c.content, {
+			{ id = "achievements", label = "ACHIEVEMENTS " .. doneCount .. "/" .. #data.achievements, icon = "portfolio", c1 = Color3.fromRGB(255, 220, 110), c2 = Color3.fromRGB(230, 145, 25) },
+			{ id = "buildings", label = "BUILDINGS " .. builtCount .. "/" .. #data.built, icon = "company", c1 = Color3.fromRGB(150, 200, 255), c2 = Color3.fromRGB(60, 120, 230) },
+		}, trophyTab, function(id)
+			if not c.live(tok) then return end
+			c.click()
+			trophyTab = id
+			drawTabs()
+			drawBody()
+			c.content.CanvasPosition = Vector2.zero
+		end)
+	end
+	drawTabs()
 	-- your numbers at a glance
 	local stats = K.grid(c.content, 1, 4, 84, 10)
 	local function stat(i, icon, value, label, color)
@@ -195,34 +216,42 @@ function M.Portfolio(tabId)
 	stat(2, "company", builtCount .. "/" .. #data.built, "BUILDINGS", Color3.fromRGB(90, 160, 255))
 	stat(3, "jobs", Config.FormatNum(data.completed), "CONTRACTS", Color3.fromRGB(255, 150, 60))
 	stat(4, "cash", Config.Short and ("$" .. Config.Short(data.earned)) or Config.FormatMoney(data.earned), "EARNED", Color3.fromRGB(70, 200, 100))
-	if trophyTab == "buildings" then
-		K.section(c.content, 2, "BUILDINGS", Color3.fromRGB(160, 205, 255), "every kind you finished, and how many times")
-		local five = (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700
-		local grid = K.grid(c.content, 3, five and 5 or 3, 178, 10)
-		for i, b in ipairs(data.built) do
-			local id
-			for _, cc in ipairs(Config.Contracts) do if cc.name == b.name then id = cc.id end end
-			local rk = K.rarityOf(i, #data.built)
-			local t = K.tile(grid, { order = i, name = b.name, icon = (id and K.BUILDING[id]) or b.icon, color = K.RAR[rk], artH = 96, dim = b.count == 0,
-				stats = { b.count > 0 and { "x" .. b.count .. " BUILT", K.GREEN } or { "NOT YET", K.LOCK } }, spin = b.count >= 10 })
-			local tl = t:FindFirstChild("Title")
-			if tl then
-				local cons = tl:FindFirstChildOfClass("UITextSizeConstraint")
-				if cons then cons.MaxTextSize = 17 end
-			end
+	local fixed = {} -- (what stays when the tab changes: the numbers at the top)
+	for _, ch in ipairs(c.content:GetChildren()) do fixed[ch] = true end
+	drawBody = function()
+		for _, ch in ipairs(c.content:GetChildren()) do
+			if not fixed[ch] and not ch:IsA("UIListLayout") then ch:Destroy() end
 		end
-	else
-		K.section(c.content, 2, "ACHIEVEMENTS", Color3.fromRGB(255, 220, 110), "the closest ones first · finished ones at the bottom")
-		local list = {}
-		for i, a in ipairs(data.achievements) do list[i] = { a = a, i = i } end
-		table.sort(list, function(x, y)
-			if x.a.done ~= y.a.done then return y.a.done end
-			local fx, fy = x.a.value / math.max(1, x.a.target), y.a.value / math.max(1, y.a.target)
-			if not x.a.done and math.abs(fx - fy) > 1e-6 then return fx > fy end
-			return x.i < y.i
-		end)
-		for n, e in ipairs(list) do achRow(2 + n, e.a) end
+		if trophyTab == "buildings" then
+			K.section(c.content, 2, "BUILDINGS", Color3.fromRGB(160, 205, 255), "every kind you finished, and how many times")
+			local five = (_G.__CE_ListWidth and _G.__CE_ListWidth() or 780) >= 700
+			local grid = K.grid(c.content, 3, five and 5 or 3, 178, 10)
+			for i, b in ipairs(data.built) do
+				local id
+				for _, cc in ipairs(Config.Contracts) do if cc.name == b.name then id = cc.id end end
+				local rk = K.rarityOf(i, #data.built)
+				local t = K.tile(grid, { order = i, name = b.name, icon = (id and K.BUILDING[id]) or b.icon, color = K.RAR[rk], artH = 96, dim = b.count == 0,
+					stats = { b.count > 0 and { "x" .. b.count .. " BUILT", K.GREEN } or { "NOT YET", K.LOCK } }, spin = b.count >= 10 })
+				local tl = t:FindFirstChild("Title")
+				if tl then
+					local cons = tl:FindFirstChildOfClass("UITextSizeConstraint")
+					if cons then cons.MaxTextSize = 17 end
+				end
+			end
+		else
+			K.section(c.content, 2, "ACHIEVEMENTS", Color3.fromRGB(255, 220, 110), "the closest ones first · finished ones at the bottom")
+			local list = {}
+			for i, a in ipairs(data.achievements) do list[i] = { a = a, i = i } end
+			table.sort(list, function(x, y)
+				if x.a.done ~= y.a.done then return y.a.done end
+				local fx, fy = x.a.value / math.max(1, x.a.target), y.a.value / math.max(1, y.a.target)
+				if not x.a.done and math.abs(fx - fy) > 1e-6 then return fx > fy end
+				return x.i < y.i
+			end)
+			for n, e in ipairs(list) do achRow(2 + n, e.a) end
+		end
 	end
+	drawBody()
 end
 
 -- My Property -----------------------------------------------------------------------------------------------------
