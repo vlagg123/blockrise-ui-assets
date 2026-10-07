@@ -1,6 +1,6 @@
-# BlockRise Empire — rețeta economiei (propunere, NIMIC implementat încă)
+# BlockRise Empire — rețeta economiei, versiunea 2 (propunere, NIMIC implementat încă)
 
-Lucrat în noaptea de 7 octombrie 2026. Toate cifrele „azi” sunt citite din Studio (Config, Company, Hammers, Main, Crew,
+Lucrat în noaptea de 7 octombrie 2026, verificat și corectat a doua zi (secțiunea 12). Toate cifrele „azi” sunt citite din Studio (Config, Company, Hammers, Main, Crew,
 Machines, CompanyService, RebirthService). Cifrele „propus” vin dintr-un simulator al jocului (`tools/econ/sim.py`) care
 folosește formulele reale ale jocului, plus 120+ scenarii (`tools/econ/sweep.py`).
 
@@ -82,11 +82,13 @@ Ouă vândute pe Robux:
 
 ### Timpul până la fiecare Rebirth (simulat, cu formulele reale ale jocului)
 
-| Jucător | Rebirth 1 | Rebirth 2 | Rebirth 3 | Rebirth 4 |
-|---|---|---|---|---|
-| activ, gratis | 44 min | 2 h 48 | 5 h 15 | 9 h |
-| casual, gratis | 78 min | 4 h 04 | 7 h 23 | 12 h 28 |
-| plătitor (2x Cash, VIP, 2x Str) | 26 min | 1 h 43 | 2 h 51 | 4 h 25 |
+| Jucător | Rebirth 1 | Rebirth 2 | Rebirth 3 | Rebirth 4 | Rebirth 5 |
+|---|---|---|---|---|---|
+| activ, gratis | 45 min | 2 h 25 | 4 h 15 | 6 h 02 | 7 h 00 |
+| casual, gratis | 68 min | 3 h 53 | 6 h 21 | 8 h 36 | 9 h 40 |
+| plătitor (2x Cash, VIP, 2x Str) | 22 min | 1 h 40 | 2 h 28 | 3 h 12 | 3 h 54 |
+
+(Cu toate sistemele jocului, inclusiv Star Shop-ul: simulatorul v2, după verificarea 1.)
 
 Rebirth 1 cere 150K câștigați în tură plus clădirea Corner Shop (strength 2.500, crew 3, ciocan Uncommon).
 Rebirth 2 cere 40M.
@@ -118,6 +120,11 @@ Rebirth 2 cere 40M.
    antrenament decât construind, deci copiii ajung să antreneze în loc să joace bucla principală.
 10. **Puterea ciocanelor e plată.** Divine e doar ×8 față de Common (×1,35 pe raritate): un item de 1 în 25.000 abia se
     simte.
+11. **Star Shop-ul se termină devreme.** Stars = √(câștigat în tură / 2,5M): Rebirth 4–5 dau sute de Stars, toate
+    perk-urile sunt maxate pe la Rebirth 4. După aceea jocul se strânge (Rebirth 4 → 5 în sub o oră) și nu mai ai ce
+    urmări.
+12. **Bara de Rebirth minte fără să vrea.** Banii cresc exponențial, deci bara stă aproape goală jumătate de tură și
+    se umple la final. Exact „stai 20 de minute și abia atunci afli cât mai ai”.
 
 ---
 
@@ -127,36 +134,57 @@ Rebirth 2 cere 40M.
 - primul Rebirth în prima sesiune (~15–20 min);
 - fiecare Rebirth cam de 2 ori mai lung decât precedentul;
 - crew-ul și utilajele preiau treptat munca: jucătorul nu trebuie să dea click non-stop;
+- bara de Rebirth arată tot timpul cinstit cât mai e;
 - itemele de top sunt rare de-adevăratelea.
 
-**Minute de joc până la fiecare Rebirth** (media pe 5 rulări cu noroc diferit la lăzi):
+> **Versiunea 2 (după cele 10 verificări din 7 octombrie, ziua).** Simulatorul de azi-noapte nu avea câteva sisteme ale
+> jocului: **Rebirth Stars / Star Shop**, blueprint-urile, banii din Empire Road și achievements, tips, cadouri și
+> misiuni. Cu ele incluse, rețeta v1 ajungea la Rebirth 5 în ~4,5 h în loc de 8,5 h. Tot ce urmează e recalibrat cu
+> ele. Ce s-a schimbat față de v1 e în secțiunea 12.
+
+**Minute de joc continuu până la fiecare Rebirth** (media pe 5 rulări cu noroc diferit la lăzi):
 
 | Jucător | | Rebirth 1 | Rebirth 2 | Rebirth 3 | Rebirth 4 | Rebirth 5 |
 |---|---|---|---|---|---|---|
-| activ, gratis | azi | 44 min | 2 h 48 | 5 h 15 | 9 h | — |
-| | **propus** | **19 min** | **55 min** | **1 h 51** | **4 h 00** | **8 h 28** |
-| casual, gratis | azi | 78 min | 4 h 04 | 7 h 23 | 12 h 28 | — |
-| | **propus** | **23 min** | **67 min** | **2 h 12** | **5 h 09** | **10 h 50** |
-| plătitor (2x Cash, VIP, 2x Str) | azi | 26 min | 1 h 43 | 2 h 51 | 4 h 25 | — |
-| | **propus** | **9 min** | **29 min** | **58 min** | **2 h 07** | **4 h 12** |
-| whale (toate pass-urile) | **propus** | **6 min** | **18 min** | **38 min** | **1 h 19** | **2 h 32** |
+| activ, gratis | azi | 45 min | 2 h 25 | 4 h 15 | 6 h 02 | 7 h 00 |
+| | **propus** | **17 min** | **49 min** | **2 h 17** | **4 h 43** | **8 h 49** |
+| casual, gratis | azi | 68 min | 3 h 53 | 6 h 21 | 8 h 36 | 9 h 40 |
+| | **propus** | **22 min** | **60 min** | **2 h 52** | **5 h 53** | **11 h 07** |
+| plătitor (2x Cash, VIP, 2x Str) | azi | 22 min | 1 h 40 | 2 h 28 | 3 h 12 | 3 h 54 |
+| | **propus** | **8 min** | **25 min** | **65 min** | **2 h 03** | **3 h 57** |
+| whale (toate pass-urile) | **propus** | **6 min** | **17 min** | **40 min** | **1 h 11** | **2 h 17** |
 
-- „Nici 10 minute până la al 5-lea rebirth”: nici whale-ul nu ajunge la Rebirth 5 în mai puțin de ~2 ore și un sfert.
-- Norocul la lăzi schimbă puțin ritmul: Rebirth 1 între 17 și 20 min, Rebirth 5 între 8 h 13 și 8 h 52 (jucător activ).
+- **Azi:** primul Rebirth vine târziu (45–68 min), al doilea e un zid de ore, iar după Rebirth 3 jocul se strânge.
+  Star Shop-ul e maxat pe la Rebirth 4, iar Rebirth 4 → 5 durează sub o oră.
+- **Propus:** fiecare tură e de ~2 ori mai lungă decât precedenta, până la capăt.
+- Norocul la lăzi schimbă puțin ritmul: Rebirth 1 între 15 și 19 min, Rebirth 5 între 8 h 12 și 9 h 43 (jucător activ).
+- Nici whale-ul nu ajunge la Rebirth 5 în mai puțin de ~1 h 50.
+
+**Cum arată pe zile** (cineva care intră o dată pe zi; noaptea offline: 50% din chirie, maxim 8 h):
+
+| Jucător | Rebirth 1 | Rebirth 2 | Rebirth 3 | Rebirth 4 | Rebirth 5 |
+|---|---|---|---|---|---|
+| casual, 20 min/zi | ziua 1–2 | ziua 3 | ziua 7 | ziua 13 | ziua 20 |
+| casual, 45 min/zi | ziua 1 | ziua 2 | ziua 3 | ziua 7 | ziua 11 |
+| activ, 45 min/zi | ziua 1 | ziua 2 | ziua 3 | ziua 6 | ziua 10 |
+| activ, 90 min/zi | ziua 1 | ziua 1 | ziua 2 | ziua 4 | ziua 6 |
+| casual, 45 min/zi + Night Shift | ziua 1 | ziua 2 | ziua 4 | ziua 6 | ziua 8 |
+
+Un copil care intră zilnic are un Rebirth la câteva zile. E exact motivul pentru care revine.
 
 **Cum se simte fiecare tură** (jucător activ):
 
 | Tura | Durată | Contracte | O construcție | Crew-ul face | Din chirii | Cumpărături / min |
 |---|---|---|---|---|---|---|
-| 1 (Town) | 17 min | 13 | 36 s | 24% din muncă | 0% | 0,8 |
-| 2 (Suburbs) | 36 min | 42 | 24 s | 52% | 5% | 5,6 |
-| 3 (Downtown) | 80 min | 48 | 66 s | 68% | 30% | 3,5 |
-| 4 | 2 h 11 | 130 | 33 s | 74% | 15% | 2,4 |
-| 5 | 4 h 28 | 166 | 70 s | 77% | 26% | 1,2 |
+| 1 (Town) | 15 min | 13 | 35 s | 25% din muncă | 0% | 0,9 |
+| 2 (Suburbs) | 32 min | 36 | 24 s | 52% | 4% | 6,3 |
+| 3 (Downtown) | 1 h 47 | 88 | 46 s | 69% | 14% | 2,7 |
+| 4 | 2 h 38 | 135 | 46 s | 76% | 12% | 2,0 |
+| 5 | 3 h 01 | 186 | 33 s | 77% | 12% | 1,8 |
 
 - O construcție ține între 25 s și 2 min.
 - La început jucătorul lovește singur, apoi crew-ul face 3/4 din muncă.
-- Cumpără ceva cam la fiecare 10–75 de secunde.
+- Cumpără ceva cam la fiecare 10–70 de secunde.
 
 ---
 
@@ -167,19 +195,74 @@ Rebirth 2 cere 40M.
 | Rebirth | Cost azi (câștigat în tură) | Cost propus | Bani după (azi → propus) | Strength după (azi → propus) |
 |---|---|---|---|---|
 | 1 | 150K | **25K** + Corner Shop construit | ×1,5 → **×2,5** | ×1,5 → **×1,75** |
-| 2 | 40M | **200M** + Distribution Center | ×2 → **×4** | ×2 → **×2,5** |
-| 3 | 10B | **5B** + Hotel | ×2,5 → **×5,5** | ×2,5 → **×3,25** |
-| 4 | 100B | **75B** + Skyscraper | ×3 → **×7** | ×3 → **×4** |
-| 5 | 1T | **400B** + HQ | ×3,5 → **×8,5** | ×3,5 → **×4,75** |
-| 6 | 10T | **2,5T** + Spire | **×10** | **×5,5** |
-| 7 | 100T | **25T** | **×11,5** | **×6,25** |
+| 2 | 40M | **250M** + Distribution Center | ×2 → **×4** | ×2 → **×2,5** |
+| 3 | 10B | **20B** + Hotel | ×2,5 → **×5,5** | ×2,5 → **×3,25** |
+| 4 | 100B | **150B** + Skyscraper | ×3 → **×7** | ×3 → **×4** |
+| 5 | 1T | **800B** + HQ | ×3,5 → **×8,5** | ×3,5 → **×4,75** |
+| 6 | 10T | **5T** + Spire | **×10** | **×5,5** |
+| 7 | 100T | **40T** | **×11,5** | **×6,25** |
+| 8+ | ×10 pe Rebirth | **×3 pe Rebirth** (până vine Zona 4) | +1,5 pe Rebirth | +0,75 pe Rebirth |
 
 - Formula: bani ×(1 + 1,5·R), strength ×(1 + 0,75·R).
 - Fiecare Rebirth cere și ultima clădire a zonei: Rebirth-ul e o etapă de joc, nu doar o sumă.
-- Sumele cresc neregulat pentru că fiecare zonă nouă plătește de zeci de ori mai mult. Ce contează e timpul (tabelul
-  din secțiunea 3), iar timpul crește regulat.
+- Sumele cresc neregulat pentru că fiecare zonă nouă plătește de zeci de ori mai mult. Ce contează e timpul (secțiunea
+  3), iar timpul crește regulat.
+- **Start cu avans:** fiecare tură nouă pornește cu 1% din Rebirth-ul tocmai plătit (în plus față de perk-ul Head
+  Start). Așa revii la venitul de dinainte în 5–18 minute (după Rebirth 5: ~30), nu în 6–27 (verificarea 3).
 
-### 4.2 Drumul: contractele
+### 4.2 Star Shop: o regulă nouă pentru Stars
+
+| | Azi | Propus |
+|---|---|---|
+| Stars primite la Rebirth | √(câștigat în tură / 2,5M) | **3 + 2 × numărul Rebirth-ului**, **+1 pentru fiecare dublare** a costului pe care o câștigi înainte să apeși |
+| Exemplu | Rebirth 1: 1 · Rebirth 3: ~90 · Rebirth 5: ~400+ | Rebirth 1: 5 · Rebirth 3: 9 · Rebirth 5: 13 (+ dublările) |
+| Când ai toate perk-urile (290 Stars) | pe la Rebirth 4–5 | pe la Rebirth 13–15 |
+
+- Azi Star Shop-ul se termină înainte de jumătatea jocului. După aceea fiecare Rebirth dă tot mai puțin, iar finalul se
+  strânge: Rebirth 4 → 5 durează sub o oră.
+- Cu regula nouă, fiecare Rebirth dă câteva Stars, care se simt (Tycoon +10% bani, Loyal Crew etc.), iar Star Shop-ul
+  ține ca obiectiv pe tot jocul.
+- „+1 pe dublare” păstrează o alegere interesantă: dai Rebirth acum sau mai câștigi puțin pentru o stea în plus.
+- Jucătorii care au deja perk-uri le păstrează.
+
+### 4.3 Bara de Rebirth: pași, nu doar bani
+
+Verificarea 2 a arătat exact problema de care vorbeai.
+
+**Bara de azi (doar bani):**
+- În tura 2 bara e la **5% la jumătatea turei** și se umple aproape toată în ultimul sfert. Banii cresc exponențial.
+- Un „timp rămas” calculat din venitul de acum arată **~7.500 de minute** când mai sunt de fapt 26.
+- Copilul crede că mai are ore întregi, apoi termină brusc. Sau se lasă înainte.
+
+**Propus:**
+- **Pașii zonei:** fiecare clădire nouă a zonei e un pas pe bară (în tura 1: Fence → Shed → Garage → House → Corner
+  Shop), apoi banii. Pașii vin la intervale aproape egale.
+- **Banii, pe trepte cu premii:** 1% · 5% · 10% · 25% · 50% · 75% · 100% din cost. La fiecare treaptă primești ceva mic,
+  de exemplu o Supply Crate sau câteva Gems. În tura 5 treptele vin la ~26, 42, 57, 92, 147 și 202 minute: un premiu la
+  fiecare 15–55 de minute, inclusiv în turele lungi.
+- **„≈ X min rămase”**, calculat din venitul ultimelor 2 minute. Apare doar după ultima clădire a zonei; din acel moment
+  greșește cu cel mult 10–30% și de obicei spune puțin mai mult decât e. Copilul are o surpriză plăcută, nu una
+  neplăcută.
+
+### 4.4 Empire Road, achievements și materiale
+
+- **Banii din Empire Road și achievements** intră la Rebirth. Cu costurile noi, cei din Town ar putea fi jumătate din Rebirth 1
+  sau mai mult (de exemplu „10.000 Strength” dă 8.000, iar Rebirth 1 costă 25.000).
+  - **Propus:** fiecare zonă dă din Road + achievements cam **8% din Rebirth-ul ei**. Town se înmulțește cu ~1/6,
+    Suburbs cu ~6, Downtown rămâne cam la fel.
+  - Gems și XP rămân cum sunt.
+  - Textele Road-ului cu sume („Earn $150K”, „Earn $40M”...) se schimbă pe sumele noi.
+- **Prețul de vânzare al materialelor:**
+
+  | Material | Azi | Propus | De ce |
+  |---|---|---|---|
+  | Steel | 40 | **10** | un Fence dă 3 Steel = 120, adică dublul plății lui (60) |
+  | Copper | 250 | **60** | |
+  | Marble, Gold, Diamond | | rămân | |
+
+  Cu prețurile de azi, cine vinde tot materialul face Rebirth 1 cu 17% mai repede.
+
+### 4.5 Drumul: contractele
 
 Recompensele rămân **exact ca azi**. Se schimbă munca (cât durează), porțile și zona.
 
@@ -209,7 +292,7 @@ Recompensele rămân **exact ca azi**. Se schimbă munca (cât durează), porți
   ieșeau mai slabe decât clădirea dinainte și nimeni nu le construia; le-am reparat, iar acum fiecare clădire nouă
   plătește mai bine pe minut.
 
-### 4.3 Upgrade-uri (departamentele Company)
+### 4.6 Upgrade-uri (departamentele Company)
 
 | | Azi | Propus |
 |---|---|---|
@@ -218,7 +301,7 @@ Recompensele rămân **exact ca azi**. Se schimbă munca (cât durează), porți
 | Creștere cost | ×1,55 pe nivel | la fel |
 | Nivel maxim | 10 / 20 / 30 (Rebirth 0 / 1 / 2+) | la fel |
 
-### 4.4 Crew (muncitori)
+### 4.7 Crew (muncitori)
 
 | Muncitor | Preț | Viteză azi → propus |
 |---|---|---|
@@ -230,7 +313,7 @@ Recompensele rămân **exact ca azi**. Se schimbă munca (cât durează), porți
 - Crew-ul ×4 e motivul principal pentru care jocul nu mai e un clicker obositor: de la tura 2 crew-ul face jumătate
   din muncă, de la tura 3 două treimi.
 
-### 4.5 Utilaje
+### 4.8 Utilaje
 
 | Utilaj | Preț | Viteză azi → propus |
 |---|---|---|
@@ -240,7 +323,7 @@ Recompensele rămân **exact ca azi**. Se schimbă munca (cât durează), porți
 
 Upgrade-urile Mk rămân cum sunt (×2,2 pe Mk).
 
-### 4.6 Proprietăți și bani offline
+### 4.9 Proprietăți și bani offline
 
 **Regula:**
 - o unitate dintr-o clădire dă chirie cât 3% din ce câștigi construind clădirea respectivă;
@@ -272,9 +355,11 @@ Upgrade-urile Mk rămân cum sunt (×2,2 pe Mk).
   offline. După Rebirth 2 (×4) dă 60K pe minut offline.
 - **O noapte offline (8 h) valorează cam 15–60 de minute de joc**, în funcție de tură. E un motiv bun să revii a doua
   zi, dar nu mai poți face Rebirth fără să joci.
+- Pentru cine joacă puțin pe zi, banii de noapte contează mult: 37% din bani la 90 min/zi, 55–58% la 45 min/zi, 71% la
+  20 min/zi. Rebirth-urile vin în zile, nu în minute (vezi secțiunea 3).
 - Online, chiriile ajung la 15–30% din venit: o a doua sursă de bani, nu sursa principală.
 
-### 4.7 Training Yard
+### 4.10 Training Yard
 
 | Stație (de la Strength) | Azi | Propus |
 |---|---|---|
@@ -289,7 +374,7 @@ Upgrade-urile Mk rămân cum sunt (×2,2 pe Mk).
   sare peste drum. Jucătorul activ tot antrenează ~15% din timp.
 - **Auto Train** (pass-ul) primește în plus ×2 la antrenament, ca să nu pară că pierde valoare pentru cine l-a cumpărat.
 
-### 4.8 Ciocane
+### 4.11 Ciocane
 
 - **Puterea crește ×2 pe raritate** (azi ×1,35):
 
@@ -314,8 +399,8 @@ pe fiecare ladă, înainte de cumpărare.
 | Town Supply | 1,5 min din venitul tău | 75% · 1 în 1,3 | 20% · 1 în 5 | 4% · 1 în 25 | 1% · 1 în 100 | | | | |
 | Suburbs Supply | la fel | 52% | 33% · 1 în 3 | 12% · 1 în 8 | 2,6% · 1 în 38 | 0,4% · **1 în 250** | | | |
 | Downtown Supply | la fel | | 55% | 33% · 1 în 3 | 10,8% · 1 în 9 | 1,15% · 1 în 87 | 0,05% · **1 în 2.000** | | |
-| Builder's | 200 💎 / 49 R$ | | 52% | 36% · 1 în 3 | 10% · 1 în 10 | 1,85% · 1 în 54 | 0,15% · 1 în 667 | | |
-| Golden | 750 💎 / 149 R$ | | | 55,996% | 33% · 1 în 3 | 9,4% · 1 în 11 | 1,3% · 1 în 77 | 0,3% · **1 în 333** | 0,004% · **1 în 25.000** |
+| Builder's | 200 💎 / 79 R$ | | 52% | 36% · 1 în 3 | 10% · 1 în 10 | 1,85% · 1 în 54 | 0,15% · 1 în 667 | | |
+| Golden | 750 💎 / 249 R$ | | | 55,996% | 33% · 1 în 3 | 9,4% · 1 în 11 | 1,3% · 1 în 77 | 0,3% · **1 în 333** | 0,004% · **1 în 25.000** |
 
 - **Lăzile urcă pe zone.** Supply-ul e altă ladă în fiecare zonă (Town / Suburbs / Downtown): mai scumpă, cu șanse mai
   bune. Prețul e de 1,5 minute din venitul tău, deci nu se mai poate exploata.
@@ -346,31 +431,45 @@ pe fiecare ladă, înainte de cumpărare.
 
 ### 5.3 Reguli
 
-- **Trade-up 10 → 1 doar până la Mythic** (10 Legendary → 1 Mythic e ultimul). Azi merge până la Divine: 10 Secret →
-  1 Divine. Secret și Divine vin doar din lăzi și din trade între jucători.
+- **Trade-up 10 → 1 doar până la Legendary** (10 Epic → 1 Legendary e ultimul). Mythic, Secret și Divine vin doar din
+  lăzi și din trade între jucători.
+  - Azi trade-up-ul merge până la Divine.
+  - În v1 propusesem până la Mythic, dar verificarea 7 a arătat că trade-up-urile ar fi făcut mai multe Mythic decât
+    lăzile, adică dublul numărului.
 - **Luck-ul se aplică doar la Legendary și mai rar.** Nu schimbă cât de des pică Common-urile.
+- **La Secret și Divine, luck-ul contează cel mult ×3** (casca, pass-urile, poțiunile și Lucky Hour se adună, dar la
+  aceste două rarități se opresc la ×3). **Secret Hunter dă ×2** pe deasupra.
+  - Fără limita asta, whale-urile ar face 80% din toate Secret-urile, adică 145 din 181 pe lună la 1.000 de jucători pe
+    zi, iar Secret-ul și-ar pierde valoarea.
 - Fără pity, cu excepția primei lăzi deschise vreodată (rămâne ca azi).
 
 ### 5.4 Ce înseamnă pentru piață
 
-**Ore de joc până la primul item:**
+Verificarea 7 ține cont de luck-ul pe care îl vor avea jucătorii în realitate (cască, pass-uri, poțiuni, Lucky Hour) și
+de trade-up-uri.
+
+**Ore de joc până la primul item (doar din lăzi):**
 
 | Jucător | Legendary (azi → propus) | Mythic | Secret | Divine |
 |---|---|---|---|---|
-| activ, gratis | 1,8 → **5,3 h** | 9 → **28 h** | 72 → **~1.000 h** | 590 h → practic niciodată |
-| plătitor | 1,1 → **2,2 h** | 4,6 → **13 h** | 27 → **156 h** | 184 h → foarte rar |
-| whale | 0,4 → **0,6 h** | 1,4 → **3,2 h** | 6,5 → **17,5 h** | 36 h → **~1.300 h** |
+| activ, gratis | 1,8 → **4,6 h** | 9 → **~65 h** | 72 → **~900 h** | 590 h → practic niciodată |
+| casual, gratis | 2,8 → **8 h** | 15 → **~120 h** | 129 h → foarte rar | niciodată |
+| plătitor | 1,1 → **2 h** | 4,6 → **19 h** | 27 → **~140 h** | foarte rar |
+| whale | 0,4 → **0,5 h** | 1,4 → **3,2 h** | 6,5 → **18 h** | 36 h → **~1.350 h** |
 
-**Câte există după 30 de zile, la 1.000 de jucători pe zi:**
+- Pentru jucătorii gratis, Mythic devine un obiectiv de o lună de joc zilnic. Alternativ îl pot lua prin trade sau din
+  Hammers of the Day (60.000 💎).
+- Legendary rămâne accesibil: primul vine în câteva ore.
+
+**Câte există, la 1.000 de jucători pe zi:**
 
 | | Legendary | Mythic | Secret | Divine |
 |---|---|---|---|---|
-| Azi | 34.000 | 1.660 | 211 | 23 |
-| Propus | **9.300** | **710** | **90** | **~1** |
+| Azi, după 30 de zile | 34.000 | 1.660 | 211 | 23 |
+| Propus, după 30 de zile | **14.200** | **710** | **81** | **~1** |
+| Propus, după 90 de zile | 42.800 | 2.130 | 244 | ~3 |
 
-- Un Divine pe lună la o mie de jucători pe zi: exact ca un Huge / Titanic în PS99. Cine îl are e celebru pe server, iar
-  la trade valorează enorm.
-- Un jucător activ gratis are în 14 ore de joc ~5 Legendary și un Mythic. Simte progresul, dar topul rămâne un vis.
+- Un Divine pe lună la o mie de jucători pe zi, ca un Huge / Titanic în PS99.
 
 ---
 
@@ -381,11 +480,11 @@ Item nou, purtat pe cap (un singur slot). Se face în Company → Helmet, cu ban
 
 | Nivel | Luck | Când | Cost |
 |---|---|---|---|
-| I | **+10%** | după Rebirth 1 | 50M + 25 Steel |
-| II | **+25%** | după Rebirth 2 | 1B + 25 Copper |
-| III | **+50%** | după Rebirth 3 | 20B + 25 Marble |
-| IV | **+100%** | după Rebirth 4 | 100B + 20 Gold + 2.500 💎 |
-| V | **+200%** | după Rebirth 5 | 600B + 10 Diamond + 10.000 💎 |
+| I | **+10%** | după Rebirth 1 | 60M + 25 Steel |
+| II | **+25%** | după Rebirth 2 | 5B + 25 Copper |
+| III | **+50%** | după Rebirth 3 | 40B + 25 Marble |
+| IV | **+100%** | după Rebirth 4 | 200B + 20 Gold + 2.500 💎 |
+| V | **+200%** | după Rebirth 5 | 1,25T + 10 Diamond + 10.000 💎 |
 
 - Prețul în bani e cam un sfert din Rebirth-ul următor. Banii se pierd oricum la Rebirth, așa că o cască e locul
   perfect pentru banii de la finalul turei: fiecare nivel e obiectivul unei ture.
@@ -403,9 +502,10 @@ Item nou, purtat pe cap (un singur slot). Se face în Company → Helmet, cu ban
 | Ultra Lucky | +200% |
 | Poțiune 2x Luck (30 min) | +100% |
 | Lucky Hour pe server | +100% |
-| **Maxim, cu tot** | **×8** la Legendary și mai rar (Divine din Golden: 1 în ~5.500) |
+| **Maxim, cu tot** | **×8** la Legendary și Mythic; **×3** la Secret și Divine |
 
-- **Secret Hunter** (pass, 2.499 R$) înmulțește separat cu ×3 doar Secret și Divine.
+- **Secret Hunter** (pass) dă în plus ×2 la Secret și Divine.
+- Cu absolut tot, dintr-un Golden Crate: Secret 1 în ~100, Divine 1 în ~7.400.
 
 ---
 
@@ -430,51 +530,89 @@ Item nou, purtat pe cap (un singur slot). Se face în Company → Helmet, cu ban
 
 ### 7.2 Robux
 
+Verificarea 8 a măsurat cât valorează fiecare pass, pentru un jucător care intră o oră pe zi. Rezultatul:
+- 2x Cash (499) aduce +40% viteză, adică ~12 R$ pentru fiecare 1%;
+- Night Shift (199) aduce +16%, tot ~12 R$ pe 1%;
+- VIP, Big Crew, Fast Hands și Super Strength aduc câteva procente fiecare (sub zgomotul simulării).
+
+**De aceea VIP și Big Crew rămân la prețul de azi.** În v1 propusesem să le scumpim, dar nu merită.
+
 **Game passes:**
 
 | Pass | Azi | Propus | De ce |
 |---|---|---|---|
 | 2x Cash | 499 | 499 | |
-| Auto Builder | 399 | 399 | lovește în locul tău, cam ca un jucător calm (în simulare: Rebirth 1 în 15 min stând AFK) |
+| Auto Builder | 399 | 399 | lovește în locul tău, cam ca un jucător calm |
 | Super Strength | 349 | 349 | |
 | 2x Gems | 299 | 299 | |
-| Auto Train | 249 | 249 | + ×2 la antrenament (vezi 4.7) |
+| Auto Train | 249 | 249 | + ×2 la antrenament (vezi 4.10) |
 | Fast Hands | 199 | 199 | |
-| Big Crew | 149 | **299** | crew-ul face acum 50–75% din muncă: valorează mult mai mult |
-| VIP Builder | 199 | **399** | cât VIP-ul din PS99 (400) |
+| Big Crew | 149 | **149** | |
+| VIP Builder | 199 | **199** | |
 | Golden Supercar / Monster Truck / Teleporter / Skip Build Animation | 599 / 299 / 39 / 39 | la fel | |
 | Thunderclap Hammer | 499 | **scos de la vânzare** | ciocanul e acum în Exclusive Crate, 1 în ???; cine are pass-ul îl păstrează |
 | Lucky Builder | — (gata în cod, fără id) | **299** | +100% luck |
 | Ultra Lucky | — | **899** | +200% luck |
-| Secret Hunter | — | **2.499** | Secret și Divine ×3 (ca Huge Hunter din PS99) |
+| Secret Hunter | — | **1.499** | Secret și Divine ×2 |
 | Night Shift | — | **199** | offline 100% și 12 ore |
 | Quick Open | — (gata în cod) | **99** | deschidere instantă |
 | Auto Opener | — (gata în cod) | **199** | deschide singur toate lăzile |
 
 **Produse (se cumpără de mai multe ori):**
 
-| Produs | Azi | Propus |
-|---|---|---|
-| Starter Pack (o singură dată) | 99 | 99 = **600 💎 + 1 Golden Crate + 30 min 2x Cash** |
-| Builder's Crate | 39 | **49 · 5 pentru 199** |
-| Golden Crate | 149 · 3 pentru 399 (fără id) | **149 · 3 pentru 399 · 10 pentru 1.199** |
-| Exclusive Crate | 399 · 3 pentru 999 (fără id) | **399 · 3 pentru 999 · 10 pentru 2.999** |
-| 2x Luck (30 min) | — | **99** |
-| Pachete de Gems, de bani (în minute de venit), 2x Cash 30 min, Rush Crew, Lucky Spins | | **rămân cum sunt** |
+| Produs | Azi | Propus | De ce |
+|---|---|---|---|
+| Starter Pack (o singură dată) | 99 | 99 = **600 💎 + 1 Golden Crate + 30 min 2x Cash** | |
+| Builder's Crate | 39 (fără id) | **79 · 5 pentru 349** | 200 💎 costă ~86 R$ din pachetele de Gems |
+| Golden Crate | 149 · 3 pentru 399 (fără id) | **249 · 3 pentru 699 · 10 pentru 2.199** | 750 💎 costă ~300 R$ din pachetele de Gems |
+| Exclusive Crate | 399 · 3 pentru 999 (fără id) | **399 · 3 pentru 999 · 10 pentru 2.999** | |
+| 2x Luck (30 min) | — | **99** | |
+| Hammers of the Day pe Robux (99 / 249 / 549, fără id) | | **nu le crea** | un Mythic la 549 R$, când din lăzi costă în medie ~19.000 R$, ar strica piața; rămân doar pe Gems |
+| Pachete de Gems, de bani (în minute de venit), 2x Cash 30 min, Rush Crew, Lucky Spins | | **rămân cum sunt** | |
+
+**Lăzile pe Robux la prețul Gems-urilor.** La 149 R$, un Golden Crate cumpărat direct costa jumătate cât același crate
+plătit cu Gems cumpărate pe Robux, așa că nimeni n-ar mai fi cumpărat Gems pentru lăzi. Acum cele două variante costă
+cam la fel.
+
+**Cât costă în medie, pe Robux:**
+
+| Ce | Preț mediu |
+|---|---|
+| Legendary din Golden | ~2.700 R$ |
+| Mythic | ~19.000 R$ |
+| Secret | ~83.000 R$ |
+| Divine | ~6 milioane R$ |
+| Prism, din Exclusive | ~13.600 R$ |
+| Thunderclap, din Exclusive | ~400.000 R$ |
+
+Sunt de ordinul Huge-urilor din PS99: le iau doar whale-urile, iar ele dau valoare pieței.
 
 ---
 
 ## 8. Ce conținut să adăugăm (în ordinea asta)
 
-1. **Casca de constructor** (secțiunea 6): motiv de joc după fiecare Rebirth și primul item de luck.
-2. **Exclusive Crate deschisă**: modele pentru Crown, Ghost, Prism; Thunderclap la 1 în ???.
-3. **Ciocanele „soon” terminate**: Clockwork (Epic), Phoenix (Legendary), Void (Mythic), Black Hole și Demon King
+1. **Bara de Rebirth pe pași, cu premii și „≈ X min”** (4.3). E cea mai ieftină schimbare cu cel mai mare efect.
+2. **Butonul „BEST BUY”** la Upgrades: o apăsare cumpără ce se recuperează cel mai repede, iar insigna de „ai bani de un
+   upgrade” se vede bine.
+   - În verificarea 5, un copil care nu deschide niciodată Upgrades face Rebirth 2 abia după **7,5 ore** (normal ~1 h).
+   - Un copil care cumpără la întâmplare e de 2,5 ori mai lent în tura 2.
+3. **Casca de constructor** (secțiunea 6).
+4. **Exclusive Crate deschisă**: modele pentru Crown, Ghost, Prism; Thunderclap la 1 în ???.
+5. **Ciocanele „soon” terminate**: Clockwork (Epic), Phoenix (Legendary), Void (Mythic), Black Hole și Demon King
    (Secret), Celestial (Divine). Fiecare raritate are nevoie de 3–4 ciocane, ca Index-ul să aibă ce colecta.
-4. **Lucky Hour**: ×2 luck pe server, 15 minute la fiecare 3 ore, cu numărătoare pe ecran. E un motiv să rămâi online.
-5. **Recompense de Index**: toate ciocanele unei rarități colectate → +5% luck permanent + Gems.
-6. **Halloween Crate** (de pe ~15 octombrie până pe 2 noiembrie): 3 ciocane limitate, pentru Gems și Robux. Nu mai apar
+6. **Lucky Hour**: ×2 luck pe server, 15 minute la fiecare 3 ore, cu numărătoare pe ecran.
+7. **Recompense de Index**: toate ciocanele unei rarități colectate → +5% luck permanent + Gems.
+8. **Halloween Crate** (de pe ~15 octombrie până pe 2 noiembrie): 3 ciocane limitate, pentru Gems și Robux. Nu mai apar
    niciodată, deci au valoare la trade.
-7. **Zona 4** (o hartă nouă) de la Rebirth 6. După Spire drumul se termină; un jucător activ ajunge acolo în ~15 h.
+9. **Zona 4** (o hartă nouă) de la Rebirth 6, **în cel mult 2–3 săptămâni de la update**. După Spire drumul se termină.
+   - Când ajung la Rebirth 6:
+
+     | Cine | Rebirth 6 |
+     |---|---|
+     | jucător activ | după ~14 ore de joc (cam 2 săptămâni de joc zilnic) |
+     | whale | după ~4–5 ore |
+   - Până atunci, Rebirth 8+ costă ×3 pe Rebirth, nu ×20, ca să existe mereu un pas următor. Star Shop-ul și casca V
+     țin obiective.
 
 ---
 
@@ -489,53 +627,108 @@ Item nou, purtat pe cap (un singur slot). Se face în Company → Helmet, cu ban
   Jucătorul simulat face ce ar face un copil care vrea să avanseze: alege contractul care plătește cel mai bine, cumpără
   ce se recuperează cel mai repede, deschide lăzi, antrenează când o poartă îi stă în drum și dă Rebirth cât poate de
   repede.
+- **Versiunea 2** (`FIDELITY_V2` în `sim.py`, `fidelity.py`) a adăugat ce lipsea, după ce am comparat formulele cu
+  scripturile din Studio (Main, Economy, Crew, CompanyService, RebirthService, Company, Config, Hammers):
+  - Rebirth Stars și perk-urile din Star Shop;
+  - blueprint-urile;
+  - banii din Road și achievements;
+  - tips, rush orders, cadouri și misiuni;
+  - materialele;
+  - sesiuni zilnice cu offline;
+  - start-ul cu avans.
 - **4 jucători:**
   - activ: 5 click-uri pe secundă, 75% din timp;
   - casual: 4 click-uri, 45% din timp;
   - plătitor: 2x Cash, VIP, Super Strength și boost-uri;
   - whale: toate pass-urile și multe lăzi.
-- **220 de scenarii:** 120 + 100 de combinații de parametri (viteza crew-ului și a utilajelor, multiplicatorii de Rebirth,
-  chiriile, raritatea, upgrade-urile). Fiecare scenariu e calibrat și jucat de toți cei 4 jucători, apoi notat după cât
-  de aproape e de rețeta jocurilor de top (ritm, cât face crew-ul, cât din venit vin chiriile, cât de des cumperi ceva).
-  - Scenariul ales a ieșit **primul din 100** (scor 1,02, față de mediana 1,95).
-- **Verificări la final:**
-  - fiecare contract chiar e folosit (2 erau „morți” și au fost reparați);
-  - 5 rulări cu noroc diferit la lăzi;
-  - 4 obiceiuri de click: cine dă click doar 30% din timp merge de ~1,5 ori mai încet, ceea ce e normal;
-  - un jucător AFK cu Auto Builder.
-- Fișierele: `sim.py`, `proposal.py`, `sweep.py`, `final.py`, `road.py`, `report_final.py`, `avg.py`, `crates.py`,
-  `sweep_A.json`, `sweep_B.json`, `final_econ.json` (toate cifrele exacte, inclusiv `workMult` pe contract).
-- **Limită:** e un model. După lansare trebuie urmărite timpul real până la Rebirth 1 și 2 (mediana) și câte Legendary,
-  Mythic, Secret și Divine apar pe zi. Ajustăm după primele 3–7 zile.
+
+  În plus: jucători pe telefon, copii care cumpără la întâmplare, jucători de 20 / 45 / 90 de minute pe zi.
+- **220 de scenarii** pentru structura rețetei. Scenariul ales a ieșit primul din 100.
+- **Costurile finale** sunt calibrate pe media a 5 rulări cu noroc diferit.
+- **Fișierele** sunt în `tools/econ/`:
+  - `final_econ_v2.json`: toate cifrele;
+  - `check2_bar.py` … `check10_migrate.py`, `market.py`: verificările;
+  - `final_v2.py`, `tune_v2.py`, `final_checks.py`.
+- **Limită:** e tot un model. După lansare trebuie urmărite timpul real până la Rebirth 1 și 2 (mediana) și câte
+  Legendary, Mythic, Secret și Divine apar pe zi. Ajustăm după primele 3–7 zile.
 
 ---
 
 ## 10. Cum s-ar implementa (DOAR după confirmarea ta)
 
-1. **Config / Company:** contractele (muncă, porți, zone), costurile și multiplicatorii de Rebirth, crew, utilaje,
-   upgrade-uri, Training Yard.
-2. **Proprietăți:** prețuri, chirii, ×1,45, offline 50% / 8 h, Night Shift.
-3. **Hammers:** ×2 pe raritate, șansele noi, prețul Supply în minute de venit, trade-up până la Mythic, „1 în X” în
-   interfață, Exclusive „1 în ???” rainbow cu (i).
-4. **Casca:** modul nou, interfață în Company, model 3D, luck adunat din toate sursele.
-5. **Store:** pass-urile și produsele noi. Tu creezi id-urile în Creator Hub; eu le pun în Config.
-6. **Jucătorii existenți:** nu ștergem progresul nimănui.
-   - Ciocanele rămân, inclusiv Divine-urile de azi (vor valora și mai mult).
-   - Proprietățile rămân la numărul de unități.
+1. **Config / Company:**
+   - contractele (muncă, porți, zone);
+   - costurile și multiplicatorii de Rebirth, inclusiv ×3 pentru Rebirth 8+;
+   - start-ul cu 1% din Rebirth-ul plătit;
+   - crew, utilaje, upgrade-uri, Training Yard;
+   - prețul materialelor;
+   - banii din Road și achievements.
+2. **RebirthService:** regula nouă de Stars.
+3. **Bara de Rebirth:** pașii zonei, treptele cu premii, „≈ X min rămase”.
+4. **Proprietăți:** prețuri, chirii, ×1,45, offline 50% / 8 h, Night Shift.
+5. **Hammers:**
+   - ×2 pe raritate;
+   - șansele noi;
+   - prețul Supply în minute de venit;
+   - trade-up până la Legendary;
+   - luck maxim ×3 la Secret și Divine;
+   - „1 în X” în interfață, Exclusive „1 în ???” rainbow cu (i).
+6. **Upgrades:** butonul BEST BUY.
+7. **Casca:** modul nou, interfață în Company, model 3D, luck adunat din toate sursele.
+8. **Store:** pass-urile și produsele noi și prețurile lăzilor. Tu creezi id-urile în Creator Hub; eu le pun în Config.
+9. **Jucătorii existenți** (verificarea 10): nu ștergem progresul nimănui.
+   - **O clădire pe care ai construit-o vreodată rămâne deschisă.** Fără regula asta, un jucător de azi cu Rebirth 2–3
+     ar pierde Hotel / Skyscraper / HQ, iar venitul lui ar scădea cu 30%.
+   - **Procentul din bara de Rebirth se păstrează.** Cine era la 80% din Rebirth rămâne la 80%, chiar dacă suma s-a
+     schimbat.
+   - **Proprietățile peste 10 de un tip** se vând automat la cât au costat.
+   - Ciocanele (inclusiv Divine-urile de azi, care vor valora și mai mult), Stars, perk-urile, materialele și Gems rămân.
    - Toată lumea primește un cadou de update: 1 Golden Crate.
-7. **Test în Studio** cu toți cei 4 jucători, X-ray-ul și țările cu restricție. Apoi îți spun să dai Publish.
+   - Cu ciocanele ×2 pe raritate și crew-ul ×4, jucătorii existenți devin de 1,3 până la 40 de ori mai puternici.
+     Update-ul se simte ca un cadou.
+10. **Test în Studio** cu toți cei 4 jucători, X-ray-ul și țările cu restricție. Apoi îți spun să dai Publish.
 
 ---
 
 ## 11. Ce trebuie să confirmi
 
-1. **Ritmul:** Rebirth 1 în ~19 min, Rebirth 2 la ~55 min, Rebirth 5 la ~8,5 h (jucător activ gratis). E bine?
-2. **Offline:** 50%, maxim 8 ore (Night Shift: 100%, 12 ore)? Banii offline să conteze la Rebirth? (propunerea: da,
-   fiind limitați)
-3. **Șansele:** Divine 1 în 25.000 și Secret 1 în 333, doar în Golden Crate?
-4. **Trade-up doar până la Mythic?**
-5. **Training Yard redus** (×1 … ×4) și Auto Train cu ×2?
-6. **Prețuri mărite:** VIP 199 → 399, Big Crew 149 → 299, Builder's Crate 39 → 49?
-7. **Casca** cum e descrisă în secțiunea 6?
-8. **Exclusive „1 în ???”** cu procentul în (i)?
-9. **Jucătorii existenți:** fără ștergere, cu 1 Golden Crate cadou?
+1. **Ritmul:** Rebirth 1 în ~17 min, Rebirth 2 la ~50 min, Rebirth 5 la ~9 h (jucător activ gratis). Pe zile: un copil
+   de 45 min/zi are Rebirth 5 în ziua 10–11. E bine?
+2. **Offline:** 50%, maxim 8 ore, și contează la Rebirth?
+   - Varianta în care nu contează am testat-o: banii de noapte nu mai ajută aproape deloc la Rebirth, iar copilul vede
+     sume mari care nu-l duc nicăieri. De aceea propun să conteze.
+3. **Star Shop:** regula nouă de Stars (perk-urile se termină pe la Rebirth 13–15, nu la 4)?
+4. **Bara de Rebirth pe pași**, cu premii la 1 / 5 / 10 / 25 / 50 / 75%?
+5. **Șansele:**
+   - Divine 1 în 25.000 și Secret 1 în 333, doar în Golden Crate;
+   - luck maxim ×3 la Secret și Divine;
+   - trade-up doar până la Legendary (Mythic devine o lună de joc pentru gratis)?
+6. **Training Yard redus** (×1 … ×4) și Auto Train cu ×2?
+7. **Prețurile pe Robux:**
+   - Golden 249, Builder's 79;
+   - VIP și Big Crew rămân;
+   - Hammers of the Day doar pe Gems?
+8. **Road / achievements la ~8% din fiecare Rebirth** și Steel / Copper mai ieftine la vânzare?
+9. **Casca** cum e descrisă în secțiunea 6?
+10. **Exclusive „1 în ???”**, cu procentul în (i)?
+11. **Jucătorii existenți:**
+    - clădirile construite rămân deschise;
+    - bara își păstrează procentul;
+    - 1 Golden Crate cadou?
+
+---
+
+## 12. Cele 10 verificări (7 octombrie, ziua) și ce au schimbat
+
+| # | Ce am verificat | Ce am găsit | Ce s-a schimbat în rețetă |
+|---|---|---|---|
+| 1 | Simulatorul față de codul real din Studio | Lipseau Rebirth Stars / Star Shop, blueprint-urile, banii din Road și achievements (intră la Rebirth), tips, cadouri și misiuni. Cu ele, v1 ajungea la Rebirth 5 în ~4,5 h, nu în 8,5 h. Restul formulelor (plată, putere, crew = puterea ta, utilaje, upgrade-uri, chirii, porți) se potrivesc. | Simulator v2 cu toate sistemele. Costuri recalibrate: 25K / 250M / 20B / 150B / 800B / 5T / 40T. Regulă nouă de Stars (4.2). |
+| 2 | Bara de Rebirth pe parcursul turei | Banii cresc exponențial: în tura 2 bara e la 5% la jumătatea turei. Un „timp rămas” simplu ar arăta 7.500 de minute când mai sunt 26. | Bară pe pași (clădirile zonei) + trepte de bani cu premii + „≈ X min” după ultima clădire (4.3). |
+| 3 | Saltul de putere după Rebirth | Reveneai la venitul de dinainte abia după 20–27 de minute în turele 3–5. | Start cu 1% din Rebirth-ul plătit: revii în 5–18 minute. Ritmul general nu se schimbă. |
+| 4 | Joc pe zile (20 / 45 / 90 de minute pe zi + nopți offline) | Copiii care intră zilnic au un Rebirth la câteva zile. Banii de noapte sunt 37–71% din bani la ei. Dacă banii offline n-ar conta la Rebirth, n-ar ajuta aproape deloc. | Offline 50% / 8 h rămâne și contează la Rebirth. Tabel pe zile în secțiunea 3. |
+| 5 | Copii care nu joacă optim / telefon | Telefon: doar 5% mai lent. Cumpărături la întâmplare: tura 2 de 2,5 ori mai lungă. **Fără Upgrades: Rebirth 2 după 7,5 h.** Fără crew peste tutorial: blocat (porțile cer crew). | Butonul BEST BUY + insignă clară la Upgrades. Bara pe pași arată și ce lipsește („angajează 3 muncitori”). |
+| 6 | Exploit-uri | Toate Gems-urile pe Cash Safe: cu ~20% mai repede, iar pachetele pe Robux cu 5–15%, ceea ce e acceptabil, fiindcă dau mai puțin decât promit (IncomePerMin nu include crew-ul). **Vânzarea materialelor face Town-ul cu 17% mai rapid** (Steel 40 > plata unui Fence). Lăzi în exces: fără efect. | Steel 40 → 10, Copper 250 → 60 la vânzare. |
+| 7 | Piața pe 30 / 90 de zile, cu luck real și trade-up | Trade-up-ul 10 Legendary → 1 Mythic ar fi dublat numărul de Mythic. Cu luck-ul real al whale-urilor, ar fi existat 181 de Secret pe lună (80% de la whale-uri), nu 90. | Trade-up doar până la Legendary. Luck maxim ×3 la Secret și Divine. Secret Hunter ×2 (1.499 R$). Rezultat: 710 Mythic, 81 Secret și ~1 Divine pe lună la 1.000 de jucători pe zi. |
+| 8 | Prețurile pe Robux | 2x Cash și Night Shift: ~12 R$ pentru fiecare 1% de viteză. VIP și Big Crew aduc puțin, deci nu merită scumpite. Lăzile pe Robux costau jumătate cât pe Gems, iar Hammers of the Day pe Robux ar fi vândut un Mythic de ~19.000 R$ la 549 R$. | VIP 199 și Big Crew 149 rămân. Golden 249, Builder's 79. Hammers of the Day doar pe Gems. |
+| 9 | Jocul târziu | După Spire drumul se termină. Jucătorul activ ajunge la Rebirth 6 după ~14 h, iar whale-ul după ~4–5 h. Cu ×20 pe Rebirth, Rebirth 8 devenea imposibil. | Rebirth 8+ ×3 pe Rebirth. **Zona 4 în 2–3 săptămâni de la update.** |
+| 10 | Jucătorii de azi trecuți pe economia nouă | Majoritatea devin mult mai puternici (×1,3 … ×40). Un Rebirth 2–3 ar pierde Hotel / Skyscraper / HQ (−30% venit). Chiriile vechi scad (oricum se resetează la Rebirth). | Clădirile construite vreodată rămân deschise. Bara își păstrează procentul. Proprietățile peste 10 se vând la cât au costat. 1 Golden Crate cadou. |

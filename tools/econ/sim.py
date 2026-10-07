@@ -40,6 +40,15 @@ MACHINE_VERBS = {"excavator": {"dig", "clear"}, "mixer": {"pour"}, "crane": {"me
 RARITY = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "secret", "divine"]
 COOLDOWN = [0.42, 0.38, 0.34, 0.30, 0.27, 0.25, 0.23, 0.21]
 MATS = ["steel", "copper", "marble", "gold", "diamond"]
+# FIDELITY_V2 (read from Studio, Company.StarPerks): max levels; level n -> n+1 costs n+1 Stars
+PERK_MAX = {"tycoon": 10, "genes": 10, "lawyer": 10, "lucky": 10, "headstart": 10, "crew": 5}
+PERK_ORDER = ["tycoon", "tycoon", "crew", "headstart", "tycoon", "genes", "crew", "headstart", "genes", "lawyer"]
+# material sell prices and what each building drops (Company.Materials / Company.Drops), finds per hit 1/30, 3 per contract
+MAT_SELL = {"steel": 40, "copper": 250, "marble": 1500, "gold": 10000, "diamond": 80000}
+DROPS = [{"steel": 100}, {"steel": 100}, {"steel": 90, "copper": 10}, {"steel": 65, "copper": 35}, {"steel": 40, "copper": 60},
+         {"copper": 65, "marble": 35}, {"copper": 45, "marble": 55}, {"copper": 20, "marble": 60, "gold": 20},
+         {"marble": 55, "gold": 45}, {"marble": 25, "gold": 50, "diamond": 25}, {"marble": 20, "gold": 60, "diamond": 20},
+         {"gold": 65, "diamond": 35}, {"gold": 55, "diamond": 45}, {"gold": 45, "diamond": 55}, {"gold": 30, "diamond": 70}]
 
 
 def current():
@@ -191,6 +200,11 @@ class State:
         self.work_split = [0.0, 0.0, 0.0]   # player, crew, machines
         self.rent_earned = 0.0
         self.train_time = 0.0
+        # FIDELITY_V2: Rebirth Stars and the Star Shop perks (RebirthService), what the game gives on top of contracts
+        self.stars = 0
+        self.perks = {k: 0 for k in PERK_MAX}
+        self.onetime_given = 0
+        self.mat_value = 0.0
 
     # --- multipliers ---------------------------------------------------------------------------------------------
     def best_hammer(self):
@@ -224,12 +238,23 @@ class State:
         m *= self.dept_mult("cash") * self.E["rebirth_cash"](self.R)
         if "cash2x" in self.P["passes"]: m *= 2
         m *= 1 + self.P["boosts"]
+        m *= 1 + 0.10 * self.perks["tycoon"]                       # Star Shop: Tycoon
+        m *= self.E.get("pay_extra", 1.0)                           # tips, rush orders, gifts, missions
+        m *= 1 + self.P.get("friends", 0) * 0.10                    # friends on the server (+10% each, max 4)
         return m
+
+    def bp_factor(self, c):
+        # Blueprints: found on (6% + 1.2% x order) of contracts, used on the best one: E[pay - work] = +0.46 of a reward
+        g = self.E.get("bp_gain", 0.0)
+        if not g: return 1.0
+        order = ORDER.index(c["id"]) + 1
+        return 1 + g * (0.06 + 0.012 * order) * (1 + 0.10 * self.perks["lucky"])
 
     def strength_per_hit(self):
         E = self.E
         m = E["gear"][self.gear][1] * self.dept_mult("strength") * E["rebirth_strength"](self.R)
         if "strength2x" in self.P["passes"]: m *= 2
+        m *= 1 + 0.20 * self.perks["genes"]                         # Star Shop: Strong Genes
         m *= 1 + self.P["boosts"]
         return m
 
@@ -286,7 +311,7 @@ class State:
     def contract_income(self, c):
         t, _, _ = self.contract_time(c)
         fast = t <= c["target"]
-        pay = c["reward"] * self.pay_mult() * (1 + (self.E["speed_bonus"] if fast else 0))
+        pay = c["reward"] * self.pay_mult() * (1 + (self.E["speed_bonus"] if fast else 0)) * self.bp_factor(c)
         return pay / (t + self.E["stage_overhead"]), t, pay
 
     def best_contract(self):
@@ -307,6 +332,7 @@ class State:
                 if n >= need: m *= x
             total += rent * n * m
         m = self.E["rebirth_cash"](self.R) if self.E.get("prop_rent_rebirth") else 1.0
+        m *= 1 + 0.25 * self.perks["lawyer"]                        # Star Shop: Property Lawyer
         return total * self.dept_mult("rent") * m / 60.0
 
     def income_per_sec(self):
@@ -405,8 +431,19 @@ def buy_round(s, horizon):
     bought = 0
     while bought < 200:
         best, bk = None, None
+        pol = s.P.get("policy")
+        skip = s.P.get("skip", ())
+        if pol in ("random", "cheapest"):
+            # a kid who doesn't compare paybacks: buys whatever is affordable (random) or the cheapest thing first
+            opts = [(k, kk, c) for (k, kk, c) in candidates(s) if c <= s.money and k not in skip and value_of(s, k, kk) > 0]
+            if not opts: break
+            if pol == "random" and s.rng.random() < 0.5: break      # and doesn't spend everything at once
+            k, kk, c = s.rng.choice(opts) if pol == "random" else min(opts, key=lambda o: o[2])
+            s.money -= c; apply(s, k, kk); s.purchases.append((s.t, k, kk, c)); bought += 1
+            continue
         for kind, key, cost in candidates(s):
             if cost > s.money: continue
+            if kind in skip: continue
             gain = value_of(s, kind, key)
             if gain <= 0: continue
             pb = cost / gain
@@ -487,16 +524,47 @@ def zone_supply(s):
 # ------------------------------------------------------------------------------------------------------------------
 def do_rebirth(s):
     E = s.E
+    s.reb_day = getattr(s, "reb_day", []) + [getattr(s, "day", 1)]
+    if E.get("stars"):
+        if E.get("stars_new"):
+            # PROPOSAL: 3 + 2 x (the Rebirth's number) Stars, +1 for every doubling of the cost you earned before pressing it
+            cost = E["rebirth_cost"](s.R)
+            s.stars += 3 + 2 * (s.R + 1) + max(0, int(math.log2(max(1.0, s.earned_run / cost))))
+        else:
+            s.stars += max(1, int(math.sqrt(max(0.0, s.earned_run) / 2.5e6)))
+        buy_perks(s)
+    keep = []
+    if E.get("stars") and s.perks["crew"]:
+        order = sorted(s.workers, key=lambda w: -E["workers"][w]["rate"])
+        keep = order[:s.perks["crew"]]
     s.R += 1
     s.events["rebirth"].append(s.t)
-    s.money = E["start_money"]
+    s.money = E["start_money"] + (2500 * 3 ** s.perks["headstart"] if s.perks["headstart"] > 0 else 0)
+    # PROPOSAL option: every Rebirth starts with a share of the Rebirth you just paid (a built-in head start)
+    s.money += E.get("reb_headstart", 0.0) * E["rebirth_cost"](s.R - 1)
     s.earned_run = 0.0
+    s.onetime_given = 0
     s.gear = 0
     s.strength = 0.0
-    s.workers = []
+    s.workers = keep
     s.machines = {}
     s.dept = {k: 0 for k in E["depts"]}
     s.props = {}
+
+
+def buy_perks(s):
+    """Star Shop: a sensible order first (cash, loyal crew, head start, strength), then the cheapest level"""
+    i = 0
+    while True:
+        bought = False
+        for k in PERK_ORDER + sorted(PERK_MAX, key=lambda k: s.perks[k]):
+            lv = s.perks[k]
+            if lv < PERK_MAX[k] and s.stars >= lv + 1:
+                s.stars -= lv + 1
+                s.perks[k] += 1
+                bought = True
+                break
+        if not bought: break
 
 
 def gate_contract(s):
@@ -519,7 +587,23 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
     s.money = max(s.money, 0)
     end = hours * 3600
     gems_per_sec_daily = E["gems_day"] / 3600.0   # the daily rewards, spread over an hour a day
+    sess = P.get("session_min")
+    next_end = sess * 60 if sess else None
+    s.day = 1
+    s.offline_earned = 0.0
+    s.reb_day = []
     while s.t < end and s.R < max_rebirths:
+        # DAILY SESSIONS: play `session_min` a day, the rest of the day offline (rent at offline_share, up to the cap)
+        if sess and s.t >= next_end:
+            gap = 24 * 3600 - sess * 60
+            share = 1.0 if "nightshift" in P["passes"] else E.get("offline_share", 1.0)
+            cap = (12 if "nightshift" in P["passes"] else E.get("offline_cap_h", 1e9)) * 3600
+            off = s.rent_per_sec() * share * min(gap, cap)
+            s.money += off
+            if E.get("offline_counts", True): s.earned_run += off
+            s.offline_earned += off
+            s.day += 1
+            next_end += sess * 60
         c, inc = s.best_contract()
         if c is None:
             break
@@ -551,7 +635,7 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
         # build the contract
         t, split, hits = s.contract_time(c)
         fast = t <= c["target"]
-        pay = c["reward"] * s.pay_mult() * (1 + (E["speed_bonus"] if fast else 0))
+        pay = c["reward"] * s.pay_mult() * (1 + (E["speed_bonus"] if fast else 0)) * s.bp_factor(c)
         dt = t + E["stage_overhead"]
         rent = s.rent_per_sec() * dt
         s.t += dt
@@ -565,6 +649,26 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
         s.clicks += hits
         s.work_split = [a + b for a, b in zip(s.work_split, split)]
         s.contracts_done += 1
+        # FIDELITY_V2: one-time rewards (Empire Road + achievements) worth onetime_frac of each of the first 5 Rebirths,
+        # given in 10 parts as the run goes; materials found (3 finds per contract or 1 per 30 player hits)
+        fr = E.get("onetime_frac", 0.0)
+        if fr and s.R < 5:
+            cost = E["rebirth_cost"](s.R)
+            while s.onetime_given < 10 and s.earned_run >= cost * (s.onetime_given + 1) / 10 * 0.9:
+                s.onetime_given += 1
+                s.money += fr * cost / 10
+                s.earned_run += fr * cost / 10
+        order = ORDER.index(c["id"]) + 1
+        finds = max(3.0, hits / 30.0) * (1 + 0.10 * s.perks["lucky"])
+        amt = 1 + order // 4
+        dt_ = DROPS[order - 1]
+        for m, w in dt_.items():
+            s.mats[m] += finds * amt * w / 100.0
+            s.mat_value += finds * amt * w / 100.0 * MAT_SELL[m]
+        if E.get("sell_mats"):
+            v = sum(finds * amt * w / 100.0 * MAT_SELL[m] for m, w in dt_.items()) * E["sell_mats"]
+            s.money += v
+            s.earned_run += v
         s.contract_log.append((s.t, c["id"], t, s.R, split[0] / max(1e-9, sum(split)), hits))
         s.built[c["id"]] = s.built.get(c["id"], 0) + 1
         s.events["first"].setdefault("built_" + c["id"], s.t)
@@ -608,9 +712,27 @@ def simulate(E, P, hours=12.0, seed=1, max_rebirths=8, verbose=False, record=Fal
         if need_ham and s.money > price * 3:
             s.money -= price
             open_crate(s, sp)
-        if s.gems >= E["crates"]["golden"]["gems"]:
+        # the game's IncomePerMin (Config.IncomePerMin): best unlocked contract, its target time + 20 s
+        ipm = bestc["reward"] * s.pay_mult() * 1.1 / ((bestc["target"] + 20) / 60.0)
+        s.ipm = ipm
+        if P.get("gem_policy") == "cashsafe":
+            # Gem Shop Cash Safe: 200 Gems -> 60 minutes of IncomePerMin (counts toward the Rebirth)
+            while s.gems >= 200:
+                s.gems -= 200
+                v = 60 * ipm * E.get("cash_pack_mult", 1.0)
+                s.money += v; s.earned_run += v
+                s.cash_from_packs = getattr(s, "cash_from_packs", 0.0) + v
+        elif s.gems >= E["crates"]["golden"]["gems"]:
             s.gems -= E["crates"]["golden"]["gems"]
             open_crate(s, "golden")
+        # Robux cash packs (Contractor's Bonus 99 R$ = 40 min of IncomePerMin), packs_h per hour of play
+        s.robux_pack = getattr(s, "robux_pack", 0.0) + P.get("packs_h", 0) * dt / 3600
+        while s.robux_pack >= 1:
+            s.robux_pack -= 1
+            v = 40 * ipm * E.get("cash_pack_mult", 1.0)
+            s.money += v
+            if E.get("packs_count", True): s.earned_run += v
+            s.cash_from_packs = getattr(s, "cash_from_packs", 0.0) + v
         # Robux Golden Crates (payers / whales), spread over the play time
         s.robux_golden = getattr(s, "robux_golden", 0.0) + P.get("robux_golden_h", 0) * dt / 3600
         while s.robux_golden >= 1:
