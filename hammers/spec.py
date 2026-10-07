@@ -406,7 +406,7 @@ PALETTE = {
     "fur_lt":    dict(rbx=["Fabric", [214, 196, 168], 0, 0], bl=dict(color=[0.66, 0.58, 0.46], metal=0, rough=0.95)),
     "lapis":     dict(rbx=["SmoothPlastic", [32, 64, 178], 0, 0.05], bl=dict(color=[0.02, 0.06, 0.48], metal=0.1, rough=0.25)),
     "turquoise": dict(rbx=["SmoothPlastic", [40, 206, 196], 0, 0.1], bl=dict(color=[0.03, 0.62, 0.56], metal=0, rough=0.18)),
-    "aurora_ice": dict(rbx=["Glass", [214, 240, 255], 0.3, 0.25], core=[170, 255, 220, 0.6], bl=dict(color=[0.82, 0.94, 1.0], metal=0, rough=0.02, trans=1.0, ior=1.45, emit=0.12)),
+    "aurora_ice": dict(rbx=["Glass", [150, 220, 255], 0.25, 0.25], core=[150, 255, 210, 0.55], bl=dict(color=[0.38, 0.72, 1.0], metal=0, rough=0.04, trans=0.75, ior=1.45, emit=0.35)),
     "aurora_green": dict(rbx=["Neon", [80, 255, 170], 0, 0], bl=dict(color=[0.08, 1.0, 0.45], metal=0, rough=0.4, emit=9.0)),
     "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=9.0)),
     "sand_glow": dict(rbx=["Neon", [255, 206, 96], 0, 0], bl=dict(color=[1.0, 0.62, 0.12], metal=0, rough=0.5, emit=7.0)),
@@ -1700,13 +1700,16 @@ def build_sets(H):
     # the lights: two ribbons waving along each side, green over violet
     for i, sx in enumerate((-1, 1)):
         x = sx * (w / 2 + 0.004)
-        for rb, (m, y0, ph) in enumerate((("aurora_green", 0.07, 0.0), ("aurora_violet", -0.1, 1.4))):
-            for k in range(9):
-                z = -0.42 + k * 0.105
-                y = y0 + 0.07 * math.sin(z * 7 + ph)
-                slope = 0.07 * 7 * math.cos(z * 7 + ph)
-                h.add("Light%d%d%d" % (i, rb, k), "box", (0.02, 0.06, 0.12), hp + [x, y, z], R=Rx(-math.degrees(math.atan(slope))), mat=m, cast=False)
-    h.add("Core", "ball", (0.3,), hp, mat="aurora_green", cast=False)
+        for rb, (m, y0, ph, th) in enumerate((("aurora_green", 0.12, 0.0, 0.09), ("aurora_violet", -0.02, 1.3, 0.08), ("aurora_green", -0.15, 2.6, 0.06))):
+            for k in range(10):
+                z = -0.45 + k * 0.1
+                y = y0 + 0.06 * math.sin(z * 6.5 + ph)
+                slope = 0.06 * 6.5 * math.cos(z * 6.5 + ph)
+                h.add("Light%d%d%d" % (i, rb, k), "box", (0.03, th, 0.115), hp + [x, y, z], R=Rx(-math.degrees(math.atan(slope))), mat=m, cast=False)
+    h.add("Core", "ball", (0.34,), hp, mat="aurora_green", cast=False)
+    # glowing seams along the four top and bottom edges of the crystal
+    for j, (sy, m) in enumerate(((1, "aurora_green"), (-1, "aurora_violet"))):
+        h.add("Seam%d" % j, "box", (0.36, 0.03, L - 0.24), hp + [0, sy * (w / 2 + 0.004), 0], mat=m, cast=False)
     h.headbox(hp, (0.7, 0.7, 1.4))
     h.fx("rise", hp, [[120, 255, 190], [190, 120, 255]], 4, [0.06, 0.12], area=(0.7, 0.4, 1.2))
     h.fx("stars", hp, [[255, 255, 255], [200, 255, 230]], 4, [0.08, 0.16], area=(0.8, 0.6, 1.3))
@@ -1757,8 +1760,12 @@ def build_sets(H):
     h.add("CrownBall", "ball", (0.34,), hp, mat="sea_iron")
     for i, e in enumerate((-1, 1)):
         # the arms curl up from the ends of the crown; each ends in a fluke (an arrowhead)
-        tip = chain(h, "Arm%d" % i, hp + [0, 0.02, e * 0.42], (0, 0.5, e * 1), (1, 0, 0), [(0.22, 0.17, -e * 40), (0.2, 0.15, -e * 30), (0.14, 0.13, 0)], "sea_iron", tip=False)
-        h.add("Fluke%d" % i, "box", (0.07, 0.3, 0.3), tip + [0, -0.02, 0], R=Rx(e * 45 - 90 * (e > 0)) @ Rx(0), mat="iron_lt", planes=chamfer(0.07, 0.3, 0.3, 0.13, edges="x"), cast=False)
+        d0 = unit((0, 0.35, e * 1))
+        tip = chain(h, "Arm%d" % i, hp + [0, 0.02, e * 0.42], d0, (1, 0, 0), [(0.24, 0.16, -e * 38), (0.22, 0.14, -e * 34), (0.12, 0.12, 0)], "sea_iron", tip=False)
+        dEnd = rot_axis((1, 0, 0), -e * 72) @ d0
+        # the fluke: a flat arrowhead pointing where the arm ends
+        h.add("Fluke%d" % i, "box", (0.07, 0.34, 0.3), tip + dEnd * 0.12, R=toward(dEnd), mat="iron_lt",
+              planes=[plane_through((0, 0.15, 0.17), (0, 0.17, 0)), plane_through((0, 0.15, -0.17), (0, 0.17, 0)), plane((0, -1, 0), 0.12)], cast=False)
     h.add("Shackle", "ring", (0.07, 0.18, 0.11), hp + [0, 0.24, 0], R=ALONG_X, mat="sea_iron", smooth=40)
     # rope wound round the crown, its end hanging down
     for k, z in enumerate((-0.2, -0.12, 0.12, 0.2)):
@@ -1843,14 +1850,24 @@ def build_sets(H):
         h.add("Eye%d" % i, "ball", (0.16,), hp + [sx * 0.24, 0.1, -0.16], mat="kraken_eye", cast=False)
         h.add("Pupil%d" % i, "box", (0.03, 0.12, 0.04), hp + [sx * 0.315, 0.1, -0.17], mat="ghost_eye", cast=False)
     # tentacles: two reach forward and curl under (the striking end), two sweep back and curl up
+    def tentacle(name, start, d, curl, n=11, r0=0.2, r1=0.06, step=0.085, suckers=True):
+        """a round tentacle: balls that get smaller and curl more and more (curl: degrees per ball about X)"""
+        p = np.array(start, dtype=float)
+        d = unit(d)
+        for k in range(n):
+            t = k / (n - 1)
+            r = r0 + (r1 - r0) * t
+            h.add("%s%d" % (name, k), "ball", (r * 2,), p, mat="kraken", union=name)
+            if suckers and k % 2 == 1 and k < n - 2:
+                # a pale sucker on the inside of the curl
+                inside = rot_axis((1, 0, 0), 90 if curl > 0 else -90) @ d
+                h.add("%sS%d" % (name, k), "ball", (r * 0.9,), p + inside * r * 0.72, mat="kraken_lt", cast=False)
+            p = p + d * step * (1.25 - 0.5 * t)
+            d = rot_axis((1, 0, 0), curl * (0.5 + t)) @ d
     for i, sx in enumerate((-1, 1)):
-        chain(h, "Front%d" % i, hp + [sx * 0.12, -0.12, -0.2], (sx * 0.15, -0.25, -1), (1, 0, 0),
-              [(0.26, 0.17, -25), (0.22, 0.14, -40), (0.2, 0.11, -55), (0.18, 0.08, 0)], "kraken")
-        chain(h, "Back%d" % i, hp + [sx * 0.14, -0.1, 0.3], (sx * 0.2, -0.3, 1), (1, 0, 0),
-              [(0.24, 0.15, 30), (0.22, 0.12, 45), (0.18, 0.09, 50), (0.16, 0.06, 0)], "kraken")
-    for k, z in enumerate((-0.42, -0.6)):
-        for i, sx in enumerate((-1, 1)):
-            h.add("Sucker%d%d" % (k, i), "ball", (0.07,), hp + [sx * 0.2, -0.2 - 0.04 * k, z], mat="kraken_lt", cast=False)
+        # two reach forward and curl under (the striking end), two sweep back and curl up
+        tentacle("Front%d" % i, hp + [sx * 0.13, -0.14, -0.2], (sx * 0.12, -0.2, -1), -26)
+        tentacle("Back%d" % i, hp + [sx * 0.15, -0.12, 0.28], (sx * 0.18, -0.35, 1), 24, n=10, r0=0.17)
     h.headbox(hp, (0.7, 0.8, 1.5))
     h.fx("rise", hp, [[160, 230, 255]], 4, [0.04, 0.09], area=(0.6, 0.4, 1.2))
     h.fx("sparkle", hp, [[220, 150, 255], [255, 230, 90]], 3, [0.1, 0.2], area=(0.7, 0.6, 1.3))
