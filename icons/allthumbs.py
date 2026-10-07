@@ -71,7 +71,7 @@ def i_luckboost():
     """2x Luck (30 min): a four-leaf clover, a stopwatch, a 2x badge"""
     TH.clover(loc=(-0.55, 0.5, -0.1), s=1.05)
     track(stopwatch, (0.75, -0.55, 0.85), rot=(0, 0, -10), s=0.8)
-    track(badge, "2x", (-1.2, -1.1, -0.45), s=0.68, col="#3fd36a", rot=(-30, 0, 0))
+    track(badge, "2x", (-1.2, -1.1, -0.45), s=0.68, col="#ff9a1c", rot=(-30, 0, 0))
 
 
 NEW = {"crate_builder5": i_crate_builder5, "crate_golden3": i_crate_golden3, "crate_golden10": i_crate_golden10,
