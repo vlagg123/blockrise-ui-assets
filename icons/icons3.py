@@ -16,7 +16,11 @@ import postnp
 
 ICON_SCENE, LIB_SCENE = "BlockRise Icons", "BR Library"
 RES = 372                      # 3 x 124 (atlas cell 128 with a 2 px gutter)
-OUT = os.path.join(tempfile.gettempdir(), "blockrise_icons")
+# the pipeline folder: ~/.local/share/blockrise_icons on both computers (Mac and Windows, blender/setup.py installs it),
+# else the old temp folder
+OUT = os.path.expanduser("~/.local/share/blockrise_icons")
+if not os.path.isdir(OUT):
+    OUT = os.path.join(tempfile.gettempdir(), "blockrise_icons")
 HDRI_STRENGTH = 0.75
 
 

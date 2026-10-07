@@ -19,6 +19,7 @@ import items as T
 from items import pbr, obj, bm_box, bm_cyl, bm_prism, bm_hull, bm_tube, circle, _xf
 
 OUT = os.path.join(I3.OUT, "robux")
+AIR_STARS = True
 TAU = math.tau
 
 
@@ -1088,8 +1089,8 @@ def loot_chest(loc=(0, 0, 0), rot=(0, 0, 0), s=1.0, kind="supply", open_=True, m
         CRATE_O.append(P @ Vector((0, 0, H + 0.15)))
         if mark and L.get("hammer"):
             burst_hammer(P, L["hammer"], H, L["pose"])
-        # a few sparkles in the air
-        for (x, z, r) in ((-1.75, 2.5, 0.2), (1.85, 2.2, 0.17), (-1.25, 3.7, 0.13), (1.5, 3.6, 0.15)):
+        # a few sparkles in the air (off: AIR_STARS = False, the game wants no sparkles)
+        for (x, z, r) in (((-1.75, 2.5, 0.2), (1.85, 2.2, 0.17), (-1.25, 3.7, 0.13), (1.5, 3.6, 0.15)) if AIR_STARS else ()):
             st = poly(star_pts(r, r * 0.34, 4, 90), 0.05, glow("#ffffff", 4.5), bevel=0.0, outline=False)
             st.matrix_world = P @ _xf((x, -0.3, z), (0, 0, 0))
     return P
