@@ -406,7 +406,7 @@ PALETTE = {
     "fur_lt":    dict(rbx=["Fabric", [214, 196, 168], 0, 0], bl=dict(color=[0.66, 0.58, 0.46], metal=0, rough=0.95)),
     "lapis":     dict(rbx=["SmoothPlastic", [32, 64, 178], 0, 0.05], bl=dict(color=[0.02, 0.06, 0.48], metal=0.1, rough=0.25)),
     "turquoise": dict(rbx=["SmoothPlastic", [40, 206, 196], 0, 0.1], bl=dict(color=[0.03, 0.62, 0.56], metal=0, rough=0.18)),
-    "aurora_ice": dict(rbx=["Glass", [96, 150, 236], 0.18, 0.2], core=[150, 255, 210, 0.55], bl=dict(color=[0.06, 0.16, 0.55], metal=0, rough=0.06, trans=0.35, ior=1.45, emit=0.6)),
+    "aurora_ice": dict(rbx=["Glass", [52, 84, 190], 0.12, 0.2], core=[150, 255, 210, 0.5], bl=dict(color=[0.025, 0.05, 0.22], metal=0.1, rough=0.12)),
     "aurora_green": dict(rbx=["Neon", [80, 255, 170], 0, 0], bl=dict(color=[0.08, 1.0, 0.45], metal=0, rough=0.4, emit=9.0)),
     "aurora_violet": dict(rbx=["Neon", [190, 110, 255], 0, 0], bl=dict(color=[0.5, 0.15, 1.0], metal=0, rough=0.4, emit=9.0)),
     "sand_glow": dict(rbx=["Neon", [255, 206, 96], 0, 0], bl=dict(color=[1.0, 0.62, 0.12], metal=0, rough=0.5, emit=7.0)),
@@ -1709,7 +1709,8 @@ def build_sets(H):
     h.add("Core", "ball", (0.34,), hp, mat="aurora_green", cast=False)
     # glowing seams along the four top and bottom edges of the crystal
     for j, (sy, m) in enumerate(((1, "aurora_green"), (-1, "aurora_violet"))):
-        h.add("Seam%d" % j, "box", (0.36, 0.03, L - 0.24), hp + [0, sy * (w / 2 + 0.004), 0], mat=m, cast=False)
+        for q, sx in enumerate((-1, 1)):
+            h.add("Seam%d%d" % (j, q), "box", (0.035, 0.03, L - 0.24), hp + [sx * 0.11, sy * (w / 2 + 0.004), 0], mat=m, cast=False)
     h.headbox(hp, (0.7, 0.7, 1.4))
     h.fx("rise", hp, [[120, 255, 190], [190, 120, 255]], 4, [0.06, 0.12], area=(0.7, 0.4, 1.2))
     h.fx("stars", hp, [[255, 255, 255], [200, 255, 230]], 4, [0.08, 0.16], area=(0.8, 0.6, 1.3))
