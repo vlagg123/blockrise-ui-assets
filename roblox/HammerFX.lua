@@ -901,6 +901,7 @@ local function reveal(o)
 	-- the hammer: pops in, then floats
 	local icon = new("ImageLabel", { Name = "Hammer", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(280, ICON_Y), Size = UDim2.fromOffset(270, 270),
 		BackgroundTransparency = 1, Image = o.icon or "", ScaleType = Enum.ScaleType.Fit, ZIndex = 5, Parent = box })
+	if K.guardImage then K.guardImage(icon) end -- (a picture still in Roblox's review: its older version meanwhile)
 	local isc = new("UIScale", { Scale = 0, Parent = icon })
 	task.delay(0.12, function()
 		if c.closing then return end

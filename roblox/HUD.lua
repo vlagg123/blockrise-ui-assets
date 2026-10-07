@@ -173,16 +173,17 @@ local function bigButton(parent, key, label, c1, c2, w, h, onClick)
 		new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 11), Size = UDim2.fromOffset(3, 7), BackgroundColor3 = Color3.fromRGB(70, 42, 18), BorderSizePixel = 0, ZIndex = 10, Parent = body })
 		return { group = g, shackle = sh }
 	end
-	-- little stars that fly out of the button when it unlocks
+	-- little confetti that fly out of the button when it unlocks (no sparkles)
 	local function burst()
+		local COLS = { Color3.fromRGB(255, 214, 80), Color3.fromRGB(255, 110, 160), Color3.fromRGB(90, 200, 255), Color3.fromRGB(110, 230, 120), WHITE }
 		for i = 1, 10 do
 			local a = (i / 10) * math.pi * 2 + math.random() * 0.4
-			-- (a sparkle picture: the fonts have no star character and drew empty boxes)
-			local sz = 26 + math.random(0, 10)
-			local st = new("ImageLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(sz, sz), BackgroundTransparency = 1,
-				Image = "rbxasset://textures/particles/sparkles_main.dds", ImageColor3 = (i % 2 == 0) and Color3.fromRGB(255, 236, 120) or WHITE, ZIndex = 9, Parent = b })
+			local sz = 8 + math.random(0, 5)
+			local st = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(sz, i % 2 == 0 and sz or math.floor(sz * 0.6)),
+				BackgroundColor3 = COLS[(i - 1) % #COLS + 1], BorderSizePixel = 0, Rotation = math.random(0, 90), ZIndex = 9, Parent = b })
+			if i % 3 == 0 then corner(st, sz) end
 			local d = 46 + math.random(0, 18)
-			UI.tween(st, 0.55, { Position = UDim2.new(0.5, math.cos(a) * d, 0.45, math.sin(a) * d), ImageTransparency = 1 })
+			UI.tween(st, 0.55, { Position = UDim2.new(0.5, math.cos(a) * d, 0.45, math.sin(a) * d), BackgroundTransparency = 1, Rotation = st.Rotation + 120 })
 			task.delay(0.6, function() st:Destroy() end)
 		end
 	end

@@ -86,7 +86,10 @@ function M.Show()
 				if not can then c.toast("💵 Not enough cash yet. Finish more contracts", T.red, 2.5) return end
 				local ok2, res, msg = pcall(function() return c.R.VehicleAction:InvokeServer("buy", v.id) end)
 				if ok2 and res then
-					if c.live(tok) then M.Show() end
+					-- bought: the window closes and the new car is parked right next to you
+					c.closeModal()
+					local ok3, res3, msg3 = pcall(function() return c.R.VehicleAction:InvokeServer("spawn", v.id) end)
+					if not (ok3 and res3) then c.toast("⚠️ " .. tostring(msg3 or "Can't park it here: press DRIVE in the Garage"), T.red, 3) end
 				else
 					c.toast("⚠️ " .. tostring(msg or "Can't buy that"), T.red)
 				end
@@ -156,6 +159,24 @@ end
 function M.Init(ctx)
 	c = ctx
 	UI, T, new, Config = c.UI, c.T, c.new, c.Config
+	-- a Robux ride just bought: the Garage closes and it is parked next to you (the server needs a moment to see the pass)
+	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, passId, bought)
+		if plr ~= c.player or not bought then return end
+		local v
+		for _, x in ipairs(Config.Vehicles) do
+			local p = x.pass and passOf(x)
+			if p and p.id == passId then v = x end
+		end
+		if not v then return end
+		if c.modalOpen() and c.modalTitle.Text == "Garage" then c.closeModal() end
+		task.spawn(function()
+			for _ = 1, 8 do
+				task.wait(0.75)
+				local ok3, res3 = pcall(function() return c.R.VehicleAction:InvokeServer("spawn", v.id) end)
+				if ok3 and res3 then return end
+			end
+		end)
+	end)
 	c.R.Feedback.OnClientEvent:Connect(function(kind, d)
 		if kind == "VehicleBought" then
 			c.banner("🚗 NEW VEHICLE!", d.icon .. " " .. d.name .. " is yours forever. Press SPAWN to drive it", RED1)

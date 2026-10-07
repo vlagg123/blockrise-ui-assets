@@ -71,6 +71,20 @@ K.FALLBACK = {
 	["rbxassetid://81484084637371"] = "rbxassetid://75330431497360", ["rbxassetid://72301801875933"] = "rbxassetid://104449117497713",
 	["rbxassetid://111757044275990"] = "rbxassetid://108198116543312", ["rbxassetid://140362380150130"] = "rbxassetid://117610832518353",
 	["rbxassetid://129859208894290"] = "rbxassetid://99231744226623", ["rbxassetid://90526418216758"] = "rbxassetid://89642781937720",
+	-- the hammers, the Store pictures and four training-gear pictures without sparkles (2026-10-07)
+	["rbxassetid://79621144422162"] = "rbxassetid://140017267585797", ["rbxassetid://136293287602945"] = "rbxassetid://107313245584623", ["rbxassetid://115250332513646"] = "rbxassetid://92464271681130",
+	["rbxassetid://96534178685358"] = "rbxassetid://74547073866110", ["rbxassetid://122092536358702"] = "rbxassetid://120829940524720", ["rbxassetid://117994941043100"] = "rbxassetid://129882943403564",
+	["rbxassetid://111998947682400"] = "rbxassetid://110922799386795", ["rbxassetid://126908235807818"] = "rbxassetid://106839534578056", ["rbxassetid://77112451787224"] = "rbxassetid://134714376349769",
+	["rbxassetid://128398544381380"] = "rbxassetid://94741639706514", ["rbxassetid://123265291061806"] = "rbxassetid://74436785253267", ["rbxassetid://90821017167974"] = "rbxassetid://115516317465770",
+	["rbxassetid://94175010730346"] = "rbxassetid://96724178983798", ["rbxassetid://97311092292053"] = "rbxassetid://89150929634812", ["rbxassetid://115703594722092"] = "rbxassetid://99068699750989",
+	["rbxassetid://129897267497558"] = "rbxassetid://79051832898976", ["rbxassetid://96499595381268"] = "rbxassetid://114002292478180", ["rbxassetid://80615650987774"] = "rbxassetid://139474241942444",
+	["rbxassetid://102777148756293"] = "rbxassetid://123844524251149", ["rbxassetid://77129362142929"] = "rbxassetid://123085255342882", ["rbxassetid://85854914329871"] = "rbxassetid://72451815226274",
+	["rbxassetid://138628569488985"] = "rbxassetid://129916717673380", ["rbxassetid://80286117552972"] = "rbxassetid://111149747210442", ["rbxassetid://110051828155957"] = "rbxassetid://126109143002031",
+	["rbxassetid://114944870977030"] = "rbxassetid://90790339412602", ["rbxassetid://97103017219605"] = "rbxassetid://99946262610902", ["rbxassetid://94922345578271"] = "rbxassetid://98074663629152",
+	["rbxassetid://116593067015504"] = "rbxassetid://104220772987659", ["rbxassetid://115596149082454"] = "rbxassetid://92552699421535", ["rbxassetid://97952651837523"] = "rbxassetid://88490060320126",
+	["rbxassetid://121177442701271"] = "rbxassetid://91549619059662", ["rbxassetid://91052323480380"] = "rbxassetid://130810442796727", ["rbxassetid://132614601206685"] = "rbxassetid://111400819296862",
+	["rbxassetid://104402252353849"] = "rbxassetid://113906745814581", ["rbxassetid://84733155791603"] = "rbxassetid://75200160905438", ["rbxassetid://133276331570922"] = "rbxassetid://113707203716255",
+	["rbxassetid://91011730465115"] = "rbxassetid://101924819275060", ["rbxassetid://89630917528998"] = "rbxassetid://108541104556016",
 }
 local loaded = {} -- [picture] = true (shows) / false (still waiting: use the older one)
 local function guard(img)
@@ -820,20 +834,7 @@ function K.rarityFX(box, id, o)
 			if t < 0.5 then band.Visible = true; band.Position = UDim2.fromScale(-0.4 + t / 0.5 * 1.8, 0.5) else band.Visible = false end
 		end
 	end
-	if L.stars then
-		-- (a sparkle picture, not a text glyph: the game fonts have no star character and drew empty boxes)
-		for i = 1, 3 do
-			local s = new("ImageLabel", { Name = "Star", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.18 + math.random() * 0.64, 0.16 + math.random() * 0.58),
-				Size = UDim2.fromScale(0.3, 0.3), BackgroundTransparency = 1, Image = "rbxasset://textures/particles/sparkles_main.dds", ImageColor3 = L.stars,
-				ImageTransparency = 1, ZIndex = 7, Parent = box })
-			new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height, Parent = s })
-			local ph, sp = math.random() * 6, 2.2 + math.random() * 1.6
-			anims[s] = function(now)
-				local k = math.sin(now * sp + ph)
-				s.ImageTransparency = 1 - math.max(0, k) ^ 1.5
-			end
-		end
-	end
+	-- (no twinkling stars on the cards any more: the game wants no sparkles anywhere)
 	return box
 end
 
