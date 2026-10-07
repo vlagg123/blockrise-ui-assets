@@ -1,0 +1,153 @@
+BlockRise Empire - tot ce se vinde pe Robux (7 octombrie 2026)
+Poza fiecarui item = fisierul cu acelasi numar din folderul asta (512 x 512).
+Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimite-mi ID-ul dupa ce il creezi).
+
+==================== GAME PASSES (Creator Hub > Monetization > Passes) ====================
+
+01  VIP Builder  -  199 R$  -  existent (ID 2005131359): poza noua
+    +20% cash from every contract, golden VIP name tag.
+
+02  Big Crew  -  149 R$  -  existent (ID 2006613370): poza noua
+    +3 permanent crew slots.
+
+03  2x Cash  -  499 R$  -  existent (ID 2007039661): poza noua
+    Double cash from every contract, forever.
+
+04  Super Strength  -  349 R$  -  existent (ID 2005677672): poza noua
+    Double Strength from every hit and training rep, forever.
+
+05  Auto Builder  -  399 R$  -  existent (ID 2006325688): poza noua
+    Your character keeps building on your site by itself (toggle on the HUD).
+
+06  Auto Train  -  249 R$  -  existent (ID 2005389593): poza noua
+    Keep training at the Training Yard without clicking.
+
+07  2x Gems  -  299 R$  -  existent (ID 2007015623): poza noua
+    Find twice as many Gems while you build.
+
+08  Fast Hands  -  199 R$  -  existent (ID 2006841703): poza noua
+    Swing your tools 25% faster.
+
+09  Teleporter  -  39 R$  -  existent (ID 2005785662): poza noua
+    Travel to any place in one tap with GO in Places, forever.
+
+10  Skip Build Animation  -  39 R$  -  existent (ID 2008436250): poza noua
+    Skip the camera fly-around when a building is done: straight to your reward. Turn it on / off any time in the Store.
+
+11  Quick Open  -  99 R$  -  DE CREAT
+    Press OPEN and your hammer is there at once: no spinning strip, on every crate. Turn it on / off any time in the Store.
+
+12  Auto Opener  -  199 R$  -  DE CREAT
+    An AUTO button on your crates (Inventory > CRATES): it opens all of them by itself, one after another. Forever.
+
+13  Lucky Builder  -  299 R$  -  DE CREAT
+    +100% luck in every crate: Legendary and rarer hammers drop twice as often. Forever.
+
+14  Ultra Lucky  -  899 R$  -  DE CREAT
+    +200% luck in every crate: Legendary and rarer hammers drop three times as often. Stacks with Lucky Builder. Forever.
+
+15  Night Shift  -  199 R$  -  DE CREAT
+    Your properties pay 100% while you're offline (not 50%), for up to 12 hours (not 8). Forever.
+
+16  Secret Hunter  -  1499 R$  -  DE CREAT
+    Secret and Divine hammers drop twice as often, on top of your luck. Forever.
+
+-- De pus OFF SALE (nu le sterge: cine le are le pastreaza) --
+    Thunderclap Hammer (ID 2005029676): acum e doar in Exclusive Crate.
+    Monster Truck (ID 2005731685) si Golden Supercar (ID 2004543731): off sale DUPA ce creezi produsele 45 si 46.
+
+==================== DEVELOPER PRODUCTS (Creator Hub > Monetization > Developer Products) ====================
+
+17  Starter Pack  -  99 R$  -  existent (ID 3716763280): poza noua
+    600 Gems, a Golden Crate, a Builder's Crate and 30 minutes of 2x Cash. Once per player.
+
+18  Rush Crew (15 min)  -  49 R$  -  existent (ID 3716559252): poza noua
+    Your whole crew works 2x faster for 15 minutes.
+
+19  Cash Stack  -  49 R$  -  existent (ID 3716763367): poza noua
+    Instant cash: 20 minutes of your income, right now.
+
+20  Contractor's Bonus  -  99 R$  -  existent (ID 3716559383): poza noua
+    Instant cash: 40 minutes of your income, right now.
+
+21  Cash Vault  -  199 R$  -  existent (ID 3716763403): poza noua
+    Instant cash: 1 hour 30 of your income. Best value per Robux.
+
+22  Cash Empire  -  699 R$  -  existent (ID 3716763439): poza noua
+    Instant cash: 5 hours of your income. Skip a whole evening of grinding.
+
+23  2x Cash (30 min)  -  79 R$  -  existent (ID 3716763463): poza noua
+    Double cash for 30 minutes of play.
+
+24  2x Luck (30 min)  -  99 R$  -  DE CREAT
+    +100% luck in every crate for 30 minutes of play.
+
+25  1 Lucky Spin  -  19 R$  -  existent (ID 3716763310): poza noua
+    One spin on the Lucky Spin (odds shown in the spin window).
+
+26  5 Lucky Spins  -  79 R$  -  existent (ID 3716763333): poza noua
+    Five spins on the Lucky Spin, 17% cheaper than one by one (odds shown in the spin window).
+
+27  100 Gems  -  49 R$  -  existent (ID 3716763502): poza noua
+    A handful of Gems.
+
+28  300 Gems  -  129 R$  -  existent (ID 3716763532): poza noua
+    +15% bonus Gems.
+
+29  750 Gems  -  299 R$  -  existent (ID 3716763584): poza noua
+    +25% bonus Gems.
+
+30  1,700 Gems  -  599 R$  -  existent (ID 3716763636): poza noua
+    +40% bonus Gems. Most popular!
+
+31  4,500 Gems  -  1399 R$  -  existent (ID 3716763662): poza noua
+    +60% bonus Gems.
+
+32  12,000 Gems  -  3299 R$  -  existent (ID 3716763699): poza noua
+    +80% bonus Gems. Best value!
+
+33  Builder's Crate  -  79 R$  -  DE CREAT
+    A Builder's Crate: Uncommon or better, a real shot at Legendary.
+
+34  5 Builder's Crates  -  349 R$  -  DE CREAT
+    Five Builder's Crates (save 12%).
+
+35  Golden Crate  -  249 R$  -  DE CREAT
+    A Golden Crate: Rare or better, up to Divine, and 1 in 100,000 an EXCLUSIVE hammer.
+
+36  3 Golden Crates  -  699 R$  -  DE CREAT
+    Three Golden Crates (save 6%).
+
+37  10 Golden Crates  -  2199 R$  -  DE CREAT
+    Ten Golden Crates (save 12%).
+
+38  Exclusive Crate  -  999 R$  -  DE CREAT
+    100% EXCLUSIVE: one of the 4 rarest hammers to collect: Royal Crown, Ghost, Rainbow Prism (Mythic power) or, 1 in ???, the Thunderclap (Secret power).
+
+39  3 Exclusive Crates  -  2699 R$  -  DE CREAT
+    Three Exclusive Crates: three EXCLUSIVE hammers (save 10%).
+
+40  Legends Crate  -  299 R$  -  DE CREAT (cand lansezi crate-ul)
+    A Legends Crate: Legendary or better (Viking, Pharaoh, Aurora, 1 in ??? the Chrono) and 1 in 5,000 an EXCLUSIVE hammer.
+
+41  3 Legends Crates  -  799 R$  -  DE CREAT (cand lansezi crate-ul)
+    Three Legends Crates (save 11%).
+
+42  Pirate Cove Crate  -  199 R$  -  DE CREAT (cand lansezi crate-ul)
+    One of the 4 pirate hammers, Rare to Divine (Kraken King 1 in 25,000).
+
+43  Jungle Temple Crate  -  199 R$  -  DE CREAT (cand lansezi crate-ul)
+    A Jungle Temple Crate: one of the 4 temple hammers, Rare to Mythic.
+
+44  Exclusive Hammer of the Day  -  1499 R$  -  DE CREAT
+    Today's EXCLUSIVE hammer from the Hammer Shop (the rarest rarity to collect; Mythic power, the Thunderclap Secret power), yours at once.
+
+45  Monster Truck  -  299 R$  -  DE CREAT
+    Exclusive vehicle: giant wheels, rolls over anything. Yours forever: spawn it from your Garage.
+
+46  Golden Supercar  -  599 R$  -  DE CREAT
+    Exclusive vehicle: the fastest car in BlockRise, made of pure gold. Yours forever.
+
+-- NU le crea (ciocanele zilei Epic / Legendary / Mythic raman doar pe Gems): hammer_epic, hammer_legendary, hammer_mythic.
+
+Dupa ce creezi ce scrie DE CREAT, trimite-mi ID-urile (numar + ID) si le pun eu in joc.
