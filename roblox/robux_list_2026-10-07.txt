@@ -142,7 +142,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     A Jungle Temple Crate: one of the 4 temple hammers, Rare to Mythic.
 
 44  Exclusive Hammer of the Day  -  1499 R$  -  creat (ID 3717128131)
-    Today's EXCLUSIVE hammer from the Hammer Shop (the rarest rarity to collect; Mythic power, the Thunderclap Secret power), yours at once.
+    Today's EXCLUSIVE hammer from the Hammer Shop (the rarest rarity to collect; Mythic power, the Thunderclap the strongest in the game), yours at once.   <-- THUNDER_TOP: UPDATE ON ROBLOX
 
 45  Monster Truck  -  299 R$  -  creat (ID 3717128169)
     Exclusive vehicle: giant wheels, rolls over anything. Yours forever: spawn it from your Garage.
