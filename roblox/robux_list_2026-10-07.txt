@@ -153,3 +153,9 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
 -- NU le crea (ciocanele zilei Epic / Legendary / Mythic raman doar pe Gems): hammer_epic, hammer_legendary, hammer_mythic.
 
 Dupa ce creezi ce scrie DE CREAT, trimite-mi ID-urile (numar + ID) si le pun eu in joc.
+
+47  2x Offline Cash  -  39 R$  -  DE CREAT (Developer Product; ID -> Config.Store.products offline2x.id)
+    Double the cash your properties made while you were away.
+    Imagine: BlockRise_thumbnails/Robux_2026-10-07/47_offline2x.png (Blender, stilul celorlalte 46). Butonul "x2" din fereastra
+    WELCOME BACK! apare doar cand id-ul e setat; plata da de 2 ori suma in asteptare (testat cu chitanta simulata; aceeasi
+    chitanta nu plateste de doua ori).
