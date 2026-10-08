@@ -115,7 +115,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Five Builder's Crates (save 12%).
 
 35  Golden Crate  -  249 R$  -  creat (ID 3717127707)
-    A Golden Crate: Rare or better, Secret 1 in 333, Divine 1 in 25,000.
+    A Golden Crate: Rare or better, Secret 1 in 167, Divine 1 in 5,000. Pity: Legendary or better every 20.   <-- ODDS_V7: UPDATE ON ROBLOX
 
 36  3 Golden Crates  -  699 R$  -  creat (ID 3717127744)
     Three Golden Crates (save 6%).
@@ -124,7 +124,7 @@ Nume si descriere = exact ca in joc. ID in joc 0 = inca necreat pe Roblox (trimi
     Ten Golden Crates (save 12%).
 
 38  Exclusive Crate  -  999 R$  -  creat (ID 3717127814)
-    Legendary or better: Mythic 1 in 5, Secret 1 in 22, Divine 1 in 200 and, 1 in 33, an EXCLUSIVE hammer.
+    Legendary or better: Mythic 1 in 5, Secret 1 in 22, Divine 1 in 200 and, 1 in 33, an EXCLUSIVE hammer. Pity: Secret or better every 25.   <-- ODDS_V7: UPDATE ON ROBLOX
 
 39  3 Exclusive Crates  -  2699 R$  -  creat (ID 3717127838)
     Three Exclusive Crates (save 10%).
