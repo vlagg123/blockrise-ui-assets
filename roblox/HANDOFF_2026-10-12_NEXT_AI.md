@@ -299,8 +299,12 @@ left. Everything is the same action (hit → cash → bigger building).
      gem nodes or jobs, quests, events, Rebirth prizes. They can also be bought with Robux, which already works.
   3. **Robux-only crates with better (still small) odds for exclusives.** First open the Exclusive Crate: make the 3
      models. Then add one exclusive crate per region. Always show the odds before purchase.
-  4. **A chase item like PS99's Huges:** e.g. "TITAN" versions, about 1 in 50,000 from any crate, announced to the
-     whole server. Use our own names and art, not PS99's.
+  4. **A chase item like PS99's Huges: COLOSSAL hammers** (owner: not "Titan").
+     - **Odds:** about 1 in 50,000 from any crate.
+     - **Look:** a giant version of a hammer (e.g. "Colossal Galaxy Hammer"), clearly bigger in the hand, with its own
+       aura.
+     - **Pull moment:** announced to the whole server.
+     - Use our own names and art, not PS99's.
   5. **Optional, PS99 style:** a fuse machine (5 duplicates → Golden version, Golden → Rainbow) as a sink for
      duplicates. A separate currency per region (Cash → Oil → Pearls → Moon Rock) keeps old cash from breaking new
      prices; the 2x Cash pass applies to all of them.
