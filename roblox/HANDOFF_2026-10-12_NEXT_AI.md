@@ -35,6 +35,11 @@ whole file before touching anything. Older notes: `roblox/HANDOFF_2026-10-11.md`
 
 ## 2. The owner's quality bar for UI / HUD (read twice)
 
+The owner's words (2026-10-12): *"orice update pe partea de joc si mai ales UI trebuie sa fie perfect, testat sa arate
+bine si sa fie centrat corespunzator si sa nu fie lipite chestiile, sa aiba un UI clar si perfect HUD-ul."*
+(Every game update, and especially UI, must be perfect: tested, good-looking, properly centred, nothing stuck together,
+a clear UI and a perfect HUD.)
+
 The owner rejects anything that looks "aiurea" (off). For EVERY UI or game change:
 - **Perfect on PC and on phone.** Test in the Studio device emulator (iPhone landscape, 750x361 viewport) and on PC.
   He tests in the emulator himself and reports anything that looks wrong.
@@ -208,3 +213,37 @@ Read the data yourself and connect the dots: ads → game page → join → funn
   - **Client.HammersUI:** tutorial crate auto-open.
   - **StarterPlayerScripts.HammerFX:** reveal card, KEEP placement.
   - **ReplicatedStorage.Shared.UIKit:** `UI.touch`, `UI.emulate`, `UI.button`, `UI.touchActions`.
+
+## 8. Game page text given to the owner (2026-10-12)
+
+He pastes it himself. If the page still shows the old text, remind him.
+
+```
+🏗️ Take building jobs, smash with your hammer, earn cash and grow from a rusty hammer to a huge CONSTRUCTION EMPIRE!
+
+🎁 FREE crate after your first job – in under 1 minute!
+⏰ EVENTS every 20 minutes: CASH RUSH (x2 cash) or LUCKY RUSH (x2 luck)!
+🔨 Pull hammers from Common to Mythic and DIVINE!
+👷 Hire workers and machines – they build for you!
+🏙️ Unlock bigger jobs: shops, villas, skyscrapers!
+🎰 FREE Lucky Spin + gifts just for playing!
+
+👍 Like + ⭐ Favorite for new updates!
+```
+
+Optional title tag: `BlockRise Empire [🔨 EVENTS]`. First thumbnail: the "LVL 1 → LVL 100" image.
+
+## 9. Your first session, step by step
+
+1. Ask the owner to open Roblox Studio (the place) and the Claude desktop app on his MacBook, and to open the
+   conversation there so the Studio tools connect.
+2. Read the Creator Hub data (section 5) for the days since 2026-10-11 and write him a short Romanian summary:
+   - ads: clicks → plays;
+   - new users per day;
+   - 5-minute retention;
+   - funnel per step;
+   - D1;
+   - errors;
+   - sales, including the Skip Build Animation pass.
+3. Fix P0 #1 (teleport + fall guard), test it on every site as described, run the final checks, and tell him he can publish.
+4. Then P0 #2 (clean funnel), then the P1 list. One change at a time, each one tested and shown to him.
