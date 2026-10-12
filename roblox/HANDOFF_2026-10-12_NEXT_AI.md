@@ -247,3 +247,73 @@ Optional title tag: `BlockRise Empire [🔨 EVENTS]`. First thumbnail: the "LVL 
    - sales, including the Skip Build Animation pass.
 3. Fix P0 #1 (teleport + fall guard), test it on every site as described, run the final checks, and tell him he can publish.
 4. Then P0 #2 (clean funnel), then the P1 list. One change at a time, each one tested and shown to him.
+
+## 10. The next big update: REGIONS (owner's direction, 2026-10-12 evening)
+
+**The problem (owner):** a player who likes the game reaches the last building in about 3 days and then has nothing
+left. Everything is the same action (hit → cash → bigger building).
+
+**Owner's decisions:**
+- **YES: regions, Pet Simulator 99 style.** Every zone is one Rebirth, and every 3 zones open a new region with its
+  own world and jobs. No more "100 rebirths" of the same map.
+- **YES: a portal hub at the central fountain** that takes you to other worlds: Speed Build (build a tower against the
+  clock, tiers by power, medals → chests, a tiny chance at an exclusive hammer) and a Parkour/obby world (checkpoints,
+  wide platforms for phone, chest at the end, server-checked checkpoints against exploiters). Rewards have a cooldown,
+  plus one big daily reward. Unlocked after the tutorial.
+- **NO: "Your City"** (placing your finished buildings on your own plot). Don't build it.
+- **Not decided:** construction stages that aren't clicking (demolition with physics, material deliveries by car, a
+  crane timing minigame for the top floors). Proposed; ask him before building.
+
+### Region ladder (owner's order; names are proposals)
+| Region | Zones (one Rebirth each) | Jobs / feel |
+|---|---|---|
+| 1 City (exists) | Town (R0), Suburbs (R1), Downtown (R2) | today's buildings |
+| 2 Desert / Oil | e.g. Dunes (R3), Oasis (R4), Oil Fields (R5) | oil derricks, pipelines, refinery, desert hotel |
+| 3 Atlantis (underwater) | e.g. Reef (R6), Sunken City (R7), Palace (R8) | domes, glass tunnels, coral towers, sub dock |
+| 4 Moon | e.g. Moon Base (R9), Craters (R10), Spaceport (R11) | low gravity, habitats, rocket pad |
+| later | Snow (bridges), Volcano, Space Station… | one region per update |
+
+- Rebirth = move to the next zone (the existing RebirthService cost rules can stay). It stops at the last zone that is
+  released: show "NEW REGION SOON" with a countdown. A release every 2–3 weeks gives players a reason to come back, and
+  Roblox treats regular updates well.
+- Today: Suburbs opens at Rebirth 1 and Downtown at Rebirth 2 (`Config.Zones.*.rebirth`). That already matches the
+  owner's plan for region 1.
+- Travel between unlocked regions: portals in the fountain hub (locked ones show "Rebirth 3").
+
+### The economy, PS99 style. Much of it already exists; check before rebuilding
+- **Already in the game:**
+  - Zone Supply Crates for cash: one per zone, opening with that zone's odds (`Hammers.SupplyFor(zone)`).
+  - Gem crates: Builder's Crate (150 Gems) and Golden Crate (600 Gems, up to Divine). Both are also sold for Robux.
+  - Gem Shop and Gem packs for Robux.
+  - Passes: luck, quick-open, auto-open, Skip Build Animation, etc.
+  - Trading (TradeService).
+  - X-Ray crates where paid random items are restricted (PolicyService).
+  - **Exclusive Crate (Robux):** built but closed (`soon = true`). Its hammers (Royal Crown, Ghost, Rainbow Prism) have
+    no models yet; only the Thunderclap has one.
+- **What the owner wants, and what's missing:**
+  1. **Each zone's crate costs a lot of cash, but its best hammers match the power that zone's jobs need** (like each
+     PS99 egg). With only 8 rarities, power can't keep growing through rarity alone. Give every region its own hammer
+     family with a region power multiplier: the region-2 Common beats the region-1 Legendary, and so on. Tune so the
+     usual pull from a zone's crate is enough for that zone, and a lucky pull (or a Gem crate) puts you ahead.
+  2. **Rare things only for Gems.** Gems must be farmable in every region, so a free player can earn them by playing:
+     gem nodes or jobs, quests, events, Rebirth prizes. They can also be bought with Robux, which already works.
+  3. **Robux-only crates with better (still small) odds for exclusives.** First open the Exclusive Crate: make the 3
+     models. Then add one exclusive crate per region. Always show the odds before purchase.
+  4. **A chase item like PS99's Huges:** e.g. "TITAN" versions, about 1 in 50,000 from any crate, announced to the
+     whole server. Use our own names and art, not PS99's.
+  5. **Optional, PS99 style:** a fuse machine (5 duplicates → Golden version, Golden → Rainbow) as a sink for
+     duplicates. A separate currency per region (Cash → Oil → Pearls → Moon Rock) keeps old cash from breaking new
+     prices; the 2x Cash pass applies to all of them.
+- **Existing saves: NEVER reset progress.** Before designing the migration:
+  - Read (read-only) how many Rebirths today's players have, using Data Stores Manager.
+  - Agree with the owner how players with Rebirth ≥ 3 enter the Desert: for example, they start in Desert zone 1 and
+    their old Rebirth multipliers become a one-time bonus.
+- **Build order:**
+  1. The P0 fixes above.
+  2. Open the Exclusive Crate.
+  3. The portal hub with Speed Build and Parkour.
+  4. Region 2, the Desert: map, jobs, hammer family, crates, the rebirth into it, the migration.
+  5. Then one region per update.
+
+  Every map and UI must pass section 2 on PC and phone, and phone performance must be checked with the new maps
+  (StreamingEnabled).
