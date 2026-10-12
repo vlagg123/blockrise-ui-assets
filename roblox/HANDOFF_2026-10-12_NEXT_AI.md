@@ -264,60 +264,56 @@ left. Everything is the same action (hit → cash → bigger building).
 - **Not decided:** construction stages that aren't clicking (demolition with physics, material deliveries by car, a
   crane timing minigame for the top floors). Proposed; ask him before building.
 
-### Region ladder (owner's order; names are proposals)
-| Region | Zones (one Rebirth each) | Jobs / feel |
-|---|---|---|
-| 1 City (exists) | Town (R0), Suburbs (R1), Downtown (R2) | today's buildings |
-| 2 Desert / Oil | e.g. Dunes (R3), Oasis (R4), Oil Fields (R5) | oil derricks, pipelines, refinery, desert hotel |
-| 3 Atlantis (underwater) | e.g. Reef (R6), Sunken City (R7), Palace (R8) | domes, glass tunnels, coral towers, sub dock |
-| 4 Moon | e.g. Moon Base (R9), Craters (R10), Spaceport (R11) | low gravity, habitats, rocket pad |
-| later | Snow (bridges), Volcano, Space Station… | one region per update |
+### The full plan: `roblox/ECONOMY_V6_REGIONS.md` (economy + regions, written 2026-10-12 late)
+Read it before building anything for the regions. It is written in Romanian for the owner; the numbers come from
+`tools/econ/v6_regions.py`, so re-run that after any rule change. Section 11 of that file lists what the owner still
+has to confirm.
 
-- Rebirth = move to the next zone (the existing RebirthService cost rules can stay). It stops at the last zone that is
-  released: show "NEW REGION SOON" with a countdown. A release every 2–3 weeks gives players a reason to come back, and
-  Roblox treats regular updates well.
-- Today: Suburbs opens at Rebirth 1 and Downtown at Rebirth 2 (`Config.Zones.*.rebirth`). That already matches the
-  owner's plan for region 1.
-- Travel between unlocked regions: portals in the fountain hub (locked ones show "Rebirth 3").
+**The plan in brief:**
+- **Zones and Rebirths:** 9 zones, Rebirth 0–8.
+  - City: Town, Suburbs, Downtown. Downtown gets all 5 buildings at R2; `reqRebirth` 3/4/5 go away.
+  - Desert: Dunes Outpost (R3), Oasis (R4), Oil Fields (R5).
+  - Moon: Moon Base (R6), Crater City (R7), Spaceport (R8).
+  - Later regions are only ever added after the Moon.
+- **One currency (Cash).** City rewards stay as they are; new buildings continue at x2.8 reward and x1.6 XP per
+  building.
+- **Pacing targets** (active free player, hours of play):
+  - Desert at ~6 h (day ~4 at 2 h/day);
+  - Moon at ~21 h;
+  - the end of the Moon at ~46 h (day ~24).
 
-### The economy, PS99 style. Much of it already exists; check before rebuilding
-- **Already in the game:**
-  - Zone Supply Crates for cash: one per zone, opening with that zone's odds (`Hammers.SupplyFor(zone)`).
-  - Gem crates: Builder's Crate (150 Gems) and Golden Crate (600 Gems, up to Divine). Both are also sold for Robux.
-  - Gem Shop and Gem packs for Robux.
-  - Passes: luck, quick-open, auto-open, Skip Build Animation, etc.
-  - Trading (TradeService).
-  - X-Ray crates where paid random items are restricted (PolicyService).
-  - **Exclusive Crate (Robux):** built but closed (`soon = true`). Its hammers (Royal Crown, Ghost, Rainbow Prism) have
-    no models yet; only the Thunderclap has one.
-- **What the owner wants, and what's missing:**
-  1. **Each zone's crate costs a lot of cash, but its best hammers match the power that zone's jobs need** (like each
-     PS99 egg). With only 8 rarities, power can't keep growing through rarity alone. Give every region its own hammer
-     family with a region power multiplier: the region-2 Common beats the region-1 Legendary, and so on. Tune so the
-     usual pull from a zone's crate is enough for that zone, and a lucky pull (or a Gem crate) puts you ahead.
-  2. **Rare things only for Gems.** Gems must be farmable in every region, so a free player can earn them by playing:
-     gem nodes or jobs, quests, events, Rebirth prizes. They can also be bought with Robux, which already works.
-  3. **Robux-only crates with better (still small) odds for exclusives.** First open the Exclusive Crate: make the 3
-     models. Then add one exclusive crate per region. Always show the odds before purchase.
-  4. **A chase item like PS99's Huges: COLOSSAL hammers** (owner: not "Titan").
-     - **Odds:** about 1 in 50,000 from any crate.
-     - **Look:** a giant version of a hammer (e.g. "Colossal Galaxy Hammer"), clearly bigger in the hand, with its own
-       aura.
-     - **Pull moment:** announced to the whole server.
-     - Use our own names and art, not PS99's.
-  5. **Optional, PS99 style:** a fuse machine (5 duplicates → Golden version, Golden → Rainbow) as a sink for
-     duplicates. A separate currency per region (Cash → Oil → Pearls → Moon Rock) keeps old cash from breaking new
-     prices; the 2x Cash pass applies to all of them.
-- **Existing saves: NEVER reset progress.** Before designing the migration:
-  - Read (read-only) how many Rebirths today's players have, using Data Stores Manager.
-  - Agree with the owner how players with Rebirth ≥ 3 enter the Desert: for example, they start in Desert zone 1 and
-    their old Rebirth multipliers become a one-time bonus.
-- **Build order:**
-  1. The P0 fixes above.
-  2. Open the Exclusive Crate.
-  3. The portal hub with Speed Build and Parkour.
-  4. Region 2, the Desert: map, jobs, hammer family, crates, the rebirth into it, the migration.
-  5. Then one region per update.
+  Today the content runs out at ~13 h.
+- **Zone Crates (cash):**
+  - Fixed price per zone, equal to 2.5 builds of the zone's first building at entry.
+  - Physical stands in each zone (OPEN 1 / x3 / x8 / AUTO).
+  - Odds by the zone's place in its region; pity Epic+ every 40.
+  - 3 free Welcome Crates on entering a zone; the Daily Crate becomes 3 zone crates.
+- **Hammer families:** x16 per region (a Desert Common = a City Legendary).
+  - Builder's / Golden / Hammer of the Day give your highest region's family.
+- **COLOSSAL:**
+  - One per region: x2 that region's Divine.
+  - Odds: 1 in 100,000 per zone crate, 1 in 25,000 per Golden, 1 in 2,500 per Exclusive.
+  - Announced to the server and tradable.
+- **New Robux items:**
+  - an Exclusive Crate per region, limited until the next region;
+  - a Region Pack, 299 R$, once per region;
+  - passes Open x3 (299 R$) and Open x8 (999 R$).
+- **Zone Mastery:** 25 / 100 / 250 builds → +10 / 25 / 50% cash in that zone.
+- **Migration** (no reset): new field `Zone` = min(Rebirths + 1, 4), so R≥3 → Dunes Outpost. The Rebirth bonus is
+  kept.
 
-  Every map and UI must pass section 2 on PC and phone, and phone performance must be checked with the new maps
-  (StreamingEnabled).
+**Correction to earlier notes:**
+- The Exclusive Crate is LIVE (product 3717127814, 999 R$; pity Secret+ every 25). So are Legends (999 R$),
+  Pirate Cove and Jungle Temple (199 R$), all live since 2026-10-08 according to `roblox/robux_list_2026-10-07.txt`.
+- Builder's / Golden cost 200 / 750 Gems (Economy v4), not 150 / 600.
+- The `roblox/*.lua` copies in the repo are from 2026-10-07 13:52, before Economy v4. Always read the live scripts in
+  Studio.
+
+**Build order:**
+1. The P0 fixes above.
+2. **DESERT UPDATE** (V6 part 1, with the economy changes and the migration).
+3. **PORTALS UPDATE:** the hub with Speed Build and Parkour.
+4. **MOON UPDATE.**
+
+Section 9 of the V6 file has the tuning method and the acceptance checks. Every map and UI must pass section 2 here
+on PC and phone, and phone performance must be checked with the new maps (StreamingEnabled).
