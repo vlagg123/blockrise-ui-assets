@@ -88,6 +88,16 @@ The owner rejects anything that looks "aiurea" (off). For EVERY UI or game chang
 ## 4. Open work, in priority order
 
 ### P0: must be done before any more ad money
+**DONE in Studio on 2026-10-13 (TELEPORT_FIX, FUNNEL_V8), waiting for the owner's publish.** Details are in
+`roblox/STUDIO_2026-10-13.md`.
+- `Construction:StandPoint()` is the stand point in front of the plot (Construction module).
+- Main publishes it on the job state as `StandPoint` / `StandLook`. `autoFirstJob`, LocationsUI GO-to-site and the rookie
+  trip all use it.
+- A Client guard handles two cases:
+  - a building piece around your body moves you to the stand point;
+  - below Y -8, you are put back at your site, on the ground above you, or at the spawn.
+- The separate funnel "Tutorial v8" logs only builders who started at step 1.
+
 1. **Teleport puts players ON the foundation, and the walls push them under the map** (owner, 2026-10-12, live).
    - Cause: LocationsUI.Go("site") stands 6 studs from the job's `WorkPoint`, toward the map centre; `autoFirstJob`
      does the same at 9 studs. That point is often inside the building's footprint. New walls spawn over the player,
