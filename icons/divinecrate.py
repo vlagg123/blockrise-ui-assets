@@ -3,6 +3,8 @@
 # and the Celestial Hammer (a Divine hammer) standing out of it, two white-violet gems at its feet. No sparkles in the air.
 #   crate_divine    the game picture (256 px, transparent) and the product card (512 px)
 #   crate_divine3   three chests (the 3-pack's product card)
+# The Creator Hub thumbnails (icons/cards/crate_divine*.png, 512 px) are in the premium round look of thumbs.py (deep
+# violet backdrop, spotlight, gold ring), like every other product: see divinethumbs_render.py.
 # Run in Blender after blender/setup.py:  import divinecrate; divinecrate.render()
 import robux as R
 
