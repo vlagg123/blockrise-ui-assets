@@ -1,0 +1,589 @@
+[
+ {
+  "i": 1,
+  "place": "site",
+  "title": "Build your first fence",
+  "crate": "supply",
+  "target": 1,
+  "gems": 5,
+  "stat": "Completed",
+  "cash": 100
+ },
+ {
+  "i": 2,
+  "place": "hire",
+  "title": "Hire a worker",
+  "target": 1,
+  "gems": 5,
+  "stat": "Workers",
+  "cash": 100
+ },
+ {
+  "i": 3,
+  "place": "gearshop",
+  "title": "Training gloves",
+  "target": 2,
+  "gems": 5,
+  "stat": "GearTier",
+  "cash": 100
+ },
+ {
+  "i": 4,
+  "place": "tires",
+  "title": "Get stronger",
+  "target": 10,
+  "gems": 5,
+  "stat": "TrainReps",
+  "cash": 100
+ },
+ {
+  "i": 5,
+  "place": "machines",
+  "title": "Your first machine",
+  "target": 1,
+  "gems": 5,
+  "stat": "MachinesOwned",
+  "cash": 150
+ },
+ {
+  "i": 6,
+  "place": "board",
+  "title": "Your second job",
+  "target": 2,
+  "gems": 5,
+  "stat": "Completed",
+  "cash": 200
+ },
+ {
+  "i": 7,
+  "place": "tires",
+  "title": "Train for your next building",
+  "crate": "builder",
+  "target": 1,
+  "gems": 15,
+  "stat": "VisitedGym",
+  "cash": 500
+ },
+ {
+  "title": "Build the Garden Shed",
+  "stat": "Built_shed",
+  "target": 1,
+  "cash": 200,
+  "gems": 5,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Hire 2 workers",
+  "stat": "Workers",
+  "target": 2,
+  "cash": 300,
+  "gems": 10,
+  "crate": "builder",
+  "place": "hire"
+ },
+ {
+  "title": "Build the Brick Garage",
+  "stat": "Built_garage",
+  "target": 1,
+  "cash": 500,
+  "gems": 10,
+  "crate": "supply",
+  "place": "board"
+ },
+ {
+  "title": "Your first upgrade",
+  "stat": "DeptLevels",
+  "target": 1,
+  "cash": 400,
+  "gems": 5,
+  "crate": null,
+  "place": "upgrades"
+ },
+ {
+  "title": "Build the Family House",
+  "stat": "Built_house",
+  "target": 1,
+  "cash": 1000,
+  "gems": 10,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Lifting Belt",
+  "stat": "GearTier",
+  "target": 3,
+  "cash": 500,
+  "gems": 10,
+  "crate": null,
+  "place": "gearshop"
+ },
+ {
+  "title": "Build the Corner Shop",
+  "stat": "Built_shop",
+  "target": 1,
+  "cash": 2500,
+  "gems": 15,
+  "crate": "supply",
+  "place": "board"
+ },
+ {
+  "title": "Build the Corner Bakery",
+  "stat": "Built_bakery",
+  "target": 1,
+  "cash": 3000,
+  "gems": 10,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Open 10 Town crates",
+  "stat": "CratesOpened",
+  "target": 10,
+  "cash": 2000,
+  "gems": 10,
+  "crate": null,
+  "place": "shop"
+ },
+ {
+  "title": "Build the Car Wash",
+  "stat": "Built_carwash",
+  "target": 1,
+  "cash": 4000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "A crew of 4",
+  "stat": "Workers",
+  "target": 4,
+  "cash": 3000,
+  "gems": 10,
+  "crate": null,
+  "place": "hire"
+ },
+ {
+  "title": "Build the Town Clinic",
+  "stat": "Built_clinic",
+  "target": 1,
+  "cash": 5000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Fire Station",
+  "stat": "Built_firestation",
+  "target": 1,
+  "cash": 7000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Town Hall",
+  "stat": "Built_townhall",
+  "target": 1,
+  "cash": 10000,
+  "gems": 20,
+  "crate": "builder",
+  "place": "board"
+ },
+ {
+  "title": "Level 12 \u2192 Rebirth 1",
+  "stat": "Rebirths",
+  "target": 1,
+  "cash": 5000,
+  "gems": 25,
+  "crate": "builder",
+  "place": "rebirth"
+ },
+ {
+  "title": "Build the Villa",
+  "stat": "Built_villa",
+  "target": 1,
+  "cash": 300000,
+  "gems": 10,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Concrete Mixer",
+  "stat": "Owns_mixer",
+  "target": 1,
+  "cash": 300000,
+  "gems": 10,
+  "crate": null,
+  "place": "machines"
+ },
+ {
+  "title": "A crew of 6",
+  "stat": "Workers",
+  "target": 6,
+  "cash": 500000,
+  "gems": 10,
+  "crate": null,
+  "place": "hire"
+ },
+ {
+  "title": "An upgrade at level 5",
+  "stat": "DeptMax",
+  "target": 5,
+  "cash": 500000,
+  "gems": 10,
+  "crate": null,
+  "place": "upgrades"
+ },
+ {
+  "title": "Build the Warehouse",
+  "stat": "Built_warehouse",
+  "target": 1,
+  "cash": 1000000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "A Builder's Order",
+  "stat": "BuilderOrders",
+  "target": 1,
+  "cash": 1500000,
+  "gems": 15,
+  "crate": null,
+  "place": "missions"
+ },
+ {
+  "title": "Your first trade-up",
+  "stat": "TradeUps",
+  "target": 1,
+  "cash": 1500000,
+  "gems": 15,
+  "crate": null,
+  "place": "tradeup"
+ },
+ {
+  "title": "Build the Apartments",
+  "stat": "Built_apartments",
+  "target": 1,
+  "cash": 3000000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Luxury Villa",
+  "stat": "Built_luxvilla",
+  "target": 1,
+  "cash": 7000000,
+  "gems": 20,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Distribution Center",
+  "stat": "Built_distcenter",
+  "target": 1,
+  "cash": 8000000,
+  "gems": 20,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Shopping Plaza",
+  "stat": "Built_plaza",
+  "target": 1,
+  "cash": 4000000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Your first property",
+  "stat": "PropertyCount",
+  "target": 1,
+  "cash": 4000000,
+  "gems": 15,
+  "crate": null,
+  "place": "company"
+ },
+ {
+  "title": "Build the Sports Arena",
+  "stat": "Built_arena",
+  "target": 1,
+  "cash": 5000000,
+  "gems": 15,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Hospital",
+  "stat": "Built_hospital",
+  "target": 1,
+  "cash": 7000000,
+  "gems": 20,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Water Park",
+  "stat": "Built_waterpark",
+  "target": 1,
+  "cash": 10000000,
+  "gems": 20,
+  "crate": null,
+  "place": "board"
+ },
+ {
+  "title": "Build the Suburb Mall",
+  "stat": "Built_mall",
+  "target": 1,
+  "cash": 15000000,
+  "gems": 25,
+  "crate": "builder",
+  "place": "board"
+ },
+ {
+  "title": "Level 35 \u2192 Rebirth 2",
+  "stat": "Rebirths",
+  "target": 2,
+  "cash": 9000000,
+  "gems": 25,
+  "crate": "golden",
+  "place": "rebirth"
+ },
+ {
+  "title": "Build the Office Tower",
+  "stat": "Built_office",
+  "target": 1,
+  "cash": 40000000,
+  "gems": 15,
+  "crate": null,
+  "place": "downtown"
+ },
+ {
+  "title": "Builder's Helmet I",
+  "stat": "Helmet",
+  "target": 1,
+  "cash": 40000000,
+  "gems": 15,
+  "crate": null,
+  "place": "upgrades"
+ },
+ {
+  "title": "Buy the Crane",
+  "stat": "Owns_crane",
+  "target": 1,
+  "cash": 40000000,
+  "gems": 15,
+  "crate": null,
+  "place": "machines"
+ },
+ {
+  "title": "Build the Grand Hotel",
+  "stat": "Built_hotel",
+  "target": 1,
+  "cash": 100000000,
+  "gems": 20,
+  "crate": null,
+  "place": "downtown"
+ },
+ {
+  "title": "Build the Bank Tower",
+  "stat": "Built_banktower",
+  "target": 1,
+  "cash": 100000000,
+  "gems": 20,
+  "crate": null,
+  "place": "downtown"
+ },
+ {
+  "title": "A Star Shop perk",
+  "stat": "StarPerks",
+  "target": 1,
+  "cash": 100000000,
+  "gems": 15,
+  "crate": null,
+  "place": "rebirth"
+ },
+ {
+  "title": "Build the Concert Hall",
+  "stat": "Built_concert",
+  "target": 1,
+  "cash": 120000000,
+  "gems": 20,
+  "crate": null,
+  "place": "downtown"
+ },
+ {
+  "title": "Build the City Museum",
+  "stat": "Built_museum",
+  "target": 1,
+  "cash": 160000000,
+  "gems": 20,
+  "crate": null,
+  "place": "downtown"
+ },
+ {
+  "title": "Build the Twin Towers",
+  "stat": "Built_twintowers",
+  "target": 1,
+  "cash": 220000000,
+  "gems": 20,
+  "crate": null,
+  "place": "downtown"
+ },
+ {
+  "title": "Build the City Stadium",
+  "stat": "Built_stadium",
+  "target": 1,
+  "cash": 300000000,
+  "gems": 25,
+  "crate": "golden",
+  "place": "downtown"
+ },
+ {
+  "title": "A Golden Order",
+  "stat": "GoldenOrders",
+  "target": 1,
+  "cash": 300000000,
+  "gems": 20,
+  "crate": null,
+  "place": "missions"
+ },
+ {
+  "title": "Level 55 \u2192 Rebirth 3",
+  "stat": "Rebirths",
+  "target": 3,
+  "cash": 700000000,
+  "gems": 25,
+  "crate": null,
+  "place": "rebirth"
+ },
+ {
+  "i": 38,
+  "place": "downtown",
+  "title": "Build the Skyscraper",
+  "target": 1,
+  "gems": 20,
+  "stat": "Built_skyscraper",
+  "cash": 3000000000
+ },
+ {
+  "i": 39,
+  "place": "upgrades",
+  "title": "Builder's Helmet II",
+  "target": 2,
+  "gems": 20,
+  "stat": "Helmet",
+  "cash": 3000000000
+ },
+ {
+  "i": 40,
+  "place": "rebirth",
+  "title": "Level 75 \u2192 Rebirth 4",
+  "target": 4,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 6000000000
+ },
+ {
+  "i": 41,
+  "place": "downtown",
+  "title": "Build the Corporate HQ",
+  "target": 1,
+  "gems": 20,
+  "stat": "Built_hq",
+  "cash": 20000000000
+ },
+ {
+  "i": 42,
+  "place": "upgrades",
+  "title": "Builder's Helmet III",
+  "target": 3,
+  "gems": 20,
+  "stat": "Helmet",
+  "cash": 20000000000
+ },
+ {
+  "i": 43,
+  "place": "rebirth",
+  "title": "Level 100 \u2192 Rebirth 5",
+  "target": 5,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 40000000000
+ },
+ {
+  "i": 44,
+  "place": "downtown",
+  "title": "Build the Landmark Spire",
+  "target": 1,
+  "gems": 20,
+  "stat": "Built_spire",
+  "cash": 80000000000
+ },
+ {
+  "i": 45,
+  "place": "upgrades",
+  "title": "Builder's Helmet IV",
+  "target": 4,
+  "gems": 20,
+  "stat": "Helmet",
+  "cash": 80000000000
+ },
+ {
+  "i": 46,
+  "place": "rebirth",
+  "title": "Level 125 \u2192 Rebirth 6",
+  "target": 6,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 160000000000
+ },
+ {
+  "i": 47,
+  "place": "upgrades",
+  "title": "Builder's Helmet V",
+  "target": 5,
+  "gems": 20,
+  "stat": "Helmet",
+  "cash": 200000000000
+ },
+ {
+  "i": 48,
+  "place": "rebirth",
+  "title": "Level 145 \u2192 Rebirth 7",
+  "target": 7,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 600000000000
+ },
+ {
+  "i": 49,
+  "place": "rebirth",
+  "title": "Level 165 \u2192 Rebirth 8",
+  "target": 8,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 2400000000000
+ },
+ {
+  "i": 50,
+  "place": "rebirth",
+  "title": "Level 185 \u2192 Rebirth 9",
+  "target": 9,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 7200000000000
+ },
+ {
+  "i": 51,
+  "place": "rebirth",
+  "title": "Level 205 \u2192 Rebirth 10",
+  "target": 10,
+  "gems": 25,
+  "stat": "Rebirths",
+  "cash": 21600000000000
+ }
+]

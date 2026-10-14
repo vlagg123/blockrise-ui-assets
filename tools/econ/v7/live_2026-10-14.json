@@ -1,0 +1,1087 @@
+{
+ "stations": [
+  {
+   "id": "tires",
+   "mult": 1,
+   "req": 0
+  },
+  {
+   "id": "beam",
+   "mult": 1.5,
+   "req": 4000
+  },
+  {
+   "id": "block",
+   "mult": 2.5,
+   "req": 150000
+  },
+  {
+   "id": "hoist",
+   "mult": 4,
+   "req": 5000000
+  }
+ ],
+ "machineMax": 10,
+ "gemshop": [
+  {
+   "id": "b_cash",
+   "gems": 60,
+   "kind": "boost"
+  },
+  {
+   "id": "b_strength",
+   "gems": 50,
+   "kind": "boost"
+  },
+  {
+   "id": "b_power",
+   "gems": 50,
+   "kind": "boost"
+  },
+  {
+   "id": "b_crew",
+   "gems": 40,
+   "kind": "boost"
+  },
+  {
+   "id": "cashbag",
+   "gems": 40,
+   "kind": "cash"
+  },
+  {
+   "id": "cashsafe",
+   "gems": 200,
+   "kind": "cash"
+  },
+  {
+   "id": "finish",
+   "gems": 0,
+   "kind": "finish"
+  },
+  {
+   "id": "crewslot",
+   "gems": 300,
+   "kind": "crewslot"
+  }
+ ],
+ "contracts": [
+  {
+   "reqStrength": 0,
+   "zone": "town",
+   "id": "fence",
+   "xp": 25,
+   "rep": 1,
+   "order": 1,
+   "reqCrew": 0,
+   "name": "Repair Fence",
+   "workMult": 2.926,
+   "reqRebirth": 0,
+   "targetTime": 33,
+   "blueprint": "Fence",
+   "reward": 60
+  },
+  {
+   "reqStrength": 80,
+   "zone": "town",
+   "id": "shed",
+   "xp": 55,
+   "rep": 2,
+   "order": 2,
+   "reqCrew": 0,
+   "name": "Garden Shed",
+   "workMult": 5.363940805602635,
+   "reqRebirth": 0,
+   "targetTime": 48,
+   "blueprint": "Shed",
+   "reward": 190
+  },
+  {
+   "reqStrength": 750,
+   "zone": "town",
+   "id": "garage",
+   "xp": 120,
+   "rep": 3,
+   "order": 3,
+   "reqCrew": 1,
+   "name": "Brick Garage",
+   "workMult": 3.9652346970888717,
+   "reqRebirth": 0,
+   "targetTime": 63,
+   "blueprint": "Garage",
+   "reward": 520
+  },
+  {
+   "reqStrength": 2000,
+   "zone": "town",
+   "id": "house",
+   "xp": 300,
+   "rep": 5,
+   "order": 4,
+   "reqCrew": 2,
+   "name": "Small Family House",
+   "workMult": 17.165356619026927,
+   "reqRebirth": 0,
+   "targetTime": 78,
+   "blueprint": "House",
+   "reward": 1600
+  },
+  {
+   "reqStrength": 4000,
+   "zone": "town",
+   "id": "shop",
+   "xp": 620,
+   "rep": 8,
+   "order": 5,
+   "reqCrew": 3,
+   "name": "Corner Shop",
+   "workMult": 20.59880195956046,
+   "reqRebirth": 0,
+   "targetTime": 93,
+   "blueprint": "CornerShop",
+   "reward": 4200
+  },
+  {
+   "reqStrength": 15000,
+   "zone": "suburbs",
+   "id": "villa",
+   "xp": 1300,
+   "rep": 12,
+   "order": 6,
+   "reqCrew": 4,
+   "name": "Two-Story Villa",
+   "workMult": 47.82195944275662,
+   "reqRebirth": 1,
+   "targetTime": 108,
+   "blueprint": "Villa",
+   "reward": 14000
+  },
+  {
+   "reqStrength": 20000,
+   "zone": "suburbs",
+   "id": "warehouse",
+   "xp": 2100,
+   "rep": 18,
+   "order": 7,
+   "reqCrew": 5,
+   "name": "Logistics Warehouse",
+   "workMult": 69.70252653280583,
+   "reqRebirth": 1,
+   "targetTime": 120,
+   "blueprint": "Warehouse",
+   "reward": 32000
+  },
+  {
+   "reqStrength": 50000,
+   "zone": "suburbs",
+   "id": "apartments",
+   "xp": 3600,
+   "rep": 26,
+   "order": 8,
+   "reqCrew": 6,
+   "name": "Apartment Block",
+   "workMult": 103.33683865908128,
+   "reqRebirth": 1,
+   "targetTime": 132,
+   "blueprint": "Apartments",
+   "reward": 85000
+  },
+  {
+   "reqStrength": 600000,
+   "zone": "suburbs",
+   "id": "luxvilla",
+   "xp": 6000,
+   "rep": 36,
+   "order": 9,
+   "reqCrew": 6,
+   "name": "Luxury Villa",
+   "workMult": 1096.702446917337,
+   "reqRebirth": 1,
+   "targetTime": 144,
+   "blueprint": "LuxuryVilla",
+   "reward": 210000
+  },
+  {
+   "reqStrength": 2500000,
+   "zone": "suburbs",
+   "id": "distcenter",
+   "xp": 9000,
+   "rep": 50,
+   "order": 10,
+   "reqCrew": 6,
+   "name": "Distribution Center",
+   "workMult": 3785.223414648077,
+   "reqRebirth": 1,
+   "targetTime": 158,
+   "blueprint": "DistributionCenter",
+   "reward": 520000
+  },
+  {
+   "reqStrength": 4900000,
+   "zone": "downtown",
+   "id": "office",
+   "xp": 15000,
+   "rep": 70,
+   "order": 11,
+   "reqCrew": 8,
+   "name": "Glass Office Tower",
+   "workMult": 3306.344175627776,
+   "reqRebirth": 2,
+   "targetTime": 173,
+   "blueprint": "OfficeTower",
+   "reward": 1600000
+  },
+  {
+   "reqStrength": 25000000,
+   "zone": "downtown",
+   "id": "hotel",
+   "xp": 24000,
+   "rep": 95,
+   "order": 12,
+   "reqCrew": 8,
+   "name": "Grand Hotel",
+   "workMult": 18758.383857554396,
+   "reqRebirth": 2,
+   "targetTime": 188,
+   "blueprint": "GrandHotel",
+   "reward": 4500000
+  },
+  {
+   "reqStrength": 150000000,
+   "zone": "downtown",
+   "id": "skyscraper",
+   "xp": 38000,
+   "rep": 125,
+   "order": 13,
+   "reqCrew": 8,
+   "name": "Skyscraper",
+   "workMult": 89917.2319095717,
+   "reqRebirth": 3,
+   "targetTime": 203,
+   "blueprint": "Skyscraper",
+   "reward": 14000000
+  },
+  {
+   "reqStrength": 400000000,
+   "zone": "downtown",
+   "id": "hq",
+   "xp": 60000,
+   "rep": 160,
+   "order": 14,
+   "reqCrew": 8,
+   "name": "Corporate HQ",
+   "workMult": 480635.5414656517,
+   "reqRebirth": 4,
+   "targetTime": 218,
+   "blueprint": "CorporateHQ",
+   "reward": 45000000
+  },
+  {
+   "reqStrength": 1500000000,
+   "zone": "downtown",
+   "id": "spire",
+   "xp": 100000,
+   "rep": 200,
+   "order": 15,
+   "reqCrew": 8,
+   "name": "Landmark Spire",
+   "workMult": 1117381.0428664216,
+   "reqRebirth": 5,
+   "targetTime": 240,
+   "blueprint": "LandmarkSpire",
+   "reward": 150000000
+  }
+ ],
+ "road": [
+  {
+   "i": 1,
+   "place": "site",
+   "title": "Build your first fence",
+   "crate": "supply",
+   "target": 1,
+   "gems": 5,
+   "stat": "Completed",
+   "cash": 100
+  },
+  {
+   "i": 2,
+   "place": "hire",
+   "title": "Hire a worker",
+   "target": 1,
+   "gems": 5,
+   "stat": "Workers",
+   "cash": 100
+  },
+  {
+   "i": 3,
+   "place": "gearshop",
+   "title": "Training gloves",
+   "target": 2,
+   "gems": 5,
+   "stat": "GearTier",
+   "cash": 100
+  },
+  {
+   "i": 4,
+   "place": "tires",
+   "title": "Get stronger",
+   "target": 10,
+   "gems": 5,
+   "stat": "TrainReps",
+   "cash": 100
+  },
+  {
+   "i": 5,
+   "place": "machines",
+   "title": "Your first machine",
+   "target": 1,
+   "gems": 5,
+   "stat": "MachinesOwned",
+   "cash": 150
+  },
+  {
+   "i": 6,
+   "place": "board",
+   "title": "Your second job",
+   "target": 2,
+   "gems": 5,
+   "stat": "Completed",
+   "cash": 200
+  },
+  {
+   "i": 7,
+   "place": "tires",
+   "title": "Train for your next building",
+   "crate": "builder",
+   "target": 1,
+   "gems": 15,
+   "stat": "VisitedGym",
+   "cash": 500
+  },
+  {
+   "i": 8,
+   "place": "board",
+   "title": "Build the Garden Shed",
+   "target": 1,
+   "gems": 5,
+   "stat": "Built_shed",
+   "cash": 200
+  },
+  {
+   "i": 9,
+   "place": "hire",
+   "title": "Hire 2 workers",
+   "crate": "builder",
+   "target": 2,
+   "gems": 10,
+   "stat": "Workers",
+   "cash": 300
+  },
+  {
+   "i": 10,
+   "place": "board",
+   "title": "Build the Brick Garage",
+   "crate": "supply",
+   "target": 1,
+   "gems": 10,
+   "stat": "Built_garage",
+   "cash": 500
+  },
+  {
+   "i": 11,
+   "place": "upgrades",
+   "title": "Your first upgrade",
+   "target": 1,
+   "gems": 5,
+   "stat": "DeptLevels",
+   "cash": 400
+  },
+  {
+   "i": 12,
+   "place": "board",
+   "title": "Build the Family House",
+   "target": 1,
+   "gems": 10,
+   "stat": "Built_house",
+   "cash": 1000
+  },
+  {
+   "i": 13,
+   "place": "company",
+   "title": "Your first property",
+   "target": 1,
+   "gems": 10,
+   "stat": "PropertyCount",
+   "cash": 800
+  },
+  {
+   "i": 14,
+   "place": "missions",
+   "title": "Today's missions",
+   "target": 1,
+   "gems": 10,
+   "stat": "DailySets",
+   "cash": 800
+  },
+  {
+   "i": 15,
+   "place": "board",
+   "title": "Build the Corner Shop",
+   "crate": "supply",
+   "target": 1,
+   "gems": 15,
+   "stat": "Built_shop",
+   "cash": 2500
+  },
+  {
+   "i": 16,
+   "place": "gearshop",
+   "title": "Lifting Belt",
+   "target": 3,
+   "gems": 10,
+   "stat": "GearTier",
+   "cash": 500
+  },
+  {
+   "i": 17,
+   "place": "rebirth",
+   "title": "Level 12 \u2192 Rebirth 1",
+   "crate": "builder",
+   "target": 1,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 5000
+  },
+  {
+   "i": 18,
+   "place": "board",
+   "title": "Build the Villa",
+   "target": 1,
+   "gems": 10,
+   "stat": "Built_villa",
+   "cash": 300000
+  },
+  {
+   "i": 19,
+   "place": "machines",
+   "title": "Concrete Mixer",
+   "target": 1,
+   "gems": 10,
+   "stat": "Owns_mixer",
+   "cash": 300000
+  },
+  {
+   "i": 20,
+   "place": "hire",
+   "title": "A crew of 4",
+   "target": 4,
+   "gems": 10,
+   "stat": "Workers",
+   "cash": 500000
+  },
+  {
+   "i": 21,
+   "place": "upgrades",
+   "title": "An upgrade at level 5",
+   "target": 5,
+   "gems": 10,
+   "stat": "DeptMax",
+   "cash": 500000
+  },
+  {
+   "i": 22,
+   "place": "board",
+   "title": "Build the Warehouse",
+   "target": 1,
+   "gems": 15,
+   "stat": "Built_warehouse",
+   "cash": 1000000
+  },
+  {
+   "i": 23,
+   "place": "missions",
+   "title": "A Builder's Order",
+   "target": 1,
+   "gems": 15,
+   "stat": "BuilderOrders",
+   "cash": 1500000
+  },
+  {
+   "i": 24,
+   "place": "tradeup",
+   "title": "Your first trade-up",
+   "target": 1,
+   "gems": 15,
+   "stat": "TradeUps",
+   "cash": 1500000
+  },
+  {
+   "i": 25,
+   "place": "board",
+   "title": "Build the Apartments",
+   "target": 1,
+   "gems": 15,
+   "stat": "Built_apartments",
+   "cash": 3000000
+  },
+  {
+   "i": 26,
+   "place": "company",
+   "title": "3 kinds of property",
+   "target": 3,
+   "gems": 15,
+   "stat": "PropertyKinds",
+   "cash": 3000000
+  },
+  {
+   "i": 27,
+   "place": "board",
+   "title": "Build the Luxury Villa",
+   "target": 1,
+   "gems": 20,
+   "stat": "Built_luxvilla",
+   "cash": 7000000
+  },
+  {
+   "i": 28,
+   "place": "index",
+   "title": "Complete an Index rarity",
+   "target": 1,
+   "gems": 20,
+   "stat": "IndexRarities",
+   "cash": 4400000
+  },
+  {
+   "i": 29,
+   "place": "board",
+   "title": "Build the Distribution Center",
+   "target": 1,
+   "gems": 20,
+   "stat": "Built_distcenter",
+   "cash": 8000000
+  },
+  {
+   "i": 30,
+   "place": "rebirth",
+   "title": "Level 35 \u2192 Rebirth 2",
+   "crate": "golden",
+   "target": 2,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 9000000
+  },
+  {
+   "i": 31,
+   "place": "downtown",
+   "title": "Build the Office Tower",
+   "target": 1,
+   "gems": 15,
+   "stat": "Built_office",
+   "cash": 100000000
+  },
+  {
+   "i": 32,
+   "place": "upgrades",
+   "title": "Builder's Helmet I",
+   "target": 1,
+   "gems": 15,
+   "stat": "Helmet",
+   "cash": 150000000
+  },
+  {
+   "i": 33,
+   "place": "machines",
+   "title": "Buy the Crane",
+   "target": 1,
+   "gems": 15,
+   "stat": "Owns_crane",
+   "cash": 150000000
+  },
+  {
+   "i": 34,
+   "place": "downtown",
+   "title": "Build the Grand Hotel",
+   "target": 1,
+   "gems": 20,
+   "stat": "Built_hotel",
+   "cash": 400000000
+  },
+  {
+   "i": 35,
+   "place": "rebirth",
+   "title": "A Star Shop perk",
+   "target": 1,
+   "gems": 15,
+   "stat": "StarPerks",
+   "cash": 200000000
+  },
+  {
+   "i": 36,
+   "place": "missions",
+   "title": "A Golden Order",
+   "target": 1,
+   "gems": 20,
+   "stat": "GoldenOrders",
+   "cash": 300000000
+  },
+  {
+   "i": 37,
+   "place": "rebirth",
+   "title": "Level 55 \u2192 Rebirth 3",
+   "target": 3,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 700000000
+  },
+  {
+   "i": 38,
+   "place": "downtown",
+   "title": "Build the Skyscraper",
+   "target": 1,
+   "gems": 20,
+   "stat": "Built_skyscraper",
+   "cash": 3000000000
+  },
+  {
+   "i": 39,
+   "place": "upgrades",
+   "title": "Builder's Helmet II",
+   "target": 2,
+   "gems": 20,
+   "stat": "Helmet",
+   "cash": 3000000000
+  },
+  {
+   "i": 40,
+   "place": "rebirth",
+   "title": "Level 75 \u2192 Rebirth 4",
+   "target": 4,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 6000000000
+  },
+  {
+   "i": 41,
+   "place": "downtown",
+   "title": "Build the Corporate HQ",
+   "target": 1,
+   "gems": 20,
+   "stat": "Built_hq",
+   "cash": 20000000000
+  },
+  {
+   "i": 42,
+   "place": "upgrades",
+   "title": "Builder's Helmet III",
+   "target": 3,
+   "gems": 20,
+   "stat": "Helmet",
+   "cash": 20000000000
+  },
+  {
+   "i": 43,
+   "place": "rebirth",
+   "title": "Level 100 \u2192 Rebirth 5",
+   "target": 5,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 40000000000
+  },
+  {
+   "i": 44,
+   "place": "downtown",
+   "title": "Build the Landmark Spire",
+   "target": 1,
+   "gems": 20,
+   "stat": "Built_spire",
+   "cash": 80000000000
+  },
+  {
+   "i": 45,
+   "place": "upgrades",
+   "title": "Builder's Helmet IV",
+   "target": 4,
+   "gems": 20,
+   "stat": "Helmet",
+   "cash": 80000000000
+  },
+  {
+   "i": 46,
+   "place": "rebirth",
+   "title": "Level 125 \u2192 Rebirth 6",
+   "target": 6,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 160000000000
+  },
+  {
+   "i": 47,
+   "place": "upgrades",
+   "title": "Builder's Helmet V",
+   "target": 5,
+   "gems": 20,
+   "stat": "Helmet",
+   "cash": 200000000000
+  },
+  {
+   "i": 48,
+   "place": "rebirth",
+   "title": "Level 145 \u2192 Rebirth 7",
+   "target": 7,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 600000000000
+  },
+  {
+   "i": 49,
+   "place": "rebirth",
+   "title": "Level 165 \u2192 Rebirth 8",
+   "target": 8,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 2400000000000
+  },
+  {
+   "i": 50,
+   "place": "rebirth",
+   "title": "Level 185 \u2192 Rebirth 9",
+   "target": 9,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 7200000000000
+  },
+  {
+   "i": 51,
+   "place": "rebirth",
+   "title": "Level 205 \u2192 Rebirth 10",
+   "target": 10,
+   "gems": 25,
+   "stat": "Rebirths",
+   "cash": 21600000000000
+  }
+ ],
+ "newPlayerMoney": 3100,
+ "achievements": [
+  {
+   "target": 1,
+   "id": "first",
+   "stat": "Completed",
+   "reward": 100
+  },
+  {
+   "target": 10,
+   "id": "c10",
+   "stat": "Completed",
+   "reward": 1000
+  },
+  {
+   "target": 50,
+   "id": "c50",
+   "stat": "Completed",
+   "reward": 10000
+  },
+  {
+   "target": 15,
+   "id": "types",
+   "stat": "Types",
+   "reward": 8000
+  },
+  {
+   "target": 5,
+   "id": "lv5",
+   "stat": "Level",
+   "reward": 500
+  },
+  {
+   "target": 10,
+   "id": "lv10",
+   "stat": "Level",
+   "reward": 3000
+  },
+  {
+   "target": 15,
+   "id": "lv15",
+   "stat": "Level",
+   "reward": 9000
+  },
+  {
+   "target": 10000,
+   "id": "earn10k",
+   "stat": "Earned",
+   "reward": 1000
+  },
+  {
+   "target": 100000,
+   "id": "earn100k",
+   "stat": "Earned",
+   "reward": 8000
+  },
+  {
+   "target": 1000000,
+   "id": "earn1m",
+   "stat": "Earned",
+   "reward": 50000
+  },
+  {
+   "target": 5,
+   "id": "crew5",
+   "stat": "Workers",
+   "reward": 1500
+  },
+  {
+   "target": 3,
+   "id": "fleet",
+   "stat": "MachinesOwned",
+   "reward": 3000
+  },
+  {
+   "target": 3,
+   "id": "dream",
+   "stat": "HouseLevel",
+   "reward": 4000
+  },
+  {
+   "target": 3,
+   "id": "estate",
+   "stat": "ExtCount",
+   "reward": 5000
+  },
+  {
+   "target": 1,
+   "id": "mega",
+   "stat": "MegaBuilt",
+   "reward": 2000
+  },
+  {
+   "target": 7,
+   "id": "streak7",
+   "stat": "Streak",
+   "reward": 3000
+  },
+  {
+   "target": 1,
+   "id": "trade1",
+   "stat": "Trades",
+   "reward": 2000
+  },
+  {
+   "target": 10000,
+   "id": "str10k",
+   "stat": "Strength",
+   "reward": 8000
+  },
+  {
+   "target": 1000000,
+   "id": "str1m",
+   "stat": "Strength",
+   "reward": 400000
+  }
+ ],
+ "missions": [
+  {
+   "id": "hits",
+   "target": 150,
+   "xp": 40,
+   "reward": 150
+  },
+  {
+   "id": "contracts",
+   "target": 2,
+   "xp": 70,
+   "reward": 260
+  },
+  {
+   "id": "stages",
+   "target": 8,
+   "xp": 50,
+   "reward": 200
+  },
+  {
+   "id": "earn",
+   "target": 800,
+   "xp": 60,
+   "reward": 220
+  },
+  {
+   "id": "helper",
+   "target": 1,
+   "xp": 90,
+   "reward": 320
+  },
+  {
+   "id": "combo",
+   "target": 1,
+   "xp": 40,
+   "reward": 160
+  },
+  {
+   "id": "train",
+   "target": 120,
+   "xp": 50,
+   "reward": 200
+  }
+ ],
+ "workerGrowth": 1.3,
+ "machines": [
+  {
+   "verbs": [
+    "clear",
+    "dig",
+    "demolish"
+   ],
+   "id": "excavator",
+   "reqLevel": 1,
+   "rate": 1.2,
+   "price": 2500
+  },
+  {
+   "verbs": [
+    "pour"
+   ],
+   "id": "mixer",
+   "reqLevel": 5,
+   "rate": 1.6,
+   "price": 6500
+  },
+  {
+   "verbs": [
+    "glass",
+    "metal"
+   ],
+   "id": "crane",
+   "reqLevel": 12,
+   "rate": 1.2,
+   "price": 120000
+  }
+ ],
+ "gear": [
+  {
+   "price": 0,
+   "mult": 1,
+   "tier": 1
+  },
+  {
+   "price": 250,
+   "mult": 2,
+   "tier": 2
+  },
+  {
+   "price": 720,
+   "mult": 4,
+   "tier": 3
+  },
+  {
+   "price": 2100,
+   "mult": 8,
+   "tier": 4
+  },
+  {
+   "price": 6100,
+   "mult": 16,
+   "tier": 5
+  },
+  {
+   "price": 17700,
+   "mult": 32,
+   "tier": 6
+  },
+  {
+   "price": 51300,
+   "mult": 64,
+   "tier": 7
+  },
+  {
+   "price": 149000,
+   "mult": 128,
+   "tier": 8
+  },
+  {
+   "price": 431000,
+   "mult": 256,
+   "tier": 9
+  },
+  {
+   "price": 1250000,
+   "mult": 512,
+   "tier": 10
+  },
+  {
+   "price": 3630000,
+   "mult": 1024,
+   "tier": 11
+  },
+  {
+   "price": 10500000,
+   "mult": 2048,
+   "tier": 12
+  }
+ ],
+ "playtime": [
+  {
+   "gems": 3,
+   "cash": 0.5,
+   "mins": 5
+  },
+  {
+   "gems": 5,
+   "cash": 1,
+   "mins": 10
+  },
+  {
+   "secs": 300,
+   "boost": "power",
+   "cash": 1.5,
+   "mins": 20
+  },
+  {
+   "gems": 10,
+   "cash": 2,
+   "mins": 30
+  },
+  {
+   "secs": 600,
+   "boost": "cash",
+   "cash": 3,
+   "mins": 45
+  },
+  {
+   "bp": "silver",
+   "gems": 25,
+   "cash": 5,
+   "mins": 60
+  }
+ ],
+ "missionCrates": {
+  "goldenN": {
+   "suburbs": 365,
+   "town": 480,
+   "downtown": 260
+  },
+  "builderN": {
+   "suburbs": 75,
+   "town": 100,
+   "downtown": 55
+  },
+  "goldenDays": 6
+ },
+ "workers": [
+  {
+   "id": "laborer",
+   "reqLevel": 1,
+   "rate": 0.3,
+   "price": 200
+  },
+  {
+   "id": "builder",
+   "reqLevel": 3,
+   "rate": 0.6,
+   "price": 800
+  },
+  {
+   "boost": 0.2,
+   "id": "foreman",
+   "reqLevel": 5,
+   "rate": 0.4,
+   "price": 6000
+  }
+ ]
+}
