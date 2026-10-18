@@ -436,6 +436,7 @@ task.spawn(function()
 				local inc = City.Income(st)
 				if inc > 0 then addMoney(plr, inc, "Income") end
 				plr:SetAttribute("Income", inc)
+				pcall(City.PublishRates, st) -- RATE_TAGS: the "+$X/s" over each building
 				local rs = City.RebirthState(st)
 				plr:SetAttribute("RebirthReady", rs.ready == true and st.data.Money >= (rs.cost or math.huge))
 				-- timed boosts run down

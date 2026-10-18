@@ -169,6 +169,32 @@ end
 -- where a building stands: the top of the lot's pad, its front (-Z) toward the lot's street
 local function lotOrigin(k, i) return Geo.lotCF(k, i) * CFrame.new(0, 0.5, 0) end
 
+-- RATE_TAGS (2026-10-18, the owner: "over every building, how much money it makes per second"): each lot's own income
+-- per second (its level, the block bonus, Rebirth, the cash boosts) on its lot model; every client draws the "+$X/s" tag.
+function City.PublishRates(st)
+	local d = st.k and districtFolder(st.k)
+	local city = d and d:FindFirstChild("City")
+	local f = city and city:FindFirstChild("Lots")
+	if not f then return end
+	local c = st.data.City
+	local mult = C.RebirthMultiplier(st.data.Rebirths) * (ctx.cashMult and ctx.cashMult(st) or 1)
+	for r = 1, 3 do
+		for b = 1, 2 do
+			local bonus = City.BlockBonusOn(c, r, b)
+			for s = 1, 4 do
+				local i = Geo.lotIndex(r, b, s)
+				local m = f:FindFirstChild("L" .. i)
+				if m then
+					local lv = lotRec(c, i).lv
+					local rate = lv > 0 and C.Levels[lv].income * mult * (bonus and 1 + C.BlockBonus or 1) or 0
+					m:SetAttribute("Rate", rate)
+					m:SetAttribute("Bonus", bonus or nil)
+				end
+			end
+		end
+	end
+end
+
 -- the finished building standing on a lot (lv 0: none), put up at once (join, style change, Rebirth)
 local function setBuilding(k, i, lv, style)
 	local m = lotModel(k, i)

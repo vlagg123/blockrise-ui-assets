@@ -537,6 +537,71 @@ task.spawn(function()
 	end
 end)
 
+-- Income tags (RATE_TAGS): over every finished building of every city, the money it makes each second ---------------
+-- (green; gold with "+25%" when its block has the bonus). Mine pulse with every income tick; the others show up closer.
+local rateTags = {}
+local function rateTag(m)
+	local t = rateTags[m]
+	if t then return t end
+	local bb = new("BillboardGui", { Name = "Rate", Size = UDim2.fromOffset(118, 36), AlwaysOnTop = true, MaxDistance = 220, Enabled = false, Parent = worldGui })
+	local pill = UI.pill({ Color = "green", Size = UDim2.new(1, -16, 1, -8), Position = UDim2.fromOffset(12, 4), Parent = bb })
+	UI.icon("cash", { Size = UDim2.fromOffset(34, 34), Position = UDim2.new(0, -14, 0.5, -17), ZIndex = 4, Parent = pill })
+	local txt = UI.text({ Text = "", Size = UDim2.new(1, -30, 0.78, 0), Position = UDim2.new(0, 22, 0.11, 0), ZIndex = 4, StrokeTh = 2.2, Parent = pill })
+	local badge = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromOffset(40, 18), Position = UDim2.new(1, -30, 0, -10), ZIndex = 5, Visible = false, Parent = pill })
+	UI.corner(badge, UDim.new(1, 0))
+	UI.stroke(badge, 2)
+	UI.gradient(badge, UI.Colors.red[1], UI.Colors.red[2])
+	UI.text({ Text = "+25%", Size = UDim2.fromScale(1, 1), ZIndex = 6, StrokeTh = 1.5, Parent = badge })
+	t = { bb = bb, pill = pill, txt = txt, badge = badge, grad = pill:FindFirstChildOfClass("UIGradient"), sc = new("UIScale", { Parent = pill }) }
+	rateTags[m] = t
+	m.Destroying:Connect(function() bb:Destroy() rateTags[m] = nil end)
+	return t
+end
+local function refreshRates(pulse)
+	local districts = workspace:FindFirstChild("World") and workspace.World:FindFirstChild("Districts")
+	if not districts then return end
+	local mine = myDistrict()
+	for _, d in ipairs(districts:GetChildren()) do
+		local lotsF = d:FindFirstChild("City") and d.City:FindFirstChild("Lots")
+		for _, m in ipairs(lotsF and lotsF:GetChildren() or {}) do
+			local rate = m:GetAttribute("Rate") or 0
+			local b = m:FindFirstChild("Building")
+			local pad = m:FindFirstChild("Pad")
+			if rate > 0 and b and pad then
+				local t = rateTag(m)
+				local own = m:GetAttribute("District") == mine
+				local bonus = m:GetAttribute("Bonus") == true
+				t.txt.Text = "+" .. C.Money(rate) .. "/s"
+				if t.bonus ~= bonus then
+					t.bonus = bonus
+					local col = UI.Colors[bonus and "gold" or "green"]
+					t.grad.Color = ColorSequence.new(col[1], col[2])
+					t.badge.Visible = bonus
+				end
+				-- just over the roof (the blueprint's height), centred on the lot
+				t.bb.Adornee = pad
+				t.bb.StudsOffsetWorldSpace = Vector3.new(0, (b:GetAttribute("Height") or 20) + 4, 0)
+				t.bb.MaxDistance = own and 360 or 200
+				if not t.bb.Enabled then t.bb.Enabled = true UI.pop(t.pill, 0.6) end
+				if pulse and own then
+					t.sc.Scale = 1.14
+					TweenService:Create(t.sc, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+				end
+			elseif rateTags[m] then
+				rateTags[m].bb.Enabled = false
+			end
+		end
+	end
+end
+task.spawn(function()
+	local n = 0
+	while true do
+		n += 1
+		pcall(refreshRates, n % 2 == 0)
+		task.wait(0.5)
+	end
+end)
+
 -- The fountain: the golden hammer rises slowly and slams the anvil; the jets burst, a clang ------------------------
 task.spawn(function()
 	local CollectionService = game:GetService("CollectionService")
