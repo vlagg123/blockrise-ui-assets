@@ -200,7 +200,7 @@ function Crew.Update(plr, st, dt)
 			-- a spot on a ring around the lot, in front of the building
 			local lotCF = Geo.lotCF(st.k, o.lot)
 			local a = math.pi + (i - (n + 1) / 2) * 0.5
-			local r = 23
+			local r = 30 -- MAP v3: lots of 72
 			target = (lotCF * CFrame.new(math.sin(a) * r, 3, math.cos(a) * r)).Position
 			face = lotCF.Position
 		else

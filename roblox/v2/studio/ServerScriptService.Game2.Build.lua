@@ -11,6 +11,7 @@ local Blueprints = require(script.Parent.Blueprints2)
 local Construction = {}
 Construction.__index = Construction
 Construction.Active = {}
+Construction.Scale = 1.25 -- MAP v3: buildings in scale with the bigger lots and streets
 
 -- collision groups: NPC workers never get trapped inside building pieces
 pcall(function() PhysicsService:RegisterCollisionGroup("Build") end)
@@ -158,6 +159,19 @@ function Construction.new(params)
 	self.onComplete = params.onComplete
 	self.meta = params.meta or {}
 	local stages, info = Blueprints[params.blueprint](params.blueprintArg)
+	-- MAP v3 (2026-10-18): the city's lots grew to 72 and its streets to 44, so every building is built 1.25x bigger
+	-- (sizes and positions of every piece, relative to the lot's origin; the footprints still fit the 68 pad)
+	local S = Construction.Scale
+	if S ~= 1 then
+		for _, st in ipairs(stages) do
+			for _, list in ipairs({ st.adds or {}, st.removes or {} }) do
+				for _, p in ipairs(list) do
+					if p.s and p.c then p.s = p.s * S p.c = CFrame.new(p.c.Position * S) * p.c.Rotation end
+				end
+			end
+		end
+		info = { size = info.size * S }
+	end
 	-- bigger contract tiers reuse a blueprint with much more work to do
 	local wm = tonumber(params.workMult) or 1
 	if wm ~= 1 and wm > 0 then

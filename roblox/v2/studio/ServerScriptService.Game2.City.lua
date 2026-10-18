@@ -153,7 +153,7 @@ local function lotModel(k, i)
 		local pad = Geo.box(m, Vector3.new(Geo.Lot - 4, 0.5, Geo.Lot - 4), cf * CFrame.new(0, 0.25, 0), Color3.fromRGB(122, 214, 98), Enum.Material.SmoothPlastic, { Name = "Pad" })
 		pad:SetAttribute("Lot", i)
 		-- a soft path from the sidewalk to the front door
-		Geo.box(m, Vector3.new(6, 0.56, 8), cf * CFrame.new(0, 0.28, -24), Color3.fromRGB(244, 238, 226), Enum.Material.SmoothPlastic, { Name = "Path" })
+		Geo.box(m, Vector3.new(6, 0.56, 12), cf * CFrame.new(0, 0.28, -(Geo.Lot / 2 - 6)), Color3.fromRGB(244, 238, 226), Enum.Material.SmoothPlastic, { Name = "Path" })
 		-- STYLE: a crisp white kerb around the plot (open where the path comes in)
 		local e = (Geo.Lot - 4) / 2
 		local kerb = Color3.fromRGB(255, 255, 255)
@@ -254,22 +254,24 @@ local function saleSign(k, row, block, price, locked)
 	m:SetAttribute("District", k)
 	m.Parent = f
 	local side = block == 1 and -1 or 1
-	local base = Geo.districtCF(k) * CFrame.new(side * 70, 0, Geo.blockZ(row) + 56)
-	-- a soft fenced field: the land itself
-	Geo.box(m, Vector3.new(108, 0.3, 108), base * CFrame.new(0, 0.15, 0), Color3.fromRGB(150, 222, 110), Enum.Material.SmoothPlastic, { Name = "Field", CanCollide = false })
+	local bx, bz = Geo.blockCenter(row, block)
+	local base = Geo.districtCF(k) * CFrame.new(bx, 0, bz)
+	-- a soft fenced field: the land itself (MAP v3: blocks of 144)
+	local F, H = 138, 69
+	Geo.box(m, Vector3.new(F, 0.3, F), base * CFrame.new(0, 0.15, 0), Color3.fromRGB(150, 222, 110), Enum.Material.SmoothPlastic, { Name = "Field", CanCollide = false })
 	for s = -1, 1, 2 do
 		for _, ax in ipairs({ "x", "z" }) do
-			local size = ax == "x" and Vector3.new(108, 1.2, 0.6) or Vector3.new(0.6, 1.2, 108)
-			local off = ax == "x" and CFrame.new(0, 2.2, s * 54) or CFrame.new(s * 54, 2.2, 0)
+			local size = ax == "x" and Vector3.new(F, 1.2, 0.6) or Vector3.new(0.6, 1.2, F)
+			local off = ax == "x" and CFrame.new(0, 2.2, s * H) or CFrame.new(s * H, 2.2, 0)
 			Geo.box(m, size, base * off, Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic, { Name = "Rail" })
 		end
 	end
-	for ix = -2, 2 do
-		for _, z in ipairs({ -54, 54 }) do Geo.box(m, Vector3.new(1, 3.4, 1), base * CFrame.new(ix * 27, 1.7, z), Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic, { Name = "Post" }) end
-		for _, x in ipairs({ -54, 54 }) do Geo.box(m, Vector3.new(1, 3.4, 1), base * CFrame.new(x, 1.7, ix * 27), Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic, { Name = "Post" }) end
+	for ix = -3, 3 do
+		for _, z in ipairs({ -H, H }) do Geo.box(m, Vector3.new(1, 3.4, 1), base * CFrame.new(ix * 23, 1.7, z), Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic, { Name = "Post" }) end
+		for _, x in ipairs({ -H, H }) do Geo.box(m, Vector3.new(1, 3.4, 1), base * CFrame.new(x, 1.7, ix * 23), Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic, { Name = "Post" }) end
 	end
-	-- the sign, facing the hub (front -Z)
-	local signCF = base * CFrame.new(0, 0, -40)
+	-- the sign, facing the boulevard (front -Z)
+	local signCF = base * CFrame.new(0, 0, -52)
 	for s = -1, 1, 2 do Geo.box(m, Vector3.new(1.2, 12, 1.2), signCF * CFrame.new(s * 9, 6, 0), Color3.fromRGB(150, 104, 64), Enum.Material.Wood) end
 	local board = Geo.box(m, Vector3.new(22, 9, 1.2), signCF * CFrame.new(0, 11, 0), locked and Color3.fromRGB(120, 128, 150) or Color3.fromRGB(255, 206, 64), Enum.Material.SmoothPlastic, { Name = "Board" })
 	board:SetAttribute("Block", row .. "_" .. block)
