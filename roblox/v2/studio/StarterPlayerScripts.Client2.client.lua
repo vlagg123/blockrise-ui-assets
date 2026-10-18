@@ -66,7 +66,7 @@ pcall(function() gui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets end)
 local worldGui = plr.PlayerGui
 local root = new("Frame", { Name = "Root", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Parent = gui })
 local scale = new("UIScale", { Parent = root })
-local logicalH = 640
+local logicalH, logicalW = 640, 1150
 local onResize = {}
 local function rescale()
 	local v = workspace.CurrentCamera.ViewportSize
@@ -75,6 +75,7 @@ local function rescale()
 	root.Size = UDim2.fromScale(1 / s, 1 / s)
 	local abs = gui.AbsoluteSize
 	logicalH = (abs.Y > 0 and abs.Y or v.Y) / s
+	logicalW = (abs.X > 0 and abs.X or v.X) / s
 	for _, f in ipairs(onResize) do pcall(f) end
 end
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
@@ -82,36 +83,37 @@ gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(rescale)
 
 local windows = {}
 
--- Top: money, gems, Rebirth -------------------------------------------------------------------------------
-local top = new("Frame", { Name = "Top", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10), Size = UDim2.fromOffset(620, 112), ZIndex = 8, Parent = root })
-local moneyPill = UI.pill({ Name = "Money", Style = "dark", Size = UDim2.fromOffset(286, 58), Position = UDim2.new(0.5, -72, 0, 0), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
-local cashIcon = UI.icon("cash", { Size = UDim2.fromOffset(80, 80), Position = UDim2.new(0, -34, 0.5, -42), ZIndex = 6, Parent = moneyPill })
+-- Top-left: money, gems, Rebirth (PREMIUM_UI v2, 2026-10-18: a compact column in the corner; the middle of the screen
+-- belongs to the game) ----------------------------------------------------------------------------------------
+local top = new("Frame", { Name = "Top", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 0), Size = UDim2.fromOffset(300, 184), ZIndex = 8, Parent = root })
+local moneyPill = UI.pill({ Name = "Money", Style = "dark", Size = UDim2.fromOffset(250, 54), Position = UDim2.fromOffset(36, 10), Parent = top })
+local cashIcon = UI.icon("cash", { Size = UDim2.fromOffset(74, 74), Position = UDim2.new(0, -34, 0.5, -39), ZIndex = 6, Parent = moneyPill })
 cashIcon.Rotation = -8
-local moneyText = UI.text({ Text = "$0", Size = UDim2.new(1, -112, 0, 42), Position = UDim2.fromOffset(52, 7), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 3,
-	Max = 38, Gradient = { WHITE, C3(214, 255, 196) }, Parent = moneyPill })
-UI.plus({ Name = "AddCash", Color = "green", Size = 42, Position = UDim2.new(1, -50, 0.5, -24), ZIndex = 5, Parent = moneyPill,
+local moneyText = UI.text({ Text = "$0", Size = UDim2.new(1, -96, 0, 40), Position = UDim2.fromOffset(44, 6), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 3,
+	Max = 36, Gradient = { WHITE, C3(214, 255, 196) }, Parent = moneyPill })
+UI.plus({ Name = "AddCash", Color = "green", Size = 40, Position = UDim2.new(1, -46, 0.5, -22), ZIndex = 5, Parent = moneyPill,
 	OnClick = function() if windows.open then windows.open("SHOP", { tab = "packs" }) end end })
-local incomeChip = UI.chip({ Name = "Income", Color = "green", Icon = "up_cash", Height = 28, TextSize = 18, Text = "+$0/s", Position = UDim2.fromOffset(62, 48), ZIndex = 7, Parent = moneyPill })
+local incomeChip = UI.chip({ Name = "Income", Color = "green", Icon = "up_cash", Height = 26, TextSize = 17, Text = "+$0/s", Position = UDim2.fromOffset(50, 42), ZIndex = 7, Parent = moneyPill })
 
-local gemPill = UI.pill({ Name = "Gems", Style = "dark", Size = UDim2.fromOffset(176, 50), Position = UDim2.new(0.5, 104, 0, 4), Parent = top })
-UI.icon("gem", { Size = UDim2.fromOffset(62, 62), Position = UDim2.new(0, -24, 0.5, -32), ZIndex = 6, Parent = gemPill })
-local gemText = UI.text({ Text = "0", Size = UDim2.new(1, -92, 0, 34), Position = UDim2.fromOffset(42, 8), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 3,
-	Max = 30, Gradient = { WHITE, C3(236, 214, 255) }, Parent = gemPill })
-UI.plus({ Name = "AddGems", Color = "purple", Size = 36, Position = UDim2.new(1, -43, 0.5, -21), ZIndex = 5, Parent = gemPill,
+local gemPill = UI.pill({ Name = "Gems", Style = "dark", Size = UDim2.fromOffset(200, 46), Position = UDim2.fromOffset(36, 86), Parent = top })
+UI.icon("gem", { Size = UDim2.fromOffset(58, 58), Position = UDim2.new(0, -30, 0.5, -30), ZIndex = 6, Parent = gemPill })
+local gemText = UI.text({ Text = "0", Size = UDim2.new(1, -86, 0, 32), Position = UDim2.fromOffset(40, 7), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 3,
+	Max = 28, Gradient = { WHITE, C3(236, 214, 255) }, Parent = gemPill })
+UI.plus({ Name = "AddGems", Color = "purple", Size = 34, Position = UDim2.new(1, -40, 0.5, -19), ZIndex = 5, Parent = gemPill,
 	OnClick = function() if windows.open then windows.open("SHOP", { tab = "packs" }) end end })
 local money = UI.counter(moneyText, function(v) return C.Money(v) end)
 local gems = UI.counter(gemText, function(v) return C.Fmt(v) end)
 
 -- the Rebirth bar (a button when it is ready)
-local rebBar = new("Frame", { Name = "Rebirth", BackgroundTransparency = 1, Size = UDim2.fromOffset(270, 30), Position = UDim2.new(0.5, 16, 0, 82), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
-local rebProg = UI.progress({ Color = "gold", Size = UDim2.new(1, -26, 0, 26), Position = UDim2.fromOffset(26, 2), Text = "REBIRTH 0%", Max = 18, Parent = rebBar })
+local rebBar = new("Frame", { Name = "Rebirth", BackgroundTransparency = 1, Size = UDim2.fromOffset(240, 30), Position = UDim2.fromOffset(18, 144), Parent = top })
+local rebProg = UI.progress({ Color = "gold", Size = UDim2.new(1, -26, 0, 26), Position = UDim2.fromOffset(26, 2), Text = "REBIRTH 0%", Max = 17, Parent = rebBar })
 UI.icon("rebirth_star", { Size = UDim2.fromOffset(46, 46), Position = UDim2.fromOffset(0, -8), ZIndex = 6, Parent = rebBar })
-local rebBtn, rebHolder = UI.button({ Name = "RebirthBtn", Color = "gold", Text = "REBIRTH!", IconKey = "rebirth", Size = UDim2.fromOffset(220, 48), Position = UDim2.new(0.5, 16, 0, 72),
-	AnchorPoint = Vector2.new(0.5, 0), Shimmer = true, Max = 28, Parent = top })
+local rebBtn, rebHolder = UI.button({ Name = "RebirthBtn", Color = "gold", Text = "REBIRTH!", IconKey = "rebirth", Size = UDim2.fromOffset(220, 46), Position = UDim2.fromOffset(36, 140),
+	Shimmer = true, Max = 26, Parent = top })
 rebHolder.Visible = false
 
 -- toasts: one at a time, under the top; they drop in, wait, then pop away
-local toastHolder = new("Frame", { Name = "Toasts", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 134), Size = UDim2.fromOffset(600, 50), ZIndex = 9, Parent = root })
+local toastHolder = new("Frame", { Name = "Toasts", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 14), Size = UDim2.fromOffset(600, 50), ZIndex = 9, Parent = root })
 local toastQueue, toasting = {}, false
 local TOAST_ICON = { green = "upgrades", gold = "star", purple = "gem", blue = "shop", red = nil, white = nil }
 local function nextToast()
@@ -144,12 +146,12 @@ local function toast(text, color, time, icon)
 end
 
 -- Left: HAMMERS, SHOP, MENU -----------------------------------------------------------------------------------
-local left = new("Frame", { Name = "Left", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 16, 0.5, 0), Size = UDim2.fromOffset(96, 330), ZIndex = 8, Parent = root })
-new("UIListLayout", { Padding = UDim.new(0, 18), SortOrder = Enum.SortOrder.LayoutOrder, Parent = left })
+local left = new("Frame", { Name = "Left", BackgroundTransparency = 1, Position = UDim2.fromOffset(18, 200), Size = UDim2.fromOffset(96, 340), ZIndex = 8, Parent = root })
+new("UIListLayout", { Padding = UDim.new(0, 16), SortOrder = Enum.SortOrder.LayoutOrder, Parent = left })
 local function sideButton(name, icon, color, order)
-	local btn, holder = UI.button({ Name = name, Color = color, Size = UDim2.fromOffset(90, 84), Order = order, Radius = 22, Parent = left,
+	local btn, holder = UI.button({ Name = name, Color = color, Size = UDim2.fromOffset(88, 80), Order = order, Radius = 22, Parent = left,
 		OnClick = function() if windows.open then windows.open(name) end end })
-	local ic = UI.icon(icon, { Size = UDim2.fromOffset(70, 70), Position = UDim2.new(0.5, -35, 0, -2), ZIndex = btn.ZIndex + 3, Parent = btn })
+	local ic = UI.icon(icon, { Size = UDim2.fromOffset(66, 66), Position = UDim2.new(0.5, -33, 0, -2), ZIndex = btn.ZIndex + 3, Parent = btn })
 	ic.Rotation = -6
 	UI.text({ Text = name, Size = UDim2.new(1, 12, 0, 26), Position = UDim2.new(0, -6, 1, -22), ZIndex = btn.ZIndex + 5, Max = 21, StrokeTh = 2.8, Shadow = 2, Parent = btn })
 	return btn, holder
@@ -158,7 +160,7 @@ sideButton("HAMMERS", "rbxassetid://71920003497651", "blue", 1)
 sideButton("SHOP", "store", "gold", 2)
 sideButton("MENU", "more", "purple", 3)
 -- HOME: only when you are far from your city
-local homeBtn, homeHolder = UI.button({ Name = "HOME", Color = "green", Text = "HOME", IconKey = "home", Size = UDim2.fromOffset(90, 46), Order = 4, Parent = left, Max = 20,
+local _homeBtn, homeHolder = UI.button({ Name = "HOME", Color = "green", Text = "HOME", IconKey = "home", Size = UDim2.fromOffset(88, 46), Order = 4, Parent = left, Max = 20,
 	OnClick = function() CityRF:InvokeServer("home") end })
 homeHolder.Visible = false
 
@@ -474,7 +476,7 @@ local dustPE = new("ParticleEmitter", { Texture = "rbxasset://textures/particles
 -- Windows (HAMMERS / SHOP / MENU): a dimmed screen, one panel with a header ribbon; the contents come in their own modules
 local scrim = new("TextButton", { Name = "Scrim", Text = "", AutoButtonColor = false, BackgroundColor3 = C3(8, 12, 36), BackgroundTransparency = 0.45, Size = UDim2.new(1, 0, 1, 120), Position = UDim2.fromOffset(0, -120), ZIndex = 5, Visible = false, Parent = root })
 local WIN_W = 800
-local winBg, win, winHead = UI.panel({ Name = "Window", Size = UDim2.fromOffset(WIN_W, 470), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 128),
+local winBg, win, winHead = UI.panel({ Name = "Window", Size = UDim2.fromOffset(WIN_W, 470), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 24),
 	Title = "", Icon = "shop", Color = "blue", HeadHeight = 64, Radius = 26, Pattern = true, PatternW = WIN_W, PatternH = 520, Visible = false, ZIndex = 6, Parent = root })
 local winTitle = winHead.title
 local function closeWindow()
@@ -487,9 +489,11 @@ windows.close = closeWindow
 UI.close({ Size = 52, Position = UDim2.new(1, -34, 0, -18), ZIndex = 12, Parent = winBg, OnClick = closeWindow })
 scrim.Activated:Connect(closeWindow)
 local winBody = new("Frame", { Name = "Body", BackgroundTransparency = 1, Position = UDim2.fromOffset(22, 80), Size = UDim2.new(1, -44, 1, -98), ZIndex = 5, Parent = winBg })
+-- the window: as tall as the screen allows, centred, but never over the money column on the left
 local function fitWindow()
-	local h = math.clamp(logicalH - 128 - 16, 330, 480)
+	local h = math.clamp(logicalH - 44, 330, 540)
 	win.Size = UDim2.fromOffset(WIN_W, h)
+	win.Position = UDim2.fromOffset(math.max(logicalW / 2, 304 + WIN_W / 2), 24)
 end
 table.insert(onResize, fitWindow)
 local winColors = { HAMMERS = "blue", SHOP = "gold", MENU = "purple" }
