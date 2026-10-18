@@ -237,10 +237,11 @@ function M.ghost(job)
 	for _, st in ipairs(stages) do
 		if st.key ~= "dig" then
 			for _, spec in ipairs(st.adds or {}) do
-				if n < 1600 and spec.s and spec.c and (spec.t or 0) < 0.9 then
+				if n < 1000 and spec.s and spec.c and (spec.t or 0) < 0.9 then
 					local cf, sz = place(spec)
 					local key = gkey(cf, sz)
-					if not gone[key] and not map[key] then
+					-- (the tiny trims are left out: the shape reads the same and phones draw far fewer see-through parts)
+					if not gone[key] and not map[key] and math.max(sz.X, sz.Y, sz.Z) >= 1.5 then
 						n += 1
 						local p = Instance.new(spec.shape == "Wedge" and "WedgePart" or "Part")
 						if spec.shape == "Ball" then p.Shape = Enum.PartType.Ball elseif spec.shape == "Cylinder" then p.Shape = Enum.PartType.Cylinder end
