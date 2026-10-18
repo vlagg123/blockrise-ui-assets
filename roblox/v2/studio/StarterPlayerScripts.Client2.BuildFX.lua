@@ -76,6 +76,87 @@ function M.emit(pos, kind, color, n)
 end
 local emit = M.emit
 
+-- sounds (the live game's set): 2D for your own actions, 3D (a short life in the world) for what happens on the sites.
+-- The pieces' sounds are rate-limited so a stage that shows many pieces at once stays pleasant
+M.S = {
+	Hammer = "rbxassetid://9120954412", Brick = "rbxassetid://9118609285", Wood = "rbxassetid://9120871244",
+	Pour = "rbxassetid://9117934842", Metal = "rbxassetid://9125672726", Dig = "rbxassetid://9114083746",
+	Coins = "rbxassetid://9113849583", Fanfare = "rbxassetid://1843946260", Chime = "rbxassetid://4612374036",
+}
+local SoundService = game:GetService("SoundService")
+local sound2D = {}
+local fades = {}
+function M.play(key, vol, pitch, dur)
+	local id = M.S[key]
+	if not id then return end
+	local s = sound2D[key]
+	if not s then
+		s = Instance.new("Sound")
+		s.Name = "FX_" .. key
+		s.SoundId = id
+		s.Parent = SoundService
+		sound2D[key] = s
+	end
+	if fades[key] then fades[key]:Cancel() fades[key] = nil end
+	s.Volume = vol or 0.5
+	s.PlaybackSpeed = pitch or 1
+	s.TimePosition = 0
+	s:Play()
+	-- a long sound (the fanfare) can be cut short with a fade
+	if dur then
+		local token = {}
+		fades[key .. "_t"] = token
+		task.delay(dur, function()
+			if fades[key .. "_t"] ~= token or not s.IsPlaying then return end
+			local tw = TweenService:Create(s, TweenInfo.new(0.7), { Volume = 0 })
+			fades[key] = tw
+			tw.Completed:Connect(function(st) if st == Enum.PlaybackState.Completed then s:Stop() end end)
+			tw:Play()
+		end)
+	end
+end
+function M.play3D(key, pos, vol, pitch, far)
+	local id = M.S[key]
+	local cam = workspace.CurrentCamera
+	if not id or not cam or (cam.CFrame.Position - pos).Magnitude > (far or 160) then return end
+	local a = Instance.new("Attachment")
+	a.WorldPosition = pos
+	a.Parent = workspace.Terrain
+	local s = Instance.new("Sound")
+	s.SoundId = id
+	s.Volume = vol or 0.4
+	s.PlaybackSpeed = pitch or 1
+	s.RollOffMode = Enum.RollOffMode.InverseTapered
+	s.RollOffMinDistance = 14
+	s.RollOffMaxDistance = far or 160
+	s.Parent = a
+	s:Play()
+	Debris:AddItem(a, 3)
+end
+task.spawn(function()
+	local list = {}
+	for _, id in pairs(M.S) do
+		local s = Instance.new("Sound")
+		s.SoundId = id
+		table.insert(list, s)
+	end
+	pcall(function() game:GetService("ContentProvider"):PreloadAsync(list) end)
+end)
+local lastPiece = 0
+local function pieceSound(p, anim)
+	local now = os.clock()
+	if now - lastPiece < 0.085 then return end
+	lastPiece = now
+	local m = p.Material
+	local key, vol = "Brick", 0.28
+	if anim == "steel" or anim == "beam" or m == Enum.Material.Metal or m == Enum.Material.DiamondPlate or m == Enum.Material.CorrodedMetal then key, vol = "Metal", 0.14
+	elseif m == Enum.Material.Wood or m == Enum.Material.WoodPlanks then key, vol = "Wood", 0.3
+	elseif anim == "rise" or m == Enum.Material.Concrete or m == Enum.Material.Slate or m == Enum.Material.Pavement then key, vol = "Pour", 0.22
+	elseif m == Enum.Material.Glass then key, vol = "Chime", 0.08
+	elseif m == Enum.Material.Ground or m == Enum.Material.Mud or m == Enum.Material.Sand or m == Enum.Material.Grass then key, vol = "Dig", 0.22 end
+	M.play3D(key, p.Position, vol, 0.9 + math.random() * 0.25, 120)
+end
+
 -- the tower crane lifts the high pieces (the crane section below moves it) -------------------------------------
 local lifts = { aim = {}, lift = {} }
 local function craneTake(p)
@@ -103,6 +184,7 @@ local function craneTake(p)
 	local anim = p:GetAttribute("Anim")
 	task.delay(dur, function()
 		if p.Parent and (anim == "steel" or anim == "beam") then emit(target.Position, "sparks", Color3.fromRGB(255, 190, 90), 6) end
+		if p.Parent then pieceSound(p, anim) end
 	end)
 	return true
 end
@@ -116,6 +198,7 @@ local function animatePart(p)
 	if cam and (cam.CFrame.Position - p.Position).Magnitude > 420 then return end
 	local target, size, trans = p.CFrame, p.Size, p.Transparency
 	if (anim == "drop" or anim == "steel" or anim == "beam" or anim == "deck") and craneTake(p) then return end
+	task.delay(anim == "rise" and 0.1 or 0.3, function() if p.Parent then pieceSound(p, anim) end end)
 	if anim == "drop" then
 		if p.Material == Enum.Material.Glass and size.Y >= 2 and math.min(size.X, size.Z) <= 1.3 then
 			-- a glass facade panel slides in from outside and catches the light
@@ -182,6 +265,7 @@ local function hookRemove(p)
 		local cf = p.CFrame
 		tween(p, 0.45, { Size = p.Size * 0.12, CFrame = cf - Vector3.new(0, p.Size.Y * 0.4, 0), Transparency = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
 		if math.random() < 0.6 then emit(p.Position, "dust", p.Color:Lerp(Color3.fromRGB(160, 140, 120), 0.5), 5) end
+		if math.random() < 0.35 then M.play3D("Dig", p.Position, 0.18, 0.85 + math.random() * 0.2, 110) end
 	end)
 end
 

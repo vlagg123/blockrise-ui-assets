@@ -469,6 +469,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 			slashTrack:Play(0.05, 1, 1.5)
 		end
 		if sparks then sparks(hitPos, Hammers.ById[attr("HammerKey", "rusty")] and Hammers.ById[attr("HammerKey", "rusty")].r or 1, 10) end
+		BuildFX.play("Hammer", 0.42, 0.92 + math.random() * 0.22)
 		return
 	end
 	openCard(i)
@@ -494,10 +495,15 @@ sparks = function(pos, r, n)
 	sparkAtt.WorldPosition = pos
 	emitter(r):Emit(n or 6)
 end
+local lastKnock = 0
 HitsRE.OnClientEvent:Connect(function(list)
 	local cam = workspace.CurrentCamera.CFrame.Position
 	for _, h in ipairs(list) do
 		if (h[1] - cam).Magnitude < 260 then sparks(h[1], h[2], 5) end
+		if os.clock() - lastKnock > 0.22 and (h[1] - cam).Magnitude < 90 then
+			lastKnock = os.clock()
+			BuildFX.play3D("Hammer", h[1], 0.22, 0.95 + math.random() * 0.2, 90)
+		end
 	end
 end)
 
@@ -596,7 +602,8 @@ local winBody = new("Frame", { Name = "Body", BackgroundTransparency = 1, Positi
 local function fitWindow()
 	local h = math.clamp(logicalH - 44, 330, 540)
 	win.Size = UDim2.fromOffset(WIN_W, h)
-	win.Position = UDim2.fromOffset(math.max(logicalW / 2, 304 + WIN_W / 2), 24)
+	-- (on a narrow phone it may cover the money column's right end rather than run off the screen)
+	win.Position = UDim2.fromOffset(math.max(logicalW / 2, math.min(304 + WIN_W / 2, logicalW - WIN_W / 2 - 12)), 24)
 end
 table.insert(onResize, fitWindow)
 local winColors = { HAMMERS = "blue", SHOP = "gold", MENU = "purple", GIFTS = "pink" }
@@ -655,6 +662,12 @@ plr:GetAttributeChangedSignal("Lots"):Connect(refreshCard)
 plr:GetAttributeChangedSignal("Queue"):Connect(refreshCard)
 plr:GetAttributeChangedSignal("Money"):Connect(function() if card.Visible then refreshCard() end end)
 
+-- a multiplier as people read it: 2, 1.5, 2.25
+local function multText(m)
+	if math.abs(m - math.floor(m)) < 1e-6 then return tostring(math.floor(m)) end
+	return (string.format("%.2f", m):gsub("%.?0+$", ""))
+end
+
 -- Rebirth: the dialog says what you get and what it takes. Ready: what goes (all your cash) and a REBIRTH! button.
 -- Not ready yet (a tap on the Rebirth bar): how far you are and what is missing
 local function confirmRebirth()
@@ -666,10 +679,8 @@ local function confirmRebirth()
 	local cost = attr("RebirthCost", 0)
 	if cost <= 0 then cost = C.RebirthCost[reb + 1] end
 	local money = attr("Money", 0)
-	local m = C.RebirthMultiplier(reb + 1)
-	local mult = math.abs(m - math.floor(m)) < 1e-6 and tostring(math.floor(m)) or (string.format("%.2f", m):gsub("%.?0+$", ""))
 	local rows = {
-		{ "up_cash", "Income x" .. mult .. " for good" },
+		{ "up_cash", "Income x" .. multText(C.RebirthMultiplier(reb + 1)) .. " for good" },
 		{ "locations", C.RowNames[reb + 2] and ("New land: " .. C.RowNames[reb + 2]) or "Bigger towers on all your land" },
 		{ "mega", "Build up to level " .. cap .. ": " .. C.Levels[cap].name },
 	}
@@ -1126,12 +1137,15 @@ FeedbackRE.OnClientEvent:Connect(function(kind, p)
 			BuildFX.emit(m.Pad.Position + Vector3.new(0, h + 4, 0), "confetti", nil, 60)
 			sparks(m.Pad.Position + Vector3.new(0, 8, 0), 5, 30)
 		end
-		UI.coin()
+		BuildFX.play("Fanfare", 0.35, 1.05, 2.6)
+		BuildFX.play("Coins", 0.45)
 		toast(p.name .. " built!", "green", nil, "mega")
 	elseif kind == "Land" then
+		BuildFX.play("Chime", 0.5)
 		toast("New land! The streets build themselves", "gold", 3, "locations")
 	elseif kind == "Rebirth" then
-		toast("REBIRTH " .. p.n .. "! Income x" .. C.Fmt(p.mult), "gold", 4, "rebirth")
+		BuildFX.play("Fanfare", 0.5, 0.9)
+		toast("REBIRTH " .. p.n .. "! Income x" .. multText(p.mult), "gold", 4, "rebirth")
 	elseif kind == "Offline" then
 		toast("While you were away: +" .. C.Money(p.amount), "green", 4, "cash")
 	elseif kind == "Error" then
