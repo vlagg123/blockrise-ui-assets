@@ -154,8 +154,8 @@ end
 -- Left: HAMMERS, SHOP, MENU -----------------------------------------------------------------------------------
 local left = new("Frame", { Name = "Left", BackgroundTransparency = 1, Position = UDim2.fromOffset(18, 200), Size = UDim2.fromOffset(96, 340), ZIndex = 8, Parent = root })
 new("UIListLayout", { Padding = UDim.new(0, 16), SortOrder = Enum.SortOrder.LayoutOrder, Parent = left })
-local function sideButton(name, icon, color, order)
-	local btn, holder = UI.button({ Name = name, Color = color, Size = UDim2.fromOffset(88, 80), Order = order, Radius = 22, Parent = left,
+local function sideButton(name, icon, color, order, parent)
+	local btn, holder = UI.button({ Name = name, Color = color, Size = UDim2.fromOffset(88, 80), Order = order, Radius = 22, Parent = parent or left,
 		OnClick = function() if windows.open then windows.open(name) end end })
 	local ic = UI.icon(icon, { Size = UDim2.fromOffset(66, 66), Position = UDim2.new(0.5, -33, 0, -2), ZIndex = btn.ZIndex + 3, Parent = btn })
 	ic.Rotation = -6
@@ -165,6 +165,29 @@ end
 sideButton("HAMMERS", "rbxassetid://71920003497651", "blue", 1)
 sideButton("SHOP", "store", "gold", 2)
 sideButton("MENU", "more", "purple", 3)
+-- Right: FREE GIFTS (a badge with how many are waiting; else the time to the next one). Under the dimmed screen
+-- while a window is open
+local right = new("Frame", { Name = "Right", BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -18, 0, 200), Size = UDim2.fromOffset(96, 130), ZIndex = 4, Parent = root })
+local giftBtn = sideButton("GIFTS", "gift", "pink", 1, right)
+local giftBadge, giftBadgeText = UI.badge(giftBtn, "1")
+giftBadge.Visible = false
+local giftTimer = UI.chip({ Color = "dark", Icon = "timer", Height = 26, TextSize = 16, Text = "0:00", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 8, 0, 96), ZIndex = 6, Parent = right })
+giftTimer.frame.Visible = false
+local function refreshGifts()
+	local n = attr("GiftsReady", 0)
+	giftBadge.Visible = n > 0
+	giftBadgeText.Text = tostring(n)
+	local nx = attr("GiftNext", -1)
+	giftTimer.frame.Visible = n == 0 and nx >= 0
+	if nx >= 0 then giftTimer.set(string.format("%d:%02d", nx // 60, nx % 60)) end
+end
+plr:GetAttributeChangedSignal("GiftsReady"):Connect(function()
+	local before = giftBadge.Visible
+	refreshGifts()
+	if giftBadge.Visible and not before then UI.pop(giftBadge, 1.5) end
+end)
+plr:GetAttributeChangedSignal("GiftNext"):Connect(refreshGifts)
+refreshGifts()
 -- HOME: only when you are far from your city
 local _homeBtn, homeHolder = UI.button({ Name = "HOME", Color = "green", Text = "HOME", IconKey = "home", Size = UDim2.fromOffset(88, 46), Order = 4, Parent = left, Max = 20,
 	OnClick = function() CityRF:InvokeServer("home") end })
@@ -523,6 +546,36 @@ local dustPE = new("ParticleEmitter", { Texture = "rbxasset://textures/particles
 	Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 9) }), Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) }),
 	Lifetime = NumberRange.new(1, 1.6), Speed = NumberRange.new(4, 9), SpreadAngle = Vector2.new(80, 80), Rate = 0, Parent = dust })
 
+-- A reward flying home: a handful of icons burst out of `from` (a GuiObject) and fly into the money (cash), the gems
+-- (gems) or the HAMMERS button (crates), which bumps as they land
+local function fly(icon, from, kind, n)
+	local target = kind == "gems" and gemPill or (kind == "cash" and moneyPill or left:FindFirstChild("HAMMERS"))
+	if not (from and from.Parent and target) then UI.coin() return end
+	local sc = scale.Scale
+	local function logical(v) return (v - root.AbsolutePosition) / sc end
+	local a = logical(from.AbsolutePosition + from.AbsoluteSize / 2)
+	local b = logical(target.AbsolutePosition + Vector2.new(math.min(26 * sc, target.AbsoluteSize.X / 2), target.AbsoluteSize.Y / 2))
+	n = n or 8
+	for i = 1, n do
+		local ic = UI.icon(icon, { Size = UDim2.fromOffset(56, 56), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(a.X, a.Y), ZIndex = 40, Parent = root })
+		local s = new("UIScale", { Scale = 0.2, Parent = ic })
+		local ang = (i / n) * math.pi * 2 + math.random() * 0.6
+		local mid = a + Vector2.new(math.cos(ang), math.sin(ang)) * (46 + math.random() * 40)
+		TweenService:Create(s, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		TweenService:Create(ic, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = UDim2.fromOffset(mid.X, mid.Y), Rotation = math.random(-25, 25) }):Play()
+		task.delay(0.34 + i * 0.045, function()
+			local tw = TweenService:Create(ic, TweenInfo.new(0.42, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Position = UDim2.fromOffset(b.X, b.Y), Rotation = 0 })
+			TweenService:Create(s, TweenInfo.new(0.42, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Scale = 0.5 }):Play()
+			tw.Completed:Connect(function()
+				ic:Destroy()
+				UI.pop(target, 1.08)
+				if i % 2 == 1 then UI.coin() end
+			end)
+			tw:Play()
+		end)
+	end
+end
+
 -- Windows (HAMMERS / SHOP / MENU): a dimmed screen, one panel with a header ribbon; the contents come in their own modules
 local scrim = new("TextButton", { Name = "Scrim", Text = "", AutoButtonColor = false, BackgroundColor3 = C3(8, 12, 36), BackgroundTransparency = 0.45, Size = UDim2.new(1, 0, 1, 120), Position = UDim2.fromOffset(0, -120), ZIndex = 5, Visible = false, Parent = root })
 local WIN_W = 800
@@ -546,8 +599,8 @@ local function fitWindow()
 	win.Position = UDim2.fromOffset(math.max(logicalW / 2, 304 + WIN_W / 2), 24)
 end
 table.insert(onResize, fitWindow)
-local winColors = { HAMMERS = "blue", SHOP = "gold", MENU = "purple" }
-local winIcons = { HAMMERS = "rbxassetid://71920003497651", SHOP = "store", MENU = "more" }
+local winColors = { HAMMERS = "blue", SHOP = "gold", MENU = "purple", GIFTS = "pink" }
+local winIcons = { HAMMERS = "rbxassetid://71920003497651", SHOP = "store", MENU = "more", GIFTS = "gift" }
 local contents = {}
 windows.open = function(name, opts)
 	if win.Visible and win:GetAttribute("Name") == name and not opts then closeWindow() return end
@@ -563,7 +616,7 @@ windows.open = function(name, opts)
 	end
 	for _, c in ipairs(winBody:GetChildren()) do c:Destroy() end
 	if contents[name] then
-		local ok, err = pcall(contents[name], winBody, { UI = UI, toast = toast, attr = attr, tab = opts and opts.tab, close = closeWindow, open = function(n, o) task.defer(windows.open, n, o) end, h = win.Size.Y.Offset - 98 })
+		local ok, err = pcall(contents[name], winBody, { UI = UI, toast = toast, attr = attr, tab = opts and opts.tab, close = closeWindow, open = function(n, o) task.defer(windows.open, n, o) end, h = win.Size.Y.Offset - 98, fly = fly })
 		if not ok then warn("[HUD2] window " .. name .. ": " .. tostring(err)) end
 	end
 	win.Visible = true
@@ -572,7 +625,7 @@ windows.open = function(name, opts)
 	UI.pop(win, 0.88)
 end
 -- the window contents live in modules next to this script (HammersWin, ShopWin, MenuWin); missing ones say so
-for _, n in ipairs({ "HAMMERS", "SHOP", "MENU" }) do
+for _, n in ipairs({ "HAMMERS", "SHOP", "MENU", "GIFTS" }) do
 	local mod = script:FindFirstChild(n:sub(1, 1) .. n:sub(2):lower() .. "Win")
 	if mod then
 		local ok, fn = pcall(require, mod)
@@ -602,10 +655,80 @@ plr:GetAttributeChangedSignal("Lots"):Connect(refreshCard)
 plr:GetAttributeChangedSignal("Queue"):Connect(refreshCard)
 plr:GetAttributeChangedSignal("Money"):Connect(function() if card.Visible then refreshCard() end end)
 
+-- Rebirth: the dialog says what you get and what it takes. Ready: what goes (all your cash) and a REBIRTH! button.
+-- Not ready yet (a tap on the Rebirth bar): how far you are and what is missing
+local function confirmRebirth()
+	local reb = attr("Rebirths", 0)
+	if reb >= #C.RebirthCost then toast("Max Rebirth for now!", "gold", 2.5, "rebirth_star") return end
+	if root:FindFirstChild("RebirthAsk") then return end
+	local ready = attr("RebirthReady", false)
+	local cap, capNow = C.Cap(reb + 1), C.Cap(reb)
+	local cost = attr("RebirthCost", 0)
+	if cost <= 0 then cost = C.RebirthCost[reb + 1] end
+	local money = attr("Money", 0)
+	local m = C.RebirthMultiplier(reb + 1)
+	local mult = math.abs(m - math.floor(m)) < 1e-6 and tostring(math.floor(m)) or (string.format("%.2f", m):gsub("%.?0+$", ""))
+	local rows = {
+		{ "up_cash", "Income x" .. mult .. " for good" },
+		{ "locations", C.RowNames[reb + 2] and ("New land: " .. C.RowNames[reb + 2]) or "Bigger towers on all your land" },
+		{ "mega", "Build up to level " .. cap .. ": " .. C.Levels[cap].name },
+	}
+	if ready then
+		table.insert(rows, { "cash", "Your cash (" .. C.Money(money) .. ") goes back to $0. Your buildings stay!", red = true })
+	else
+		table.insert(rows, { "site", "Every lot to level " .. capNow .. " (" .. C.Levels[capNow].name .. ")", prog = math.clamp(attr("RebirthProgress", 0), 0, 1) })
+		table.insert(rows, { "cash", "Have " .. C.Money(cost) .. " cash", prog = math.clamp(money / cost, 0, 1) })
+	end
+	local H = 84 + #rows * 58 + 96
+	local holder = new("Frame", { Name = "RebirthAsk", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 20, Parent = root })
+	local dim = new("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = C3(8, 12, 36), BackgroundTransparency = 0.4, Size = UDim2.new(1, 0, 1, 120), Position = UDim2.fromOffset(0, -120), ZIndex = 1, Parent = holder })
+	local body, panel = UI.panel({ Size = UDim2.fromOffset(580, H), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, -24), Title = "REBIRTH " .. (reb + 1), Icon = "rebirth",
+		Color = "gold", HeadHeight = 64, Radius = 26, Pattern = true, PatternW = 580, PatternH = H + 20, ZIndex = 2, Parent = holder })
+	if not ready then
+		UI.chip({ Color = "dark", Icon = "timer", Height = 32, TextSize = 17, Text = "NOT YET", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -70, 0, 32), ZIndex = 9, Parent = body })
+	end
+	for i, r in ipairs(rows) do
+		local row = new("Frame", { BackgroundColor3 = WHITE, Size = UDim2.new(1, -60, 0, 50), Position = UDim2.fromOffset(30, 80 + (i - 1) * 58), ZIndex = 5, Parent = body })
+		UI.corner(row, 16)
+		UI.stroke(row, 2.5, r.red and UI.Colors.red[2] or UI.Ink, r.red and 0 or 0.35)
+		UI.gradient(row, WHITE, r.red and C3(255, 226, 226) or (r.prog and C3(255, 244, 214) or C3(232, 240, 255)))
+		UI.icon(r[1], { Size = UDim2.fromOffset(46, 46), Position = UDim2.new(0, 8, 0.5, -23), ZIndex = 7, Parent = row })
+		local textW = r.prog and -200 or -74
+		UI.text({ Text = r[2], Size = UDim2.new(1, textW, 0.6, 0), Position = UDim2.new(0, 62, 0.2, 0), XAlign = Enum.TextXAlignment.Left, Color = r.red and UI.Colors.red[2] or UI.Ink, Stroke = false, Max = 19, ZIndex = 7, Parent = row })
+		if r.prog then
+			local done = r.prog >= 1
+			local pb = UI.progress({ Color = done and "green" or "gold", Size = UDim2.fromOffset(122, 26), AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Text = done and "DONE!" or (math.floor(r.prog * 100) .. "%"), Max = 16, ZIndex = 7, Parent = row })
+			pb.set(math.max(0.08, r.prog), done and "DONE!" or (math.floor(r.prog * 100) .. "%"), true)
+		end
+	end
+	local function close()
+		local sc = panel:FindFirstChildOfClass("UIScale")
+		if sc then TweenService:Create(sc, TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Scale = 0 }):Play() end
+		task.delay(0.18, function() holder:Destroy() end)
+	end
+	if ready then
+		UI.button({ Name = "No", Color = "grey", Text = "NOT YET", Size = UDim2.fromOffset(200, 60), AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 30, 1, -22), Max = 26, ZIndex = 6, Parent = body, OnClick = close })
+		UI.button({ Name = "Yes", Color = "gold", Text = "REBIRTH!", IconKey = "rebirth", Size = UDim2.fromOffset(270, 60), AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -30, 1, -22), Shimmer = true, Max = 28, ZIndex = 6, Parent = body,
+			OnClick = function()
+				local ok, err = CityRF:InvokeServer("rebirth")
+				close()
+				if not ok then toast(tostring(err), "red") end
+			end })
+	else
+		UI.button({ Name = "Ok", Color = "green", Text = "KEEP BUILDING!", IconKey = "site", Size = UDim2.fromOffset(330, 60), AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -22), Max = 26, ZIndex = 6, Parent = body, OnClick = close })
+	end
+	dim.Activated:Connect(close)
+	UI.pop(panel, 0.7)
+end
+-- the Rebirth bar (not ready yet) opens the same dialog: what it takes
+local rebTap = new("TextButton", { Name = "Tap", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 12), Position = UDim2.fromOffset(0, -6), ZIndex = 12, Parent = rebBar })
+rebTap.Activated:Connect(function()
+	UI.click()
+	confirmRebirth()
+end)
 rebBtn.Activated:Connect(function()
 	UI.click()
-	local ok, err = CityRF:InvokeServer("rebirth")
-	if not ok then toast(tostring(err), "red") end
+	confirmRebirth()
 end)
 
 local lastGoal, lastProg = nil, nil
