@@ -228,6 +228,10 @@ local function startJob(plr, st, o, rec)
 	job.model:SetAttribute("Level", o.to)
 	job.model:SetAttribute("Style", rec.st)
 	job.model:SetAttribute("Height", job.size and job.size.Y or 20)
+	-- (the clients draw the finished building as a hologram over the site: GHOST_V1)
+	job.model:SetAttribute("Blueprint", bp)
+	job.model:SetAttribute("Origin", lotOrigin(k, o.lot))
+	job.model:SetAttribute("Scale", Build.Scale or 1)
 	-- tall buildings get the tower crane
 	if job.size and job.size.Y >= 30 then pcall(Crane.Spawn, job) end
 	-- (resumed after a rejoin: the work already done shows at once)

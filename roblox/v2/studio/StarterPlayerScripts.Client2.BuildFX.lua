@@ -189,6 +189,100 @@ local function craneTake(p)
 	return true
 end
 
+-- the hologram (GHOST_V1): while a building goes up, the finished building stands over its site as a see-through blue
+-- shell; every real piece that arrives takes the place of its ghost piece, so the hologram fills in as the work goes on.
+-- The server tags the site model with Blueprint, Origin and Scale; the pieces are the blueprint's (as the server builds
+-- them), minus the dig and the scaffolding that comes down again
+local ghosts = {}
+local GHOST, GHOST_T = Color3.fromRGB(120, 210, 255), 0.74
+local function gkey(cf, size)
+	local p = cf.Position
+	local function q(v) return math.floor(v * 4 + 0.5) end
+	return q(p.X) .. "," .. q(p.Y) .. "," .. q(p.Z) .. "|" .. q(size.X) .. "," .. q(size.Y) .. "," .. q(size.Z)
+end
+local function ghostTake(part)
+	local gh = ghosts[part.Parent]
+	if not gh then return end
+	local key = gkey(part.CFrame, part.Size)
+	local g = gh.map[key]
+	if g then
+		gh.map[key] = nil
+		g:Destroy()
+	end
+end
+function M.ghost(job)
+	if ghosts[job] or job.Name == "Building" then return end
+	local bp, origin = job:GetAttribute("Blueprint"), job:GetAttribute("Origin")
+	if type(bp) ~= "string" or typeof(origin) ~= "CFrame" then return end
+	local cam = workspace.CurrentCamera
+	if cam and (cam.CFrame.Position - origin.Position).Magnitude > 600 then return end
+	local okB, Blueprints = pcall(require, ReplicatedStorage.Shared:WaitForChild("Blueprints", 10))
+	if not okB or not Blueprints[bp] then return end
+	local okS, stages = pcall(Blueprints[bp])
+	if not okS or type(stages) ~= "table" then return end
+	local S = tonumber(job:GetAttribute("Scale")) or 1
+	local function place(spec) return origin * (CFrame.new(spec.c.Position * S) * spec.c.Rotation), spec.s * S end
+	local gone = {}
+	for _, st in ipairs(stages) do
+		for _, spec in ipairs(st.removes or {}) do
+			if spec.s and spec.c then
+				local cf, sz = place(spec)
+				gone[gkey(cf, sz)] = true
+			end
+		end
+	end
+	local g = Instance.new("Model")
+	g.Name = "Ghost_" .. job.Name
+	local map, n = {}, 0
+	for _, st in ipairs(stages) do
+		if st.key ~= "dig" then
+			for _, spec in ipairs(st.adds or {}) do
+				if n < 1600 and spec.s and spec.c and (spec.t or 0) < 0.9 then
+					local cf, sz = place(spec)
+					local key = gkey(cf, sz)
+					if not gone[key] and not map[key] then
+						n += 1
+						local p = Instance.new(spec.shape == "Wedge" and "WedgePart" or "Part")
+						if spec.shape == "Ball" then p.Shape = Enum.PartType.Ball elseif spec.shape == "Cylinder" then p.Shape = Enum.PartType.Cylinder end
+						p.Anchored = true p.CanCollide = false p.CanQuery = false p.CanTouch = false p.CastShadow = false
+						p.Size = sz
+						p.CFrame = cf
+						p.Material = Enum.Material.SmoothPlastic
+						p.Color = GHOST
+						p.Transparency = 1
+						p.Parent = g
+						map[key] = p
+					end
+				end
+			end
+		end
+	end
+	local folder = workspace:FindFirstChild("FX2") or workspace
+	g.Parent = folder
+	local gh = { model = g, map = map }
+	ghosts[job] = gh
+	-- the pieces already standing (a site seen late) take their place at once
+	for _, d in ipairs(job:GetChildren()) do if d:IsA("BasePart") then ghostTake(d) end end
+	-- it fades in
+	for _, p in pairs(map) do tween(p, 0.8, { Transparency = GHOST_T }) end
+	local function finish()
+		if ghosts[job] ~= gh then return end
+		ghosts[job] = nil
+		for _, p in pairs(gh.map) do if p.Parent then tween(p, 0.5, { Transparency = 1 }) end end
+		Debris:AddItem(g, 0.6)
+	end
+	job:GetPropertyChangedSignal("Name"):Connect(function() if job.Name == "Building" then finish() end end)
+	job.AncestryChanged:Connect(function() if not job:IsDescendantOf(workspace) then finish() end end)
+end
+local function maybeGhost(m)
+	if not (m:IsA("Model") and m:GetAttribute("JobId") and m.Name:sub(1, 1) == "J") then return end
+	task.spawn(function()
+		local t0 = os.clock()
+		while m.Parent and not m:GetAttribute("Origin") and os.clock() - t0 < 3 do task.wait(0.1) end
+		if m.Parent then M.ghost(m) end
+	end)
+end
+
 -- one piece arriving ----------------------------------------------------------------------------------------
 local function animatePart(p)
 	local anim = p:GetAttribute("Anim")
@@ -280,12 +374,15 @@ function M.start()
 	local function watch(root)
 		root.DescendantAdded:Connect(function(d)
 			if d:IsA("BasePart") and inLot(d) then
+				ghostTake(d)
 				if d:GetAttribute("Anim") then animatePart(d) end
 				hookRemove(d)
+			elseif d:IsA("Model") then
+				maybeGhost(d)
 			end
 		end)
 		for _, d in ipairs(root:GetDescendants()) do
-			if d:IsA("BasePart") and inLot(d) then hookRemove(d) end
+			if d:IsA("BasePart") and inLot(d) then hookRemove(d) elseif d:IsA("Model") then maybeGhost(d) end
 		end
 	end
 	watch(districts)
