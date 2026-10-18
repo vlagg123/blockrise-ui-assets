@@ -343,6 +343,42 @@ function City.Render(plr, st, animateBlock)
 	end
 end
 
+-- Free districts (PREMIUM_UI, 2026-10-18): no bare grass where no builder lives on this server. Their streets stand
+-- with lamps and trees, every plot is marked out (a pad, a white kerb, a path, a couple of bushes); it all goes the
+-- moment a builder moves in, and comes back when they leave.
+local SHOW_STREETS = { "A1", "A2", "A3", "I1_0", "I2_0", "X1_1", "X1_2", "X2_1", "X2_2" }
+local function showcase(k)
+	local d = districtFolder(k)
+	if not d or owners[k] or d:FindFirstChild("Showcase") then return end
+	local f = Instance.new("Folder")
+	f.Name = "Showcase"
+	local sf = Geo.folder(f, "Streets")
+	for _, id in ipairs(SHOW_STREETS) do pcall(Streets.build, sf, k, id) end
+	local lf = Geo.folder(f, "Plots")
+	for i = 1, 24 do
+		local m = Instance.new("Model")
+		m.Name = "P" .. i
+		local cf = Geo.lotCF(k, i)
+		Geo.box(m, Vector3.new(Geo.Lot - 4, 0.5, Geo.Lot - 4), cf * CFrame.new(0, 0.25, 0), Color3.fromRGB(122, 214, 98), Enum.Material.SmoothPlastic, { Name = "Pad" })
+		Geo.box(m, Vector3.new(6, 0.56, 12), cf * CFrame.new(0, 0.28, -(Geo.Lot / 2 - 6)), Color3.fromRGB(244, 238, 226), Enum.Material.SmoothPlastic, { Name = "Path" })
+		local e = (Geo.Lot - 4) / 2
+		local kerb = Color3.fromRGB(255, 255, 255)
+		for _, sd in ipairs({ -1, 1 }) do
+			Geo.box(m, Vector3.new(1, 0.8, Geo.Lot - 4), cf * CFrame.new(sd * (e - 0.5), 0.4, 0), kerb, Enum.Material.SmoothPlastic, { Name = "Kerb" })
+			Geo.box(m, Vector3.new(e - 3, 0.8, 1), cf * CFrame.new(sd * (3 + (e - 3) / 2), 0.4, -(e - 0.5)), kerb, Enum.Material.SmoothPlastic, { Name = "Kerb" })
+			pcall(Geo.bush, m, cf * CFrame.new(sd * (e - 6), 0.5, e - 6), 0.9, k * 100 + i * 2 + (sd > 0 and 1 or 0))
+		end
+		Geo.box(m, Vector3.new(Geo.Lot - 4, 0.8, 1), cf * CFrame.new(0, 0.4, e - 0.5), kerb, Enum.Material.SmoothPlastic, { Name = "Kerb" })
+		m.Parent = lf
+	end
+	f.Parent = d
+end
+local function clearShowcase(k)
+	local d = districtFolder(k)
+	local s = d and d:FindFirstChild("Showcase")
+	if s then s:Destroy() end
+end
+
 -- Assignment ---------------------------------------------------------------------------------------------
 function City.Assign(plr, st)
 	for k = 1, 6 do
@@ -350,6 +386,7 @@ function City.Assign(plr, st)
 			owners[k] = plr
 			st.k = k
 			plr:SetAttribute("District", k)
+			clearShowcase(k)
 			City.Render(plr, st)
 			return k
 		end
@@ -367,6 +404,7 @@ function City.Release(plr, st)
 	if gate and gate:FindFirstChild("Sign") then
 		for _, sg in ipairs(gate.Sign:GetChildren()) do if sg:IsA("SurfaceGui") and sg:FindFirstChild("Label") then sg.Label.Text = "FREE LAND" end end
 	end
+	task.defer(showcase, k)
 end
 function City.OwnerOf(k) return owners[k] end
 -- where a player arrives in their city: on the avenue just inside the gate, looking in
@@ -595,6 +633,15 @@ end
 
 function City.Init(c)
 	ctx = c
+	-- the districts nobody has taken yet (a moment after the start, after the first players are placed)
+	task.delay(3, function()
+		for k = 1, 6 do
+			if not owners[k] then
+				pcall(showcase, k)
+				task.wait(0.2)
+			end
+		end
+	end)
 end
 
 return City

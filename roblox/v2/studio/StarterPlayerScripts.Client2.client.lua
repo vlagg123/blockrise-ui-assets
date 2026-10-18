@@ -946,6 +946,50 @@ end)
 local music = new("Sound", { Name = "Music2", SoundId = "rbxassetid://84797666595507", Looped = true, Volume = 0.16, Parent = game:GetService("SoundService") })
 music:Play()
 
+-- Welcome (a new builder: no building yet, the free first build still there) ---------------------------------------------
+local function welcome()
+	local holder = new("Frame", { Name = "Welcome", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 20, Parent = root })
+	local dim = new("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = C3(8, 12, 36), BackgroundTransparency = 0.4, Size = UDim2.new(1, 0, 1, 120), Position = UDim2.fromOffset(0, -120), ZIndex = 1, Parent = holder })
+	local body, panel = UI.panel({ Size = UDim2.fromOffset(560, 400), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Title = "WELCOME, BUILDER!", Icon = "mega",
+		Color = "gold", HeadHeight = 64, Radius = 26, Pattern = true, PatternW = 560, PatternH = 420, ZIndex = 2, Parent = holder })
+	UI.text({ Text = "Grow a city from one empty lot to a skyline of towers.", Size = UDim2.new(1, -60, 0, 26), Position = UDim2.fromOffset(30, 80), Color = UI.Ink, Stroke = false, Max = 21, ZIndex = 6, Parent = body })
+	local steps = {
+		{ "site", "Tap your glowing lot to build: the first one is free", "green" },
+		{ "upgrades", "Upgrade your buildings: every level makes more cash", "blue" },
+		{ "rebirth", "Rebirth to unlock new land and much taller towers", "purple" },
+	}
+	for i, st in ipairs(steps) do
+		local y = 118 + (i - 1) * 62
+		local row = new("Frame", { BackgroundColor3 = WHITE, Size = UDim2.new(1, -60, 0, 52), Position = UDim2.fromOffset(30, y), ZIndex = 5, Parent = body })
+		UI.corner(row, 16)
+		UI.stroke(row, 2.5, UI.Ink, 0.35)
+		UI.gradient(row, WHITE, C3(232, 240, 255))
+		local num = UI.pill({ Color = st[3], Size = UDim2.fromOffset(38, 38), Position = UDim2.new(0, 8, 0.5, -19), ZIndex = 7, Parent = row })
+		UI.text({ Text = tostring(i), Size = UDim2.new(1, -10, 1, -10), Position = UDim2.fromOffset(5, 5), ZIndex = 9, Max = 24, StrokeTh = 2, Parent = num })
+		UI.icon(st[1], { Size = UDim2.fromOffset(48, 48), Position = UDim2.new(0, 50, 0.5, -24), ZIndex = 7, Parent = row })
+		UI.text({ Text = st[2], Size = UDim2.new(1, -120, 0.62, 0), Position = UDim2.new(0, 106, 0.19, 0), XAlign = Enum.TextXAlignment.Left, Color = UI.Ink, Stroke = false, Max = 19, ZIndex = 7, Parent = row })
+	end
+	local function close()
+		local sc = panel:FindFirstChildOfClass("UIScale")
+		if sc then TweenService:Create(sc, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Scale = 0 }):Play() end
+		TweenService:Create(dim, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
+		task.delay(0.22, function() holder:Destroy() end)
+	end
+	UI.button({ Name = "Go", Color = "green", Text = "LET'S BUILD!", Size = UDim2.fromOffset(300, 64), AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -22),
+		Shimmer = true, Max = 32, ZIndex = 6, Parent = body, OnClick = close })
+	dim.Activated:Connect(close)
+	UI.pop(panel, 0.7)
+end
+task.spawn(function()
+	-- wait for the save, then: no building at all and the free first build unused = a new builder
+	local t0 = os.clock()
+	while attr("Lots", "") == "" and os.clock() - t0 < 20 do task.wait(0.5) end
+	task.wait(1.5)
+	local any = false
+	for _, l in ipairs(lots()) do if l.lv > 0 or l.planned > 0 then any = true end end
+	if not any and attr("FreeFirst", false) ~= true then welcome() end
+end)
+
 -- Feedback from the server ------------------------------------------------------------------------------------------
 FeedbackRE.OnClientEvent:Connect(function(kind, p)
 	if kind == "Built" then

@@ -334,6 +334,11 @@ Store.Init(ctx)
 local function onCharacter(plr, char)
 	task.wait(0.2)
 	holdHammer(plr)
+	-- you (re)spawn in your own city, at its gate, looking down your street (the plaza is a walk or a MENU tap away)
+	local st = S[plr]
+	if st and st.k and char:WaitForChild("HumanoidRootPart", 5) and char.Parent then
+		char:PivotTo(City.HomeCF(st))
+	end
 end
 
 local function onPlayerAdded(plr)
