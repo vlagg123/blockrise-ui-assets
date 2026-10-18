@@ -15,6 +15,7 @@ local City = require(script.Parent.City)
 local Crew = require(script.Parent.Crew2)
 local Store = require(script.Parent.Store)
 local Gifts = require(script.Parent.Gifts)
+local Leaderboard = require(script.Parent.Leaderboard)
 
 -- 2.0 has its own contextual tutorial: the v1 one (Road steps) never locks crates or level-ups here
 Config.InTutorial = function() return false end
@@ -331,6 +332,7 @@ Crew.Init(ctx)
 HammerService.Init(ctx)
 Store.Init(ctx)
 Gifts.Init(ctx)
+Leaderboard.Init(ctx)
 
 -- Players -------------------------------------------------------------------------------------------------
 local function onCharacter(plr, char)
@@ -380,6 +382,7 @@ Players.PlayerRemoving:Connect(function(plr)
 	if not st then return end
 	Crew.Remove(plr)
 	Gifts.Leave(plr)
+	Leaderboard.Leave(plr)
 	City.Release(plr, st)
 	saveData(plr, true)
 	S[plr] = nil

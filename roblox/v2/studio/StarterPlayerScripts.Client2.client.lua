@@ -15,6 +15,7 @@ local C = require(ReplicatedStorage.Shared.Config2)
 local Hammers = require(ReplicatedStorage.Shared.Hammers)
 local UI = require(script:WaitForChild("UI"))
 local BuildFX = require(script:WaitForChild("BuildFX"))
+local LotPosts = require(script:WaitForChild("LotPosts"))
 task.spawn(BuildFX.start)
 -- cars driving the permanent streets (Traffic.lua)
 task.spawn(function()
@@ -220,7 +221,7 @@ local function goal()
 		if l.owned and l.lv >= cap then maxed += 1 end
 	end
 	local reb = attr("Rebirths", 0)
-	if built < 1 then return "Tap the glowing lot to build!", "", 1 end
+	if built < 1 then return "Step on the green pad to build!", "", 1 end
 	if built < 2 then return "Build a second building", built .. "/2", 2 end
 	if n4 < 1 then return "Upgrade a building", "0/1" end
 	if built < 4 then return "Build 4 buildings", built .. "/4" end
@@ -539,13 +540,18 @@ local ovText = UI.text({ Text = "", Scaled = false, TextSize = 22, Size = UDim2.
 local ovProg = UI.progress({ Color = "green", Track = C3(64, 78, 140), Size = UDim2.new(1, -28, 0, 30), Position = UDim2.fromOffset(14, 41), Max = 20, ZIndex = 5, Parent = ovPanel })
 local ovTap = UI.chip({ Color = "gold", Icon = "up_power", Height = 32, TextSize = 19, Text = "TAP TO BUILD FASTER!", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 12, 0, 106), Parent = overlay })
 local ovTapScale = new("UIScale", { Parent = ovTap.frame })
+-- (the overlay above is not shown any more: LOTPOST_V1 puts the progress on the lot's sign; this hint is on the screen)
+local tapHint = UI.chip({ Color = "gold", Icon = "up_power", Height = 38, TextSize = 21, Text = "TAP YOUR SITE TO BUILD FASTER!", AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 10, 1, -100), ZIndex = 3, Parent = root })
+tapHint.frame.Visible = false
+local tapHintScale = new("UIScale", { Parent = tapHint.frame })
 
 -- the tutorial marker over lot 1: a gold "TAP HERE!" bubble with a tail, bobbing
 local arrow = new("BillboardGui", { Name = "Arrow", Size = UDim2.fromOffset(200, 96), AlwaysOnTop = true, LightInfluence = 0, StudsOffsetWorldSpace = Vector3.new(0, 14, 0), Enabled = false, Parent = worldGui })
 tail(arrow, "gold", { Position = UDim2.new(0.5, 0, 0, 62), S = 24 })
 local arrowPill = UI.pill({ Color = "gold", Size = UDim2.fromOffset(176, 60), Position = UDim2.new(0.5, 0, 0, 6), AnchorPoint = Vector2.new(0.5, 0), StrokeTh = 3.5, ZIndex = 3, Parent = arrow })
 UI.icon("site", { Size = UDim2.fromOffset(64, 64), Position = UDim2.new(0, -12, 0.5, -34), ZIndex = 6, Parent = arrowPill })
-UI.text({ Text = "TAP HERE!", Size = UDim2.new(1, -62, 0.62, 0), Position = UDim2.new(0, 50, 0.19, 0), ZIndex = 6, StrokeTh = 3, Max = 30, Parent = arrowPill })
+UI.text({ Text = "BUILD HERE!", Size = UDim2.new(1, -62, 0.62, 0), Position = UDim2.new(0, 50, 0.19, 0), ZIndex = 6, StrokeTh = 3, Max = 30, Parent = arrowPill })
 
 local dust = new("Attachment", { Parent = workspace.Terrain })
 local dustPE = new("ParticleEmitter", { Texture = "rbxasset://textures/particles/smoke_main.dds", Color = ColorSequence.new(Color3.fromRGB(235, 215, 185)),
@@ -754,29 +760,25 @@ RunService.Heartbeat:Connect(function()
 		nextText.Position = UDim2.fromOffset(NEXT_TX, p and 6 or 19)
 		if p then nextBar.set(math.max(0.06, p), prog) end
 	end
-	-- the site overlay
+	-- a building of yours going up: its progress is on its lot's sign; near it, a hint on the screen to tap the site
 	local bl = attr("BuildLot", 0)
 	local m = bl > 0 and lotModel(bl)
+	overlay.Enabled = false
+	local near = false
 	if m and m:FindFirstChild("Pad") then
-		overlay.Adornee = m.Pad
-		overlay.StudsOffsetWorldSpace = m.Pad.CFrame.LookVector * 21 + Vector3.new(0, 15, 0)
-		overlay.Enabled = true
-		local p = attr("BuildProgress", 0)
-		local stage = attr("BuildStage", "") ~= "" and attr("BuildStage", "") or (C.Levels[attr("BuildTo", 1)] or C.Levels[1]).name
-		if ovText.Text ~= stage then fit(ovText, stage, 22, 216, 12) end
-		ovProg.set(math.clamp(p, 0.04, 1), math.ceil(attr("BuildLeft", 0)) .. "s")
-		ovTap.frame.Visible = p > 0
-		ovTapScale.Scale = 1 + math.abs(math.sin(os.clock() * 3)) * 0.07
+		local char0 = plr.Character
+		local r0 = char0 and char0:FindFirstChild("HumanoidRootPart")
+		near = r0 ~= nil and (r0.Position - m.Pad.Position).Magnitude < 150
 		if math.random() < 0.08 then dust.WorldPosition = m.Pad.Position dustPE:Emit(2) end
-	else
-		overlay.Enabled = false
 	end
-	-- the tutorial marker over lot 1
-	local am = arrowLot and lotModel(arrowLot)
-	if am and am:FindFirstChild("Pad") and bl == 0 then
-		arrow.Adornee = am.Pad
+	tapHint.frame.Visible = near and attr("BuildProgress", 0) > 0 and attr("BuildProgress", 0) < 1 and not (card.Visible or win.Visible)
+	if tapHint.frame.Visible then tapHintScale.Scale = 1 + math.abs(math.sin(os.clock() * 3)) * 0.06 end
+	-- the tutorial marker: over the sign of the lot to build
+	local anc = arrowLot and LotPosts.anchor and LotPosts.anchor(arrowLot)
+	if anc and bl == 0 then
+		arrow.Adornee = anc
 		arrow.Enabled = not card.Visible
-		arrow.StudsOffsetWorldSpace = Vector3.new(0, 12 + math.abs(math.sin(os.clock() * 3.2)) * 3, 0)
+		arrow.StudsOffsetWorldSpace = Vector3.new(0, 12 + math.abs(math.sin(os.clock() * 3.2)) * 1.5, 0)
 	else
 		arrow.Enabled = false
 	end
@@ -798,135 +800,23 @@ plr:GetAttributeChangedSignal("Money"):Connect(function()
 	lastMoney = v
 end)
 
--- Lot bubbles: over each lot of yours, BUILD (empty) or UPGRADE (you can pay the next level) with the price, a tail
--- pointing at the lot; tap one = its card ------------------------------------------------------------------------
-local bubbles = {}
-local function bubble(i)
-	if bubbles[i] then return bubbles[i] end
-	local bb = new("BillboardGui", { Name = "Lot" .. i, Size = UDim2.fromOffset(170, 84), AlwaysOnTop = true, MaxDistance = 220, Active = true, LightInfluence = 0, Enabled = false, Parent = worldGui })
-	local _, tailGrad = tail(bb, "green", { Position = UDim2.new(0.5, 0, 0, 60), S = 20 })
-	local btn, holder, label = UI.button({ Name = "B", Color = "green", Text = "BUILD", Sub = "FREE", IconKey = "mega", Size = UDim2.fromOffset(156, 58), AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 2), Radius = 18, Max = 24, SubMax = 18, ZIndex = 2, Parent = bb, OnClick = function() openCard(i) end })
-	bubbles[i] = { bb = bb, btn = btn, holder = holder, label = label, sub = btn:FindFirstChild("Sub"), icon = btn:FindFirstChild("Icon"), tail = tailGrad, kind = nil, phase = math.random() * 6 }
-	return bubbles[i]
-end
-local function refreshBubbles()
-	local L = lots()
-	local cap = attr("Cap", 4)
-	local moneyNow = attr("Money", 0)
-	local busy = attr("Queue", 0) >= C.QueueSize
-	for i, l in ipairs(L) do
-		local kind, price
-		if l.owned and not busy and l.planned == l.lv and l.planned < cap then
-			local nx = C.Levels[l.planned + 1]
-			local free = l.planned == 0 and i == 1 and attr("FreeFirst", false) ~= true
-			price = free and 0 or nx.cost
-			if l.planned == 0 then kind = (free or moneyNow >= nx.cost) and "build" or nil
-			elseif moneyNow >= nx.cost then kind = "up" end
+-- Lot posts (LOTPOST_V1): each building's sign (name, level, income) on a post at its lot's corner, and on your lots
+-- the glowing pad (BUILD / UPGRADE and the price: step on it or tap the sign). The old floating bubbles and income
+-- tags are gone: everything stands on its own lot now (the module LotPosts next to this script)
+LotPosts.start({ UI = UI, C = C, attr = attr, lots = lots, myDistrict = myDistrict, toast = toast,
+	openCard = function(i) openCard(i) end,
+	order = function(i)
+		local ok, res = CityRF:InvokeServer("order", i)
+		if ok then
+			UI.coin()
+			BuildFX.play("Hammer", 0.5, 1.1)
+		else
+			toast(tostring(res), "red")
 		end
-		local m = kind and lotModel(i)
-		if m and m:FindFirstChild("Pad") then
-			local b = bubble(i)
-			if b.kind ~= kind then
-				b.kind = kind
-				local col = kind == "build" and "green" or "gold"
-				b.label.Text = kind == "build" and "BUILD" or "UPGRADE"
-				UI.recolor(b.btn, col)
-				b.tail.Color = ColorSequence.new(UI.Colors[col][2], UI.darker(UI.Colors[col][2], 0.35))
-				if b.icon then UI.setIcon(b.icon, kind == "build" and "mega" or "upgrades") end
-				UI.pop(b.holder, 0.5)
-			end
-			b.sub.Text = price == 0 and "FREE" or C.Money(price)
-			-- (in front of the building, toward its street, at eye height: tall towers never hide it above the screen)
-			b.bb.Adornee = m.Pad
-			b.base = m.Pad.CFrame.LookVector * 22 + Vector3.new(0, 5.5, 0)
-			b.bb.Enabled = not (card.Visible or win.Visible) -- (no clutter over an open card or window)
-		elseif bubbles[i] then
-			bubbles[i].bb.Enabled = false
-			bubbles[i].kind = nil
-		end
-	end
-end
-task.spawn(function()
-	while true do
-		pcall(refreshBubbles)
-		task.wait(0.5)
-	end
-end)
-RunService.RenderStepped:Connect(function()
-	local t = os.clock()
-	for _, b in pairs(bubbles) do
-		if b.bb.Enabled and b.base then b.bb.StudsOffsetWorldSpace = b.base + Vector3.new(0, math.sin(t * 2.4 + b.phase) * 0.6, 0) end
-	end
-end)
-
--- Income tags (RATE_TAGS): over every finished building of every city, the money it makes each second ---------------
--- (green; gold with "+25%" when its block has the bonus). Mine pulse with every income tick; the others show up closer.
-local rateTags = {}
-local RATE_TS = 21
-local function rateTag(m)
-	local t = rateTags[m]
-	if t then return t end
-	local bb = new("BillboardGui", { Name = "Rate", Size = UDim2.fromOffset(220, 58), AlwaysOnTop = true, MaxDistance = 220, LightInfluence = 0, Enabled = false, Parent = worldGui })
-	local pill = UI.pill({ Color = "green", Size = UDim2.fromOffset(120, 38), Position = UDim2.new(0.5, 0, 1, -6), AnchorPoint = Vector2.new(0.5, 1), Parent = bb })
-	UI.icon("cash", { Size = UDim2.fromOffset(44, 44), Position = UDim2.new(0, -8, 0.5, -23), ZIndex = 6, Parent = pill })
-	local txt = UI.text({ Text = "", Scaled = false, TextSize = RATE_TS, Size = UDim2.new(1, -44, 1, 0), Position = UDim2.fromOffset(38, 0), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 2.4, Parent = pill })
-	local badge = UI.pill({ Color = "red", Size = UDim2.fromOffset(52, 22), Position = UDim2.new(1, -24, 0, -14), ZIndex = 8, StrokeTh = 2.2, Parent = pill })
-	badge.Visible = false
-	UI.text({ Text = "+25%", Size = UDim2.new(1, -8, 1, -4), Position = UDim2.fromOffset(4, 2), ZIndex = 10, StrokeTh = 1.6, Max = 16, Parent = badge })
-	t = { bb = bb, pill = pill, txt = txt, badge = badge, grad = pill:FindFirstChildOfClass("UIGradient"), sc = new("UIScale", { Parent = pill }) }
-	rateTags[m] = t
-	m.Destroying:Connect(function() bb:Destroy() rateTags[m] = nil end)
-	return t
-end
-local function refreshRates(pulse)
-	local districts = workspace:FindFirstChild("World") and workspace.World:FindFirstChild("Districts")
-	if not districts then return end
-	local mine = myDistrict()
-	for _, d in ipairs(districts:GetChildren()) do
-		local lotsF = d:FindFirstChild("City") and d.City:FindFirstChild("Lots")
-		for _, m in ipairs(lotsF and lotsF:GetChildren() or {}) do
-			local rate = m:GetAttribute("Rate") or 0
-			local b = m:FindFirstChild("Building")
-			local pad = m:FindFirstChild("Pad")
-			if rate > 0 and b and pad then
-				local t = rateTag(m)
-				local own = m:GetAttribute("District") == mine
-				local bonus = m:GetAttribute("Bonus") == true
-				local text = "+" .. C.Money(rate) .. "/s"
-				if t.txt.Text ~= text then
-					t.txt.Text = text
-					t.pill.Size = UDim2.fromOffset(38 + UI.textWidth(text, RATE_TS) + 14, 38)
-				end
-				if t.bonus ~= bonus then
-					t.bonus = bonus
-					local col = UI.Colors[bonus and "gold" or "green"]
-					t.grad.Color = ColorSequence.new(col[1], col[2])
-					t.badge.Visible = bonus
-				end
-				-- just over the roof (the blueprint's height), centred on the lot
-				t.bb.Adornee = pad
-				t.bb.StudsOffsetWorldSpace = Vector3.new(0, (b:GetAttribute("Height") or 20) + 4, 0)
-				t.bb.MaxDistance = own and 360 or 200
-				if not t.bb.Enabled then t.bb.Enabled = true UI.pop(t.pill, 0.6) end
-				if pulse and own then
-					t.sc.Scale = 1.12
-					TweenService:Create(t.sc, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
-				end
-			elseif rateTags[m] then
-				rateTags[m].bb.Enabled = false
-			end
-		end
-	end
-end
-task.spawn(function()
-	local n = 0
-	while true do
-		n += 1
-		pcall(refreshRates, n % 2 == 0)
-		task.wait(0.5)
-	end
-end)
+		return ok
+	end,
+	burst = function(pos) BuildFX.emit(pos, "sparks", Color3.fromRGB(140, 255, 160), 16) end,
+})
 
 -- For-sale boards (PREMIUM_UI): the server puts the plain board and its numbers (Price, Locked, Need); the face is
 -- drawn here with the kit: a ribbon, the price, how to buy ---------------------------------------------------------
