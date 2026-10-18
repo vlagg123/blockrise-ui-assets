@@ -274,30 +274,11 @@ local function saleSign(k, row, block, price, locked)
 	local signCF = base * CFrame.new(0, 0, -52)
 	for s = -1, 1, 2 do Geo.box(m, Vector3.new(1.2, 12, 1.2), signCF * CFrame.new(s * 9, 6, 0), Color3.fromRGB(150, 104, 64), Enum.Material.Wood) end
 	local board = Geo.box(m, Vector3.new(22, 9, 1.2), signCF * CFrame.new(0, 11, 0), locked and Color3.fromRGB(120, 128, 150) or Color3.fromRGB(255, 206, 64), Enum.Material.SmoothPlastic, { Name = "Board" })
+	-- PREMIUM_UI: the board's face (ribbon, price, how to buy) is drawn by each client from these
+	board:SetAttribute("Price", price)
+	board:SetAttribute("Locked", locked == true)
+	board:SetAttribute("Need", row - 1)
 	board:SetAttribute("Block", row .. "_" .. block)
-	local sg = Instance.new("SurfaceGui")
-	sg.Face = Enum.NormalId.Front
-	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	sg.PixelsPerStud = 24
-	sg.LightInfluence = 0
-	sg.Parent = board
-	local t1 = Instance.new("TextLabel")
-	t1.BackgroundTransparency = 1
-	t1.Size = UDim2.fromScale(1, 0.5)
-	t1.Font = Enum.Font.FredokaOne
-	t1.TextScaled = true
-	t1.TextColor3 = Color3.fromRGB(30, 44, 88)
-	t1.Text = locked and ("REBIRTH " .. (row - 1)) or "LAND FOR SALE"
-	t1.Parent = sg
-	local t2 = t1:Clone()
-	t2.Position = UDim2.fromScale(0, 0.48)
-	t2.Size = UDim2.fromScale(1, 0.48)
-	t2.TextColor3 = locked and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(30, 140, 70)
-	t2.Text = locked and "to unlock" or C.Money(price)
-	t2.Parent = sg
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0.06, 0) pad.PaddingBottom = UDim.new(0.06, 0) pad.PaddingLeft = UDim.new(0.05, 0) pad.PaddingRight = UDim.new(0.05, 0)
-	pad.Parent = sg
 	if not locked then
 		local pp = Instance.new("ProximityPrompt")
 		pp.Name = "Buy"

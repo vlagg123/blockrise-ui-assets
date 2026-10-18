@@ -83,10 +83,15 @@ local function makePart(spec, originCF, parent, animate)
 		local t = Instance.new("TextLabel")
 		t.BackgroundTransparency = 1
 		t.Size = UDim2.fromScale(1, 1)
-		t.Font = spec.font or Enum.Font.GothamBlack
+		t.Font = spec.font or Enum.Font.FredokaOne -- PREMIUM_UI: the game's font, with a dark outline
 		t.TextScaled = true
 		t.TextColor3 = spec.textCol or Color3.new(1, 1, 1)
 		t.Text = spec.text
+		local st = Instance.new("UIStroke")
+		st.Thickness = 3
+		st.Color = Color3.fromRGB(24, 32, 70)
+		st.Transparency = 0.15
+		st.Parent = t
 		local pad = Instance.new("UIPadding")
 		pad.PaddingTop = UDim.new(0.12, 0) pad.PaddingBottom = UDim.new(0.12, 0) pad.PaddingLeft = UDim.new(0.05, 0) pad.PaddingRight = UDim.new(0.05, 0)
 		pad.Parent = t

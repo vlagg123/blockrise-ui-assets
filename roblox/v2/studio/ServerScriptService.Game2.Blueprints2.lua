@@ -922,7 +922,7 @@ function B.CornerMarket()
 		extraFinish = function(w, d, h, slabH)
 			local list = bands(w, d, { slabH + 8.2, slabH + 16.2 }, rgb(236, 226, 206))
 			append(list, Z.awning(-4, 14, slabH + 7.25, d, 7, stripe, WHITE))
-			table.insert(list, sign(Vector3.new(20, 1.6, 0.4), Vector3.new(-1, slabH + 8.6 - 1.4, -d / 2 - 0.45), stripe, "MARKET"))
+			table.insert(list, sign(Vector3.new(20, 1.6, 0.4), Vector3.new(-1, slabH + 9.0, -d / 2 - 0.5), stripe, "MARKET")) -- (over the awning, not inside it)
 			-- the fire escape on the right wall: a landing a floor, rails, a ladder
 			for _, y in ipairs({ slabH + 9.4, slabH + 17.4 }) do
 				table.insert(list, P(Vector3.new(2.8, 0.3, 12), Vector3.new(w / 2 + 1.6, y, 0), METAL, INK, { anim = "beam" }))

@@ -1,5 +1,8 @@
 -- BlockRise Empire 2.0 - client: the HUD (money, gems, Rebirth bar, HAMMERS / SHOP / MENU, NEXT), the building card
--- (tap a lot), taps on the building site, the construction overlay and the effects (sparks, coins, pops).
+-- (tap a lot), taps on the building site, the construction overlay, the world tags (income, BUILD / UPGRADE, the
+-- for-sale boards, the prompts) and the effects (sparks, coins, pops).
+-- PREMIUM_UI (2026-10-18): everything redrawn with the UI kit v2 (UI.lua): dark HUD capsules with + buttons, glossy
+-- 3D buttons, panels with a header ribbon over a dimmed screen, segmented tabs, chips, progress bars with a shimmer.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,6 +17,8 @@ local UI = require(script:WaitForChild("UI"))
 local BuildFX = require(script:WaitForChild("BuildFX"))
 task.spawn(BuildFX.start)
 local new = UI.new
+local C3 = Color3.fromRGB
+local WHITE = Color3.new(1, 1, 1)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local CityRF = Remotes:WaitForChild("City")
 local TapRE = Remotes:WaitForChild("CityTap")
@@ -35,6 +40,25 @@ local function lots()
 	return out
 end
 
+-- a text that never wraps: the biggest size up to `max` that fits `width`
+local function fit(label, text, max, width, min)
+	local s = max
+	while s > (min or 12) and UI.textWidth(text, s) > width do s -= 1 end
+	label.TextSize = s
+	label.Text = text
+end
+
+-- a speech-bubble tail (a diamond under a bubble)
+local function tail(parent, color, props)
+	local col = UI.Colors[color]
+	local d = new("Frame", { Name = "Tail", BackgroundColor3 = WHITE, Rotation = 45, AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(props.S or 20, props.S or 20),
+		Position = props.Position, ZIndex = props.ZIndex or 1, Parent = parent })
+	UI.corner(d, 4)
+	UI.stroke(d, 3)
+	local g = UI.gradient(d, col[2], UI.darker(col[2], 0.35), 45)
+	return d, g
+end
+
 -- Screen ------------------------------------------------------------------------------------------------
 local gui = new("ScreenGui", { Name = "HUD2", ResetOnSpawn = false, IgnoreGuiInset = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = plr:WaitForChild("PlayerGui") })
 pcall(function() gui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets end)
@@ -42,51 +66,68 @@ pcall(function() gui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets end)
 local worldGui = plr.PlayerGui
 local root = new("Frame", { Name = "Root", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Parent = gui })
 local scale = new("UIScale", { Parent = root })
+local logicalH = 640
+local onResize = {}
 local function rescale()
 	local v = workspace.CurrentCamera.ViewportSize
 	local s = math.clamp(math.min(v.X / 1150, v.Y / 640), 0.62, 1.2)
 	scale.Scale = s
 	root.Size = UDim2.fromScale(1 / s, 1 / s)
+	local abs = gui.AbsoluteSize
+	logicalH = (abs.Y > 0 and abs.Y or v.Y) / s
+	for _, f in ipairs(onResize) do pcall(f) end
 end
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
-rescale()
+gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(rescale)
+
+local windows = {}
 
 -- Top: money, gems, Rebirth -------------------------------------------------------------------------------
-local top = new("Frame", { Name = "Top", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.fromOffset(520, 120), Parent = root })
-local moneyPill = UI.pill({ Name = "Money", Color = "green", Size = UDim2.fromOffset(290, 62), Position = UDim2.new(0.5, -40, 0, 0), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
-UI.icon("cash", { Size = UDim2.fromOffset(66, 66), Position = UDim2.new(0, -16, 0.5, -33), ZIndex = 4, Parent = moneyPill })
-local moneyText = UI.text({ Text = "$0", Size = UDim2.new(1, -70, 0.66, 0), Position = UDim2.new(0, 56, 0.04, 0), XAlign = Enum.TextXAlignment.Left, ZIndex = 4, StrokeTh = 3, Parent = moneyPill })
-local incomeText = UI.text({ Text = "+$0/s", Size = UDim2.new(1, -70, 0.32, 0), Position = UDim2.new(0, 58, 0.64, 0), XAlign = Enum.TextXAlignment.Left, Color = Color3.fromRGB(255, 255, 190), ZIndex = 4, StrokeTh = 2, Parent = moneyPill })
-local gemPill = UI.pill({ Name = "Gems", Color = "purple", Size = UDim2.fromOffset(150, 48), Position = UDim2.new(0.5, 168, 0, 7), Parent = top })
-UI.icon("gem", { Size = UDim2.fromOffset(50, 50), Position = UDim2.new(0, -12, 0.5, -25), ZIndex = 4, Parent = gemPill })
-local gemText = UI.text({ Text = "0", Size = UDim2.new(1, -52, 0.74, 0), Position = UDim2.new(0, 42, 0.13, 0), XAlign = Enum.TextXAlignment.Left, ZIndex = 4, Parent = gemPill })
+local top = new("Frame", { Name = "Top", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10), Size = UDim2.fromOffset(620, 112), ZIndex = 8, Parent = root })
+local moneyPill = UI.pill({ Name = "Money", Style = "dark", Size = UDim2.fromOffset(286, 58), Position = UDim2.new(0.5, -72, 0, 0), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
+local cashIcon = UI.icon("cash", { Size = UDim2.fromOffset(80, 80), Position = UDim2.new(0, -34, 0.5, -42), ZIndex = 6, Parent = moneyPill })
+cashIcon.Rotation = -8
+local moneyText = UI.text({ Text = "$0", Size = UDim2.new(1, -112, 0, 42), Position = UDim2.fromOffset(52, 7), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 3,
+	Max = 38, Gradient = { WHITE, C3(214, 255, 196) }, Parent = moneyPill })
+UI.plus({ Name = "AddCash", Color = "green", Size = 42, Position = UDim2.new(1, -50, 0.5, -24), ZIndex = 5, Parent = moneyPill,
+	OnClick = function() if windows.open then windows.open("SHOP", { tab = "packs" }) end end })
+local incomeChip = UI.chip({ Name = "Income", Color = "green", Icon = "up_cash", Height = 28, TextSize = 18, Text = "+$0/s", Position = UDim2.fromOffset(62, 48), ZIndex = 7, Parent = moneyPill })
+
+local gemPill = UI.pill({ Name = "Gems", Style = "dark", Size = UDim2.fromOffset(176, 50), Position = UDim2.new(0.5, 104, 0, 4), Parent = top })
+UI.icon("gem", { Size = UDim2.fromOffset(62, 62), Position = UDim2.new(0, -24, 0.5, -32), ZIndex = 6, Parent = gemPill })
+local gemText = UI.text({ Text = "0", Size = UDim2.new(1, -92, 0, 34), Position = UDim2.fromOffset(42, 8), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 3,
+	Max = 30, Gradient = { WHITE, C3(236, 214, 255) }, Parent = gemPill })
+UI.plus({ Name = "AddGems", Color = "purple", Size = 36, Position = UDim2.new(1, -43, 0.5, -21), ZIndex = 5, Parent = gemPill,
+	OnClick = function() if windows.open then windows.open("SHOP", { tab = "packs" }) end end })
 local money = UI.counter(moneyText, function(v) return C.Money(v) end)
 local gems = UI.counter(gemText, function(v) return C.Fmt(v) end)
 
 -- the Rebirth bar (a button when it is ready)
-local rebBar = new("Frame", { Name = "Rebirth", BackgroundColor3 = Color3.fromRGB(255, 255, 255), Size = UDim2.fromOffset(270, 20), Position = UDim2.new(0.5, -40, 0, 72), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
-UI.corner(rebBar, UDim.new(1, 0))
-UI.stroke(rebBar, 3)
-local rebFill = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(0, 1), Parent = rebBar })
-UI.corner(rebFill, UDim.new(1, 0))
-UI.gradient(rebFill, UI.Colors.gold[1], UI.Colors.gold[2])
-local rebText = UI.text({ Text = "REBIRTH 0%", Size = UDim2.new(1, 0, 1.2, 0), Position = UDim2.fromScale(0, -0.1), ZIndex = 3, StrokeTh = 2, Parent = rebBar })
-local rebBtn, rebHolder = UI.button({ Name = "RebirthBtn", Color = "gold", Text = "REBIRTH!", Size = UDim2.fromOffset(200, 50), Position = UDim2.new(0.5, -40, 0, 70), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
+local rebBar = new("Frame", { Name = "Rebirth", BackgroundTransparency = 1, Size = UDim2.fromOffset(270, 30), Position = UDim2.new(0.5, 16, 0, 82), AnchorPoint = Vector2.new(0.5, 0), Parent = top })
+local rebProg = UI.progress({ Color = "gold", Size = UDim2.new(1, -26, 0, 26), Position = UDim2.fromOffset(26, 2), Text = "REBIRTH 0%", Max = 18, Parent = rebBar })
+UI.icon("rebirth_star", { Size = UDim2.fromOffset(46, 46), Position = UDim2.fromOffset(0, -8), ZIndex = 6, Parent = rebBar })
+local rebBtn, rebHolder = UI.button({ Name = "RebirthBtn", Color = "gold", Text = "REBIRTH!", IconKey = "rebirth", Size = UDim2.fromOffset(220, 48), Position = UDim2.new(0.5, 16, 0, 72),
+	AnchorPoint = Vector2.new(0.5, 0), Shimmer = true, Max = 28, Parent = top })
 rebHolder.Visible = false
 
--- toasts: one at a time, under the top
-local toastHolder = new("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 132), Size = UDim2.fromOffset(520, 46), Parent = root })
+-- toasts: one at a time, under the top; they drop in, wait, then pop away
+local toastHolder = new("Frame", { Name = "Toasts", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 134), Size = UDim2.fromOffset(600, 50), ZIndex = 9, Parent = root })
 local toastQueue, toasting = {}, false
+local TOAST_ICON = { green = "upgrades", gold = "star", purple = "gem", blue = "shop", red = nil, white = nil }
 local function nextToast()
 	if toasting or #toastQueue == 0 then return end
 	toasting = true
 	local t = table.remove(toastQueue, 1)
-	local f = UI.pill({ Color = t.color or "white", Size = UDim2.fromOffset(0, 44), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Parent = toastHolder })
-	f.AutomaticSize = Enum.AutomaticSize.X
-	UI.pad(f, 22, 0, 22, 0)
-	local l = UI.text({ Text = t.text, Scaled = false, TextSize = 24, Size = UDim2.fromScale(0, 1), Color = t.ink and UI.Ink or Color3.new(1, 1, 1), Stroke = not t.ink, ZIndex = 4, Parent = f })
-	l.AutomaticSize = Enum.AutomaticSize.X
+	local icon = t.icon or TOAST_ICON[t.color or "white"]
+	local ts = 24
+	local left = icon and 52 or 22
+	local w = left + UI.textWidth(t.text, ts) + 26
+	local f = UI.pill({ Color = t.color or "white", Size = UDim2.fromOffset(w, 46), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, -20), Parent = toastHolder })
+	if icon then UI.icon(icon, { Size = UDim2.fromOffset(56, 56), Position = UDim2.new(0, -10, 0.5, -29), ZIndex = 6, Parent = f }) end
+	UI.text({ Text = t.text, Scaled = false, TextSize = ts, Size = UDim2.new(1, -left - 18, 1, 0), Position = UDim2.fromOffset(left, 0), XAlign = Enum.TextXAlignment.Left,
+		Color = t.ink and UI.Ink or WHITE, Stroke = not t.ink, StrokeTh = 2.4, ZIndex = 5, Parent = f })
 	UI.pop(f, 0.6)
+	TweenService:Create(f, TweenInfo.new(0.3, Enum.EasingStyle.Back), { Position = UDim2.new(0.5, 0, 0, 0) }):Play()
 	task.delay(t.time or 2.4, function()
 		local sc = f:FindFirstChildOfClass("UIScale")
 		if sc then TweenService:Create(sc, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Scale = 0 }):Play() end
@@ -96,40 +137,47 @@ local function nextToast()
 		nextToast()
 	end)
 end
-local function toast(text, color, time)
-	table.insert(toastQueue, { text = text, color = color, time = time, ink = (color == nil or color == "white") })
+local function toast(text, color, time, icon)
+	table.insert(toastQueue, { text = text, color = color, time = time, icon = icon, ink = (color == nil or color == "white") })
 	if #toastQueue > 3 then table.remove(toastQueue, 1) end
 	nextToast()
 end
 
 -- Left: HAMMERS, SHOP, MENU -----------------------------------------------------------------------------------
-local left = new("Frame", { Name = "Left", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 14, 0.5, -10), Size = UDim2.fromOffset(92, 300), Parent = root })
-new("UIListLayout", { Padding = UDim.new(0, 14), SortOrder = Enum.SortOrder.LayoutOrder, Parent = left })
-local windows = {}
+local left = new("Frame", { Name = "Left", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 16, 0.5, 0), Size = UDim2.fromOffset(96, 330), ZIndex = 8, Parent = root })
+new("UIListLayout", { Padding = UDim.new(0, 18), SortOrder = Enum.SortOrder.LayoutOrder, Parent = left })
 local function sideButton(name, icon, color, order)
-	local ic = UI.icon(icon, { Size = UDim2.fromScale(0.78, 0.78), Position = UDim2.fromScale(0.11, 0.02) })
-	local btn, holder = UI.button({ Name = name, Color = color, Size = UDim2.fromOffset(82, 74), Icon = ic, Order = order, Radius = 18, Parent = left,
+	local btn, holder = UI.button({ Name = name, Color = color, Size = UDim2.fromOffset(90, 84), Order = order, Radius = 22, Parent = left,
 		OnClick = function() if windows.open then windows.open(name) end end })
-	UI.text({ Text = name, Size = UDim2.new(1, 8, 0, 22), Position = UDim2.new(0, -4, 1, -16), ZIndex = btn.ZIndex + 3, Max = 20, Parent = btn })
+	local ic = UI.icon(icon, { Size = UDim2.fromOffset(70, 70), Position = UDim2.new(0.5, -35, 0, -2), ZIndex = btn.ZIndex + 3, Parent = btn })
+	ic.Rotation = -6
+	UI.text({ Text = name, Size = UDim2.new(1, 12, 0, 26), Position = UDim2.new(0, -6, 1, -22), ZIndex = btn.ZIndex + 5, Max = 21, StrokeTh = 2.8, Shadow = 2, Parent = btn })
 	return btn, holder
 end
-sideButton("HAMMERS", "shop", "blue", 1)
+sideButton("HAMMERS", "rbxassetid://71920003497651", "blue", 1)
 sideButton("SHOP", "store", "gold", 2)
-local menuBtn = sideButton("MENU", "more", "purple", 3)
+sideButton("MENU", "more", "purple", 3)
 -- HOME: only when you are far from your city
-local homeBtn, homeHolder = UI.button({ Name = "HOME", Color = "green", Text = "HOME", Size = UDim2.fromOffset(82, 44), Order = 4, Parent = left, Max = 22,
+local homeBtn, homeHolder = UI.button({ Name = "HOME", Color = "green", Text = "HOME", IconKey = "home", Size = UDim2.fromOffset(90, 46), Order = 4, Parent = left, Max = 20,
 	OnClick = function() CityRF:InvokeServer("home") end })
 homeHolder.Visible = false
 
 -- Bottom: NEXT ----------------------------------------------------------------------------------------------
-local nextHolder = new("Frame", { Name = "Next", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.fromOffset(460, 66), Parent = root })
-local nextPill = UI.pill({ Color = "white", Size = UDim2.fromScale(1, 1), Parent = nextHolder })
-local nextTag = UI.pill({ Color = "green", Size = UDim2.fromOffset(92, 50), Position = UDim2.new(0, 8, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), Parent = nextPill })
-UI.text({ Text = "NEXT", Size = UDim2.new(1, -12, 0.7, 0), Position = UDim2.new(0, 6, 0.15, 0), ZIndex = 4, Parent = nextTag })
-local nextText = UI.text({ Text = "", Size = UDim2.new(1, -200, 0.62, 0), Position = UDim2.new(0, 112, 0.19, 0), XAlign = Enum.TextXAlignment.Left, Color = UI.Ink, Stroke = false, ZIndex = 4, Max = 26, Parent = nextPill })
-local nextProg = UI.text({ Text = "", Size = UDim2.new(0, 80, 0.6, 0), Position = UDim2.new(1, -90, 0.2, 0), Color = Color3.fromRGB(46, 186, 80), Stroke = false, ZIndex = 4, Max = 26, Parent = nextPill })
+local NEXT_W = 540
+local nextHolder = new("Frame", { Name = "Next", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -16), Size = UDim2.fromOffset(NEXT_W, 68), Parent = root })
+local nextShadow = new("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.75, Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, 6), Parent = nextHolder })
+UI.corner(nextShadow, UDim.new(1, 0))
+local nextPill = UI.pill({ Color = "white", Size = UDim2.fromScale(1, 1), StrokeTh = 3.5, ZIndex = 2, Parent = nextHolder })
+local nextTag = UI.pill({ Color = "green", Size = UDim2.fromOffset(112, 52), Position = UDim2.new(0, 8, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), ZIndex = 4, Parent = nextPill })
+UI.icon("quest", { Size = UDim2.fromOffset(50, 50), Position = UDim2.new(0, -8, 0.5, -26), ZIndex = 7, Parent = nextTag })
+UI.text({ Text = "NEXT", Size = UDim2.new(1, -46, 0.6, 0), Position = UDim2.new(0, 38, 0.2, 0), ZIndex = 7, StrokeTh = 2.6, Max = 26, Parent = nextTag })
+local NEXT_TX = 134
+local NEXT_TW = NEXT_W - NEXT_TX - 22
+local nextText = UI.text({ Text = "", Scaled = false, TextSize = 24, Size = UDim2.fromOffset(NEXT_TW, 30), Position = UDim2.fromOffset(NEXT_TX, 6), XAlign = Enum.TextXAlignment.Left,
+	Color = UI.Ink, Stroke = false, ZIndex = 5, Parent = nextPill })
+local nextBar = UI.progress({ Color = "green", Size = UDim2.fromOffset(NEXT_TW, 20), Position = UDim2.fromOffset(NEXT_TX, 39), Max = 15, TextStroke = 2, StrokeTh = 2.5, ZIndex = 5, Parent = nextPill })
 
--- the goals, the first one not done yet
+-- the goals, the first one not done yet: text, progress text, the lot to point at
 local function goal()
 	local L = lots()
 	local built, n4, ownedLots, maxed = 0, 0, 0, 0
@@ -152,30 +200,58 @@ local function goal()
 	if reb < #C.RebirthCost then return "REBIRTH for x" .. C.RebirthMult .. " income!", math.floor(math.min(1, attr("Money", 0) / math.max(1, attr("RebirthCost", 1))) * 100) .. "%" end
 	return "Your city is complete!", ""
 end
+-- "3/8" -> 0.375, "71%" -> 0.71
+local function progOf(s)
+	if not s or s == "" then return nil end
+	local a, b = s:match("^(%d+)/(%d+)$")
+	if a then return tonumber(a) / math.max(1, tonumber(b)) end
+	local p = s:match("^(%d+)%%$")
+	if p then return tonumber(p) / 100 end
+	return nil
+end
 
 -- Building card -------------------------------------------------------------------------------------------------
-local card = new("Frame", { Name = "Card", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96), Size = UDim2.fromOffset(500, 220), Visible = false, Parent = root })
-local cardBg = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(1, 1), Parent = card })
-UI.corner(cardBg, 22)
-UI.stroke(cardBg, 4)
-UI.gradient(cardBg, Color3.fromRGB(255, 255, 255), Color3.fromRGB(226, 236, 255))
-local cardHead = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.new(1, 0, 0, 50), Parent = cardBg })
-UI.corner(cardHead, 22)
-UI.gradient(cardHead, UI.Colors.blue[1], UI.Colors.blue[2])
-new("Frame", { BackgroundColor3 = UI.Colors.blue[2], Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 0, 1, -16), Parent = cardHead })
-local cardTitle = UI.text({ Text = "", Size = UDim2.new(1, -110, 0.7, 0), Position = UDim2.new(0, 18, 0.15, 0), XAlign = Enum.TextXAlignment.Left, ZIndex = 3, Max = 30, Parent = cardHead })
-local closeBtn = UI.button({ Name = "Close", Color = "red", Text = "X", Size = UDim2.fromOffset(44, 40), Position = UDim2.new(1, -54, 0, 4), Radius = 12, Parent = cardBg,
-	OnClick = function() card.Visible = false end })
-local view = new("ViewportFrame", { BackgroundColor3 = Color3.fromRGB(190, 230, 255), Size = UDim2.fromOffset(150, 150), Position = UDim2.new(0, 16, 0, 60), Ambient = Color3.fromRGB(200, 200, 210), LightColor = Color3.fromRGB(255, 250, 240), LightDirection = Vector3.new(-1, -1.5, -0.6), Parent = cardBg })
-UI.corner(view, 16)
-UI.stroke(view, 3)
+local CARD_W, CARD_H = 560, 248
+local cardBg, card, cardHead = UI.panel({ Name = "Card", Size = UDim2.fromOffset(CARD_W, CARD_H), AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -100),
+	Title = "", Color = "blue", HeadHeight = 52, Radius = 22, TitleMax = 30, Visible = false, ZIndex = 3, Parent = root })
+local cardTitle = cardHead.title
+cardTitle.Size = UDim2.new(1, -190, 0, 32) -- (room for STYLE and the close button)
+UI.close({ Size = 46, Position = UDim2.new(1, -30, 0, -16), ZIndex = 10, Parent = cardBg, OnClick = function() card.Visible = false end })
+-- the picture: a sky well with the model turning on it
+local well = UI.well({ Size = UDim2.fromOffset(168, 168), Position = UDim2.fromOffset(16, 64), Color = WHITE, Transparency = 0, Radius = 18, Parent = cardBg })
+UI.gradient(well, C3(160, 220, 255), C3(226, 244, 255))
+local pedestal = new("Frame", { BackgroundColor3 = WHITE, BackgroundTransparency = 0.35, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 1, -30), Size = UDim2.fromOffset(130, 34), ZIndex = 4, Parent = well })
+UI.corner(pedestal, UDim.new(1, 0))
+local view = new("ViewportFrame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Ambient = C3(200, 200, 210), LightColor = C3(255, 250, 240), LightDirection = Vector3.new(-1, -1.5, -0.6), ZIndex = 5, Parent = well })
 local vcam = new("Camera", { Parent = view })
 view.CurrentCamera = vcam
-local cardLine1 = UI.text({ Text = "", Size = UDim2.new(1, -200, 0, 34), Position = UDim2.new(0, 182, 0, 62), XAlign = Enum.TextXAlignment.Left, Color = UI.Ink, Stroke = false, ZIndex = 3, Max = 28, Parent = cardBg })
-local cardLine2 = UI.text({ Text = "", Size = UDim2.new(1, -200, 0, 28), Position = UDim2.new(0, 182, 0, 98), XAlign = Enum.TextXAlignment.Left, Color = Color3.fromRGB(46, 170, 80), Stroke = false, ZIndex = 3, Max = 24, Parent = cardBg })
-local cardBtn, cardBtnHolder, cardBtnLabel = UI.button({ Name = "Do", Color = "green", Text = "BUILD", Size = UDim2.new(1, -200, 0, 58), Position = UDim2.new(0, 182, 0, 142), Parent = cardBg })
-local styleBtn, styleHolder = UI.button({ Name = "Style", Color = "purple", Text = "STYLE", Size = UDim2.fromOffset(84, 36), Position = UDim2.new(1, -150, 0, 6), Radius = 12, Max = 18, Parent = cardBg })
+local COL_X = 200
+local COL_W = CARD_W - COL_X - 22
+local cardLine1 = UI.text({ Text = "", Scaled = false, TextSize = 26, Size = UDim2.fromOffset(COL_W, 30), Position = UDim2.fromOffset(COL_X, 64), XAlign = Enum.TextXAlignment.Left, Color = UI.Ink, Stroke = false, ZIndex = 5, Parent = cardBg })
+local chipRow = new("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(COL_W, 30), Position = UDim2.fromOffset(COL_X + 10, 102), ZIndex = 5, Parent = cardBg })
+new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 22), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = chipRow })
+local incChip = UI.chip({ Color = "green", Icon = "cash", Height = 30, TextSize = 19, Order = 1, ZIndex = 5, Parent = chipRow })
+local timeChip = UI.chip({ Color = "blue", Icon = "timer", Height = 30, TextSize = 19, Order = 2, ZIndex = 5, Parent = chipRow })
+local cardLine2 = UI.text({ Text = "", Scaled = false, TextSize = 19, Size = UDim2.fromOffset(COL_W, 22), Position = UDim2.fromOffset(COL_X, 138), XAlign = Enum.TextXAlignment.Left, Color = UI.Muted, Stroke = false, ZIndex = 5, Parent = cardBg })
+local cardBtn, cardBtnHolder, cardBtnLabel = UI.button({ Name = "Do", Color = "green", Text = "BUILD", Sub = " ", Size = UDim2.fromOffset(COL_W, 64), Position = UDim2.fromOffset(COL_X, 164), Shimmer = true, Max = 30, SubMax = 20, ZIndex = 5, Parent = cardBg })
+local cardSub = cardBtn:FindFirstChild("Sub")
+local styleBtn, styleHolder = UI.button({ Name = "Style", Color = "purple", Text = "STYLE", Size = UDim2.fromOffset(92, 36), Position = UDim2.new(1, -150, 0, 8), Radius = 13, Max = 18, Depth = 4, ZIndex = 8, Parent = cardBg })
 local cardLot, cardAction, previewKey = nil, nil, nil
+
+-- the main button: a label, an optional second line (the price), a colour
+local function cta(text, sub, color)
+	cardBtnLabel.Text = text
+	cardSub.Visible = sub ~= nil and sub ~= ""
+	cardSub.Text = sub or ""
+	if cardSub.Visible then
+		cardBtnLabel.Size = UDim2.new(1, -16, 0.5, 0)
+		cardBtnLabel.Position = UDim2.new(0, 8, 0.08, 0)
+	else
+		cardBtnLabel.Size = UDim2.new(1, -16, 0.62, 0)
+		cardBtnLabel.Position = UDim2.new(0, 8, 0.19, 0)
+	end
+	UI.recolor(cardBtn, color)
+end
 
 -- the card's picture: the live game's blueprint of that level and style, drawn here
 local function setPreview(lv, st)
@@ -190,7 +266,7 @@ local function setPreview(lv, st)
 	-- frame the whole model: its bounding sphere fills the view, seen from the front-right, a bit from above
 	local r = size.Magnitude / 2
 	vcam.FieldOfView = 34
-	local dist = r / math.sin(math.rad(17)) * 0.92
+	local dist = r / math.sin(math.rad(17)) * 1.12
 	local centre = Vector3.new(0, size.Y / 2, 0)
 	vcam.CFrame = CFrame.lookAt(centre + Vector3.new(0.55, 0.32, -0.77).Unit * dist, centre)
 end
@@ -200,6 +276,13 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 end)
 
+local function chips(income, time)
+	incChip.frame.Visible = income ~= nil
+	if income then incChip.set(income) end
+	timeChip.frame.Visible = time ~= nil
+	if time then timeChip.set(time) end
+end
+
 local function refreshCard()
 	if not card.Visible or not cardLot then return end
 	local L = lots()
@@ -208,43 +291,48 @@ local function refreshCard()
 	local cap = attr("Cap", 4)
 	local moneyNow = attr("Money", 0)
 	local busy = attr("Queue", 0) >= C.QueueSize
+	local mult = C.RebirthMultiplier(attr("Rebirths", 0))
 	styleHolder.Visible = l.owned and l.lv > 0
 	if not l.owned then
+		cardHead.color("blue")
 		cardTitle.Text = "LAND FOR SALE"
-		cardLine1.Text = "Walk to the sign to buy it"
-		cardLine2.Text = ""
-		cardBtnLabel.Text = "OK"
-		UI.recolor(cardBtn, "blue")
+		fit(cardLine1, "Buy this land at its sale sign", 26, COL_W)
+		chips(nil, nil)
+		cardLine2.Text = "Walk to the board and hold the button"
+		cta("OK", nil, "blue")
 		cardAction = function() card.Visible = false end
 		setPreview(1, 1)
 		return
 	end
 	local cur = l.lv > 0 and C.Levels[l.lv] or nil
-	cardTitle.Text = cur and ("LV " .. l.lv .. " " .. (C.StyleOf(l.lv, l.st)):upper()) or "EMPTY LOT"
+	cardTitle.Text = cur and ("LV " .. l.lv .. "  " .. (C.StyleOf(l.lv, l.st)):upper()) or "EMPTY LOT"
 	local nextLv = l.planned + 1
 	if l.planned >= cap then
+		cardHead.color("gold")
 		setPreview(math.max(1, l.lv), l.st)
-		cardLine1.Text = cur and ("Makes " .. C.Money(cur.income * C.RebirthMultiplier(attr("Rebirths", 0))) .. "/s") or ""
-		cardLine2.Text = l.planned >= C.MaxLevel and "Max level!" or "Rebirth to build higher"
-		cardBtnLabel.Text = l.planned >= C.MaxLevel and "MAX" or "REBIRTH TO GO HIGHER"
-		UI.recolor(cardBtn, "grey")
+		fit(cardLine1, cur and "This building makes" or "", 26, COL_W)
+		chips(cur and (C.Money(cur.income * mult) .. "/s") or nil, nil)
+		cardLine2.Text = l.planned >= C.MaxLevel and "It is at the top level!" or "Rebirth to build even higher"
+		cta(l.planned >= C.MaxLevel and "MAX LEVEL" or "REBIRTH TO GO HIGHER", nil, "grey")
 		cardAction = nil
 		return
 	end
+	cardHead.color(l.planned == 0 and "green" or "blue")
 	local nx = C.Levels[nextLv]
 	setPreview(nextLv, l.st)
-	local gain = (nx.income - (cur and cur.income or 0)) * C.RebirthMultiplier(attr("Rebirths", 0))
-	cardLine1.Text = (l.planned > l.lv and "Then: " or "Next: ") .. (C.StyleOf(nextLv, l.st))
-	cardLine2.Text = "+" .. C.Money(gain) .. "/s  -  " .. nx.time .. "s build"
+	local gain = (nx.income - (cur and cur.income or 0)) * mult
+	fit(cardLine1, (l.planned > l.lv and "Then: " or "Next: ") .. (C.StyleOf(nextLv, l.st)), 26, COL_W)
+	chips("+" .. C.Money(gain) .. "/s", nx.time .. "s")
+	cardLine2.Text = ""
 	local price = nx.cost
 	if nextLv == 1 and cardLot == 1 and attr("FreeFirst", false) ~= true and #L > 0 and L[1].lv == 0 then price = 0 end
 	if busy then
-		cardBtnLabel.Text = "CREW BUSY " .. attr("Queue", 0) .. "/" .. C.QueueSize
-		UI.recolor(cardBtn, "grey")
+		cta("CREW BUSY", "Queue " .. attr("Queue", 0) .. "/" .. C.QueueSize, "grey")
 		cardAction = nil
 	else
-		cardBtnLabel.Text = (l.planned == 0 and "BUILD " or "UPGRADE ") .. (price == 0 and "FREE" or C.Money(price))
-		UI.recolor(cardBtn, moneyNow >= price and "green" or "grey")
+		local can = moneyNow >= price
+		cta(l.planned == 0 and "BUILD" or "UPGRADE", price == 0 and "FREE" or C.Money(price), can and "green" or "grey")
+		if not can then cardLine2.Text = "You need " .. C.Money(price - moneyNow) .. " more" end
 		cardAction = function()
 			local ok, res = CityRF:InvokeServer("order", cardLot)
 			if ok then
@@ -263,6 +351,7 @@ styleBtn.Activated:Connect(function()
 	if l then CityRF:InvokeServer("style", cardLot, l.st == 1 and 2 or 1) task.wait(0.2) previewKey = nil refreshCard() end
 end)
 local function openCard(i)
+	if windows.close then windows.close() end
 	cardLot = i
 	card.Visible = true
 	previewKey = nil
@@ -337,14 +426,21 @@ HitsRE.OnClientEvent:Connect(function(list)
 	end
 end)
 
--- a floating text in the world ("+$3/s", "+ $120")
+-- a floating tag in the world ("+$3/s"): a glossy pill that rises and fades
 local function floatText(pos, text, color)
 	local p = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, Transparency = 1, Size = Vector3.one, CFrame = CFrame.new(pos), Parent = fxFolder })
-	local bb = new("BillboardGui", { Size = UDim2.fromOffset(260, 70), AlwaysOnTop = true, MaxDistance = 400, Parent = p })
-	local t = UI.text({ Text = text, Color = color or Color3.fromRGB(120, 255, 120), StrokeTh = 3, Parent = bb })
-	TweenService:Create(p, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = CFrame.new(pos + Vector3.new(0, 14, 0)) }):Play()
-	TweenService:Create(t, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { TextTransparency = 1 }):Play()
-	Debris:AddItem(p, 1.7)
+	local bb = new("BillboardGui", { Size = UDim2.fromOffset(300, 70), AlwaysOnTop = true, MaxDistance = 400, LightInfluence = 0, Parent = p })
+	local w = UI.textWidth(text, 32) + 62
+	local pill = UI.pill({ Color = color or "green", Size = UDim2.fromOffset(w, 52), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Parent = bb })
+	UI.icon("cash", { Size = UDim2.fromOffset(56, 56), Position = UDim2.new(0, -8, 0.5, -29), ZIndex = 6, Parent = pill })
+	UI.text({ Text = text, Scaled = false, TextSize = 32, Size = UDim2.new(1, -52, 1, 0), Position = UDim2.fromOffset(44, 0), ZIndex = 5, StrokeTh = 3, XAlign = Enum.TextXAlignment.Left, Parent = pill })
+	UI.pop(pill, 0.3)
+	TweenService:Create(p, TweenInfo.new(1.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = CFrame.new(pos + Vector3.new(0, 14, 0)) }):Play()
+	task.delay(1.2, function()
+		local sc = pill:FindFirstChildOfClass("UIScale")
+		if sc then TweenService:Create(sc, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Scale = 0 }):Play() end
+	end)
+	Debris:AddItem(p, 1.9)
 end
 
 -- the lot model of my city
@@ -354,79 +450,97 @@ local function lotModel(i)
 	return c and c.Lots:FindFirstChild("L" .. i)
 end
 
--- the construction overlay: a progress bar over the site, dust at its foot, a glowing arrow on the tutorial lot
-local overlay = new("BillboardGui", { Name = "Site", Size = UDim2.fromOffset(240, 92), AlwaysOnTop = true, MaxDistance = 600, StudsOffsetWorldSpace = Vector3.new(0, 26, 0), Enabled = false, Parent = worldGui })
-local ovBar = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.new(1, 0, 0, 28), Position = UDim2.new(0, 0, 0, 34), Parent = overlay })
-UI.corner(ovBar, UDim.new(1, 0))
-UI.stroke(ovBar, 3)
-local ovFill = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(0, 1), Parent = ovBar })
-UI.corner(ovFill, UDim.new(1, 0))
-UI.gradient(ovFill, UI.Colors.green[1], UI.Colors.green[2])
-local ovText = UI.text({ Text = "", Size = UDim2.new(1, 0, 0, 32), Parent = overlay })
-local ovTime = UI.text({ Text = "", Size = UDim2.new(1, 0, 1, 0), ZIndex = 3, StrokeTh = 2, Parent = ovBar })
-local ovTap = UI.text({ Text = "TAP TO BUILD FASTER!", Size = UDim2.new(1, 0, 0, 24), Position = UDim2.new(0, 0, 0, 66), Color = Color3.fromRGB(255, 230, 90), Parent = overlay })
+-- the construction overlay: a dark panel with the stage, a progress bar and the time; a gold hint to tap
+local overlay = new("BillboardGui", { Name = "Site", Size = UDim2.fromOffset(310, 146), AlwaysOnTop = true, MaxDistance = 600, LightInfluence = 0, StudsOffsetWorldSpace = Vector3.new(0, 26, 0), Enabled = false, Parent = worldGui })
+local ovPanel = UI.pill({ Style = "dark", Size = UDim2.fromOffset(272, 82), Position = UDim2.new(0.5, 8, 0, 16), AnchorPoint = Vector2.new(0.5, 0), Radius = 22, Transparency = 0.1, Parent = overlay })
+UI.icon("mega", { Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(-20, -14), ZIndex = 8, Parent = ovPanel })
+local ovText = UI.text({ Text = "", Scaled = false, TextSize = 22, Size = UDim2.new(1, -60, 0, 28), Position = UDim2.fromOffset(42, 7), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 2.4, Parent = ovPanel })
+local ovProg = UI.progress({ Color = "green", Track = C3(64, 78, 140), Size = UDim2.new(1, -28, 0, 30), Position = UDim2.fromOffset(14, 41), Max = 20, ZIndex = 5, Parent = ovPanel })
+local ovTap = UI.chip({ Color = "gold", Icon = "up_power", Height = 32, TextSize = 19, Text = "TAP TO BUILD FASTER!", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 12, 0, 106), Parent = overlay })
+local ovTapScale = new("UIScale", { Parent = ovTap.frame })
 
-local arrow = new("BillboardGui", { Name = "Arrow", Size = UDim2.fromOffset(110, 130), AlwaysOnTop = true, StudsOffsetWorldSpace = Vector3.new(0, 14, 0), Enabled = false, Parent = worldGui })
-local arrowImg = UI.text({ Text = "V", Color = Color3.fromRGB(255, 220, 60), StrokeTh = 5, Parent = arrow })
-local arrowTag = UI.text({ Text = "TAP!", Size = UDim2.new(1, 0, 0.35, 0), Position = UDim2.fromScale(0, -0.3), StrokeTh = 3, Parent = arrow })
+-- the tutorial marker over lot 1: a gold "TAP HERE!" bubble with a tail, bobbing
+local arrow = new("BillboardGui", { Name = "Arrow", Size = UDim2.fromOffset(200, 96), AlwaysOnTop = true, LightInfluence = 0, StudsOffsetWorldSpace = Vector3.new(0, 14, 0), Enabled = false, Parent = worldGui })
+tail(arrow, "gold", { Position = UDim2.new(0.5, 0, 0, 62), S = 24 })
+local arrowPill = UI.pill({ Color = "gold", Size = UDim2.fromOffset(176, 60), Position = UDim2.new(0.5, 0, 0, 6), AnchorPoint = Vector2.new(0.5, 0), StrokeTh = 3.5, ZIndex = 3, Parent = arrow })
+UI.icon("site", { Size = UDim2.fromOffset(64, 64), Position = UDim2.new(0, -12, 0.5, -34), ZIndex = 6, Parent = arrowPill })
+UI.text({ Text = "TAP HERE!", Size = UDim2.new(1, -62, 0.62, 0), Position = UDim2.new(0, 50, 0.19, 0), ZIndex = 6, StrokeTh = 3, Max = 30, Parent = arrowPill })
 
 local dust = new("Attachment", { Parent = workspace.Terrain })
 local dustPE = new("ParticleEmitter", { Texture = "rbxasset://textures/particles/smoke_main.dds", Color = ColorSequence.new(Color3.fromRGB(235, 215, 185)),
 	Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 9) }), Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) }),
 	Lifetime = NumberRange.new(1, 1.6), Speed = NumberRange.new(4, 9), SpreadAngle = Vector2.new(80, 80), Rate = 0, Parent = dust })
 
--- Windows (HAMMERS / SHOP / MENU): the shared frame; the contents come in their own modules -------------------------
-local win = new("Frame", { Name = "Window", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(760, 470), Visible = false, Parent = root })
-local winBg = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(1, 1), Parent = win })
-UI.corner(winBg, 26)
-UI.stroke(winBg, 4)
-UI.gradient(winBg, Color3.fromRGB(255, 255, 255), Color3.fromRGB(222, 234, 255))
-local winHead = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.new(1, 0, 0, 64), Parent = winBg })
-UI.corner(winHead, 26)
-local winHeadGrad = UI.gradient(winHead, UI.Colors.blue[1], UI.Colors.blue[2])
-local winHeadFill = new("Frame", { BackgroundColor3 = UI.Colors.blue[2], Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -20), Parent = winHead })
-local winTitle = UI.text({ Text = "", Size = UDim2.new(1, -140, 0.72, 0), Position = UDim2.new(0, 24, 0.14, 0), XAlign = Enum.TextXAlignment.Left, ZIndex = 3, StrokeTh = 3, Parent = winHead })
-UI.button({ Name = "Close", Color = "red", Text = "X", Size = UDim2.fromOffset(52, 48), Position = UDim2.new(1, -66, 0, 8), Radius = 14, Parent = winBg, OnClick = function() win.Visible = false end })
-local winBody = new("Frame", { Name = "Body", BackgroundTransparency = 1, Position = UDim2.new(0, 18, 0, 78), Size = UDim2.new(1, -36, 1, -94), Parent = winBg })
+-- Windows (HAMMERS / SHOP / MENU): a dimmed screen, one panel with a header ribbon; the contents come in their own modules
+local scrim = new("TextButton", { Name = "Scrim", Text = "", AutoButtonColor = false, BackgroundColor3 = C3(8, 12, 36), BackgroundTransparency = 0.45, Size = UDim2.new(1, 0, 1, 120), Position = UDim2.fromOffset(0, -120), ZIndex = 5, Visible = false, Parent = root })
+local WIN_W = 800
+local winBg, win, winHead = UI.panel({ Name = "Window", Size = UDim2.fromOffset(WIN_W, 470), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 128),
+	Title = "", Icon = "shop", Color = "blue", HeadHeight = 64, Radius = 26, Pattern = true, PatternW = WIN_W, PatternH = 520, Visible = false, ZIndex = 6, Parent = root })
+local winTitle = winHead.title
+local function closeWindow()
+	if not win.Visible then return end
+	win.Visible = false
+	scrim.Visible = false
+	nextHolder.Visible = true
+end
+windows.close = closeWindow
+UI.close({ Size = 52, Position = UDim2.new(1, -34, 0, -18), ZIndex = 12, Parent = winBg, OnClick = closeWindow })
+scrim.Activated:Connect(closeWindow)
+local winBody = new("Frame", { Name = "Body", BackgroundTransparency = 1, Position = UDim2.fromOffset(22, 80), Size = UDim2.new(1, -44, 1, -98), ZIndex = 5, Parent = winBg })
+local function fitWindow()
+	local h = math.clamp(logicalH - 128 - 16, 330, 480)
+	win.Size = UDim2.fromOffset(WIN_W, h)
+end
+table.insert(onResize, fitWindow)
 local winColors = { HAMMERS = "blue", SHOP = "gold", MENU = "purple" }
+local winIcons = { HAMMERS = "rbxassetid://71920003497651", SHOP = "store", MENU = "more" }
 local contents = {}
-windows.open = function(name)
-	if win.Visible and win:GetAttribute("Name") == name then win.Visible = false return end
+windows.open = function(name, opts)
+	if win.Visible and win:GetAttribute("Name") == name and not opts then closeWindow() return end
 	card.Visible = false
 	win:SetAttribute("Name", name)
 	winTitle.Text = name
-	local col = UI.Colors[winColors[name] or "blue"]
-	winHeadGrad.Color = ColorSequence.new(col[1], col[2])
-	winHeadFill.BackgroundColor3 = col[2]
+	winHead.color(winColors[name] or "blue")
+	if winHead.icon then
+		winHead.icon:Destroy()
+		local ic = UI.icon(winIcons[name] or "shop", { Size = UDim2.fromOffset(80, 80), Position = UDim2.new(0, 6, 0.5, -44), ZIndex = 8, Parent = winHead.frame })
+		ic.Rotation = -8
+		winHead.icon = ic
+	end
 	for _, c in ipairs(winBody:GetChildren()) do c:Destroy() end
-	if contents[name] then contents[name](winBody, { UI = UI, toast = toast, attr = attr }) end
+	if contents[name] then
+		local ok, err = pcall(contents[name], winBody, { UI = UI, toast = toast, attr = attr, tab = opts and opts.tab, close = closeWindow, h = win.Size.Y.Offset - 98 })
+		if not ok then warn("[HUD2] window " .. name .. ": " .. tostring(err)) end
+	end
 	win.Visible = true
-	UI.pop(win, 0.85)
+	scrim.Visible = true
+	nextHolder.Visible = false
+	UI.pop(win, 0.88)
 end
 -- the window contents live in modules next to this script (HammersWin, ShopWin, MenuWin); missing ones say so
 for _, n in ipairs({ "HAMMERS", "SHOP", "MENU" }) do
 	local mod = script:FindFirstChild(n:sub(1, 1) .. n:sub(2):lower() .. "Win")
 	if mod then
 		local ok, fn = pcall(require, mod)
-		if ok then contents[n] = fn end
+		if ok then contents[n] = fn else warn("[HUD2] " .. tostring(fn)) end
 	end
 	if not contents[n] then
 		contents[n] = function(body) UI.text({ Text = "Coming soon", Color = UI.Ink, Stroke = false, Size = UDim2.new(1, 0, 0, 40), Position = UDim2.fromScale(0, 0.4), Max = 32, Parent = body }) end
 	end
 end
+rescale()
 
 -- The loop: counters, Rebirth, NEXT, the overlay, the arrow, HOME ----------------------------------------------------
 local lastMoney = attr("Money", 0)
 local function refreshTop()
 	money.set(attr("Money", 0))
 	gems.set(attr("Gems", 0))
-	incomeText.Text = "+" .. C.Money(attr("Income", 0)) .. "/s"
+	incomeChip.set("+" .. C.Money(attr("Income", 0)) .. "/s")
 	local ready = attr("RebirthReady", false)
 	rebHolder.Visible = ready
 	rebBar.Visible = not ready
 	local p = math.clamp(attr("RebirthProgress", 0), 0, 1)
-	rebFill.Size = UDim2.fromScale(math.max(0.04, p), 1)
-	rebText.Text = (attr("Rebirths", 0) >= #C.RebirthCost) and "MAX REBIRTH" or ("REBIRTH " .. math.floor(p * 100) .. "%")
+	rebProg.set(math.max(0.05, p), (attr("Rebirths", 0) >= #C.RebirthCost) and "MAX REBIRTH" or ("REBIRTH " .. math.floor(p * 100) .. "%"))
 end
 for _, n in ipairs({ "Money", "Gems", "Income", "RebirthReady", "RebirthProgress", "Rebirths" }) do plr:GetAttributeChangedSignal(n):Connect(refreshTop) end
 refreshTop()
@@ -440,11 +554,18 @@ rebBtn.Activated:Connect(function()
 	if not ok then toast(tostring(err), "red") end
 end)
 
+local lastGoal, lastProg = nil, nil
 RunService.Heartbeat:Connect(function()
 	-- NEXT
 	local g, prog, arrowLot = goal()
-	nextText.Text = g
-	nextProg.Text = prog or ""
+	if g ~= lastGoal or prog ~= lastProg then
+		lastGoal, lastProg = g, prog
+		local p = progOf(prog)
+		fit(nextText, g, 24, NEXT_TW, 14)
+		nextBar.frame.Visible = p ~= nil
+		nextText.Position = UDim2.fromOffset(NEXT_TX, p and 6 or 19)
+		if p then nextBar.set(math.max(0.06, p), prog) end
+	end
 	-- the site overlay
 	local bl = attr("BuildLot", 0)
 	local m = bl > 0 and lotModel(bl)
@@ -453,20 +574,21 @@ RunService.Heartbeat:Connect(function()
 		overlay.StudsOffsetWorldSpace = m.Pad.CFrame.LookVector * 21 + Vector3.new(0, 15, 0)
 		overlay.Enabled = true
 		local p = attr("BuildProgress", 0)
-		ovFill.Size = UDim2.fromScale(math.clamp(p, 0.02, 1), 1)
-		ovText.Text = attr("BuildStage", "") ~= "" and attr("BuildStage", "") or (C.Levels[attr("BuildTo", 1)] or C.Levels[1]).name
-		ovTime.Text = math.ceil(attr("BuildLeft", 0)) .. "s"
-		ovTap.Visible = p > 0
+		local stage = attr("BuildStage", "") ~= "" and attr("BuildStage", "") or (C.Levels[attr("BuildTo", 1)] or C.Levels[1]).name
+		if ovText.Text ~= stage then fit(ovText, stage, 22, 216, 12) end
+		ovProg.set(math.clamp(p, 0.04, 1), math.ceil(attr("BuildLeft", 0)) .. "s")
+		ovTap.frame.Visible = p > 0
+		ovTapScale.Scale = 1 + math.abs(math.sin(os.clock() * 3)) * 0.07
 		if math.random() < 0.08 then dust.WorldPosition = m.Pad.Position dustPE:Emit(2) end
 	else
 		overlay.Enabled = false
 	end
-	-- the tutorial arrow over lot 1
+	-- the tutorial marker over lot 1
 	local am = arrowLot and lotModel(arrowLot)
 	if am and am:FindFirstChild("Pad") and bl == 0 then
 		arrow.Adornee = am.Pad
 		arrow.Enabled = not card.Visible
-		arrow.StudsOffsetWorldSpace = Vector3.new(0, 10 + math.abs(math.sin(os.clock() * 4)) * 4, 0)
+		arrow.StudsOffsetWorldSpace = Vector3.new(0, 12 + math.abs(math.sin(os.clock() * 3.2)) * 3, 0)
 	else
 		arrow.Enabled = false
 	end
@@ -484,18 +606,20 @@ end)
 -- money pops: the counter grows; a coin sound now and then
 plr:GetAttributeChangedSignal("Money"):Connect(function()
 	local v = attr("Money", 0)
-	if v > lastMoney + 0.5 then UI.pop(moneyPill, 1.05) end
+	if v > lastMoney + 0.5 then UI.pop(moneyPill, 1.04) end
 	lastMoney = v
 end)
 
--- Lot bubbles: over each lot of yours, BUILD (empty) or UPGRADE (you can pay the next level); tap one = its card ------
+-- Lot bubbles: over each lot of yours, BUILD (empty) or UPGRADE (you can pay the next level) with the price, a tail
+-- pointing at the lot; tap one = its card ------------------------------------------------------------------------
 local bubbles = {}
 local function bubble(i)
 	if bubbles[i] then return bubbles[i] end
-	local bb = new("BillboardGui", { Name = "Lot" .. i, Size = UDim2.fromOffset(132, 54), AlwaysOnTop = true, MaxDistance = 260, Active = true, Enabled = false, Parent = worldGui })
-	local btn, holder, label = UI.button({ Name = "B", Color = "green", Text = "BUILD", Size = UDim2.new(1, -8, 1, -10), Position = UDim2.fromOffset(4, 2), Radius = 16, Max = 26, Parent = bb,
-		OnClick = function() openCard(i) end })
-	bubbles[i] = { bb = bb, btn = btn, label = label, kind = nil }
+	local bb = new("BillboardGui", { Name = "Lot" .. i, Size = UDim2.fromOffset(170, 84), AlwaysOnTop = true, MaxDistance = 220, Active = true, LightInfluence = 0, Enabled = false, Parent = worldGui })
+	local _, tailGrad = tail(bb, "green", { Position = UDim2.new(0.5, 0, 0, 60), S = 20 })
+	local btn, holder, label = UI.button({ Name = "B", Color = "green", Text = "BUILD", Sub = "FREE", IconKey = "mega", Size = UDim2.fromOffset(156, 58), AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 2), Radius = 18, Max = 24, SubMax = 18, ZIndex = 2, Parent = bb, OnClick = function() openCard(i) end })
+	bubbles[i] = { bb = bb, btn = btn, holder = holder, label = label, sub = btn:FindFirstChild("Sub"), icon = btn:FindFirstChild("Icon"), tail = tailGrad, kind = nil, phase = math.random() * 6 }
 	return bubbles[i]
 end
 local function refreshBubbles()
@@ -504,10 +628,11 @@ local function refreshBubbles()
 	local moneyNow = attr("Money", 0)
 	local busy = attr("Queue", 0) >= C.QueueSize
 	for i, l in ipairs(L) do
-		local kind
+		local kind, price
 		if l.owned and not busy and l.planned == l.lv and l.planned < cap then
 			local nx = C.Levels[l.planned + 1]
 			local free = l.planned == 0 and i == 1 and attr("FreeFirst", false) ~= true
+			price = free and 0 or nx.cost
 			if l.planned == 0 then kind = (free or moneyNow >= nx.cost) and "build" or nil
 			elseif moneyNow >= nx.cost then kind = "up" end
 		end
@@ -516,14 +641,18 @@ local function refreshBubbles()
 			local b = bubble(i)
 			if b.kind ~= kind then
 				b.kind = kind
+				local col = kind == "build" and "green" or "gold"
 				b.label.Text = kind == "build" and "BUILD" or "UPGRADE"
-				UI.recolor(b.btn, kind == "build" and "green" or "gold")
-				UI.pop(b.bb:FindFirstChild("B"), 0.5)
+				UI.recolor(b.btn, col)
+				b.tail.Color = ColorSequence.new(UI.Colors[col][2], UI.darker(UI.Colors[col][2], 0.35))
+				if b.icon then UI.setIcon(b.icon, kind == "build" and "mega" or "upgrades") end
+				UI.pop(b.holder, 0.5)
 			end
+			b.sub.Text = price == 0 and "FREE" or C.Money(price)
 			-- (in front of the building, toward its street, at eye height: tall towers never hide it above the screen)
 			b.bb.Adornee = m.Pad
-			b.bb.StudsOffsetWorldSpace = m.Pad.CFrame.LookVector * 21 + Vector3.new(0, 9, 0)
-			b.bb.Enabled = true
+			b.base = m.Pad.CFrame.LookVector * 22 + Vector3.new(0, 5.5, 0)
+			b.bb.Enabled = not (card.Visible or win.Visible) -- (no clutter over an open card or window)
 		elseif bubbles[i] then
 			bubbles[i].bb.Enabled = false
 			bubbles[i].kind = nil
@@ -536,22 +665,27 @@ task.spawn(function()
 		task.wait(0.5)
 	end
 end)
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	for _, b in pairs(bubbles) do
+		if b.bb.Enabled and b.base then b.bb.StudsOffsetWorldSpace = b.base + Vector3.new(0, math.sin(t * 2.4 + b.phase) * 0.6, 0) end
+	end
+end)
 
 -- Income tags (RATE_TAGS): over every finished building of every city, the money it makes each second ---------------
 -- (green; gold with "+25%" when its block has the bonus). Mine pulse with every income tick; the others show up closer.
 local rateTags = {}
+local RATE_TS = 21
 local function rateTag(m)
 	local t = rateTags[m]
 	if t then return t end
-	local bb = new("BillboardGui", { Name = "Rate", Size = UDim2.fromOffset(118, 36), AlwaysOnTop = true, MaxDistance = 220, Enabled = false, Parent = worldGui })
-	local pill = UI.pill({ Color = "green", Size = UDim2.new(1, -16, 1, -8), Position = UDim2.fromOffset(12, 4), Parent = bb })
-	UI.icon("cash", { Size = UDim2.fromOffset(34, 34), Position = UDim2.new(0, -14, 0.5, -17), ZIndex = 4, Parent = pill })
-	local txt = UI.text({ Text = "", Size = UDim2.new(1, -30, 0.78, 0), Position = UDim2.new(0, 22, 0.11, 0), ZIndex = 4, StrokeTh = 2.2, Parent = pill })
-	local badge = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromOffset(40, 18), Position = UDim2.new(1, -30, 0, -10), ZIndex = 5, Visible = false, Parent = pill })
-	UI.corner(badge, UDim.new(1, 0))
-	UI.stroke(badge, 2)
-	UI.gradient(badge, UI.Colors.red[1], UI.Colors.red[2])
-	UI.text({ Text = "+25%", Size = UDim2.fromScale(1, 1), ZIndex = 6, StrokeTh = 1.5, Parent = badge })
+	local bb = new("BillboardGui", { Name = "Rate", Size = UDim2.fromOffset(220, 58), AlwaysOnTop = true, MaxDistance = 220, LightInfluence = 0, Enabled = false, Parent = worldGui })
+	local pill = UI.pill({ Color = "green", Size = UDim2.fromOffset(120, 38), Position = UDim2.new(0.5, 0, 1, -6), AnchorPoint = Vector2.new(0.5, 1), Parent = bb })
+	UI.icon("cash", { Size = UDim2.fromOffset(44, 44), Position = UDim2.new(0, -8, 0.5, -23), ZIndex = 6, Parent = pill })
+	local txt = UI.text({ Text = "", Scaled = false, TextSize = RATE_TS, Size = UDim2.new(1, -44, 1, 0), Position = UDim2.fromOffset(38, 0), XAlign = Enum.TextXAlignment.Left, ZIndex = 5, StrokeTh = 2.4, Parent = pill })
+	local badge = UI.pill({ Color = "red", Size = UDim2.fromOffset(52, 22), Position = UDim2.new(1, -24, 0, -14), ZIndex = 8, StrokeTh = 2.2, Parent = pill })
+	badge.Visible = false
+	UI.text({ Text = "+25%", Size = UDim2.new(1, -8, 1, -4), Position = UDim2.fromOffset(4, 2), ZIndex = 10, StrokeTh = 1.6, Max = 16, Parent = badge })
 	t = { bb = bb, pill = pill, txt = txt, badge = badge, grad = pill:FindFirstChildOfClass("UIGradient"), sc = new("UIScale", { Parent = pill }) }
 	rateTags[m] = t
 	m.Destroying:Connect(function() bb:Destroy() rateTags[m] = nil end)
@@ -571,7 +705,11 @@ local function refreshRates(pulse)
 				local t = rateTag(m)
 				local own = m:GetAttribute("District") == mine
 				local bonus = m:GetAttribute("Bonus") == true
-				t.txt.Text = "+" .. C.Money(rate) .. "/s"
+				local text = "+" .. C.Money(rate) .. "/s"
+				if t.txt.Text ~= text then
+					t.txt.Text = text
+					t.pill.Size = UDim2.fromOffset(38 + UI.textWidth(text, RATE_TS) + 14, 38)
+				end
 				if t.bonus ~= bonus then
 					t.bonus = bonus
 					local col = UI.Colors[bonus and "gold" or "green"]
@@ -584,7 +722,7 @@ local function refreshRates(pulse)
 				t.bb.MaxDistance = own and 360 or 200
 				if not t.bb.Enabled then t.bb.Enabled = true UI.pop(t.pill, 0.6) end
 				if pulse and own then
-					t.sc.Scale = 1.14
+					t.sc.Scale = 1.12
 					TweenService:Create(t.sc, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
 				end
 			elseif rateTags[m] then
@@ -600,6 +738,115 @@ task.spawn(function()
 		pcall(refreshRates, n % 2 == 0)
 		task.wait(0.5)
 	end
+end)
+
+-- For-sale boards (PREMIUM_UI): the server puts the plain board and its numbers (Price, Locked, Need); the face is
+-- drawn here with the kit: a ribbon, the price, how to buy ---------------------------------------------------------
+local function dressBoard(board)
+	if not board:IsA("BasePart") or board.Name ~= "Board" or board:GetAttribute("Block") == nil then return end
+	local old = board:FindFirstChild("SaleUI")
+	if old then old:Destroy() end
+	local locked = board:GetAttribute("Locked") == true
+	local price = board:GetAttribute("Price") or 0
+	local ppsS = 40
+	local H = board.Size.Y * ppsS
+	local sg = new("SurfaceGui", { Name = "SaleUI", Face = Enum.NormalId.Front, SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud, PixelsPerStud = ppsS, LightInfluence = 0, Parent = board })
+	local body = new("Frame", { BackgroundColor3 = WHITE, Size = UDim2.new(1, -24, 1, -24), Position = UDim2.fromOffset(12, 12), Parent = sg })
+	UI.corner(body, 40)
+	UI.stroke(body, 10)
+	UI.gradient(body, locked and C3(236, 240, 252) or C3(255, 255, 250), locked and C3(188, 198, 226) or C3(255, 236, 170))
+	local rib = new("Frame", { BackgroundColor3 = WHITE, Size = UDim2.new(1, 0, 0, H * 0.3), ZIndex = 2, Parent = body })
+	UI.corner(rib, 40)
+	local rc = UI.Colors[locked and "navy" or "red"]
+	UI.gradient(rib, rc[1], rc[2])
+	local ribFill = new("Frame", { BackgroundColor3 = rc[2], Size = UDim2.new(1, 0, 0, 40), Position = UDim2.new(0, 0, 1, -40), ZIndex = 2, Parent = rib })
+	UI.gradient(ribFill, rc[1]:Lerp(rc[2], 0.6), rc[2])
+	new("Frame", { BackgroundColor3 = UI.Ink, Size = UDim2.new(1, 0, 0, 10), Position = UDim2.new(0, 0, 1, -5), ZIndex = 3, Parent = rib })
+	UI.gloss(rib, 30, { ZIndex = 3, Size = UDim2.new(1, -40, 0.4, 0), Position = UDim2.fromOffset(20, 8) })
+	UI.text({ Text = locked and "LOCKED LAND" or "LAND FOR SALE", Size = UDim2.new(1, -60, 0.72, 0), Position = UDim2.new(0, 30, 0.12, 0), ZIndex = 4, StrokeTh = 8, Parent = rib })
+	local chip = UI.pill({ Color = locked and "purple" or "green", Size = UDim2.new(0.74, 0, 0, H * 0.36), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 30, 0, H * 0.34), StrokeTh = 8, ZIndex = 3, Parent = body })
+	UI.icon(locked and "rebirth_star" or "cash", { Size = UDim2.fromOffset(H * 0.5, H * 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 0, 0.5, 0), ZIndex = 6, Parent = chip })
+	UI.text({ Text = locked and ("REBIRTH " .. tostring(board:GetAttribute("Need") or 1)) or C.Money(price), Size = UDim2.new(1, -H * 0.36, 0.78, 0), Position = UDim2.new(0, H * 0.28, 0.11, 0),
+		ZIndex = 5, StrokeTh = 8, Parent = chip })
+	UI.text({ Text = locked and "Rebirth to unlock this land" or "Walk up to the sign to buy it", Size = UDim2.new(1, -60, 0, H * 0.16), Position = UDim2.new(0, 30, 1, -H * 0.2), Color = UI.Ink,
+		Stroke = false, ZIndex = 3, Parent = body })
+end
+local function watchBoards()
+	local world = workspace:WaitForChild("World")
+	for _, d in ipairs(world:GetDescendants()) do if d.Name == "Board" then pcall(dressBoard, d) end end
+	world.DescendantAdded:Connect(function(d)
+		if d.Name == "Board" and d:IsA("BasePart") then
+			task.delay(0.2, function() if d.Parent then pcall(dressBoard, d) end end)
+		end
+	end)
+end
+task.spawn(watchBoards)
+
+-- Prompts (PREMIUM_UI): every ProximityPrompt drawn in the kit's style: a key cap, a dark capsule with what it does,
+-- a gold bar while you hold; on touch the whole thing is the button ------------------------------------------------
+local PPS = game:GetService("ProximityPromptService")
+local function customize(p) if p:IsA("ProximityPrompt") then p.Style = Enum.ProximityPromptStyle.Custom end end
+for _, d in ipairs(workspace:GetDescendants()) do customize(d) end
+workspace.DescendantAdded:Connect(customize)
+PPS.PromptShown:Connect(function(prompt, inputType)
+	if prompt.Style ~= Enum.ProximityPromptStyle.Custom then return end
+	local adornee = prompt.Parent
+	if not (adornee and (adornee:IsA("BasePart") or adornee:IsA("Attachment") or adornee:IsA("Model"))) then return end
+	local touch = inputType == Enum.ProximityPromptInputType.Touch
+	local action, object = prompt.ActionText, prompt.ObjectText
+	local aw = math.max(UI.textWidth(action, 26), UI.textWidth(object, 17)) + 40
+	local w = 84 + aw
+	local bb = new("BillboardGui", { Name = "Prompt", Size = UDim2.fromOffset(w + 20, 104), AlwaysOnTop = true, Active = true, LightInfluence = 0, Adornee = adornee,
+		ExtentsOffsetWorldSpace = Vector3.new(0, 1, 0), Parent = worldGui })
+	local holder = new("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(w, 76), Position = UDim2.fromOffset(10, 8), Parent = bb })
+	local sc = new("UIScale", { Scale = 0, Parent = holder })
+	TweenService:Create(sc, TweenInfo.new(0.22, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	local cap = UI.pill({ Color = "white", Size = UDim2.fromOffset(70, 70), Position = UDim2.fromOffset(0, 3), Radius = 18, StrokeTh = 3.5, ZIndex = 4, Parent = holder })
+	local capLip = new("Frame", { BackgroundColor3 = C3(150, 160, 196), Size = UDim2.fromOffset(70, 70), Position = UDim2.fromOffset(0, 8), ZIndex = 3, Parent = holder })
+	UI.corner(capLip, 18)
+	UI.stroke(capLip, 3.5)
+	local key = touch and "TAP" or (inputType == Enum.ProximityPromptInputType.Gamepad and prompt.GamepadKeyCode.Name:gsub("Button", "") or prompt.KeyboardKeyCode.Name)
+	UI.text({ Text = key, Size = UDim2.new(1, -14, 0.6, 0), Position = UDim2.new(0, 7, 0.2, 0), Color = UI.Ink, Stroke = false, ZIndex = 6, Max = 40, Parent = cap })
+	local panel = UI.pill({ Style = "dark", Size = UDim2.fromOffset(aw, 62), Position = UDim2.fromOffset(80, 7), Radius = 20, Transparency = 0.1, ZIndex = 2, Parent = holder })
+	UI.text({ Text = object, Scaled = false, TextSize = 17, Size = UDim2.new(1, -24, 0, 20), Position = UDim2.fromOffset(16, 6), XAlign = Enum.TextXAlignment.Left, Color = C3(190, 204, 240), StrokeTh = 1.6, ZIndex = 4, Parent = panel })
+	UI.text({ Text = action, Scaled = false, TextSize = 26, Size = UDim2.new(1, -24, 0, 30), Position = UDim2.fromOffset(16, object ~= "" and 25 or 16), XAlign = Enum.TextXAlignment.Left, ZIndex = 4, StrokeTh = 2.4, Parent = panel })
+	local bar = UI.progress({ Color = "gold", Size = UDim2.new(1, -10, 0, 14), Position = UDim2.new(0, 5, 1, 12), StrokeTh = 2.5, ZIndex = 3, Parent = holder })
+	bar.frame.Visible = false
+	local holdTween
+	local conns = {}
+	table.insert(conns, prompt.PromptButtonHoldBegan:Connect(function()
+		if prompt.HoldDuration <= 0 then return end
+		bar.frame.Visible = true
+		bar.set(0, "", true)
+		holdTween = TweenService:Create(bar.fill, TweenInfo.new(prompt.HoldDuration, Enum.EasingStyle.Linear), { Size = UDim2.fromScale(1, 1) })
+		bar.fill.Visible = true
+		holdTween:Play()
+		cap.Position = UDim2.fromOffset(0, 7)
+	end))
+	table.insert(conns, prompt.PromptButtonHoldEnded:Connect(function()
+		if holdTween then holdTween:Cancel() end
+		bar.frame.Visible = false
+		cap.Position = UDim2.fromOffset(0, 3)
+	end))
+	table.insert(conns, prompt.Triggered:Connect(function()
+		UI.click()
+		UI.pop(holder, 1.12)
+	end))
+	if touch or inputType == Enum.ProximityPromptInputType.Keyboard then
+		local hit = new("TextButton", { Text = "", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 20, Parent = holder })
+		hit.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+				if input.UserInputState ~= Enum.UserInputState.Change then prompt:InputHoldBegin() end
+			end
+		end)
+		hit.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then prompt:InputHoldEnd() end
+		end)
+	end
+	prompt.PromptHidden:Wait()
+	for _, c in ipairs(conns) do c:Disconnect() end
+	TweenService:Create(sc, TweenInfo.new(0.12), { Scale = 0 }):Play()
+	Debris:AddItem(bb, 0.15)
 end)
 
 -- The fountain: the golden hammer rises slowly and slams the anvil; the jets burst, a clang ------------------------
@@ -634,7 +881,7 @@ task.spawn(function()
 end)
 
 -- the Hammer Shop's prompt (and any prompt with a Window attribute) opens its window
-game:GetService("ProximityPromptService").PromptTriggered:Connect(function(prompt)
+PPS.PromptTriggered:Connect(function(prompt)
 	local w = prompt:GetAttribute("Window")
 	if w and windows.open then
 		if not (win.Visible and win:GetAttribute("Name") == w) then windows.open(w) end
@@ -659,21 +906,21 @@ FeedbackRE.OnClientEvent:Connect(function(kind, p)
 			sparks(m.Pad.Position + Vector3.new(0, 8, 0), 5, 30)
 		end
 		UI.coin()
-		toast(p.name .. " built!", "green")
+		toast(p.name .. " built!", "green", nil, "mega")
 	elseif kind == "Land" then
-		toast("New land! The streets build themselves", "gold", 3)
+		toast("New land! The streets build themselves", "gold", 3, "locations")
 	elseif kind == "Rebirth" then
-		toast("REBIRTH " .. p.n .. "! Income x" .. C.Fmt(p.mult), "gold", 4)
+		toast("REBIRTH " .. p.n .. "! Income x" .. C.Fmt(p.mult), "gold", 4, "rebirth")
 	elseif kind == "Offline" then
-		toast("While you were away: +" .. C.Money(p.amount), "green", 4)
+		toast("While you were away: +" .. C.Money(p.amount), "green", 4, "cash")
 	elseif kind == "Error" then
 		toast(tostring(p.text), "red")
 	elseif kind == "Gems" and (p.amount or 0) > 0 then
-		toast("+" .. C.Fmt(p.amount) .. " Gems", "purple")
+		toast("+" .. C.Fmt(p.amount) .. " Gems", "purple", nil, "gem")
 	elseif kind == "Purchased" then
 		UI.coin()
-		toast(tostring(p.name) .. " - thank you!", "gold", 3.5)
+		toast(tostring(p.name) .. " - thank you!", "gold", 3.5, "gift")
 	elseif kind == "PaidRestored" then
-		toast("Restored: " .. tostring(p.list), "gold", 4)
+		toast("Restored: " .. tostring(p.list), "gold", 4, "gift")
 	end
 end)
