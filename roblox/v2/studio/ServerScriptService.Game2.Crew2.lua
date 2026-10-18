@@ -1,6 +1,7 @@
 -- BlockRise 2.0 - the crew: worker NPCs in hard hats, each with a real hammer from your inventory in hand
--- (EQUIP BEST: your best hammer is yours, the next ones go to the crew). They wait at the yard by the city gate and
--- walk to the site of the order being built, then swing; every swing sends a spark (the hammer's rarity colour).
+-- (EQUIP BEST: your best hammer is yours, the next ones go to the crew). Between orders they take a break on the
+-- sidewalks of the first street; they walk to the site of the order being built, then swing; every swing sends a
+-- spark (the hammer's rarity colour).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
@@ -13,7 +14,8 @@ local ctx
 local crews = {} -- player -> { workers = { { model, hum, track, key, spot } }, k }
 local hits = {} -- batched sparks: { pos, rarity }
 
-local ANIM = { walk = "rbxassetid://507777826", idle = "rbxassetid://507766388", work = "rbxassetid://522635514" }
+local ANIM = { walk = "rbxassetid://507777826", idle = "rbxassetid://507766388", work = "rbxassetid://522635514",
+	hold = "rbxassetid://507768375" } -- hold: Roblox's tool pose (the arm up, the hammer upright), over walk and idle
 local SKIN = { Color3.fromRGB(255, 214, 180), Color3.fromRGB(234, 184, 146), Color3.fromRGB(198, 140, 100), Color3.fromRGB(150, 104, 72), Color3.fromRGB(104, 70, 50) }
 local SHIRTS = { Color3.fromRGB(255, 150, 40), Color3.fromRGB(70, 150, 240), Color3.fromRGB(240, 80, 90), Color3.fromRGB(60, 190, 120), Color3.fromRGB(160, 110, 240), Color3.fromRGB(255, 200, 60) }
 
@@ -92,7 +94,10 @@ local function makeRig(i)
 	return model, hum
 end
 
--- put a hammer (the key's model from ServerStorage.Hammers) in the worker's right hand
+-- put a hammer (the key's model from ServerStorage.Hammers) in the worker's right hand. With the tool pose (the
+-- "hold" animation) it rests tilted back over the shoulder (REST); a swing straightens it
+local REST = CFrame.Angles(math.rad(35), 0, 0)
+Crew.REST = REST
 local function giveHammer(w, key)
 	local old = w.model:FindFirstChild("HeldHammer")
 	if old then old:Destroy() end
@@ -116,13 +121,21 @@ local function giveHammer(w, key)
 		elseif p:IsA("BasePart") then p.Anchored = false p.CanCollide = false p.Massless = true p.CanQuery = false p.CanTouch = false end
 	end
 	local att = hand:FindFirstChild("RightGripAttachment")
-	local target = hand.CFrame * (att and att.CFrame or CFrame.new(0, -0.3, 0)) * grip:Inverse()
-	m:PivotTo(m:GetPivot() * (handle.CFrame:Inverse() * target))
+	local base = att and att.CFrame or CFrame.new(0, -0.3, 0)
+	local target = hand.CFrame * base * REST * grip:Inverse()
+	-- move the whole model so its handle lands in the grip (some models' pivots are not at their handle)
+	m:PivotTo((target * handle.CFrame:Inverse()) * m:GetPivot())
 	m.Parent = w.model
-	local wc = Instance.new("WeldConstraint")
-	wc.Part0 = hand
-	wc.Part1 = handle
-	wc.Parent = handle
+	-- a classic weld (its C0 can change): resting on the shoulder; upright while swinging (see play / the client)
+	local wd = Instance.new("Weld")
+	wd.Name = "GripWeld"
+	wd.Part0 = hand
+	wd.Part1 = handle
+	wd.C0 = base * REST
+	wd.C1 = grip
+	wd:SetAttribute("Base", base)
+	wd.Parent = handle
+	w.grip = wd
 end
 
 -- the same for a player's character (their best hammer)
@@ -141,13 +154,31 @@ local function play(w, name, speed)
 		local ok, tr = pcall(function() return animator:LoadAnimation(a) end)
 		if ok then
 			tr.Looped = true
-			tr.Priority = name == "work" and Enum.AnimationPriority.Action or (name == "walk" and Enum.AnimationPriority.Movement or Enum.AnimationPriority.Idle)
+			tr.Priority = name == "work" and Enum.AnimationPriority.Action2 or (name == "walk" and Enum.AnimationPriority.Movement or Enum.AnimationPriority.Idle)
 			w.anims[name] = tr
 		end
 	end
 	w.track = w.anims[name]
 	w.playing = name
 	if w.track then w.track:Play(0.15, 1, speed or 1) end
+	-- the hammer: held upright like a tool while walking or waiting; the swing takes the arm while working
+	if not w.holdTrack then
+		local a = Instance.new("Animation")
+		a.AnimationId = ANIM.hold
+		local ok, tr = pcall(function() return animator:LoadAnimation(a) end)
+		if ok then
+			tr.Looped = true
+			tr.Priority = Enum.AnimationPriority.Action
+			w.holdTrack = tr
+		end
+	end
+	if w.holdTrack then
+		if name == "work" then w.holdTrack:Stop(0.1) elseif not w.holdTrack.IsPlaying then w.holdTrack:Play(0.2) end
+	end
+	if w.grip and w.grip.Parent then
+		local base = w.grip:GetAttribute("Base")
+		if base then w.grip.C0 = name == "work" and base or base * REST end
+	end
 end
 
 -- the crew of a player: as many workers as they have (at most C.MaxWorkersShown walk around)
@@ -167,7 +198,7 @@ function Crew.Sync(plr, st)
 		local model, hum = makeRig(i)
 		if not model then break end
 		model.Name = "Worker" .. i
-		local yard = Geo.districtCF(st.k) * CFrame.new((i - (n + 1) / 2) * 4, 3, 14)
+		local yard = Geo.districtCF(st.k) * CFrame.new((i % 2 == 0) and 17 or -17, 3, 10 + ((i - 1) // 2) * 26)
 		model:PivotTo(yard)
 		model.Parent = folder
 		local root = model:FindFirstChild("HumanoidRootPart")
@@ -204,8 +235,20 @@ function Crew.Update(plr, st, dt)
 			target = (lotCF * CFrame.new(math.sin(a) * r, 3, math.cos(a) * r)).Position
 			face = lotCF.Position
 		else
-			target = (Geo.districtCF(st.k) * CFrame.new((i - (n + 1) / 2) * 4.5, 3, 16)).Position
-			face = (Geo.districtCF(st.k) * CFrame.new((i - (n + 1) / 2) * 4.5, 3, 40)).Position
+			-- no order: they take a break on the sidewalks of the first street, each in their own spot, and now and
+			-- then stroll to another one (a lane between the lamps and the trees); never a row in the road
+			if not w.idleAt or now > (w.idleUntil or 0) or w.idleK ~= st.k then
+				local rng = Random.new(i * 7919 + math.floor(now * 10))
+				local side = (i % 2 == 0) and 1 or -1
+				local x = side * rng:NextNumber(16.7, 17.3)
+				local z = 10 + ((i - 1) // 2) * 26 + rng:NextNumber(0, 14)
+				local base = Geo.districtCF(st.k)
+				w.idleAt = (base * CFrame.new(x, 3, z)).Position
+				w.idleFace = (base * CFrame.new(0, 3, z + rng:NextNumber(-12, 12))).Position
+				w.idleUntil = now + rng:NextNumber(8, 16)
+				w.idleK = st.k
+			end
+			target, face = w.idleAt, w.idleFace
 		end
 		local pos = w.root.Position
 		local flat = Vector3.new(target.X - pos.X, 0, target.Z - pos.Z)

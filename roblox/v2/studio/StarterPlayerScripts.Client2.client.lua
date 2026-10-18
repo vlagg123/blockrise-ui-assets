@@ -16,6 +16,12 @@ local Hammers = require(ReplicatedStorage.Shared.Hammers)
 local UI = require(script:WaitForChild("UI"))
 local BuildFX = require(script:WaitForChild("BuildFX"))
 task.spawn(BuildFX.start)
+-- cars driving the permanent streets (Traffic.lua)
+task.spawn(function()
+	local mod = script:WaitForChild("Traffic", 10)
+	local ok, T = pcall(require, mod)
+	if ok and T then T.start() else warn("[HUD2] traffic: " .. tostring(T)) end
+end)
 local new = UI.new
 local C3 = Color3.fromRGB
 local WHITE = Color3.new(1, 1, 1)
@@ -195,6 +201,7 @@ local function goal()
 	if built < 2 then return "Build a second building", built .. "/2", 2 end
 	if n4 < 1 then return "Upgrade a building", "0/1" end
 	if built < 4 then return "Build 4 buildings", built .. "/4" end
+	if attr("Hires", 0) < 1 and attr("Money", 0) >= C.HirePrice[1] then return "Hire a worker: HAMMERS > CREW", "0/1" end
 	local openLots = 8 * math.min(3, reb + 1)
 	if ownedLots < openLots then return "Buy new land (the sale sign)", (ownedLots // 4) .. "/" .. (openLots // 4) end
 	if built < ownedLots then return "Build on every lot", built .. "/" .. ownedLots end
@@ -383,6 +390,39 @@ local function lotUnder(pos)
 	end
 end
 
+-- your hammer: held upright like a tool (Roblox's tool pose over walking and idling), a swing on every tap on your
+-- building site (the animations play on your own character, so everyone sees them)
+local holdTrack, slashTrack
+local function setupHold(char)
+	local hum = char:WaitForChild("Humanoid", 10)
+	local animator = hum and (hum:FindFirstChildOfClass("Animator") or hum:WaitForChild("Animator", 5))
+	if not animator then return end
+	local a = Instance.new("Animation")
+	a.AnimationId = "rbxassetid://507768375"
+	local b = Instance.new("Animation")
+	b.AnimationId = "rbxassetid://522635514"
+	local ok1, h = pcall(function() return animator:LoadAnimation(a) end)
+	local ok2, sl = pcall(function() return animator:LoadAnimation(b) end)
+	if not (ok1 and ok2) then return end
+	h.Looped = true
+	h.Priority = Enum.AnimationPriority.Action
+	sl.Looped = false
+	sl.Priority = Enum.AnimationPriority.Action2
+	holdTrack, slashTrack = h, sl
+	local function update()
+		if char:FindFirstChild("HeldHammer") then
+			if not h.IsPlaying then h:Play(0.2) end
+		elseif h.IsPlaying then
+			h:Stop(0.2)
+		end
+	end
+	char.ChildAdded:Connect(update)
+	char.ChildRemoved:Connect(update)
+	update()
+end
+plr.CharacterAdded:Connect(setupHold)
+if plr.Character then task.spawn(setupHold, plr.Character) end
+
 local sparks -- defined below
 local lastTap = 0
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -395,6 +435,16 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		if os.clock() - lastTap < 0.12 then return end
 		lastTap = os.clock()
 		TapRE:FireServer(i)
+		if slashTrack and not slashTrack.IsPlaying then
+			-- the hammer straightens for the swing, then rests on the shoulder again
+			local wd = plr.Character and plr.Character:FindFirstChild("GripWeld", true)
+			local base = wd and wd:GetAttribute("Base")
+			if base then
+				wd.C0 = base
+				task.delay(0.5, function() if wd.Parent then wd.C0 = base * CFrame.Angles(math.rad(35), 0, 0) end end)
+			end
+			slashTrack:Play(0.05, 1, 1.5)
+		end
 		if sparks then sparks(hitPos, Hammers.ById[attr("HammerKey", "rusty")] and Hammers.ById[attr("HammerKey", "rusty")].r or 1, 10) end
 		return
 	end
@@ -513,7 +563,7 @@ windows.open = function(name, opts)
 	end
 	for _, c in ipairs(winBody:GetChildren()) do c:Destroy() end
 	if contents[name] then
-		local ok, err = pcall(contents[name], winBody, { UI = UI, toast = toast, attr = attr, tab = opts and opts.tab, close = closeWindow, h = win.Size.Y.Offset - 98 })
+		local ok, err = pcall(contents[name], winBody, { UI = UI, toast = toast, attr = attr, tab = opts and opts.tab, close = closeWindow, open = function(n, o) task.defer(windows.open, n, o) end, h = win.Size.Y.Offset - 98 })
 		if not ok then warn("[HUD2] window " .. name .. ": " .. tostring(err)) end
 	end
 	win.Visible = true

@@ -1,6 +1,7 @@
--- BlockRise 2.0 - the HAMMERS window: your hammers (a grid; tap one: its card with EQUIP and LEVEL UP) and the
--- crates (cash or Gems; where paid random items aren't allowed every crate shows the hammer inside first: X-RAY).
--- Talks to the v1 HammerService (RemoteFunction HammerAction).
+-- BlockRise 2.0 - the HAMMERS window: your hammers (a grid; tap one: its card with LEVEL UP), the crates (cash or
+-- Gems; where paid random items aren't allowed every crate shows the hammer inside first: X-RAY) and your CREW (who
+-- holds which hammer; HIRE). In 2.0 you always hold your best hammer and the workers the next ones (by power).
+-- Talks to the v1 HammerService (RemoteFunction HammerAction) and the City remote (hire).
 -- PREMIUM_UI (2026-10-18): segmented tabs, rarity tiles with a glow, a detail card with light rays, crate cards.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -20,10 +21,10 @@ return function(body, ctx)
 
 	local function rarity(r) return Hammers.Rarities[r] or Hammers.Rarities[1] end
 
-	-- the tabs, and the power of the hammer in your hand
-	UI.tabs({ Parent = body, Items = { { "mine", "MY HAMMERS" }, { "crates", "CRATES" } }, Selected = tab, Color = "blue", Size = UDim2.fromOffset(400, 54), ZIndex = 3,
+	-- the tabs, and the size of your crew
+	UI.tabs({ Parent = body, Items = { { "mine", "MY HAMMERS" }, { "crates", "CRATES" }, { "crew", "CREW" } }, Selected = tab, Color = "blue", Size = UDim2.fromOffset(470, 54), ZIndex = 3,
 		OnSelect = function(id) tab = id render() end })
-	local powerChip = UI.chip({ Color = "green", Icon = "up_power", Height = 34, TextSize = 19, Text = "", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0, 27), ZIndex = 4, Parent = body })
+	local powerChip = UI.chip({ Color = "orange", Icon = "crew", Height = 34, TextSize = 19, Text = "", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0, 27), ZIndex = 4, Parent = body })
 	powerChip.frame.Visible = false
 	local content = new("Frame", { Name = "Content", BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 68), Size = UDim2.new(1, 0, 1, -68), ZIndex = 3, Parent = body })
 
@@ -37,15 +38,22 @@ return function(body, ctx)
 		return false
 	end
 
+	-- who holds what (the server's rule): the hammers by power, best first; #1 is yours, #2.. the workers'
+	local function workers() return ctx.attr("Workers", 0) end
+	local function byPower()
+		local list = {}
+		for _, it in ipairs(data and data.hammers or {}) do if Hammers.ById[it.k] then table.insert(list, it) end end
+		table.sort(list, function(a, b)
+			local pa, pb = Hammers.Power(a.k, a.lv or 1), Hammers.Power(b.k, b.lv or 1)
+			if math.abs(pa - pb) > 1e-6 then return pa > pb end
+			if (a.lv or 1) ~= (b.lv or 1) then return (a.lv or 1) > (b.lv or 1) end
+			return tostring(a.id) < tostring(b.id)
+		end)
+		return list
+	end
 	local function showPower()
-		for _, it in ipairs(data and data.hammers or {}) do
-			if it.id == data.equip and Hammers.ById[it.k] then
-				powerChip.set("IN HAND: " .. Hammers.ById[it.k].name .. "  " .. Hammers.PowerLabel(it.k, it.lv or 1, it.pass))
-				powerChip.frame.Visible = true
-				return
-			end
-		end
-		powerChip.frame.Visible = false
+		powerChip.set("YOU + " .. workers() .. " WORKERS")
+		powerChip.frame.Visible = true
 	end
 
 	-- a hammer tile: rarity gradient, a glow, the picture, the name, the level
@@ -78,19 +86,10 @@ return function(body, ctx)
 	local function renderMine()
 		clear()
 		showPower()
-		local list = {}
-		for _, it in ipairs(data.hammers or {}) do
-			if Hammers.ById[it.k] then table.insert(list, it) end
-		end
-		-- the one in your hand first, then by rarity and level
-		table.sort(list, function(a, b)
-			local ra, rb = Hammers.ById[a.k].r, Hammers.ById[b.k].r
-			if a.id == data.equip then return true end
-			if b.id == data.equip then return false end
-			if ra ~= rb then return ra > rb end
-			if (a.lv or 1) ~= (b.lv or 1) then return (a.lv or 1) > (b.lv or 1) end
-			return a.id < b.id
-		end)
+		-- by power: yours first, then the crew's, then the rest in your bag
+		local list = byPower()
+		local roleOf = {}
+		for n, it in ipairs(list) do roleOf[it.id] = n == 1 and "you" or (n - 1 <= workers() and ("w" .. (n - 1)) or nil) end
 		local PW = 280
 		local well = UI.well({ Size = UDim2.new(1, -(PW + 16), 1, 0), Parent = content, ZIndex = 4 })
 		local grid = new("ScrollingFrame", { BackgroundTransparency = 1, Size = UDim2.new(1, -8, 1, -8), Position = UDim2.fromOffset(4, 4), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -113,7 +112,7 @@ return function(body, ctx)
 			local h = Hammers.ById[it.k]
 			local rar = rarity(h.r)
 			local H = (ctx.h or 382) - 68 -- the panel's height in the window's units
-			local stageH = math.clamp(H - 204, 60, 150)
+			local stageH = math.clamp(H - 222, 60, 160)
 			-- (a CanvasGroup: it clips the turning rays to its rounded shape; the outline is a frame over it)
 			local stage = d(new("CanvasGroup", { BackgroundTransparency = 1, Size = UDim2.new(1, -20, 0, stageH), Position = UDim2.fromOffset(10, 10), ZIndex = 5, Parent = panel }))
 			UI.corner(stage, 16)
@@ -135,19 +134,14 @@ return function(body, ctx)
 			rc.frame:FindFirstChildOfClass("UIGradient").Color = ColorSequence.new(UI.lighter(rar.color, 0.25), rar.color)
 			UI.chip({ Color = "navy", Height = 26, TextSize = 16, Text = "LV " .. (it.lv or 1), ZIndex = 6, Order = 2, Parent = row })
 			UI.chip({ Color = "green", Height = 26, TextSize = 16, Text = Hammers.PowerLabel(it.k, it.lv or 1, it.pass), ZIndex = 6, Order = 3, Parent = row })
-			-- the buttons, from the bottom up
-			local equipped = it.id == data.equip
-			local _, eh = UI.button({ Name = "Equip", Color = equipped and "grey" or "blue", Text = equipped and "IN YOUR HAND" or "EQUIP", Size = UDim2.new(1, -24, 0, 46), AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 12, 1, -72), Max = 22, ZIndex = 6, Parent = panel,
-				OnClick = function()
-					if equipped then return end
-					local ok, res = RF:InvokeServer("equip", it.id)
-					if ok then data.equip = it.id ctx.toast("Equipped " .. h.name, "blue", nil, "shop") renderMine() else ctx.toast(tostring(res), "red") end
-				end })
-			d(eh)
+			-- who uses it
+			local role = roleOf[it.id]
+			local status = role == "you" and "In your hand" or (role and ("Worker " .. role:sub(2) .. " builds with it") or "In your bag: hire workers to use it")
+			d(UI.text({ Text = status, Scaled = false, TextSize = 18, Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, y + 64), Color = role and Color3.fromRGB(34, 150, 70) or UI.Muted,
+				Stroke = false, ZIndex = 6, Parent = panel }))
 			local cost = Hammers.LevelCost(it.k, it.lv or 1)
 			local _, lh = UI.button({ Name = "Level", Color = cost and "green" or "grey", Text = cost and "LEVEL UP" or "MAX LEVEL", Sub = cost and C.Money(cost) or nil, Shimmer = cost ~= nil,
-				Size = UDim2.new(1, -24, 0, 54), AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 12, 1, -12), Max = 24, ZIndex = 6, Parent = panel,
+				Size = UDim2.new(1, -24, 0, 58), AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 12, 1, -12), Max = 26, ZIndex = 6, Parent = panel,
 				OnClick = function()
 					if not cost then return end
 					local ok, res = RF:InvokeServer("levelup", it.id)
@@ -159,9 +153,10 @@ return function(body, ctx)
 			it.order = i
 			local t, st = tile(grid, it, UDim2.fromOffset(110, 132), function() selected = it.id showPanel(it) end)
 			tiles[it.id] = { st = st }
-			if it.id == data.equip then
-				local tag = UI.pill({ Color = "green", Size = UDim2.fromOffset(50, 22), Position = UDim2.new(1, -55, 0, 5), ZIndex = 9, StrokeTh = 2, Parent = t })
-				UI.text({ Text = "HAND", Size = UDim2.new(1, -8, 1, -4), Position = UDim2.fromOffset(4, 2), ZIndex = 11, Max = 14, StrokeTh = 1.5, Parent = tag })
+			local role = roleOf[it.id]
+			if role then
+				local tag = UI.pill({ Color = role == "you" and "green" or "blue", Size = UDim2.fromOffset(50, 22), Position = UDim2.new(1, -55, 0, 5), ZIndex = 9, StrokeTh = 2, Parent = t })
+				UI.text({ Text = role == "you" and "YOU" or "CREW", Size = UDim2.new(1, -8, 1, -4), Position = UDim2.fromOffset(4, 2), ZIndex = 11, Max = 14, StrokeTh = 1.5, Parent = tag })
 			end
 		end
 		local first = list[1]
@@ -260,9 +255,81 @@ return function(body, ctx)
 		end
 	end
 
+	-- CREW ----------------------------------------------------------------------------------------------------
+	local CityRF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("City")
+	local function renderCrew()
+		clear()
+		showPower()
+		local list = byPower()
+		local n = workers()
+		local PW = 280
+		local well = UI.well({ Size = UDim2.new(1, -(PW + 16), 1, 0), Parent = content, ZIndex = 4 })
+		local grid = new("ScrollingFrame", { BackgroundTransparency = 1, Size = UDim2.new(1, -8, 1, -8), Position = UDim2.fromOffset(4, 4), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ScrollBarThickness = 8, ScrollBarImageColor3 = UI.Ink, BorderSizePixel = 0, ZIndex = 5, Parent = well })
+		new("UIGridLayout", { CellSize = UDim2.fromOffset(110, 132), CellPadding = UDim2.fromOffset(12, 12), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
+		UI.pad(grid, 10, 12, 14, 12)
+		-- you and every worker, with the hammer they build with
+		for i = 0, n do
+			local it = list[i + 1]
+			local key = it and it.k or "rusty"
+			local h = Hammers.ById[key] or Hammers.ById.rusty
+			local f = new("Frame", { BackgroundColor3 = WHITE, LayoutOrder = i, ZIndex = 5, Parent = grid })
+			UI.corner(f, 18)
+			UI.stroke(f, i == 0 and 4 or 3, i == 0 and Color3.fromRGB(255, 214, 60) or UI.Ink)
+			UI.gradient(f, i == 0 and Color3.fromRGB(190, 255, 170) or Color3.fromRGB(255, 236, 170), i == 0 and Color3.fromRGB(60, 190, 90) or Color3.fromRGB(255, 166, 40))
+			UI.glow(f, WHITE, { Size = UDim2.fromScale(0.86, 0.7), Position = UDim2.fromScale(0.5, 0.42), ZIndex = 5 })
+			UI.gloss(f, 12, { ZIndex = 6, Size = UDim2.new(1, -10, 0.3, 0), Position = UDim2.fromOffset(5, 3), From = 0.55, To = 0.95 })
+			new("ImageLabel", { BackgroundTransparency = 1, Image = h.img or "", ScaleType = Enum.ScaleType.Fit, Size = UDim2.new(1, -30, 0.56, 0), Position = UDim2.new(0, 15, 0, 14), ZIndex = 7, Parent = f })
+			UI.icon(i == 0 and "star" or "crew", { Size = UDim2.fromOffset(34, 34), Position = UDim2.fromOffset(2, 2), ZIndex = 9, Parent = f })
+			local pw = UI.pill({ Color = "navy", Size = UDim2.fromOffset(46, 22), Position = UDim2.new(1, -51, 0, 6), ZIndex = 9, StrokeTh = 2, Parent = f })
+			UI.text({ Text = Hammers.PowerLabel(key, it and it.lv or 1, it and it.pass), Size = UDim2.new(1, -8, 1, -4), Position = UDim2.fromOffset(4, 2), ZIndex = 11, Max = 15, StrokeTh = 1.5, Parent = pw })
+			local strip = new("Frame", { BackgroundColor3 = UI.Ink, BackgroundTransparency = 0.45, Size = UDim2.new(1, -10, 0, 26), Position = UDim2.new(0, 5, 1, -31), ZIndex = 7, Parent = f })
+			UI.corner(strip, 10)
+			UI.text({ Text = i == 0 and "YOU" or ("WORKER " .. i), Size = UDim2.new(1, -8, 1, -6), Position = UDim2.fromOffset(4, 3), ZIndex = 8, Max = 17, StrokeTh = 1.8, Parent = strip })
+		end
+		-- the hire card
+		local panel = UI.panel({ Size = UDim2.new(0, PW, 1, 0), Position = UDim2.new(1, -PW, 0, 0), Radius = 20, StrokeTh = 3.5, Shadow = false, ZIndex = 4, Parent = content })
+		local H = (ctx.h or 382) - 68
+		local stageH = math.clamp(H - 222, 60, 160)
+		local stage = new("CanvasGroup", { BackgroundTransparency = 1, Size = UDim2.new(1, -20, 0, stageH), Position = UDim2.fromOffset(10, 10), ZIndex = 5, Parent = panel })
+		UI.corner(stage, 16)
+		local sbg = new("Frame", { BackgroundColor3 = WHITE, Size = UDim2.fromScale(1, 1), ZIndex = 4, Parent = stage })
+		UI.gradient(sbg, Color3.fromRGB(255, 230, 150), Color3.fromRGB(255, 160, 40))
+		UI.rays(stage, WHITE, { Size = UDim2.fromOffset(stageH * 2.2, stageH * 2.2), ZIndex = 5, Strength = 0.6, Speed = 14 })
+		UI.glow(stage, WHITE, { Size = UDim2.fromOffset(stageH * 0.95, stageH * 0.95), ZIndex = 5 })
+		UI.icon("hire", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(stageH - 8, stageH - 8), ZIndex = 7, Parent = stage })
+		local outline = new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -20, 0, stageH), Position = UDim2.fromOffset(10, 10), ZIndex = 8, Parent = panel })
+		UI.corner(outline, 16)
+		UI.stroke(outline, 3)
+		local y = stageH + 18
+		UI.text({ Text = "HIRE A WORKER", Scaled = false, TextSize = 24, Size = UDim2.new(1, -20, 0, 28), Position = UDim2.fromOffset(10, y), Color = UI.Ink, Stroke = false, ZIndex = 6, Parent = panel })
+		UI.text({ Text = "Each worker builds with your next best hammer.", Size = UDim2.new(1, -24, 0, 40), Position = UDim2.fromOffset(12, y + 30), Color = UI.Muted, Stroke = false, Max = 17, Wrap = true, ZIndex = 6, Parent = panel })
+		local hires = ctx.attr("Hires", 0)
+		local price = C.HirePrice[hires + 1]
+		local can = price and ctx.attr("Money", 0) >= price
+		UI.button({ Name = "Hire", Color = price and (can and "green" or "grey") or "grey", Text = price and "HIRE +1" or "CREW FULL", Sub = price and C.Money(price) or nil, Shimmer = can == true,
+			Size = UDim2.new(1, -24, 0, 58), AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 12, 1, -12), Max = 26, ZIndex = 6, Parent = panel,
+			OnClick = function()
+				if not price then
+					if ctx.open then ctx.open("SHOP", { tab = "passes" }) end
+					return
+				end
+				if not can then ctx.toast("You need " .. C.Money(price - ctx.attr("Money", 0)) .. " more", "red") return end
+				local ok, res = CityRF:InvokeServer("hire")
+				if ok then
+					UI.coin()
+					ctx.toast("A new worker joined your crew!", "gold", 3, "hire")
+					task.wait(0.25)
+					renderCrew()
+				else
+					ctx.toast(tostring(res), "red")
+				end
+			end })
+	end
+
 	render = function()
 		if not data then msg("Loading...") if not load() then return end end
-		if tab == "mine" then renderMine() else renderCrates() end
+		if tab == "mine" then renderMine() elseif tab == "crew" then renderCrew() else renderCrates() end
 	end
 	render()
 end
